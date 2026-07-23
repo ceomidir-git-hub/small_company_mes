@@ -1114,6 +1114,10 @@ async function verifyQgisAccess() {
     return null;
   }
 
+  /*
+    로그인 화면에서 이미 정상 작동한 방식과 동일하게
+    profiles의 필수 열만 조회합니다.
+  */
   const {
     data:profile,
     error:profileError
@@ -1121,27 +1125,27 @@ async function verifyQgisAccess() {
     await supabaseClient
       .from("profiles")
       .select(
-        "company_id, " +
-        "user_name, " +
-        "user_role, " +
-        "is_active"
+        "company_id, is_active"
       )
       .eq(
         "user_id",
         user.id
       )
-      .maybeSingle();
+      .single();
 
   const isQgisUser =
+    !profileError &&
     profile &&
     profile.is_active === true &&
     profile.company_id ===
       QGIS_COMPANY_ID;
 
-  if (
-    profileError ||
-    !isQgisUser
-  ) {
+  if (!isQgisUser) {
+    console.error(
+      "QGIS 회사 권한 확인 실패:",
+      profileError
+    );
+
     await supabaseClient
       .auth
       .signOut({
@@ -1159,7 +1163,6 @@ async function verifyQgisAccess() {
 
   if (currentUserName) {
     currentUserName.textContent =
-      profile.user_name ||
       user.email ||
       "관리자";
   }
@@ -1194,11 +1197,12 @@ async function logoutCurrentUser() {
 supabaseClient
   .auth
   .onAuthStateChange(
-    (event,session) => {
-      if (
-        event === "SIGNED_OUT" ||
-        !session
-      ) {
+    (event) => {
+      /*
+        초기 세션 복원 중에는 이동하지 않고,
+        실제 로그아웃 이벤트만 처리합니다.
+      */
+      if (event === "SIGNED_OUT") {
         redirectToLogin();
       }
     }
