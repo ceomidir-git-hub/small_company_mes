@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -567,40 +567,76 @@
   }
 
   /* =========================================================
-     대시보드 전체 폭 20% 축소
-     기준 노트북 해상도: 1366 × 768px
-
-     기존 실제 대시보드 폭:
-     1366 - 사이드바 190 - 메인 좌우 여백 32 = 1144px
-
-     20% 축소:
-     1144 × 0.80 = 915.2px → 915px
-
-     축소 후 열 배분:
-     좌측 업무 대시보드 581px
-     열 간격             11px
-     우측 업무 프레임    323px
-     합계                915px
-
-     좌측 KPI 카드:
-     (581 - 8 × 3) ÷ 4 = 139.25px
+     승인된 최종 조정
+     - 생산 흐름도 최소 폭 500px 확보
+     - 우측 영역을 먼저 확보하고 좌측은 자동 계산
+     - 전체 사용 가능 폭 100% 사용
+     - 생산 흐름도 가로 스크롤 제거
+     - 인증 완료 전 화면 숨김
      ========================================================= */
+
+  html.auth-pending body {
+    visibility:hidden;
+  }
+
+  .brand-logo {
+    display:block;
+    height:30px;
+    width:auto;
+    max-width:160px;
+    object-fit:contain;
+    flex-shrink:0;
+  }
+
+  .logout-btn {
+    min-height:32px;
+    padding:5px 10px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:var(--panel-2);
+    color:var(--text);
+    cursor:pointer;
+    font-family:var(--font-body);
+    font-size:0.74rem;
+    white-space:nowrap;
+  }
+
+  .logout-btn:hover {
+    border-color:var(--bad);
+    color:var(--bad);
+  }
+
+  .logout-btn:disabled {
+    opacity:0.55;
+    cursor:wait;
+  }
 
   @media (min-width:1181px) {
     .main {
-      align-items:flex-start;
+      width:100%;
+      min-width:0;
+      align-items:stretch;
     }
 
     .main > .page-head,
     .main > .grid {
-      width:915px;
-      max-width:80%;
+      width:100%;
+      max-width:none;
     }
 
+    /*
+      전체 대시보드 자동 계산:
+      왼쪽 = 남은 폭 전체
+      간격 = 14px
+      오른쪽 = 최소 500px / 화면에 따라 최대 560px
+    */
     .grid {
-      grid-template-columns:581px 323px;
-      justify-content:start;
-      gap:11px;
+      grid-template-columns:
+        minmax(0,1fr)
+        clamp(500px,35vw,560px);
+      justify-content:stretch;
+      gap:14px;
+      width:100%;
     }
 
     .grid > div {
@@ -609,142 +645,18 @@
 
     .grid > div:first-child,
     .grid > div:last-child {
-      gap:16px !important;
-    }
-
-    .kpi-row {
-      grid-template-columns:repeat(4,139.25px);
-      gap:8px;
-    }
-
-    .kpi {
-      min-width:0;
-      padding-left:10px;
-      padding-right:10px;
-    }
-
-    .kpi .kpi-label {
-      font-size:0.64rem;
-      white-space:nowrap;
-    }
-
-    .kpi .kpi-value {
-      font-size:1.85rem;
-    }
-
-    .kpi .kpi-foot {
-      font-size:0.57rem;
-      line-height:1.35;
-    }
-
-    #kpi-equipment {
-      font-size:0.9rem !important;
-      letter-spacing:-0.04em;
-    }
-
-    .chart-grid-2 {
-      grid-template-columns:repeat(2,286.5px);
-      gap:8px;
-    }
-
-    .chart-grid-3 {
-      grid-template-columns:repeat(3,188.33px);
-      gap:8px;
-    }
-
-    .panel {
-      min-width:0;
-      padding-left:11px;
-      padding-right:11px;
-    }
-
-    .panel h3 {
-      font-size:0.78rem;
-    }
-
-    .flow-card {
-      width:323px;
-      min-width:0;
-      overflow:hidden;
-    }
-
-    .flow-track {
       width:100%;
-      overflow-x:auto;
-      justify-content:flex-start;
-      scrollbar-width:thin;
-    }
-
-    .flow-step {
-      min-width:31px;
-    }
-
-    .flow-step .node {
-      width:27px;
-      height:27px;
-      font-size:0.72rem;
-    }
-
-    .flow-step .label {
-      font-size:0.49rem;
-    }
-
-    .flow-arrow {
-      font-size:0.54rem;
-      margin-bottom:16px;
-    }
-
-    .doc-grid {
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:6px;
-    }
-
-    .doc-card {
       min-width:0;
-    }
-
-    .doc-card .doc-title {
-      font-size:0.57rem;
-    }
-
-    .doc-card .doc-meta {
-      font-size:0.46rem;
-    }
-
-    .modules {
-      grid-template-columns:repeat(4,139.25px);
-      gap:8px;
-    }
-
-    .module-card {
-      padding-left:10px;
-      padding-right:10px;
-    }
-
-    .module-card .module-head h4 {
-      font-size:0.72rem;
-    }
-
-    .module-card li {
-      font-size:0.6rem;
-    }
-  }
-
-  /* 1280px급 노트북에서도 20% 축소 비율 유지 */
-  @media (min-width:1181px) and (max-width:1320px) {
-    .main > .page-head,
-    .main > .grid {
-      width:calc(100% * 0.80);
-      max-width:none;
-    }
-
-    .grid {
-      grid-template-columns:minmax(0,63.5%) minmax(0,35.3%);
-      gap:1.2%;
     }
 
     .kpi-row,
+    .chart-grid-2,
+    .chart-grid-3,
     .modules {
+      width:100%;
+    }
+
+    .kpi-row {
       grid-template-columns:repeat(4,minmax(0,1fr));
     }
 
@@ -756,8 +668,174 @@
       grid-template-columns:repeat(3,minmax(0,1fr));
     }
 
+    .modules {
+      grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+
     .flow-card {
       width:100%;
+      min-width:0;
+      overflow:hidden;
+    }
+
+    /*
+      생산 흐름도 8단계 + 화살표 7개를
+      15개 그리드 열에 자동 배분
+    */
+    .flow-track {
+      display:grid;
+      grid-template-columns:
+        repeat(
+          7,
+          minmax(0,1fr)
+          minmax(7px,0.34fr)
+        )
+        minmax(0,1fr);
+      align-items:start;
+      width:100%;
+      min-width:0;
+      overflow:visible;
+      gap:0;
+      padding:0 0 4px;
+    }
+
+    .flow-step {
+      min-width:0;
+      width:100%;
+      flex-shrink:1;
+      gap:6px;
+    }
+
+    .flow-step .node {
+      width:32px;
+      height:32px;
+      border-radius:8px;
+      font-size:0.86rem;
+    }
+
+    .flow-step .label {
+      width:100%;
+      min-width:0;
+      font-size:0.54rem;
+      letter-spacing:-0.04em;
+      white-space:nowrap;
+    }
+
+    .flow-arrow {
+      min-width:0;
+      width:100%;
+      margin:9px 0 0;
+      align-self:start;
+      text-align:center;
+      font-size:0.62rem;
+      line-height:1;
+    }
+
+    .doc-grid {
+      grid-template-columns:
+        repeat(4,minmax(0,1fr));
+    }
+  }
+
+  @media (
+    min-width:1181px
+  ) and (
+    max-width:1320px
+  ) {
+    .grid {
+      grid-template-columns:
+        minmax(0,1fr)
+        500px;
+      gap:12px;
+    }
+
+    .topbar-right {
+      gap:6px;
+    }
+
+    .brand-logo {
+      height:27px;
+      max-width:145px;
+    }
+  }
+
+  @media (max-width:1180px) {
+    .flow-card {
+      width:100%;
+      overflow:hidden;
+    }
+
+    .flow-track {
+      display:grid;
+      grid-template-columns:
+        repeat(
+          7,
+          minmax(0,1fr)
+          minmax(5px,0.28fr)
+        )
+        minmax(0,1fr);
+      align-items:start;
+      width:100%;
+      min-width:0;
+      overflow:visible;
+      gap:0;
+    }
+
+    .flow-step {
+      min-width:0;
+      width:100%;
+      gap:5px;
+    }
+
+    .flow-step .node {
+      width:29px;
+      height:29px;
+      font-size:0.78rem;
+    }
+
+    .flow-step .label {
+      width:100%;
+      min-width:0;
+      font-size:0.5rem;
+      letter-spacing:-0.05em;
+      white-space:nowrap;
+    }
+
+    .flow-arrow {
+      min-width:0;
+      width:100%;
+      margin:9px 0 0;
+      text-align:center;
+      font-size:0.56rem;
+      line-height:1;
+    }
+  }
+
+  @media (max-width:760px) {
+    .brand-logo {
+      height:24px;
+      max-width:126px;
+    }
+
+    .logout-btn {
+      min-height:30px;
+      padding:4px 8px;
+      font-size:0.68rem;
+    }
+
+    .flow-step .node {
+      width:25px;
+      height:25px;
+      font-size:0.68rem;
+    }
+
+    .flow-step .label {
+      font-size:0.43rem;
+    }
+
+    .flow-arrow {
+      margin-top:8px;
+      font-size:0.48rem;
     }
   }
 
@@ -767,9 +845,7 @@
 <div class="app">
   <header class="topbar">
     <div class="brand">
-      <img src="qgis_logo.png"
-           alt="QGIS 로고"
-           style="height:36px;width:auto;object-fit:contain;margin-right:4px;vertical-align:middle;">
+      <img class="brand-logo" src="qgis_logo.png" alt="QGIS 로고">
       <div>
         <div>HeatPro <span style="color:var(--accent)">MES</span></div>
         <div class="sub">열처리 전문 통합 관리 시스템</div>
@@ -778,7 +854,8 @@
     <div class="topbar-right">
       <div class="date-chip"><span class="dot"></span><span id="systemDate"></span> · 가동중</div>
       <button id="themeBtn" class="theme-toggle" onclick="toggleTheme()">☀️ 라이트모드</button>
-      <div class="user-chip"><div class="avatar">👤</div>관리자</div>
+      <div class="user-chip"><div class="avatar">👤</div><span id="currentUserName">관리자</span></div>
+      <button class="logout-btn" type="button" onclick="logoutCurrentUser()">로그아웃</button>
       <button class="mail-btn" onclick="openMailStatusModal()"><span class="mdot" id="mailStatusDot"></span>메일링확인</button>
       <button class="mail-btn" onclick="confirmSendReportNow()">지금발송</button>
     </div>
@@ -982,8 +1059,151 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
+
+const SUPABASE_URL =
+  "https://enxtgbyslnryxvfpjdkc.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+
+const QGIS_COMPANY_ID =
+  "17f2ff71-20db-49ff-b682-279989776817";
+
+const LOGIN_PAGE_URL =
+  "../index.html";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    {
+      auth: {
+        persistSession:true,
+        autoRefreshToken:true,
+        detectSessionInUrl:true
+      }
+    }
+  );
+
+function redirectToLogin() {
+  window.location.replace(
+    LOGIN_PAGE_URL
+  );
+}
+
+async function verifyQgisAccess() {
+  const {
+    data:userData,
+    error:userError
+  } =
+    await supabaseClient
+      .auth
+      .getUser();
+
+  const user =
+    userData?.user;
+
+  if (
+    userError ||
+    !user
+  ) {
+    redirectToLogin();
+    return null;
+  }
+
+  const {
+    data:profile,
+    error:profileError
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select(
+        "company_id, " +
+        "user_name, " +
+        "user_role, " +
+        "is_active"
+      )
+      .eq(
+        "user_id",
+        user.id
+      )
+      .maybeSingle();
+
+  const isQgisUser =
+    profile &&
+    profile.is_active === true &&
+    profile.company_id ===
+      QGIS_COMPANY_ID;
+
+  if (
+    profileError ||
+    !isQgisUser
+  ) {
+    await supabaseClient
+      .auth
+      .signOut({
+        scope:"local"
+      });
+
+    redirectToLogin();
+    return null;
+  }
+
+  const currentUserName =
+    document.getElementById(
+      "currentUserName"
+    );
+
+  if (currentUserName) {
+    currentUserName.textContent =
+      profile.user_name ||
+      user.email ||
+      "관리자";
+  }
+
+  return {
+    user,
+    profile
+  };
+}
+
+async function logoutCurrentUser() {
+  const logoutButton =
+    document.querySelector(
+      ".logout-btn"
+    );
+
+  if (logoutButton) {
+    logoutButton.disabled = true;
+    logoutButton.textContent =
+      "로그아웃 중";
+  }
+
+  await supabaseClient
+    .auth
+    .signOut({
+      scope:"local"
+    });
+
+  redirectToLogin();
+}
+
+supabaseClient
+  .auth
+  .onAuthStateChange(
+    (event,session) => {
+      if (
+        event === "SIGNED_OUT" ||
+        !session
+      ) {
+        redirectToLogin();
+      }
+    }
+  );
+
 
 /*
   Google Sheets / Google Apps Script 연결 제거 완료.
@@ -1256,14 +1476,44 @@ function confirmSendReportNow() {
   );
 }
 
-function initializePage() {
+function initializeDashboard() {
   restoreTheme();
   updateSystemDate();
   updateDateDisplay();
   initializeEmptyDashboard();
 }
 
-window.addEventListener("load", initializePage);
+async function initializeProtectedPage() {
+  try {
+    const access =
+      await verifyQgisAccess();
+
+    if (!access) {
+      return;
+    }
+
+    document
+      .documentElement
+      .classList
+      .remove(
+        "auth-pending"
+      );
+
+    initializeDashboard();
+  } catch (error) {
+    console.error(
+      "QGIS 접근 권한 확인 실패:",
+      error
+    );
+
+    redirectToLogin();
+  }
+}
+
+window.addEventListener(
+  "load",
+  initializeProtectedPage
+);
 </script>
 </body>
 </html>
