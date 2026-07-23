@@ -382,7 +382,9 @@
     const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
     const SUPABASE_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
 
-    const MAIN_PAGE = "main.html";
+    const COMPANY_MAIN_PAGES = {
+      "17f2ff71-20db-49ff-b682-279989776817": "Qgis_MES/main1.html"
+    };
 
     let supabaseClient = null;
 
@@ -431,6 +433,34 @@
       });
     }
 
+    async function redirectByCompany(userId) {
+      const { data: profile, error } = await supabaseClient
+        .from("profiles")
+        .select("company_id, is_active")
+        .eq("user_id", userId)
+        .single();
+
+      if (error || !profile) {
+        console.error("회사 프로필 조회 오류:", error);
+        await supabaseClient.auth.signOut();
+        throw new Error("로그인 계정에 회사가 지정되지 않았습니다.");
+      }
+
+      if (profile.is_active === false) {
+        await supabaseClient.auth.signOut();
+        throw new Error("사용이 중지된 계정입니다.");
+      }
+
+      const targetPage = COMPANY_MAIN_PAGES[profile.company_id];
+
+      if (!targetPage) {
+        await supabaseClient.auth.signOut();
+        throw new Error("이 회사의 메인 화면은 아직 연결되지 않았습니다.");
+      }
+
+      window.location.replace(targetPage);
+    }
+
     async function redirectExistingSession() {
       if (!supabaseClient) return;
 
@@ -444,8 +474,13 @@
         return;
       }
 
-      if (session) {
-        window.location.replace(MAIN_PAGE);
+      if (session && session.user) {
+        try {
+          await redirectByCompany(session.user.id);
+        } catch (redirectError) {
+          console.error("기존 로그인 이동 오류:", redirectError);
+          showMessage(redirectError.message, "error");
+        }
       }
     }
 
@@ -502,12 +537,18 @@
           return;
         }
 
-        showMessage("로그인되었습니다. 메인 화면으로 이동합니다.", "success");
-        window.location.replace(MAIN_PAGE);
+        if (!data.user) {
+          throw new Error("로그인 사용자 정보를 확인하지 못했습니다.");
+        }
+
+        showMessage("로그인되었습니다. 회사 화면을 확인하고 있습니다.", "success");
+        await redirectByCompany(data.user.id);
       } catch (error) {
         console.error("로그인 처리 오류:", error);
         showMessage(
-          "로그인 서버에 연결하지 못했습니다. 잠시 후 다시 확인해 주세요.",
+          error && error.message
+            ? error.message
+            : "로그인 서버에 연결하지 못했습니다. 잠시 후 다시 확인해 주세요.",
           "error"
         );
       } finally {
