@@ -566,6 +566,201 @@
     }
   }
 
+  /* =========================================================
+     대시보드 전체 폭 20% 축소
+     기준 노트북 해상도: 1366 × 768px
+
+     기존 실제 대시보드 폭:
+     1366 - 사이드바 190 - 메인 좌우 여백 32 = 1144px
+
+     20% 축소:
+     1144 × 0.80 = 915.2px → 915px
+
+     축소 후 열 배분:
+     좌측 업무 대시보드 581px
+     열 간격             11px
+     우측 업무 프레임    323px
+     합계                915px
+
+     좌측 KPI 카드:
+     (581 - 8 × 3) ÷ 4 = 139.25px
+     ========================================================= */
+
+  @media (min-width:1181px) {
+    .main {
+      align-items:flex-start;
+    }
+
+    .main > .page-head,
+    .main > .grid {
+      width:915px;
+      max-width:80%;
+    }
+
+    .grid {
+      grid-template-columns:581px 323px;
+      justify-content:start;
+      gap:11px;
+    }
+
+    .grid > div {
+      min-width:0;
+    }
+
+    .grid > div:first-child,
+    .grid > div:last-child {
+      gap:16px !important;
+    }
+
+    .kpi-row {
+      grid-template-columns:repeat(4,139.25px);
+      gap:8px;
+    }
+
+    .kpi {
+      min-width:0;
+      padding-left:10px;
+      padding-right:10px;
+    }
+
+    .kpi .kpi-label {
+      font-size:0.64rem;
+      white-space:nowrap;
+    }
+
+    .kpi .kpi-value {
+      font-size:1.85rem;
+    }
+
+    .kpi .kpi-foot {
+      font-size:0.57rem;
+      line-height:1.35;
+    }
+
+    #kpi-equipment {
+      font-size:0.9rem !important;
+      letter-spacing:-0.04em;
+    }
+
+    .chart-grid-2 {
+      grid-template-columns:repeat(2,286.5px);
+      gap:8px;
+    }
+
+    .chart-grid-3 {
+      grid-template-columns:repeat(3,188.33px);
+      gap:8px;
+    }
+
+    .panel {
+      min-width:0;
+      padding-left:11px;
+      padding-right:11px;
+    }
+
+    .panel h3 {
+      font-size:0.78rem;
+    }
+
+    .flow-card {
+      width:323px;
+      min-width:0;
+      overflow:hidden;
+    }
+
+    .flow-track {
+      width:100%;
+      overflow-x:auto;
+      justify-content:flex-start;
+      scrollbar-width:thin;
+    }
+
+    .flow-step {
+      min-width:31px;
+    }
+
+    .flow-step .node {
+      width:27px;
+      height:27px;
+      font-size:0.72rem;
+    }
+
+    .flow-step .label {
+      font-size:0.49rem;
+    }
+
+    .flow-arrow {
+      font-size:0.54rem;
+      margin-bottom:16px;
+    }
+
+    .doc-grid {
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:6px;
+    }
+
+    .doc-card {
+      min-width:0;
+    }
+
+    .doc-card .doc-title {
+      font-size:0.57rem;
+    }
+
+    .doc-card .doc-meta {
+      font-size:0.46rem;
+    }
+
+    .modules {
+      grid-template-columns:repeat(4,139.25px);
+      gap:8px;
+    }
+
+    .module-card {
+      padding-left:10px;
+      padding-right:10px;
+    }
+
+    .module-card .module-head h4 {
+      font-size:0.72rem;
+    }
+
+    .module-card li {
+      font-size:0.6rem;
+    }
+  }
+
+  /* 1280px급 노트북에서도 20% 축소 비율 유지 */
+  @media (min-width:1181px) and (max-width:1320px) {
+    .main > .page-head,
+    .main > .grid {
+      width:calc(100% * 0.80);
+      max-width:none;
+    }
+
+    .grid {
+      grid-template-columns:minmax(0,63.5%) minmax(0,35.3%);
+      gap:1.2%;
+    }
+
+    .kpi-row,
+    .modules {
+      grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+
+    .chart-grid-2 {
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .chart-grid-3 {
+      grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+
+    .flow-card {
+      width:100%;
+    }
+  }
+
 </style>
 </head>
 <body>
