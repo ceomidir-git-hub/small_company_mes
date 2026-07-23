@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeatPro MES — 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#15181D;--panel:#1F242C;--panel-2:#262C36;--line:#323A46;--text:#EAF0F6;--muted:#8A99AC;--accent:#FF6B35;--accent-glow:rgba(255,107,53,0.35);--good:#43D17A;--bad:#FF5C5C;--info:#4FA8FF;--font-display:'Space Grotesk','Noto Sans KR',sans-serif;--font-body:'Noto Sans KR',sans-serif;--font-mono:'IBM Plex Mono',monospace;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:64px 1fr;min-height:100vh;}
+  .topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--line);background:var(--panel);}
+  .brand{display:flex;align-items:center;gap:12px;font-family:var(--font-display);font-weight:700;font-size:1.15rem;letter-spacing:0.02em;}
+  .brand .mark{width:34px;height:34px;border-radius:8px;background:radial-gradient(circle at 30% 30%,#FF8A5C,var(--accent) 60%,#B8431B 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px var(--accent-glow);font-size:1.1rem;}
+  .brand .sub{font-size:0.72rem;color:var(--muted);font-weight:500;letter-spacing:0.08em;font-family:var(--font-mono);}
+  .topbar-right{display:flex;align-items:center;gap:22px;font-family:var(--font-mono);font-size:0.85rem;color:var(--muted);}
+  .topbar-right .date-chip{display:flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);}
+  .topbar-right .date-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 8px var(--good);}
+  .user-chip{display:flex;align-items:center;gap:10px;color:var(--text);font-family:var(--font-body);font-size:0.9rem;font-weight:500;}
+  .user-chip .avatar{width:30px;height:30px;border-radius:50%;background:var(--panel-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:0.95rem;}
+  .sidebar{background:var(--panel);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
+  .nav-group-label{font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.14em;color:#5C6878;text-transform:uppercase;margin:18px 10px 6px;}
+  .nav-item .icon{width:18px;text-align:center;font-size:1rem;opacity:0.85;}
+  .nav-item:hover{background:var(--panel);color:var(--text);}
+  .nav-item.active{background:linear-gradient(90deg,var(--accent-glow),transparent);color:#FFFFFF;}
+  .nav-item.active::before{content:'';position:absolute;left:-12px;top:6px;bottom:6px;width:3px;border-radius:0 4px 4px 0;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);}
+  .nav-divider{height:1px;background:var(--line);margin:14px 8px;}
+  .nav-item{display:flex;align-items:center;justify-content:space-between;gap:0;padding:10px 12px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:0.92rem;font-weight:500;transition:background 0.15s,color 0.15s;cursor:pointer;position:relative;}
+  .nav-item .nav-left{display:flex;align-items:center;gap:12px;}
+  .nav-item .chevron{font-size:0.6rem;color:#5C6878;transition:transform 0.2s;flex-shrink:0;}
+  .nav-item.open .chevron{transform:rotate(180deg);}
+  .sub-menu{overflow:hidden;max-height:0;transition:max-height 0.25s ease;}
+  .sub-menu.open{max-height:300px;}
+  .sub-item{display:flex;align-items:center;gap:6px;padding:6px 12px 6px 38px;border-radius:6px;color:var(--muted);font-size:0.82rem;cursor:pointer;transition:background 0.1s,color 0.1s;text-decoration:none;}
+  .sub-item:hover{background:var(--panel-2);color:var(--text);}
+  .sub-item.active{color:var(--accent);}
+  .sub-item::before{content:'';width:4px;height:4px;border-radius:50%;background:#3C4554;flex-shrink:0;}
+  .sub-item.active::before{background:var(--accent);}
+  .main{padding:24px 28px 40px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;}
+  .page-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  .page-head h1{font-family:var(--font-display);font-size:1.6rem;font-weight:700;letter-spacing:0.01em;}
+  .page-head .crumb{font-family:var(--font-mono);font-size:0.78rem;color:var(--muted);}
+  .grid{display:grid;grid-template-columns:1fr 620px;gap:20px;align-items:stretch;}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .kpi{background:linear-gradient(155deg,var(--panel) 0%,var(--panel-2) 100%);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:130px;}
+  .kpi::after{content:'';position:absolute;right:-30px;top:-30px;width:90px;height:90px;border-radius:50%;background:var(--accent);opacity:0.06;filter:blur(2px);}
+  .kpi .kpi-label{font-size:0.8rem;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .kpi .kpi-label .ico{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:var(--panel-2);border:1px solid var(--line);font-size:0.85rem;}
+  .kpi .kpi-value{font-family:var(--font-mono);font-size:2.6rem;font-weight:700;letter-spacing:0.01em;display:flex;align-items:baseline;gap:8px;}
+  .kpi .kpi-value .unit{font-size:0.95rem;color:var(--muted);font-weight:500;}
+  .kpi.accent .kpi-value{color:var(--accent);}
+  .kpi .kpi-foot{margin-top:10px;font-size:0.74rem;color:#5C6878;font-family:var(--font-mono);}
+  .flow-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 18px;display:flex;flex-direction:column;}
+  .flow-card h3{font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:4px;}
+  .flow-card .flow-sub{font-size:0.78rem;color:var(--muted);margin-bottom:18px;font-family:var(--font-mono);}
+  .flow-track{display:flex;align-items:center;justify-content:space-between;gap:0;padding-bottom:6px;flex:1;}
+  .flow-step{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:54px;flex-shrink:0;}
+  .flow-step .node{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);}
+  .flow-step .label{font-size:0.7rem;color:var(--muted);font-weight:500;text-align:center;white-space:nowrap;}
+  .flow-step.active .node{background:radial-gradient(circle at 35% 30%,#FFA56B,var(--accent) 70%);color:#1A0F08;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-glow),0 0 24px var(--accent-glow);animation:furnace-pulse 2.2s ease-in-out infinite;}
+  .flow-step.active .label{color:var(--accent);font-weight:700;}
+  .flow-step.done .node{color:var(--good);border-color:rgba(67,209,122,0.35);}
+  @keyframes furnace-pulse{0%,100%{box-shadow:0 0 0 4px var(--accent-glow),0 0 18px var(--accent-glow);}50%{box-shadow:0 0 0 7px rgba(255,107,53,0.18),0 0 36px var(--accent-glow);}}
+  .flow-arrow{color:#3C4554;font-size:0.95rem;flex-shrink:1;margin:0 2px;align-self:center;margin-bottom:22px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;}
+  .panel h3{font-family:var(--font-display);font-size:0.98rem;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+  .panel h3 .tag{font-family:var(--font-mono);font-size:0.7rem;color:var(--muted);font-weight:500;background:var(--panel-2);border:1px solid var(--line);padding:3px 9px;border-radius:999px;}
+  .chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  .bars{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:24px;position:relative;overflow:visible;}
+  .bars .bar{flex:1;background:linear-gradient(180deg,#FF8A5C 0%,var(--accent) 100%);border-radius:3px 3px 0 0;min-height:4px;position:relative;transition:height 0.4s ease;}
+  .bars .bar .bar-label{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 3px);text-align:center;font-family:var(--font-mono);font-size:0.62rem;font-weight:600;color:var(--text);white-space:nowrap;line-height:1.2;pointer-events:none;}
+  .bars.muted .bar{background:linear-gradient(180deg,#5B86C9 0%,#3D6BB0 100%);}
+  .bars.acc .bar{background:linear-gradient(180deg,#61E39B 0%,var(--good) 100%);}
+  .chart-axis{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.62rem;color:#5C6878;margin-top:6px;}
+  .chart-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);}
+  .chart-foot .big{font-size:1.1rem;color:var(--text);font-weight:600;}
+  .linechart{width:100%;height:140px;display:block;}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:0.72rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);}
+  .status-pill.run{color:var(--good);border-color:rgba(67,209,122,0.3);}
+  .status-pill.run .dot{background:var(--good);box-shadow:0 0 6px var(--good);}
+  .status-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
+  .doc-section h3{font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:4px;}
+  .doc-sub{font-size:0.78rem;color:var(--muted);margin-bottom:14px;font-family:var(--font-mono);}
+  .doc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;flex:1;}
+  .doc-card{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:10px 10px 8px;cursor:pointer;transition:border-color 0.15s,transform 0.15s;display:flex;flex-direction:column;gap:6px;}
+  .doc-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .doc-card .doc-icon{width:26px;height:26px;border-radius:6px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:0.82rem;color:var(--accent);}
+  .doc-card .doc-title{font-size:0.72rem;font-weight:600;color:var(--text);line-height:1.3;}
+  .doc-card .doc-meta{font-family:var(--font-mono);font-size:0.6rem;color:#5C6878;}
+  .doc-card .doc-preview{height:28px;border-radius:5px;background:repeating-linear-gradient(to bottom,var(--bg) 0px,var(--bg) 3px,transparent 3px,transparent 7px);border:1px solid var(--line);}
+  .modules{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .module-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;}
+  .module-card .module-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .module-card .module-head .ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;background:var(--panel-2);border:1px solid var(--line);color:var(--accent);}
+  .module-card .module-head h4{font-family:var(--font-display);font-size:0.95rem;font-weight:600;}
+  .module-card ul{list-style:none;display:flex;flex-direction:column;gap:7px;}
+  .module-card li{font-size:0.8rem;color:var(--muted);display:flex;align-items:center;gap:8px;}
+  .module-card li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--line);flex-shrink:0;}
+  .theme-toggle{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:0.85rem;}
+  .date-nav{display:flex;align-items:center;gap:8px;}
+  .date-nav button{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:0.85rem;font-family:var(--font-mono);line-height:1;}
+  .date-nav button:hover{border-color:var(--accent);color:var(--accent);}
+  .date-nav button:disabled{opacity:0.4;cursor:default;}
+  .date-nav .date-label{font-family:var(--font-mono);font-size:0.9rem;font-weight:600;padding:5px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);min-width:128px;text-align:center;}
+  body.light-theme{--bg:#F5F7FA;--panel:#FFFFFF;--panel-2:#EEF2F6;--line:#D5DCE5;--text:#1F242C;--muted:#5E6B7A;--accent:#2F6BFF;--accent-glow:rgba(47,107,255,0.25);color-scheme:light;}
+  @media(max-width:1180px){.grid{grid-template-columns:1fr;}.kpi-row{grid-template-columns:repeat(2,1fr);}.chart-grid-3{grid-template-columns:1fr 1fr;}.modules{grid-template-columns:repeat(2,1fr);}.doc-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:64px auto 1fr;}.sidebar{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:10px 12px;}.nav-group-label,.nav-divider{display:none;}.nav-item{white-space:nowrap;}.kpi-row{grid-template-columns:1fr 1fr;}.chart-grid-2,.chart-grid-3{grid-template-columns:1fr;}.doc-grid{grid-template-columns:repeat(2,1fr);}.modules{grid-template-columns:1fr;}.topbar-right .date-chip{display:none;}}
+  /* ── 메일 발송 기능 (2026-07-02 추가) ── */
+  .mail-btn{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:0.85rem;font-family:var(--font-body);display:flex;align-items:center;gap:6px;}
+  .mail-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .mail-btn .mdot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .mail-btn .mdot.ok{background:var(--good);box-shadow:0 0 6px var(--good);}
+  .mail-btn .mdot.fail{background:var(--bad);box-shadow:0 0 6px var(--bad);}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:640px;width:100%;max-height:82vh;overflow-y:auto;padding:22px 24px;}
+  .modal-box h3{font-family:var(--font-display);font-size:1.05rem;font-weight:700;margin-bottom:4px;}
+  .modal-box .modal-sub{font-size:0.78rem;color:var(--muted);font-family:var(--font-mono);margin-bottom:16px;}
+  .modal-close{position:absolute;top:16px;right:18px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1;}
+  .modal-box{position:relative;}
+  .mail-log-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin-top:10px;}
+  .mail-log-table th,.mail-log-table td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);font-family:var(--font-mono);}
+  .mail-log-table th{color:var(--muted);font-weight:600;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;}
+  .mail-status-badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:0.7rem;font-weight:600;}
+  .mail-status-badge.ok{background:rgba(67,209,122,0.15);color:var(--good);}
+  .mail-status-badge.skip{background:rgba(138,153,172,0.2);color:var(--muted);}
+  .mail-status-badge.error{background:rgba(255,92,92,0.15);color:var(--bad);}
+  .mail-log-note{color:var(--bad);font-size:0.72rem;margin-top:2px;font-family:var(--font-mono);word-break:break-all;}
+  .mail-empty{color:var(--muted);font-size:0.85rem;padding:20px 0;text-align:center;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <img src="qgis_logo.png"
+           alt="QGIS 로고"
+           style="height:36px;width:auto;object-fit:contain;margin-right:4px;vertical-align:middle;">
+      <div>
+        <div>HeatPro <span style="color:var(--accent)">MES</span></div>
+        <div class="sub">열처리 전문 통합 관리 시스템</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="date-chip"><span class="dot"></span><span id="systemDate"></span> · 가동중</div>
+      <button id="themeBtn" class="theme-toggle" onclick="toggleTheme()">☀️ 라이트모드</button>
+      <div class="user-chip"><div class="avatar">👤</div>관리자</div>
+      <button class="mail-btn" onclick="openMailStatusModal()"><span class="mdot" id="mailStatusDot"></span>메일링확인</button>
+      <button class="mail-btn" onclick="confirmSendReportNow()">지금발송</button>
+    </div>
+  </header>
+
+  <nav class="sidebar">
+    <a class="nav-item active" href="index.html"><div class="nav-left"><span class="icon">⬛</span> 대시보드</div></a>
+    <div class="nav-group-label">현장 관리</div>
+
+    <!-- 1. 생산관리 -->
+    <div class="nav-item" id="m-prod" onclick="toggleMenu('prod')"><div class="nav-left"><span class="icon">🏭</span> 생산관리</div><span class="chevron">▼</span></div>
+    <div class="sub-menu" id="sub-prod">
+      <a class="sub-item" href="GitHub_Worksheet.html">작업일보</a>
+      <a class="sub-item" href="Daily_Work_Check.html">생산실적조회</a>
+      <a class="sub-item" href="Monthly_Production_Record_FINAL.html">월생산실적(달성율)</a>
+      <a class="sub-item" href="Yearly_Production_Record.html">년생산실적</a>
+      <a class="sub-item" href="Defect_Rate.html">불량률</a>
+      <a class="sub-item" href="Work_Condition_Management.html">작업조건관리대장</a>
+    </div>
+
+    <!-- 2. 설비관리 -->
+    <div class="nav-item" id="m-equip" onclick="toggleMenu('equip')"><div class="nav-left"><span class="icon">⚙️</span> 설비관리</div><span class="chevron">▼</span></div>
+    <div class="sub-menu" id="sub-equip">
+      <a class="sub-item" href="Machine_operation_Log.html">설비운영관리대장</a>
+      <a class="sub-item" href="Machine_Repair_Status.html">설비수리현황</a>
+      <a class="sub-item" href="Inspection_Tool_Status.html">검사장비현황</a>
+      <a class="sub-item" href="Operating_Rate.html">설비가동률</a>
+    </div>
+
+    <!-- 3. 도면관리 -->
+    <div class="nav-item" id="m-draw" onclick="toggleMenu('draw')"><div class="nav-left"><span class="icon">📐</span> 도면관리</div><span class="chevron">▼</span></div>
+    <div class="sub-menu" id="sub-draw">
+      <a class="sub-item" href="Drawing_Inventory_Log.html">도면관리대장</a>
+      <a class="sub-item" href="Coil_List_Management.html">코일List관리대장</a>
+      <a class="sub-item" href="Coil_History_Management.html">코일이력관리대장</a>
+    </div>
+
+    <!-- 4. 검사관리 ── 순서 변경 + 검사성적서보고서 추가 -->
+    <div class="nav-item" id="m-insp" onclick="toggleMenu('insp')"><div class="nav-left"><span class="icon">🔍</span> 검사관리</div><span class="chevron">▼</span></div>
+    <div class="sub-menu" id="sub-insp">
+      <a class="sub-item" href="InOut_Inspection_Status.html">입출고검사현황</a>
+      <a class="sub-item" href="Only_InspectionSheet_Status.html">검사성적서관리현황</a>
+      <a class="sub-item active" href="Inspection_Report.html">검사성적서보고서</a>
+      <a class="sub-item" href="Drawing_Inventory_Log.html">도면관리대장</a>
+    </div>
+
+    <!-- 5. 고객관리 -->
+    <div class="nav-item" id="m-cust" onclick="toggleMenu('cust')"><div class="nav-left"><span class="icon">🤝</span> 고객관리</div><span class="chevron">▼</span></div>
+    <div class="sub-menu" id="sub-cust">
+      <a class="sub-item" href="Customer_Managerment_Log.html">고객관리대장</a>
+      <a class="sub-item" href="5S_Photo_Management.html" style="justify-content:space-between;">
+        <span>3정 5S 개선사진</span>
+        <span id="ss5-badge" style="display:none;align-items:center;gap:3px;">
+          <span id="ss5-dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;"></span>
+          <span id="ss5-pct" style="font-size:10px;font-weight:600;"></span>
+        </span>
+      </a>
+    </div>
+
+    <!-- 6. 출하관리 -->
+    <div class="nav-item" id="m-ship" onclick="toggleMenu('ship')"><div class="nav-left"><span class="icon">🚚</span> 출하관리</div><span class="chevron">▼</span></div>
+    <div class="sub-menu" id="sub-ship">
+      <a class="sub-item" href="InOut_Management_Log.html">입출고관리대장</a>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- 7. 통계분석 -->
+    <div class="nav-item" id="m-stat" onclick="toggleMenu('stat')"><div class="nav-left"><span class="icon">📊</span> 통계분석</div><span class="chevron">▼</span></div>
+    <div class="sub-menu" id="sub-stat">
+      <a class="sub-item" href="Monthly_Production_Record_FINAL.html">월생산실적(달성율)</a>
+      <a class="sub-item" href="Defect_Rate_Graph.html">불량률(G)</a>
+      <a class="sub-item" href="Operating_Rate_Graph.html">설비가동률(G)</a>
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <!-- 8. ISO9001 -->
+    <a class="nav-item" href="ISO9001_AutoDoc_main.html"><div class="nav-left"><span class="icon">✅</span> ISO 9001</div></a>
+    <div class="nav-divider"></div>
+    <a class="nav-item"><div class="nav-left"><span class="icon">🛠️</span> SYSTEM설정</div></a>
+  </nav>
+
+  <main class="main">
+    <div class="page-head">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <h1>대시보드</h1>
+        <div class="date-nav">
+          <button onclick="changeDate(-1)" title="이전 날짜">◀</button>
+          <span class="date-label" id="selectedDateLabel">-</span>
+          <button id="nextDateBtn" onclick="changeDate(1)" title="다음 날짜">▶</button>
+        </div>
+      </div>
+      <div class="crumb">HOME / 대시보드 · 날짜 : <span id="crumbDate"></span></div>
+    </div>
+    <div class="grid">
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <section class="kpi-row">
+          <div class="kpi accent">
+            <div class="kpi-label"><span class="ico">📋</span> 오늘 작업건수</div>
+            <div class="kpi-value"><span id="kpi-job-count">-</span><span class="unit">건</span></div>
+            <div class="kpi-foot">기준일 <span id="kpiDate"></span></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label"><span class="ico">📦</span> 오늘 생산수량</div>
+            <div class="kpi-value"><span id="kpi-production">-</span><span class="unit">개</span></div>
+            <div class="kpi-foot">전 라인 합산 (양품+불량 기준)</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label"><span class="ico">⚡</span> 오늘 작동설비</div>
+            <div class="kpi-value" id="kpi-equipment" style="font-size:1.35rem;">-</div>
+            <div class="kpi-foot"><span id="kpi-equipment-status" class="status-pill"><span class="dot"></span> -</span></div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label"><span class="ico">🚚</span> 오늘 출하건수</div>
+            <div class="kpi-value"><span id="kpi-shipment">-</span><span class="unit">건</span></div>
+            <div class="kpi-foot">DB DATA 2026 기준</div>
+          </div>
+        </section>
+        <div class="chart-grid-2">
+          <div class="panel"><h3>월별생산실적 <span class="tag">개</span></h3><div class="bars" id="bar-prod"></div><div class="chart-axis" id="axis-prod"></div></div>
+          <!-- ── 2026-07-17 변경: 월 가동률 → 이번달 일별 가동률(전체 설비 합산) SVG 꺾은선, 목표% 헤더 표기 ── -->
+          <div class="panel"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-rate"></g></svg><div class="chart-axis" id="axis-rate"></div></div>
+        </div>
+        <div class="chart-grid-3">
+          <div class="panel"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></div>
+          <div class="panel"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--good)">-</span></div></div>
+          <div class="panel"><h3>월누적 불량률 <span class="tag">%</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></div>
+        </div>
+        <section>
+          <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:14px;">주요 모듈 구성(개발예정)</h3>
+          <div class="modules">
+            <div class="module-card"><div class="module-head"><div class="ico">🤝</div><h4>고객 관리</h4></div><ul><li>고객사 정보 관리</li><li>담당자 관리</li><li>거래 이력 관리</li></ul></div>
+            <div class="module-card"><div class="module-head"><div class="ico">🏭</div><h4>생산 관리</h4></div><ul><li>생산계획 수립</li><li>작업지시서 생성</li><li>진행 현황 추적</li></ul></div>
+            <div class="module-card"><div class="module-head"><div class="ico">✅</div><h4>품질 관리</h4></div><ul><li>검사 계획 수립</li><li>검사 결과 기록</li><li>불량 관리</li></ul></div>
+            <div class="module-card"><div class="module-head"><div class="ico">⚙️</div><h4>설비 관리</h4></div><ul><li>설비 정보 관리</li><li>점검/정비 관리</li><li>고장 이력 관리</li></ul></div>
+          </div>
+        </section>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px;height:100%;">
+        <div class="flow-card">
+          <h3>생산 흐름도</h3>
+          <div class="flow-sub">PRODUCTION FLOW · 고주파 진행중</div>
+          <div class="flow-track">
+            <div class="flow-step done"><div class="node">📥</div><div class="label">입고검사</div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step done"><div class="node">📋</div><div class="label">사양확인</div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step done"><div class="node">⏳</div><div class="label">대기장</div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step active"><div class="node">🔥</div><div class="label">고주파</div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="node">🌡️</div><div class="label">템퍼링</div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="node">🔎</div><div class="label">검사</div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="node">📦</div><div class="label">대기장</div></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><div class="node">🚚</div><div class="label">출하</div></div>
+          </div>
+        </div>
+        <div class="panel doc-section" style="flex:1;display:flex;flex-direction:column;">
+          <h3>문서자동생성</h3>
+          <div class="doc-sub">AUTO-GENERATED DOCUMENTS · ISO 9001</div>
+          <div class="doc-grid">
+            <!-- ✅ 신규 추가: 생산실적조회 (2026-07-04) -->
+            <a class="doc-card" href="Daily_Work_Check.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📊</div><div class="doc-preview"></div><div class="doc-title">생산실적조회</div><div class="doc-meta">PRODUCTION STATUS</div></a>
+            <a class="doc-card" href="GitHub_Worksheet.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📑</div><div class="doc-preview"></div><div class="doc-title">작업일보</div><div class="doc-meta">DAILY REPORT</div></a>
+            <a class="doc-card" href="Drawing_Inventory_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📐</div><div class="doc-preview"></div><div class="doc-title">도면관리대장</div><div class="doc-meta">DRAWING LOG</div></a>
+            <a class="doc-card" href="Coil_List_Management.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🔗</div><div class="doc-preview"></div><div class="doc-title">코일List관리대장</div><div class="doc-meta">COIL LIST</div></a>
+            <a class="doc-card" href="Coil_History_Management.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📜</div><div class="doc-preview"></div><div class="doc-title">코일이력관리대장</div><div class="doc-meta">COIL HISTORY</div></a>
+            <!-- ── 2026-07-04 이동: 도면관리 묶음 다음으로 위치 변경 ── -->
+            <a class="doc-card" href="InOut_Management_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📥</div><div class="doc-preview"></div><div class="doc-title">입출고관리대장</div><div class="doc-meta">I/O LEDGER</div></a>
+            <a class="doc-card" href="Yearly_Production_Record.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📅</div><div class="doc-preview"></div><div class="doc-title">년생산실적</div><div class="doc-meta">YEARLY OUTPUT</div></a>
+            <a class="doc-card" href="Monthly_Production_Record_FINAL.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🗓️</div><div class="doc-preview"></div><div class="doc-title">월생산달성율</div><div class="doc-meta">MONTHLY ACHIEVEMENT</div></a>
+            <a class="doc-card" href="Defect_Rate_Graph.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📉</div><div class="doc-preview"></div><div class="doc-title">불량률(G)</div><div class="doc-meta">DEFECT RATE GRAPH</div></a>
+            <a class="doc-card" href="Operating_Rate_Graph.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">⏱️</div><div class="doc-preview"></div><div class="doc-title">설비가동률(G)</div><div class="doc-meta">OPERATING RATE GRAPH</div></a>
+            <a class="doc-card" href="Machine_Repair_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🔧</div><div class="doc-preview"></div><div class="doc-title">설비수리현황</div><div class="doc-meta">REPAIR STATUS</div></a>
+            <!-- ── 2026-07-04 순서 변경: 설비운영관리대장 → 검사장비현황 ── -->
+            <a class="doc-card" href="Machine_operation_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🏭</div><div class="doc-preview"></div><div class="doc-title">설비운영관리대장</div><div class="doc-meta">MACHINE OP. LOG</div></a>
+            <a class="doc-card" href="Inspection_Tool_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🧰</div><div class="doc-preview"></div><div class="doc-title">검사장비현황</div><div class="doc-meta">EQUIP. STATUS</div></a>
+            <a class="doc-card" href="Only_InspectionSheet_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📋</div><div class="doc-preview"></div><div class="doc-title">검사성적서관리현황</div><div class="doc-meta">INSPECTION SHEET</div></a>
+            <a class="doc-card" href="Inspection_Report.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📝</div><div class="doc-preview"></div><div class="doc-title">검사성적서보고서</div><div class="doc-meta">INSPECTION REPORT</div></a>
+            <!-- ── 2026-07-04 이동: 검사성적서보고서 다음으로 위치 변경 ── -->
+            <a class="doc-card" href="InOut_Inspection_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🔍</div><div class="doc-preview"></div><div class="doc-title">입출고검사현황</div><div class="doc-meta">I/O INSPECTION</div></a>
+            <a class="doc-card" href="Customer_Managerment_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🤝</div><div class="doc-preview"></div><div class="doc-title">고객관리대장</div><div class="doc-meta">CUSTOMER LOG</div></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── 메일 발송 현황 모달 (2026-07-02 추가) ── -->
+<div class="modal-overlay" id="mailStatusOverlay" onclick="if(event.target===this)closeMailStatusModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeMailStatusModal()">✕</button>
+    <h3>자동 메일 발송 현황</h3>
+    <div class="modal-sub">최근 20건 · 매일 오전 7~8시 자동 발송</div>
+    <div id="mailLogContent"><div class="mail-empty">불러오는 중...</div></div>
+  </div>
+</div>
+
+<script>
+const API_URL='https://script.google.com/macros/s/AKfycbw3H6QfMJYTlR24IlZ-IOfk5GKml1RDm_f_CU4iSbhua-bREeVI14NIeaY3oU1sfdWVLA/exec';
+const API_KEY='@qgis2026';
+/* ── 월 가동률 목표선(%) — 가동률 현황(Operating_Rate_Graph)과 동일 값 유지 ── */
+const RATE_TARGET=80;
+/* ★ 2026-07-22 추가: 설비가동률 계산 공통 규칙 (Operating_Rate.html과 완전 동일)
+     조업시간 = 가동data 값 우선, 없으면 (평일 480분 / 토·일·공휴일 0분)
+     분모     = 조업시간 − 비가동시간 − 계획정지(교육+공사+개발+방문+기타1)
+     가동률   = 가동시간(분) ÷ 분모 × 100   (상한 없음, 분모≤0 이면 계산 제외)
+     당월은 오늘 이후 날짜를 분모에서 제외한다 (B안) */
+const OP_STD_MIN=480;
+const OP_HOLIDAYS=['2026-01-01','2026-01-28','2026-01-29','2026-01-30','2026-03-01','2026-05-05','2026-05-25','2026-06-06','2026-08-15','2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-09','2026-12-25'];
+function opIsHoliday(ds){return OP_HOLIDAYS.indexOf(ds)>=0;}
+function opTodayStr(){var t=new Date();return t.getFullYear()+'-'+pad2(t.getMonth()+1)+'-'+pad2(t.getDate());}
+function opDayCalc(ds,r){
+  var dow=new Date(ds).getDay();
+  var op=Number((r&&r['조업시간'])||0);
+  if(!op)op=((dow===0||dow===6||opIsHoliday(ds))?0:OP_STD_MIN);
+  var run=Number((r&&r['가동시간'])||0);
+  var non=Number((r&&r['비가동시간'])||0);
+  var plan=Number((r&&r['교육'])||0)+Number((r&&r['공사'])||0)+Number((r&&r['개발'])||0)
+          +Number((r&&r['방문'])||0)+Number((r&&r['기타1'])||0);
+  return {op:op,run:run,non:non,plan:plan,den:op-non-plan};
+}
+function opRowsToMap(json){
+  var map={};
+  if(json&&!json.error&&json.rows){json.rows.forEach(function(r){map[String(r['작업일']||'')]=r;});}
+  return map;
+}
+let selectedDate=new Date();
+function formatDateYMD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function formatDateLabel(d){var days=['일','월','화','수','목','금','토'];return formatDateYMD(d)+'('+days[d.getDay()]+')';}
+function getSystemTodayDateOnly(){var t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
+function updateDateDisplay(){var dateStr=formatDateYMD(selectedDate);var labelEl=document.getElementById('selectedDateLabel');var crumbEl=document.getElementById('crumbDate');var kpiDateEl=document.getElementById('kpiDate');var nextBtn=document.getElementById('nextDateBtn');if(labelEl)labelEl.textContent=formatDateLabel(selectedDate);if(crumbEl)crumbEl.textContent=dateStr;if(kpiDateEl)kpiDateEl.textContent=dateStr;if(nextBtn){var today=getSystemTodayDateOnly();var sel=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),selectedDate.getDate());nextBtn.disabled=sel.getTime()>=today.getTime();}}
+function changeDate(offsetDays){var candidate=new Date(selectedDate);candidate.setDate(candidate.getDate()+offsetDays);var today=getSystemTodayDateOnly();var candOnly=new Date(candidate.getFullYear(),candidate.getMonth(),candidate.getDate());if(candOnly.getTime()>today.getTime())return;selectedDate=candidate;updateDateDisplay();loadDashboard();}
+function makeBars(containerId,values,max,formatter){var el=document.getElementById(containerId);if(!el)return;el.innerHTML='';var safeMax=(max&&max>0)?max:1;var fmt=formatter||function(v){return Number(v).toLocaleString();};if(!values||values.length===0)return;values.forEach(function(v){var bar=document.createElement('div');bar.className='bar';var pct=Math.max(2,Math.min(100,(v/safeMax)*100));bar.style.height=pct+'%';bar.title=fmt(v);var label=document.createElement('span');label.className='bar-label';label.textContent=fmt(v);bar.appendChild(label);el.appendChild(bar);});}
+function setAxisLabels(elId,months){var el=document.getElementById(elId);if(!el||!months||months.length===0)return;var fmt=function(m){return Number(m.substring(5,7))+'월';};var first=months[0];var last=months[months.length-1];var mid=months[Math.floor((months.length-1)/2)];el.innerHTML='<span>'+fmt(first)+'</span><span>'+fmt(mid)+'</span><span>'+fmt(last)+'</span>';}
+/* ── 2026-07-17 추가: 이번달 일별 가동률(전체 설비 합산) 꺾은선
+     좌표: padL=30(Y축 숫자 공간), padR=10, padT=14, padB=16(X축 라벨 공간)
+     선은 31일(또는 해당월 일수) 데이터 전부 연결
+     X축은 1일/15일/말일 3개 고정 표기, 해당일에 데이터가 있으면 주황 강조점+정수 라벨도 함께 표시
+     폰트 9.9px(월생산실적 막대 숫자와 동일) + Bold, values[i]가 null이면 해당일 데이터 없음 ── */
+function renderRateLine(elId,values,target,totalDays){
+  var el=document.getElementById(elId);if(!el)return;el.innerHTML='';
+  if(!values||values.length===0)return;
+  var w=240,h=140,padL=30,padR=10,padT=14,padB=16;
+  var plotW=w-padL-padR,plotH=h-padT-padB;
+  var dataMax=0;
+  values.forEach(function(v){if(v!==null&&v>dataMax)dataMax=v;});
+  /* ★ 2026-07-22 수정: Y축 기준선을 20% 단위(0·20·40·60·80·100)로 고정.
+       데이터가 100%를 넘으면 120·140… 으로 20 단위 자동 연장 */
+  var maxV=Math.max(100,Math.ceil(dataMax/20)*20);
+  var yTicks=[];for(var t0=0;t0<=maxV;t0+=20)yTicks.push(t0);
+  var n=totalDays||values.length;
+  function xOf(i){return padL+i*(plotW/(n-1));}
+  function yOf(v){return padT+(1-v/maxV)*plotH;}
+  var html='';
+  yTicks.forEach(function(t){
+    var y=yOf(t);
+    html+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(w-padR)+'" y2="'+y.toFixed(1)+'" stroke="#323A46" stroke-width="0.6"/>';
+    html+='<text x="'+(padL-4)+'" y="'+(y+2.5).toFixed(1)+'" font-size="9.9" font-weight="700" font-family="IBM Plex Mono,monospace" fill="#5C6878" text-anchor="end">'+t+'%</text>';
+  });
+  var ty=yOf(target);
+  html+='<line x1="'+padL+'" y1="'+ty.toFixed(1)+'" x2="'+(w-padR)+'" y2="'+ty.toFixed(1)+'" stroke="#8A99AC" stroke-width="1" stroke-dasharray="4,3" opacity="0.8"/>';
+  var validIdx=[];
+  values.forEach(function(v,i){if(v!==null)validIdx.push(i);});
+  if(validIdx.length>0){
+    var pts=validIdx.map(function(i){return{day:i,x:xOf(i),y:yOf(values[i])};});
+    var pointsStr=pts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
+    html+='<polyline points="'+pointsStr+'" fill="none" stroke="#4FA8FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+  /* ★ 2026-07-22 수정: X축 날짜(1일/15일/말일)는 날짜 텍스트만 고정 표기.
+       주황 강조점과 값 라벨은 아래 50% 규칙으로 일원화한다. */
+  var axisDaysRaw=[1,15,n];
+  var axisDays=axisDaysRaw.filter(function(d,idx){return axisDaysRaw.indexOf(d)===idx;});
+  axisDays.forEach(function(day){
+    html+='<text x="'+xOf(day-1).toFixed(1)+'" y="'+(h-3)+'" font-size="9.9" font-weight="700" font-family="IBM Plex Mono,monospace" fill="#5C6878" text-anchor="middle">'+day+'일</text>';
+  });
+  /* ★ 2026-07-22 추가: 값 라벨은 LABEL_MIN(50%)을 '초과'하는 날만 표시한다.
+       폰트는 9.9px 그대로 유지(축소하면 가독성 저하)하고,
+       라벨 사각형이 실제로 겹치는 경우에만 자동 생략한다.
+       글자폭 = 9.9 × 0.6 × 글자수 , 글자높이 = 9.9 */
+  var LABEL_MIN=50;
+  var boxes=[];
+  values.forEach(function(v,i){
+    if(v===null||v===undefined||v<=LABEL_MIN)return;
+    var txt=Math.round(v)+'%';
+    var cx=xOf(i), py=yOf(v), ly=Math.max(11,py-7);
+    var hw=txt.length*9.9*0.6/2;
+    var bx0=cx-hw, bx1=cx+hw, by0=ly-9.9, by1=ly;
+    for(var b=0;b<boxes.length;b++){
+      var o=boxes[b];
+      if(!(bx1<o[0]||bx0>o[1]||by1<o[2]||by0>o[3]))return;   /* 겹치면 생략 */
+    }
+    boxes.push([bx0,bx1,by0,by1]);
+    html+='<circle cx="'+cx.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="2.8" fill="#FF6B35"/>';
+    html+='<text x="'+cx.toFixed(1)+'" y="'+ly.toFixed(1)+'" font-size="9.9" font-weight="700" font-family="IBM Plex Mono,monospace" fill="#FF6B35" text-anchor="middle">'+txt+'</text>';
+  });
+  el.innerHTML=html;
+}
+/* ── 2026-07-17 추가: 월누적 불량율 꺾은선 — 가동률과 동일 디자인(Y축/X축/주황 강조점/정수 라벨/선1.5px/폰트9.9 Bold)
+     패널 폭이 좁음(324px, 내부 288px)을 반영해 padL/padR/padT/padB는 동일 값 사용(비율은 자동 반영됨)
+     data: [{month:'YYYY-MM', value:Number}, ...] — 월 개수가 늘어도(최대 12개월) 라벨은 최대 7개 균등분배 ── */
+function renderDefectLine(elId,data){
+  var el=document.getElementById(elId);if(!el)return;el.innerHTML='';
+  if(!data||data.length===0)return;
+  var w=240,h=140,padL=30,padR=10,padT=14,padB=16;
+  var plotW=w-padL-padR,plotH=h-padT-padB;
+  var n=data.length;
+  var dataMax=0;
+  data.forEach(function(x){if(x.value>dataMax)dataMax=x.value;});
+  var maxV=Math.max(4,Math.ceil(dataMax));
+  var yTicks=[0,Math.round(maxV/3),Math.round(maxV*2/3),maxV];
+  function xOf(i){return padL+(n>1?i*(plotW/(n-1)):plotW/2);}
+  function yOf(v){return padT+(1-v/maxV)*plotH;}
+  var html='';
+  yTicks.forEach(function(t){
+    var y=yOf(t);
+    html+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(w-padR)+'" y2="'+y.toFixed(1)+'" stroke="#323A46" stroke-width="0.6"/>';
+    html+='<text x="'+(padL-4)+'" y="'+(y+2.5).toFixed(1)+'" font-size="9.9" font-weight="700" font-family="IBM Plex Mono,monospace" fill="#5C6878" text-anchor="end">'+t+'%</text>';
+  });
+  var pts=data.map(function(x,i){return{x:xOf(i),y:yOf(x.value),value:x.value,month:x.month};});
+  var pointsStr=pts.map(function(p){return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
+  html+='<polyline points="'+pointsStr+'" fill="none" stroke="#FF5C5C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
+  var labelCount=Math.min(7,n);
+  var labelPos=[];
+  for(var k=0;k<labelCount;k++){labelPos.push(labelCount>1?Math.round(k*(n-1)/(labelCount-1)):0);}
+  labelPos.forEach(function(pIdx){
+    var p=pts[pIdx];
+    html+='<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="2.8" fill="#FF6B35"/>';
+    var ly=Math.max(11,p.y-7);
+    html+='<text x="'+p.x.toFixed(1)+'" y="'+ly.toFixed(1)+'" font-size="9.9" font-weight="700" font-family="IBM Plex Mono,monospace" fill="#FF6B35" text-anchor="middle">'+Math.round(p.value)+'%</text>';
+    var mLabel=p.month?(Number(String(p.month).substring(5,7))+'월'):'';
+    html+='<text x="'+p.x.toFixed(1)+'" y="'+(h-3)+'" font-size="9.9" font-weight="700" font-family="IBM Plex Mono,monospace" fill="#5C6878" text-anchor="middle">'+mLabel+'</text>';
+  });
+  el.innerHTML=html;
+}
+/* ── 2026-07-17 추가: 이번달 일별 가동률 로딩 — Operating_Rate_Graph.html과 동일 계산식(가중평균: 가동시간÷부하시간×100) ── */
+function pad2(n){return n<10?'0'+n:''+n;}
+function getDaysInMonthLocal(y,m){return new Date(y,m,0).getDate();}
+/* ── 2026-07-22 수정: 월별 설비가동률(막대)
+     Code.gs의 monthlyRate가 오작동(전월 100%)하여 프론트엔드에서 직접 재계산한다.
+     action=operatingRateV2 (모든 시간값이 '분' 단위로 반환됨)
+     그 달 총가동시간(분) ÷ 총분모(분) × 100 — 분모는 조업일 전체를 포함(작업 없던 평일 포함)
+     monthList: ['2026-01','2026-02',...] — d.monthlyProduction의 month 목록 재사용 ── */
+function loadMonthlyRateBars(monthList){
+  if(!monthList||monthList.length===0)return;
+  var results=new Array(monthList.length).fill(null);
+  var remaining=monthList.length;
+  var todayStr=opTodayStr();
+  monthList.forEach(function(monthStr,idx){
+    var parts=monthStr.split('-');
+    var y=parseInt(parts[0]),m=parseInt(parts[1]);
+    var lastDay=getDaysInMonthLocal(y,m);
+    var from=monthStr+'-01';
+    var to=monthStr+'-'+pad2(lastDay);
+    var cbName='cbMonthRate_'+idx+'_'+Date.now();
+    window[cbName]=function(json){
+      var map=opRowsToMap(json);
+      /* ★ 2026-07-22 수정: 데이터가 있는 날만이 아니라 '해당 월의 모든 조업일'을 분모에 포함 */
+      var totalRun=0,totalDen=0;
+      for(var dd=1;dd<=lastDay;dd++){
+        var ds=y+'-'+pad2(m)+'-'+pad2(dd);
+        if(ds>todayStr)continue;               /* B안: 오늘 이후 제외 */
+        var c=opDayCalc(ds,map[ds]);
+        if(c.op===0)continue;                  /* 토·일·공휴일 (데이터 없을 때) */
+        totalRun+=c.run;
+        totalDen+=(c.den>0?c.den:0);
+      }
+      var rate=totalDen>0?Math.round(totalRun/totalDen*1000)/10:0;
+      results[idx]={month:monthStr,value:rate};
+      remaining--;
+      if(remaining===0)renderMonthlyRateBars(results);
+    };
+    var s=document.createElement('script');
+    s.src=API_URL+'?action=operatingRateV2&from='+from+'&to='+to+'&key='+encodeURIComponent(API_KEY)+'&callback='+cbName;
+    document.body.appendChild(s);
+  });
+}
+function renderMonthlyRateBars(results){
+  var vals=results.map(function(x){return x.value;});
+  makeBars('bar-cumrate',vals,Math.max.apply(null,vals.concat([100])),function(v){return Math.round(v)+'%';});
+  setAxisLabels('axis-cumrate',results.map(function(x){return x.month;}));
+  var footRate=document.getElementById('foot-cumrate');
+  if(footRate){
+    var sum=vals.reduce(function(a,b){return a+b;},0);
+    var avg=vals.length?sum/vals.length:0;
+    footRate.textContent=Math.round(avg)+'%';
+  }
+}
+function loadOperatingRateLine(){
+  var now=new Date();
+  var year=now.getFullYear();
+  var month=now.getMonth()+1;
+  var actualDays=getDaysInMonthLocal(year,month);
+  var from=year+'-'+pad2(month)+'-01';
+  var to=year+'-'+pad2(month)+'-'+pad2(actualDays);
+  var tagEl=document.getElementById('rate-target-tag');
+  if(tagEl)tagEl.textContent='목표 '+RATE_TARGET+'%';
+  var titleEl=document.getElementById('rate-panel-title');
+  if(titleEl)titleEl.textContent=month+'월 설비가동률';
+  window.cbOpRateLine=function(json){
+    if(!json||json.error){console.error('설비가동률(일별) 로딩 오류:',json&&json.error);return;}
+    /* ★ 2026-07-22 수정: 조업일이면 데이터가 없어도 0%로 집계 (분모 누락 방지)
+         null 은 '조업일이 아님(토·일·공휴일)' 또는 '아직 오지 않은 날' 일 때만 */
+    var map=opRowsToMap(json);
+    var todayStr=opTodayStr();
+    var values=[];
+    for(var dd=1;dd<=actualDays;dd++){
+      var ds=year+'-'+pad2(month)+'-'+pad2(dd);
+      if(ds>todayStr){values.push(null);continue;}
+      var c=opDayCalc(ds,map[ds]);
+      if(c.op===0){values.push(null);continue;}
+      values.push(c.den>0?Math.round(c.run/c.den*1000)/10:0);
+    }
+    renderRateLine('line-rate',values,RATE_TARGET,actualDays);
+  };
+  var s=document.createElement('script');
+  s.src=API_URL+'?action=operatingRateV2&from='+from+'&to='+to+'&key='+encodeURIComponent(API_KEY)+'&callback=cbOpRateLine';
+  document.body.appendChild(s);
+}
+var dashboardRequestId=0;
+async function loadDashboard(){var requestId=++dashboardRequestId;try{var dateParam=formatDateYMD(selectedDate);var res=await fetch(API_URL+'?date='+dateParam+'&key='+encodeURIComponent(API_KEY));var data=await res.json();if(requestId!==dashboardRequestId)return;if(data.error){console.error('대시보드 오류:',data.error);return;}var d=data.dashboard;if(!d)return;var jobEl=document.getElementById('kpi-job-count');var prodEl=document.getElementById('kpi-production');var shipEl=document.getElementById('kpi-shipment');if(jobEl)jobEl.textContent=(d.todayJobCount||0).toLocaleString();if(prodEl)prodEl.textContent=(d.todayProduction||0).toLocaleString();if(shipEl)shipEl.textContent=(d.todayShipment||0).toLocaleString();var eqEl=document.getElementById('kpi-equipment');var statusEl=document.getElementById('kpi-equipment-status');if(eqEl&&statusEl){if(d.todayEquipment&&d.todayEquipment.length>0){eqEl.textContent=d.todayEquipment.map(function(e){return e.name||e.no;}).join(', ');statusEl.className='status-pill run';statusEl.innerHTML='<span class="dot"></span> RUNNING';}else{eqEl.textContent='가동 설비 없음';statusEl.className='status-pill';statusEl.innerHTML='<span class="dot"></span> IDLE';}}var mp=d.monthlyProduction||[];var months=mp.map(function(x){return x.month;});makeBars('bar-prod',mp.map(function(x){return x.value;}),Math.max.apply(null,mp.map(function(x){return x.value;}).concat([1])),function(v){return Number(v).toLocaleString();});setAxisLabels('axis-prod',months);loadMonthlyRateBars(months);var cp=d.cumulativeProduction||[];makeBars('bar-cumprod',cp.map(function(x){return x.value;}),Math.max.apply(null,cp.map(function(x){return x.value;}).concat([1])),function(v){return Number(v).toLocaleString();});setAxisLabels('axis-cumprod',cp.map(function(x){return x.month;}));var footProd=document.getElementById('foot-cumprod');if(footProd){var lp=cp.length?cp[cp.length-1].value:0;footProd.textContent=lp.toLocaleString();}var cd=d.cumulativeDefectRate||[];renderDefectLine('line-defect',cd);var footDefect=document.getElementById('foot-cumdefect');if(footDefect){var ld=cd.length?cd[cd.length-1].value:0;footDefect.textContent=Math.round(ld)+'%';}}catch(err){console.error('대시보드 로딩 실패:',err);}}
+function updateSystemDate(){var today=new Date();var a=document.getElementById('systemDate');if(a)a.textContent=formatDateYMD(today);}
+function load5SCapacity(){var url=API_URL+'?key='+encodeURIComponent(API_KEY)+'&action=get5SCount&callback=cb5SCount';var s=document.createElement('script');s.src=url;document.body.appendChild(s);}
+window.cb5SCount=function(data){if(!data||data.status!=='ok')return;var pct=data.pct||0;var badge=document.getElementById('ss5-badge');var dot=document.getElementById('ss5-dot');var pctEl=document.getElementById('ss5-pct');if(!badge||!dot||!pctEl)return;var color='';if(pct>=90){color='#A32D2D';}else if(pct>=80){color='#BA7517';}else{color='#3B6D11';}dot.style.background=color;pctEl.style.color=color;pctEl.textContent=pct+'%';badge.style.display='flex';};
+function toggleTheme(){document.body.classList.toggle('light-theme');var btn=document.getElementById('themeBtn');var isLight=document.body.classList.contains('light-theme');btn.textContent=isLight?'🌙 다크모드':'☀️ 라이트모드';localStorage.setItem('theme',isLight?'light':'dark');}
+window.addEventListener('load',function(){var savedTheme=localStorage.getItem('theme');var btn=document.getElementById('themeBtn');if(savedTheme==='light'){document.body.classList.add('light-theme');if(btn)btn.textContent='🌙 다크모드';}else{if(btn)btn.textContent='☀️ 라이트모드';}});
+updateSystemDate();updateDateDisplay();loadDashboard();load5SCapacity();loadOperatingRateLine();
+var _openMenus={};
+function toggleMenu(key){var sub=document.getElementById('sub-'+key);var btn=document.getElementById('m-'+key);var isOpen=_openMenus[key];sub.classList.toggle('open',!isOpen);btn.classList.toggle('open',!isOpen);_openMenus[key]=!isOpen;}
+
+/* ══════════════════════════════════════════════════════
+   메일 발송 현황 / 수동 발송 (2026-07-02 추가)
+   ══════════════════════════════════════════════════════ */
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function renderMailLog(rows){
+  var box=document.getElementById('mailLogContent');
+  if(!box) return;
+  if(!rows||rows.length===0){ box.innerHTML='<div class="mail-empty">발송 이력이 없습니다.</div>'; updateMailStatusDot(null); return; }
+  var latest=rows[0];
+  updateMailStatusDot(latest.상태);
+  var html='<table class="mail-log-table"><thead><tr><th>발송일시</th><th>대상일자</th><th>상태</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var cls = r.상태==='성공' ? 'ok' : (r.상태==='데이터없음' ? 'skip' : 'error');
+    html+='<tr><td>'+escapeHtml(r.발송일시)+'</td><td>'+escapeHtml(r.대상일자)+'</td><td>'
+        +'<span class="mail-status-badge '+cls+'">'+escapeHtml(r.상태)+'</span>';
+    if(r.상태==='실패' && r.비고){ html+='<div class="mail-log-note">'+escapeHtml(r.비고)+'</div>'; }
+    html+='</td></tr>';
+  });
+  html+='</tbody></table>';
+  box.innerHTML=html;
+}
+
+function updateMailStatusDot(status){
+  var dot=document.getElementById('mailStatusDot');
+  if(!dot) return;
+  dot.className='mdot'+(status==='성공'?' ok':(status==='실패'?' fail':''));
+}
+
+function loadMailLogForDot(){
+  var url=API_URL+'?key='+encodeURIComponent(API_KEY)+'&action=mailLog&callback=cbMailLogDot';
+  var s=document.createElement('script'); s.src=url; document.body.appendChild(s);
+}
+window.cbMailLogDot=function(data){
+  if(!data||data.status!=='ok'||!data.rows||!data.rows.length) return;
+  updateMailStatusDot(data.rows[0].상태);
+};
+
+function openMailStatusModal(){
+  document.getElementById('mailStatusOverlay').classList.add('open');
+  document.getElementById('mailLogContent').innerHTML='<div class="mail-empty">불러오는 중...</div>';
+  var url=API_URL+'?key='+encodeURIComponent(API_KEY)+'&action=mailLog&callback=cbMailLogModal';
+  var s=document.createElement('script'); s.src=url; document.body.appendChild(s);
+}
+window.cbMailLogModal=function(data){
+  if(!data||data.status!=='ok'){ document.getElementById('mailLogContent').innerHTML='<div class="mail-empty">조회 중 오류가 발생했습니다.</div>'; return; }
+  renderMailLog(data.rows||[]);
+};
+function closeMailStatusModal(){
+  document.getElementById('mailStatusOverlay').classList.remove('open');
+}
+
+function confirmSendReportNow(){
+  if(!confirm('어제 생산실적 리포트를 지금 바로 발송하시겠습니까?')) return;
+  sendReportNow();
+}
+async function sendReportNow(){
+  try{
+    var res=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ key: API_KEY, action:'sendReportNow' })
+    });
+    var data=await res.json();
+    if(data && data.status==='ok'){
+      alert('발송 완료: '+(data.message||''));
+    } else if(data && data.status==='skip'){
+      alert('발송 안 함: '+(data.message||'대상일자 데이터가 없습니다.'));
+    } else {
+      alert('발송 실패: '+(data&&data.message?data.message:'알 수 없는 오류'));
+    }
+    loadMailLogForDot();
+  }catch(err){
+    alert('요청 중 오류가 발생했습니다: '+err.message);
+  }
+}
+loadMailLogForDot();
+</script>
+</body>
+</html>
