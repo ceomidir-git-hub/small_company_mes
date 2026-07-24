@@ -381,6 +381,115 @@
   .numeric-warning.info { background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; }
   .numeric-warning.error { background:#fff1f2; color:#b91c1c; border:1px solid #fecdd3; }
 
+
+  /* ── 작업시간·불량·비가동 상세 팝업 ── */
+  .detail-trigger-btn {
+    display:inline-block; padding:2px 7px; margin-left:5px;
+    font-size:10px; line-height:1.3;
+    font-family:'Noto Sans KR','Malgun Gothic',sans-serif;
+    font-weight:700; color:#1a3a5c; background:#eaf1fb;
+    border:1.5px solid #1a3a5c; border-radius:3px;
+    cursor:pointer; white-space:nowrap; vertical-align:middle;
+  }
+  .detail-trigger-btn:hover { background:#1a3a5c; color:#fff; }
+  .detail-trigger-btn:disabled { opacity:.55; cursor:not-allowed; }
+
+  .detail-modal-overlay {
+    display:none; position:fixed; inset:0; z-index:20000;
+    background:rgba(15,23,42,.62);
+    align-items:center; justify-content:center;
+    padding:18px;
+  }
+  .detail-modal-overlay.open { display:flex; }
+  .detail-modal {
+    width:min(980px, 100%); max-height:92vh;
+    background:#fff; border-radius:10px;
+    box-shadow:0 18px 60px rgba(0,0,0,.32);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .detail-modal.small { width:min(760px, 100%); }
+  .detail-modal-header {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 18px; background:#1a3a5c; color:#fff;
+  }
+  .detail-modal-header h3 { flex:1; font-size:18px; margin:0; }
+  .detail-modal-header p { font-size:11px; opacity:.86; margin:2px 0 0; }
+  .detail-modal-close {
+    width:34px; height:34px; border:1px solid rgba(255,255,255,.55);
+    border-radius:50%; background:transparent; color:#fff;
+    font-size:21px; line-height:1; cursor:pointer;
+  }
+  .detail-modal-body { padding:16px 18px; overflow:auto; }
+  .detail-help {
+    margin-bottom:12px; padding:9px 11px;
+    background:#eff6ff; border:1px solid #bfdbfe;
+    border-radius:5px; color:#1e3a5f; font-size:12px; line-height:1.55;
+  }
+  .detail-table-wrap { width:100%; overflow-x:auto; }
+  .detail-table { min-width:680px; margin:0; }
+  .detail-table.compact { min-width:560px; }
+  .detail-table th, .detail-table td { padding:6px 7px; }
+  .detail-table input, .detail-table select {
+    width:100%; min-width:68px; height:32px;
+    border:1px solid #aab4c2; border-radius:4px;
+    background:#fff; padding:4px 6px;
+    font-family:'Noto Sans KR','Malgun Gothic',sans-serif;
+    font-size:13px; outline:none;
+  }
+  .detail-table input:focus, .detail-table select:focus {
+    border-color:#1a3a5c; box-shadow:0 0 0 2px rgba(26,58,92,.10);
+  }
+  .detail-table input[readonly] { background:#f3f6fa; color:#334155; }
+  .detail-total-row td { background:#eef3f8; font-weight:800; }
+  .detail-total-text { color:#1a3a5c; font-size:14px; }
+  .detail-row-delete {
+    padding:5px 8px; border:1px solid #b91c1c; border-radius:3px;
+    background:#fff; color:#b91c1c; cursor:pointer; font-weight:700;
+  }
+  .detail-row-delete:hover { background:#fff1f2; }
+  .detail-add-btn {
+    margin-top:10px; padding:7px 13px;
+    border:1.5px solid #217346; border-radius:4px;
+    background:#fff; color:#217346; cursor:pointer;
+    font-family:inherit; font-weight:700;
+  }
+  .detail-add-btn:hover { background:#eaf5ef; }
+  .detail-modal-footer {
+    display:flex; justify-content:flex-end; gap:9px;
+    padding:12px 18px; border-top:1px solid #d7dee8; background:#f8fafc;
+  }
+  .detail-modal-btn {
+    min-width:92px; padding:9px 16px; border-radius:4px;
+    border:1.5px solid #64748b; background:#fff; color:#334155;
+    font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
+  }
+  .detail-modal-btn.apply { background:#1a3a5c; border-color:#1a3a5c; color:#fff; }
+  .detail-modal-btn:disabled, .detail-add-btn:disabled,
+  .detail-row-delete:disabled { opacity:.45; cursor:not-allowed; }
+  .detail-readonly-note {
+    display:none; margin-bottom:10px; padding:8px 10px;
+    border-radius:4px; background:#fff7ed; border:1px solid #fed7aa;
+    color:#9a3412; font-size:12px; font-weight:700;
+  }
+  .detail-readonly-note.show { display:block; }
+
+  @media (max-width:700px) {
+    body { padding-left:6px; padding-right:6px; }
+    .detail-modal-overlay { padding:0; align-items:stretch; }
+    .detail-modal, .detail-modal.small {
+      width:100%; max-height:none; height:100%; border-radius:0;
+    }
+    .detail-modal-header { padding:12px 13px; }
+    .detail-modal-header h3 { font-size:16px; }
+    .detail-modal-body { padding:12px 10px; }
+    .detail-modal-footer { padding:10px; }
+    .detail-trigger-btn { margin-left:3px; padding:2px 5px; font-size:9px; }
+  }
+
+  @media print {
+    .detail-trigger-btn, .detail-modal-overlay { display:none !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -483,7 +592,7 @@
     <tr>
       <td class="label">작업일</td>
       <td><input type="date" id="work-date"></td>
-      <td class="label">주/야간</td>
+      <td class="label"><span class="th-with-btn">주/야간<button type="button" id="work-time-btn" class="detail-trigger-btn" onclick="openWorkTimeModal()">시간</button></span></td>
       <td style="text-align:center">
         <span class="cb-group"><input type="checkbox" id="day-shift"><label for="day-shift">주간</label></span>
         <span class="cb-group"><input type="checkbox" id="night-shift"><label for="night-shift">야간</label></span>
@@ -572,7 +681,9 @@
   <table>
     <tr>
       <th>계획수량</th><th>투입수량</th><th>양품수량</th>
-      <th>불량수량</th><th>재작업수량</th><th>가동시간</th><th>비가동시간</th>
+      <th><span class="th-with-btn">불량수량<button type="button" id="defect-detail-btn" class="detail-trigger-btn" onclick="openDefectModal()">상세</button></span></th>
+      <th>재작업수량</th><th>가동시간</th>
+      <th><span class="th-with-btn">비가동시간<button type="button" id="downtime-detail-btn" class="detail-trigger-btn" onclick="openDowntimeModal()">상세</button></span></th>
       <th>템퍼링작업</th><th>교정작업</th>
     </tr>
     <tr>
@@ -806,6 +917,130 @@
   </div>
 </div>
 
+
+<!-- ══ 작업시간 상세 팝업 ══ -->
+<div id="work-time-modal" class="detail-modal-overlay" onclick="closeModalByBackdrop(event, 'work-time-modal')">
+  <div class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="work-time-modal-title">
+    <div class="detail-modal-header">
+      <div>
+        <h3 id="work-time-modal-title">주·야간 작업시간 상세</h3>
+        <p>같은 제품을 여러 시간 구간으로 작업한 경우 행을 추가해 입력합니다.</p>
+      </div>
+      <button type="button" class="detail-modal-close" onclick="closeDetailModal('work-time-modal')" aria-label="닫기">×</button>
+    </div>
+    <div class="detail-modal-body">
+      <div id="work-time-readonly-note" class="detail-readonly-note">조회 상태입니다. 수정 버튼을 누른 후 상세시간을 변경할 수 있습니다.</div>
+      <div class="detail-help">
+        종료시간이 시작시간보다 빠르면 다음 날 종료로 계산합니다. 실제 작업시간은 시작·종료시간에서 휴게시간을 제외하여 자동 계산됩니다.
+      </div>
+      <div class="detail-table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th style="width:44px">No.</th>
+              <th style="width:90px">주/야간</th>
+              <th style="width:112px">시작시간</th>
+              <th style="width:112px">종료시간</th>
+              <th style="width:92px">휴게(분)</th>
+              <th style="width:112px">작업시간</th>
+              <th>비고</th>
+              <th style="width:58px">삭제</th>
+            </tr>
+          </thead>
+          <tbody id="work-time-detail-body"></tbody>
+          <tfoot>
+            <tr class="detail-total-row">
+              <td colspan="5" style="text-align:right">합계</td>
+              <td id="work-time-modal-total" class="detail-total-text" style="text-align:center">0분</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <button type="button" id="work-time-add-btn" class="detail-add-btn" data-edit-only onclick="addWorkTimeRow()">＋ 작업시간 행 추가</button>
+    </div>
+    <div class="detail-modal-footer">
+      <button type="button" class="detail-modal-btn" onclick="closeDetailModal('work-time-modal')">닫기</button>
+      <button type="button" id="work-time-apply-btn" class="detail-modal-btn apply" data-edit-only onclick="applyWorkTimeModal()">적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 불량유형 상세 팝업 ══ -->
+<div id="defect-modal" class="detail-modal-overlay" onclick="closeModalByBackdrop(event, 'defect-modal')">
+  <div class="detail-modal small" role="dialog" aria-modal="true" aria-labelledby="defect-modal-title">
+    <div class="detail-modal-header">
+      <div>
+        <h3 id="defect-modal-title">불량유형별 수량</h3>
+        <p>유형별 불량수량 합계가 작업일보의 불량수량에 반영됩니다.</p>
+      </div>
+      <button type="button" class="detail-modal-close" onclick="closeDetailModal('defect-modal')" aria-label="닫기">×</button>
+    </div>
+    <div class="detail-modal-body">
+      <div id="defect-readonly-note" class="detail-readonly-note">조회 상태입니다. 수정 버튼을 누른 후 불량수량을 변경할 수 있습니다.</div>
+      <div class="detail-table-wrap">
+        <table class="detail-table compact">
+          <thead>
+            <tr><th style="width:110px">불량유형</th><th style="width:130px">불량수량</th><th>비고</th></tr>
+          </thead>
+          <tbody id="defect-detail-body"></tbody>
+          <tfoot>
+            <tr class="detail-total-row">
+              <td style="text-align:right">합계</td>
+              <td id="defect-modal-total" class="detail-total-text" style="text-align:center">0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="detail-modal-footer">
+      <button type="button" class="detail-modal-btn" onclick="closeDetailModal('defect-modal')">닫기</button>
+      <button type="button" id="defect-apply-btn" class="detail-modal-btn apply" data-edit-only onclick="applyDefectModal()">적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 비가동유형 상세 팝업 ══ -->
+<div id="downtime-modal" class="detail-modal-overlay" onclick="closeModalByBackdrop(event, 'downtime-modal')">
+  <div class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="downtime-modal-title">
+    <div class="detail-modal-header">
+      <div>
+        <h3 id="downtime-modal-title">비가동유형별 시간</h3>
+        <p>시간과 분을 입력하면 합계가 작업일보의 비가동시간에 반영됩니다.</p>
+      </div>
+      <button type="button" class="detail-modal-close" onclick="closeDetailModal('downtime-modal')" aria-label="닫기">×</button>
+    </div>
+    <div class="detail-modal-body">
+      <div id="downtime-readonly-note" class="detail-readonly-note">조회 상태입니다. 수정 버튼을 누른 후 비가동시간을 변경할 수 있습니다.</div>
+      <div class="detail-table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th style="width:100px">비가동유형</th>
+              <th style="width:88px">시간</th>
+              <th style="width:88px">분</th>
+              <th>조치/비고</th>
+            </tr>
+          </thead>
+          <tbody id="downtime-detail-body"></tbody>
+          <tfoot>
+            <tr class="detail-total-row">
+              <td style="text-align:right">합계</td>
+              <td colspan="2" id="downtime-modal-total" class="detail-total-text" style="text-align:center">0분</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="detail-modal-footer">
+      <button type="button" class="detail-modal-btn" onclick="closeDetailModal('downtime-modal')">닫기</button>
+      <button type="button" id="downtime-apply-btn" class="detail-modal-btn apply" data-edit-only onclick="applyDowntimeModal()">적용</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast">처리되었습니다.</div>
 
 
@@ -844,6 +1079,22 @@ let queryResults = [];
 let queryIndex = 0;
 let openDdId = null;
 let openQfId = null;
+
+
+const DEFECT_TYPES = ["외관", "오염", "찍힘", "탈락", "경도", "변형"];
+const DOWNTIME_TYPES = [
+  "교육", "공사", "개발", "방문", "기타1",
+  "전기", "냉각", "코일", "기타2",
+  "조건", "사양", "기타3"
+];
+
+let workTimeDetails = [];
+let defectDetails = makeEmptyDefectDetails();
+let downtimeDetails = makeEmptyDowntimeDetails();
+
+let tempWorkTimeDetails = [];
+let tempDefectDetails = [];
+let tempDowntimeDetails = [];
 
 const SELECT_COLUMNS = [
   "production_system_id","company_id","source_record_key","company_name_raw",
@@ -1057,6 +1308,7 @@ function setMode(nextMode) {
 }
 
 function clearFormValues() {
+  closeAllDetailModals();
   const form = document.getElementById("report-form");
 
   form.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]')
@@ -1077,6 +1329,7 @@ function clearFormValues() {
   document.getElementById("product-no").placeholder = "품명 먼저 선택";
 
   selectedRecordId = null;
+  resetDetailState();
   formDirty = false;
   clearWarning();
 }
@@ -1101,11 +1354,11 @@ function startEdit() {
   showWarning("조회한 작업일보를 수정 중입니다. 수정 후 저장 버튼을 누르세요.", "info");
 }
 
-function resetCurrentForm() {
+async function resetCurrentForm() {
   if (!confirm("현재 입력 내용을 초기화하시겠습니까?")) return;
 
   if (mode === "view" && queryResults[queryIndex]) {
-    loadRecordToForm(queryResults[queryIndex]);
+    await loadRecordToForm(queryResults[queryIndex]);
     return;
   }
 
@@ -1560,7 +1813,7 @@ async function queryByDate() {
 
     document.getElementById("query-nav").style.display = "flex";
     updateQueryNav();
-    loadRecordToForm(queryResults[0]);
+    await loadRecordToForm(queryResults[0]);
   } catch (error) {
     console.error(error);
     message.style.color = "#c0392b";
@@ -1576,18 +1829,18 @@ function updateQueryNav() {
   document.getElementById("next-btn").disabled = queryIndex >= total - 1;
 }
 
-function navigateRecord(direction) {
+async function navigateRecord(direction) {
   const nextIndex = queryIndex + direction;
   if (nextIndex < 0 || nextIndex >= queryResults.length) return;
   queryIndex = nextIndex;
   updateQueryNav();
-  loadRecordToForm(queryResults[queryIndex]);
+  await loadRecordToForm(queryResults[queryIndex]);
 }
 
 /* =========================================================
    조회 결과를 작업일보 폼에 표시
    ========================================================= */
-function loadRecordToForm(record) {
+async function loadRecordToForm(record) {
   clearFormValues();
 
   selectedRecordId = record.production_system_id;
@@ -1694,12 +1947,649 @@ function loadRecordToForm(record) {
   );
   setValue("special-note", record.special_notes);
 
+  let detailLoadFailed = false;
+  try {
+    await loadDetailRecords(record.production_system_id);
+  } catch (error) {
+    detailLoadFailed = true;
+    console.error("상세 데이터 조회 오류:", error);
+    showWarning("작업일보는 불러왔지만 상세 데이터 조회에 실패했습니다: " + dbErrorMessage(error), "error");
+  }
+
   formDirty = false;
   setMode("view");
-  clearWarning();
+  if (!detailLoadFailed) clearWarning();
   showToast("✅ 작업일보를 불러왔습니다.");
   window.scrollTo({ top:0, behavior:"smooth" });
 }
+
+
+
+/* =========================================================
+   작업시간·불량·비가동 상세 팝업 및 상세 테이블 연동
+   ========================================================= */
+function makeEmptyDefectDetails() {
+  return DEFECT_TYPES.map((type) => ({
+    defect_type:type,
+    defect_quantity:0,
+    remarks:""
+  }));
+}
+
+function makeEmptyDowntimeDetails() {
+  return DOWNTIME_TYPES.map((type) => ({
+    downtime_type:type,
+    downtime_minutes:0,
+    action_notes:"",
+    part_replacement:"",
+    spare_part:"",
+    remarks:""
+  }));
+}
+
+function resetDetailState() {
+  workTimeDetails = [];
+  defectDetails = makeEmptyDefectDetails();
+  downtimeDetails = makeEmptyDowntimeDetails();
+  tempWorkTimeDetails = [];
+  tempDefectDetails = [];
+  tempDowntimeDetails = [];
+  updateDetailButtonTitles();
+}
+
+function deepCopy(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function nonNegativeInteger(value) {
+  const text = String(value ?? "").trim();
+  if (text === "") return 0;
+  const number = Number(text);
+  return Number.isInteger(number) && number >= 0 ? number : NaN;
+}
+
+function timeToMinutes(value) {
+  if (!value || !/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(":").map(Number);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+function calculateWorkMinutes(startTime, endTime, breakMinutes) {
+  const start = timeToMinutes(startTime);
+  let end = timeToMinutes(endTime);
+  const rest = Number(breakMinutes || 0);
+  if (start === null || end === null || !Number.isFinite(rest) || rest < 0) return 0;
+  if (end === start) return 0;
+  if (end < start) end += 24 * 60;
+  return Math.max(0, end - start - rest);
+}
+
+function formatMinutes(totalMinutes) {
+  const total = Math.max(0, Number(totalMinutes) || 0);
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  if (hours && minutes) return hours + "시간 " + minutes + "분";
+  if (hours) return hours + "시간";
+  return minutes + "분";
+}
+
+function hoursValueFromMinutes(totalMinutes) {
+  return Number(((Number(totalMinutes) || 0) / 60).toFixed(4));
+}
+
+function getWorkTimeTotalMinutes(rows = workTimeDetails) {
+  return rows.reduce((sum, row) => sum + (Number(row.work_minutes) || 0), 0);
+}
+
+function getDefectTotal(rows = defectDetails) {
+  return rows.reduce((sum, row) => sum + (Number(row.defect_quantity) || 0), 0);
+}
+
+function getDowntimeTotalMinutes(rows = downtimeDetails) {
+  return rows.reduce((sum, row) => sum + (Number(row.downtime_minutes) || 0), 0);
+}
+
+function updateDetailButtonTitles() {
+  const workButton = document.getElementById("work-time-btn");
+  const defectButton = document.getElementById("defect-detail-btn");
+  const downtimeButton = document.getElementById("downtime-detail-btn");
+
+  if (workButton) {
+    workButton.title = "등록 " + workTimeDetails.length + "건 · " + formatMinutes(getWorkTimeTotalMinutes());
+  }
+  if (defectButton) {
+    const count = defectDetails.filter((row) => Number(row.defect_quantity) > 0).length;
+    defectButton.title = "등록 " + count + "유형 · 합계 " + getDefectTotal();
+  }
+  if (downtimeButton) {
+    const count = downtimeDetails.filter((row) => Number(row.downtime_minutes) > 0).length;
+    downtimeButton.title = "등록 " + count + "유형 · " + formatMinutes(getDowntimeTotalMinutes());
+  }
+}
+
+function setDetailModalEditable(modalId, editable) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+
+  modal.querySelectorAll("input, select, textarea").forEach((element) => {
+    element.disabled = !editable;
+  });
+  modal.querySelectorAll("[data-edit-only]").forEach((element) => {
+    element.disabled = !editable;
+  });
+  modal.querySelectorAll(".detail-row-delete").forEach((element) => {
+    element.disabled = !editable;
+  });
+
+  const noteId =
+    modalId === "work-time-modal" ? "work-time-readonly-note" :
+    modalId === "defect-modal" ? "defect-readonly-note" :
+    "downtime-readonly-note";
+  document.getElementById(noteId)?.classList.toggle("show", !editable);
+}
+
+function openDetailModal(modalId) {
+  document.getElementById(modalId)?.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeDetailModal(modalId) {
+  document.getElementById(modalId)?.classList.remove("open");
+  if (!document.querySelector(".detail-modal-overlay.open")) {
+    document.body.style.overflow = "";
+  }
+}
+
+function closeAllDetailModals() {
+  document.querySelectorAll(".detail-modal-overlay.open").forEach((modal) => {
+    modal.classList.remove("open");
+  });
+  document.body.style.overflow = "";
+}
+
+function closeModalByBackdrop(event, modalId) {
+  if (event.target?.id === modalId) closeDetailModal(modalId);
+}
+
+function defaultShiftType() {
+  if (cb("night-shift")) return "야간";
+  return "주간";
+}
+
+function openWorkTimeModal() {
+  tempWorkTimeDetails = deepCopy(workTimeDetails);
+  if (!tempWorkTimeDetails.length && (mode === "new" || mode === "edit")) {
+    tempWorkTimeDetails.push({
+      sequence_no:1,
+      shift_type:defaultShiftType(),
+      start_time:"",
+      end_time:"",
+      break_minutes:0,
+      work_minutes:0,
+      remarks:""
+    });
+  }
+  renderWorkTimeRows();
+  setDetailModalEditable("work-time-modal", mode === "new" || mode === "edit");
+  openDetailModal("work-time-modal");
+}
+
+function renderWorkTimeRows() {
+  const body = document.getElementById("work-time-detail-body");
+  body.innerHTML = "";
+
+  tempWorkTimeDetails.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="text-align:center;font-weight:700">${index + 1}</td>
+      <td>
+        <select id="work-shift-${index}" onchange="updateTempWorkRow(${index})">
+          <option value="주간" ${row.shift_type === "주간" ? "selected" : ""}>주간</option>
+          <option value="야간" ${row.shift_type === "야간" ? "selected" : ""}>야간</option>
+        </select>
+      </td>
+      <td><input type="time" id="work-start-${index}" value="${escapeHtml(String(row.start_time || "").slice(0,5))}" onchange="updateTempWorkRow(${index})"></td>
+      <td><input type="time" id="work-end-${index}" value="${escapeHtml(String(row.end_time || "").slice(0,5))}" onchange="updateTempWorkRow(${index})"></td>
+      <td><input type="number" id="work-break-${index}" min="0" step="1" value="${Number(row.break_minutes) || 0}" oninput="updateTempWorkRow(${index})"></td>
+      <td><input type="text" id="work-minutes-${index}" value="${formatMinutes(Number(row.work_minutes) || 0)}" readonly></td>
+      <td><input type="text" id="work-remarks-${index}" value="${escapeHtml(row.remarks || "")}" oninput="updateTempWorkRow(${index})"></td>
+      <td style="text-align:center"><button type="button" class="detail-row-delete" onclick="removeWorkTimeRow(${index})">삭제</button></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  if (!tempWorkTimeDetails.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td colspan="8" style="text-align:center;color:#777;padding:18px">등록된 작업시간이 없습니다.</td>';
+    body.appendChild(tr);
+  }
+
+  updateWorkTimeModalTotal();
+  setDetailModalEditable("work-time-modal", mode === "new" || mode === "edit");
+}
+
+function syncWorkTimeRowsFromDom() {
+  tempWorkTimeDetails.forEach((row, index) => {
+    const shift = document.getElementById(`work-shift-${index}`);
+    if (!shift) return;
+    row.shift_type = shift.value;
+    row.start_time = document.getElementById(`work-start-${index}`).value;
+    row.end_time = document.getElementById(`work-end-${index}`).value;
+    row.break_minutes = Number(document.getElementById(`work-break-${index}`).value || 0);
+    row.remarks = document.getElementById(`work-remarks-${index}`).value.trim();
+    row.work_minutes = calculateWorkMinutes(
+      row.start_time,
+      row.end_time,
+      row.break_minutes
+    );
+  });
+}
+
+function updateTempWorkRow(index) {
+  const row = tempWorkTimeDetails[index];
+  if (!row) return;
+  const shift = document.getElementById(`work-shift-${index}`);
+  if (!shift) return;
+
+  row.shift_type = shift.value;
+  row.start_time = document.getElementById(`work-start-${index}`).value;
+  row.end_time = document.getElementById(`work-end-${index}`).value;
+  row.break_minutes = Number(document.getElementById(`work-break-${index}`).value || 0);
+  row.remarks = document.getElementById(`work-remarks-${index}`).value.trim();
+  row.work_minutes = calculateWorkMinutes(row.start_time, row.end_time, row.break_minutes);
+
+  document.getElementById(`work-minutes-${index}`).value = formatMinutes(row.work_minutes);
+  updateWorkTimeModalTotal();
+}
+
+function updateWorkTimeModalTotal() {
+  document.getElementById("work-time-modal-total").textContent =
+    formatMinutes(getWorkTimeTotalMinutes(tempWorkTimeDetails));
+}
+
+function addWorkTimeRow() {
+  if (mode !== "new" && mode !== "edit") return;
+  syncWorkTimeRowsFromDom();
+  tempWorkTimeDetails.push({
+    sequence_no:tempWorkTimeDetails.length + 1,
+    shift_type:defaultShiftType(),
+    start_time:"",
+    end_time:"",
+    break_minutes:0,
+    work_minutes:0,
+    remarks:""
+  });
+  renderWorkTimeRows();
+}
+
+function removeWorkTimeRow(index) {
+  if (mode !== "new" && mode !== "edit") return;
+  syncWorkTimeRowsFromDom();
+  tempWorkTimeDetails.splice(index, 1);
+  renderWorkTimeRows();
+}
+
+function applyWorkTimeModal() {
+  if (mode !== "new" && mode !== "edit") return;
+  syncWorkTimeRowsFromDom();
+
+  const enteredRows = tempWorkTimeDetails.filter((row) =>
+    row.start_time || row.end_time || row.remarks || Number(row.break_minutes) > 0
+  );
+  const errors = [];
+
+  enteredRows.forEach((row, index) => {
+    if (!row.start_time || !row.end_time) {
+      errors.push((index + 1) + "번 행의 시작시간과 종료시간을 모두 입력해 주세요.");
+    } else if (row.work_minutes <= 0) {
+      errors.push((index + 1) + "번 행의 실제 작업시간이 0분입니다.");
+    }
+    if (!Number.isInteger(Number(row.break_minutes)) || Number(row.break_minutes) < 0) {
+      errors.push((index + 1) + "번 행의 휴게시간은 0 이상의 정수(분)로 입력해 주세요.");
+    }
+  });
+
+  if (errors.length) {
+    alert("[작업시간 확인]\n\n" + errors.join("\n"));
+    return;
+  }
+
+  workTimeDetails = enteredRows.map((row, index) => ({
+    sequence_no:index + 1,
+    shift_type:row.shift_type,
+    start_time:row.start_time,
+    end_time:row.end_time,
+    break_minutes:Number(row.break_minutes) || 0,
+    work_minutes:Number(row.work_minutes) || 0,
+    remarks:row.remarks || ""
+  }));
+
+  const totalMinutes = getWorkTimeTotalMinutes();
+  setValue("op-time", hoursValueFromMinutes(totalMinutes));
+
+  const shifts = [...new Set(workTimeDetails.map((row) => row.shift_type))];
+  if (shifts.length === 1) {
+    setChecked("day-shift", shifts[0] === "주간");
+    setChecked("night-shift", shifts[0] === "야간");
+  }
+
+  formDirty = true;
+  updateDetailButtonTitles();
+  closeDetailModal("work-time-modal");
+  showToast("✅ 작업시간 합계가 가동시간에 반영되었습니다.");
+}
+
+function openDefectModal() {
+  tempDefectDetails = deepCopy(defectDetails);
+  renderDefectRows();
+  setDetailModalEditable("defect-modal", mode === "new" || mode === "edit");
+  openDetailModal("defect-modal");
+}
+
+function renderDefectRows() {
+  const body = document.getElementById("defect-detail-body");
+  body.innerHTML = "";
+
+  tempDefectDetails.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="text-align:center;font-weight:700">${escapeHtml(row.defect_type)}</td>
+      <td><input type="number" id="defect-qty-${index}" min="0" step="1" value="${Number(row.defect_quantity) || 0}" oninput="updateDefectModalTotal()"></td>
+      <td><input type="text" id="defect-remarks-${index}" value="${escapeHtml(row.remarks || "")}"></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  updateDefectModalTotal();
+  setDetailModalEditable("defect-modal", mode === "new" || mode === "edit");
+}
+
+function syncDefectRowsFromDom() {
+  tempDefectDetails.forEach((row, index) => {
+    row.defect_quantity = Number(document.getElementById(`defect-qty-${index}`).value || 0);
+    row.remarks = document.getElementById(`defect-remarks-${index}`).value.trim();
+  });
+}
+
+function updateDefectModalTotal() {
+  let total = 0;
+  tempDefectDetails.forEach((row, index) => {
+    const input = document.getElementById(`defect-qty-${index}`);
+    total += Number(input?.value || 0);
+  });
+  document.getElementById("defect-modal-total").textContent = String(total);
+}
+
+function applyDefectModal() {
+  if (mode !== "new" && mode !== "edit") return;
+  const errors = [];
+
+  tempDefectDetails.forEach((row, index) => {
+    const quantity = nonNegativeInteger(document.getElementById(`defect-qty-${index}`).value);
+    if (Number.isNaN(quantity)) {
+      errors.push(row.defect_type + " 수량은 0 이상의 정수로 입력해 주세요.");
+    } else {
+      row.defect_quantity = quantity;
+    }
+    row.remarks = document.getElementById(`defect-remarks-${index}`).value.trim();
+  });
+
+  if (errors.length) {
+    alert("[불량수량 확인]\n\n" + errors.join("\n"));
+    return;
+  }
+
+  defectDetails = deepCopy(tempDefectDetails);
+  setValue("bad-qty", getDefectTotal());
+  formDirty = true;
+  updateDetailButtonTitles();
+  closeDetailModal("defect-modal");
+  showToast("✅ 유형별 합계가 불량수량에 반영되었습니다.");
+}
+
+function openDowntimeModal() {
+  tempDowntimeDetails = deepCopy(downtimeDetails);
+  renderDowntimeRows();
+  setDetailModalEditable("downtime-modal", mode === "new" || mode === "edit");
+  openDetailModal("downtime-modal");
+}
+
+function renderDowntimeRows() {
+  const body = document.getElementById("downtime-detail-body");
+  body.innerHTML = "";
+
+  tempDowntimeDetails.forEach((row, index) => {
+    const totalMinutes = Number(row.downtime_minutes) || 0;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="text-align:center;font-weight:700">${escapeHtml(row.downtime_type)}</td>
+      <td><input type="number" id="down-hour-${index}" min="0" step="1" value="${hours}" oninput="updateDowntimeModalTotal()"></td>
+      <td><input type="number" id="down-minute-${index}" min="0" max="59" step="1" value="${minutes}" oninput="updateDowntimeModalTotal()"></td>
+      <td><input type="text" id="down-action-${index}" value="${escapeHtml(row.action_notes || "")}"></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  updateDowntimeModalTotal();
+  setDetailModalEditable("downtime-modal", mode === "new" || mode === "edit");
+}
+
+function updateDowntimeModalTotal() {
+  let total = 0;
+  tempDowntimeDetails.forEach((row, index) => {
+    const hours = Number(document.getElementById(`down-hour-${index}`)?.value || 0);
+    const minutes = Number(document.getElementById(`down-minute-${index}`)?.value || 0);
+    total += Math.max(0, hours) * 60 + Math.max(0, minutes);
+  });
+  document.getElementById("downtime-modal-total").textContent = formatMinutes(total);
+}
+
+function applyDowntimeModal() {
+  if (mode !== "new" && mode !== "edit") return;
+  const errors = [];
+
+  tempDowntimeDetails.forEach((row, index) => {
+    const hours = nonNegativeInteger(document.getElementById(`down-hour-${index}`).value);
+    const minutes = nonNegativeInteger(document.getElementById(`down-minute-${index}`).value);
+
+    if (Number.isNaN(hours)) {
+      errors.push(row.downtime_type + " 시간은 0 이상의 정수로 입력해 주세요.");
+    }
+    if (Number.isNaN(minutes) || minutes > 59) {
+      errors.push(row.downtime_type + " 분은 0~59 사이의 정수로 입력해 주세요.");
+    }
+
+    if (!Number.isNaN(hours) && !Number.isNaN(minutes) && minutes <= 59) {
+      row.downtime_minutes = hours * 60 + minutes;
+    }
+    row.action_notes = document.getElementById(`down-action-${index}`).value.trim();
+  });
+
+  if (errors.length) {
+    alert("[비가동시간 확인]\n\n" + errors.join("\n"));
+    return;
+  }
+
+  downtimeDetails = deepCopy(tempDowntimeDetails);
+  setValue("non-op-time", hoursValueFromMinutes(getDowntimeTotalMinutes()));
+  formDirty = true;
+  updateDetailButtonTitles();
+  closeDetailModal("downtime-modal");
+  showToast("✅ 유형별 합계가 비가동시간에 반영되었습니다.");
+}
+
+async function loadDetailRecords(productionSystemId) {
+  if (!productionSystemId || !currentProfile) {
+    resetDetailState();
+    return;
+  }
+
+  const companyId = currentProfile.company_id;
+  const [workResult, defectResult, downtimeResult] = await Promise.all([
+    sb.from("production_work_time_details")
+      .select("sequence_no,shift_type,start_time,end_time,break_minutes,work_minutes,remarks")
+      .eq("company_id", companyId)
+      .eq("production_system_id", productionSystemId)
+      .eq("is_active", true)
+      .order("sequence_no", { ascending:true }),
+
+    sb.from("production_defect_details")
+      .select("defect_type,defect_quantity,remarks")
+      .eq("company_id", companyId)
+      .eq("production_system_id", productionSystemId)
+      .eq("is_active", true),
+
+    sb.from("production_downtime_details")
+      .select("downtime_type,downtime_minutes,action_notes,part_replacement,spare_part,remarks")
+      .eq("company_id", companyId)
+      .eq("production_system_id", productionSystemId)
+      .eq("is_active", true)
+  ]);
+
+  const firstError = workResult.error || defectResult.error || downtimeResult.error;
+  if (firstError) throw firstError;
+
+  workTimeDetails = (workResult.data || []).map((row) => ({
+    sequence_no:Number(row.sequence_no),
+    shift_type:row.shift_type,
+    start_time:String(row.start_time || "").slice(0,5),
+    end_time:String(row.end_time || "").slice(0,5),
+    break_minutes:Number(row.break_minutes) || 0,
+    work_minutes:Number(row.work_minutes) || 0,
+    remarks:row.remarks || ""
+  }));
+
+  const defectMap = new Map((defectResult.data || []).map((row) => [row.defect_type, row]));
+  defectDetails = DEFECT_TYPES.map((type) => {
+    const row = defectMap.get(type);
+    return {
+      defect_type:type,
+      defect_quantity:Number(row?.defect_quantity) || 0,
+      remarks:row?.remarks || ""
+    };
+  });
+
+  const downtimeMap = new Map((downtimeResult.data || []).map((row) => [row.downtime_type, row]));
+  downtimeDetails = DOWNTIME_TYPES.map((type) => {
+    const row = downtimeMap.get(type);
+    return {
+      downtime_type:type,
+      downtime_minutes:Number(row?.downtime_minutes) || 0,
+      action_notes:row?.action_notes || "",
+      part_replacement:row?.part_replacement || "",
+      spare_part:row?.spare_part || "",
+      remarks:row?.remarks || ""
+    };
+  });
+
+  if ((workResult.data || []).length) {
+    setValue("op-time", hoursValueFromMinutes(getWorkTimeTotalMinutes()));
+  }
+  if ((defectResult.data || []).length) {
+    setValue("bad-qty", getDefectTotal());
+  }
+  if ((downtimeResult.data || []).length) {
+    setValue("non-op-time", hoursValueFromMinutes(getDowntimeTotalMinutes()));
+  }
+
+  updateDetailButtonTitles();
+}
+
+async function replaceDetailRows(tableName, productionSystemId, rows, label) {
+  const companyId = currentProfile.company_id;
+  const deleteResult = await sb
+    .from(tableName)
+    .delete()
+    .eq("production_system_id", productionSystemId)
+    .eq("company_id", companyId);
+
+  if (deleteResult.error) {
+    throw new Error(label + " 기존 데이터 정리 실패: " + dbErrorMessage(deleteResult.error));
+  }
+
+  if (!rows.length) return;
+
+  const insertResult = await sb.from(tableName).insert(rows);
+  if (insertResult.error) {
+    throw new Error(label + " 저장 실패: " + dbErrorMessage(insertResult.error));
+  }
+}
+
+async function saveDetailRecords(productionSystemId) {
+  const companyId = currentProfile.company_id;
+
+  const workRows = workTimeDetails
+    .filter((row) => Number(row.work_minutes) > 0)
+    .map((row, index) => ({
+      company_id:companyId,
+      production_system_id:productionSystemId,
+      sequence_no:index + 1,
+      shift_type:row.shift_type,
+      start_time:row.start_time,
+      end_time:row.end_time,
+      break_minutes:Number(row.break_minutes) || 0,
+      work_minutes:Number(row.work_minutes),
+      remarks:row.remarks || null,
+      is_active:true
+    }));
+
+  const defectRows = defectDetails
+    .filter((row) => Number(row.defect_quantity) > 0)
+    .map((row) => ({
+      company_id:companyId,
+      production_system_id:productionSystemId,
+      defect_type:row.defect_type,
+      defect_quantity:Number(row.defect_quantity),
+      remarks:row.remarks || null,
+      is_active:true
+    }));
+
+  const downtimeRows = downtimeDetails
+    .filter((row) => Number(row.downtime_minutes) > 0)
+    .map((row) => ({
+      company_id:companyId,
+      production_system_id:productionSystemId,
+      downtime_type:row.downtime_type,
+      downtime_minutes:Number(row.downtime_minutes),
+      action_notes:row.action_notes || null,
+      part_replacement:row.part_replacement || null,
+      spare_part:row.spare_part || null,
+      remarks:row.remarks || null,
+      is_active:true
+    }));
+
+  await replaceDetailRows(
+    "production_work_time_details",
+    productionSystemId,
+    workRows,
+    "작업시간 상세"
+  );
+  await replaceDetailRows(
+    "production_defect_details",
+    productionSystemId,
+    defectRows,
+    "불량 상세"
+  );
+  await replaceDetailRows(
+    "production_downtime_details",
+    productionSystemId,
+    downtimeRows,
+    "비가동 상세"
+  );
+}
+
 
 /* =========================================================
    정확한 수치 검증
@@ -1792,21 +2682,49 @@ function validateRecord() {
     errors.push("출고일은 입고일보다 빠를 수 없습니다.");
   }
 
-  const downtimeDetail = decimalOrNull("non-hr1");
+  const workDetailMinutes = getWorkTimeTotalMinutes();
   if (
+    workDetailMinutes > 0 &&
+    operationHours !== null &&
+    Math.abs(operationHours - hoursValueFromMinutes(workDetailMinutes)) > 0.0001
+  ) {
+    errors.push("가동시간과 작업시간 상세 합계가 일치하지 않습니다. 시간 버튼에서 다시 적용해 주세요.");
+  }
+
+  const defectDetailTotal = getDefectTotal();
+  if (
+    defectDetailTotal > 0 &&
+    defectQuantity !== null &&
+    defectQuantity !== defectDetailTotal
+  ) {
+    errors.push("불량수량과 불량유형별 합계가 일치하지 않습니다. 불량 상세 버튼에서 다시 적용해 주세요.");
+  }
+
+  const downtimeDetailMinutes = getDowntimeTotalMinutes();
+  if (
+    downtimeDetailMinutes > 0 &&
     downtimeHours !== null &&
-    downtimeDetail !== null &&
-    Math.abs(downtimeHours - downtimeDetail) > 0.000001
+    Math.abs(downtimeHours - hoursValueFromMinutes(downtimeDetailMinutes)) > 0.0001
+  ) {
+    errors.push("비가동시간과 비가동유형별 합계가 일치하지 않습니다. 비가동 상세 버튼에서 다시 적용해 주세요.");
+  }
+
+  const legacyDowntimeDetail = decimalOrNull("non-hr1");
+  if (
+    downtimeDetailMinutes === 0 &&
+    downtimeHours !== null &&
+    legacyDowntimeDetail !== null &&
+    Math.abs(downtimeHours - legacyDowntimeDetail) > 0.000001
   ) {
     errors.push(
       "비가동시간(" + downtimeHours +
-      ")과 비가동 상세시간(" + downtimeDetail +
+      ")과 비가동 상세시간(" + legacyDowntimeDetail +
       ")이 일치하지 않습니다."
     );
   }
 
-  if (downtimeHours && !val("non-type1")) {
-    errors.push("비가동시간이 있으면 비가동 유형을 입력해 주세요.");
+  if (downtimeHours && downtimeDetailMinutes === 0 && !val("non-type1")) {
+    errors.push("비가동시간이 있으면 비가동 상세 버튼에서 유형별 시간을 입력해 주세요.");
   }
 
   if (cb("sensor-bad") && !val("sensor-detail")) {
@@ -1924,13 +2842,16 @@ async function saveRecord() {
   const payload = buildPayload();
   const saveButton = document.getElementById("btn-save");
   const oldText = saveButton.textContent;
+  const savedAsNew = mode === "new";
+  let parentSaved = false;
+
   saveButton.disabled = true;
   saveButton.textContent = "⏳ 저장 중...";
 
   try {
     let result;
 
-    if (mode === "new") {
+    if (savedAsNew) {
       result = await sb
         .from(TABLE_NAME)
         .insert({
@@ -1956,8 +2877,12 @@ async function saveRecord() {
       throw new Error("저장 대상이 없거나 회사 권한으로 수정할 수 없습니다.");
     }
 
-    const savedAsNew = mode === "new";
     selectedRecordId = result.data.production_system_id;
+    parentSaved = true;
+
+    saveButton.textContent = "⏳ 상세 저장 중...";
+    await saveDetailRecords(selectedRecordId);
+
     formDirty = false;
     setMode("view");
 
@@ -1970,15 +2895,32 @@ async function saveRecord() {
 
     showWarning(
       savedAsNew
-        ? "Supabase에 신규 작업일보가 저장되었습니다."
-        : "Supabase의 작업일보가 수정 저장되었습니다.",
+        ? "작업일보와 작업시간·불량·비가동 상세가 저장되었습니다."
+        : "작업일보와 상세 데이터가 수정 저장되었습니다.",
       "info"
     );
-    showToast("✅ 저장 완료");
+    showToast("✅ 전체 저장 완료");
   } catch (error) {
     console.error(error);
-    showWarning("저장 실패: " + dbErrorMessage(error), "error");
-    alert("Supabase 저장 오류: " + dbErrorMessage(error));
+
+    if (parentSaved) {
+      setMode("edit");
+      formDirty = true;
+      showWarning(
+        "기본 작업일보는 저장되었지만 상세 데이터 저장에 실패했습니다. 저장 버튼을 다시 눌러 주세요: " +
+        dbErrorMessage(error),
+        "error"
+      );
+      alert(
+        "기본 작업일보는 저장되었습니다.\n" +
+        "상세 데이터 저장에 실패했습니다.\n\n" +
+        dbErrorMessage(error) +
+        "\n\n현재 화면에서 저장 버튼을 다시 누르면 기존 작업일보를 수정 방식으로 재저장합니다."
+      );
+    } else {
+      showWarning("저장 실패: " + dbErrorMessage(error), "error");
+      alert("Supabase 저장 오류: " + dbErrorMessage(error));
+    }
   } finally {
     saveButton.textContent = oldText;
     saveButton.disabled = !(mode === "new" || mode === "edit");
@@ -2013,6 +2955,10 @@ document.getElementById("report-form").addEventListener("input", () => {
 });
 document.getElementById("report-form").addEventListener("change", () => {
   if (mode === "new" || mode === "edit") formDirty = true;
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeAllDetailModals();
 });
 
 window.addEventListener("beforeunload", (event) => {
