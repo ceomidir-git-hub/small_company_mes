@@ -404,9 +404,9 @@
 
   <div style="display:flex; align-items:center; gap:12px; width:100%;">
     <div id="query-nav" style="display:none; align-items:center; gap:8px;">
-      <button id="prev-btn" class="nav-btn" onclick="navigateRecord(-1)" disabled>◀</button>
+      <button type="button" id="prev-btn" class="nav-btn" onclick="navigateRecord(-1)" disabled>◀</button>
       <span id="query-counter" style="font-size:14px; font-weight:700; color:#333; min-width:64px; text-align:center; white-space:nowrap;"></span>
-      <button id="next-btn" class="nav-btn" onclick="navigateRecord(1)">▶</button>
+      <button type="button" id="next-btn" class="nav-btn" onclick="navigateRecord(1)">▶</button>
     </div>
     <span id="query-result-msg" style="font-size:13px; color:#888;"></span>
   </div>
@@ -1425,8 +1425,13 @@ function resetQueryFilters() {
   document.getElementById("q-customer").value = "";
   document.getElementById("q-product").value = "";
   document.getElementById("q-partno").value = "";
+  queryResults = [];
+  queryIndex = 0;
   document.getElementById("query-result-msg").textContent = "";
   document.getElementById("query-nav").style.display = "none";
+  document.getElementById("query-counter").textContent = "";
+  document.getElementById("prev-btn").disabled = true;
+  document.getElementById("next-btn").disabled = true;
   refreshQProductList("");
 }
 
@@ -1488,8 +1493,18 @@ async function queryByDate() {
       return;
     }
 
+    const conditionSummary = [
+      dateValue ? "작업일:" + dateValue : "",
+      customerValue ? "고객사:" + customerValue : "",
+      itemNameValue ? "품명:" + itemNameValue : "",
+      itemNumberValue ? "품번:" + itemNumberValue : ""
+    ].filter(Boolean).join(" / ");
+
     message.style.color = "#27ae60";
-    message.textContent = queryResults.length + "건 조회됨";
+    message.textContent =
+      queryResults.length + "건 조회됨" +
+      (conditionSummary ? " (" + conditionSummary + ")" : "");
+
     document.getElementById("query-nav").style.display = "flex";
     updateQueryNav();
     loadRecordToForm(queryResults[0]);
