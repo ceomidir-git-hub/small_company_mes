@@ -1,452 +1,625 @@
 <!DOCTYPE html>
 <html lang="ko" class="auth-pending">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>재질 관리 | HeatPro MES</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>재질 관리 | HeatPro MES</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-:root{
-  --bg:#f3f6fa;
-  --card:#ffffff;
-  --line:#d8e0ea;
-  --text:#18212f;
-  --muted:#64748b;
-  --primary:#1f5eff;
-  --primary-dark:#1747bf;
-  --danger:#dc2626;
-  --success:#059669;
-  --warning:#b45309;
-  --shadow:0 12px 34px rgba(15,23,42,.08);
-  --radius:16px;
-}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;background:var(--bg);color:var(--text)}
-button,input,select,textarea{font:inherit}
-button{cursor:pointer}
-button:disabled{cursor:not-allowed;opacity:.48}
-.auth-pending body{visibility:hidden}
-.page{width:min(1240px,100%);margin:0 auto;padding:14px}
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  background:#152238;color:#fff;border-radius:14px;padding:13px 15px;margin-bottom:12px;
-  box-shadow:var(--shadow)
-}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand-mark{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#ff6b35;font-size:19px;flex:0 0 auto}
-.brand h1{font-size:18px;margin:0;letter-spacing:-.3px}
-.brand p{font-size:11px;margin:2px 0 0;color:#b8c4d6}
-.top-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-.top-btn{
-  min-height:36px;padding:7px 11px;border:1px solid #40506a;border-radius:9px;
-  background:#22324b;color:#fff;font-size:12px
-}
-.top-btn:hover{border-color:#ff8a5c}
-.layout{display:grid;grid-template-columns:minmax(0,390px) minmax(0,1fr);gap:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:15px}
-.card-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:13px}
-.card-title h2{font-size:18px;margin:0}
-.card-title p{font-size:12px;color:var(--muted);margin:3px 0 0;line-height:1.45}
-.mode-badge{flex:0 0 auto;padding:5px 9px;border-radius:999px;background:#e8eef8;color:#34445e;font-size:11px;font-weight:700}
-.mode-badge.new{background:#e6f7ef;color:#047857}
-.mode-badge.edit{background:#fff1db;color:#9a4d00}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.field{display:flex;flex-direction:column;gap:5px}
-.field.full{grid-column:1/-1}
-.field label{font-size:12px;color:#40506a;font-weight:700}
-.field input,.field select,.field textarea{
-  width:100%;min-height:42px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;
-  color:var(--text);padding:9px 10px;outline:none
-}
-.field textarea{min-height:78px;resize:vertical}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(31,94,255,.12)}
-.field input:disabled,.field select:disabled,.field textarea:disabled{background:#f1f5f9;color:#64748b}
-.checkbox-line{min-height:42px;display:flex;align-items:center;gap:8px;border:1px solid #cbd5e1;border-radius:9px;padding:8px 10px}
-.checkbox-line input{width:18px;height:18px;min-height:auto}
-.button-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:14px}
-.action-btn{min-height:42px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#263449;font-weight:800;font-size:13px}
-.action-btn:hover{background:#f8fafc}
-.action-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-.action-btn.primary:hover{background:var(--primary-dark)}
-.action-btn.danger{background:#fff1f2;border-color:#fecdd3;color:var(--danger)}
-.action-btn.edit{background:#fff7ed;border-color:#fed7aa;color:#9a4d00}
-.notice{display:none;margin-top:11px;padding:9px 11px;border-radius:9px;font-size:12px;line-height:1.5}
-.notice.show{display:block}
-.notice.info{background:#eff6ff;color:#1e40af}
-.notice.success{background:#ecfdf5;color:#047857}
-.notice.error{background:#fff1f2;color:#b91c1c}
-.list-tools{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.search{flex:1;min-height:40px;border:1px solid #cbd5e1;border-radius:9px;padding:8px 10px}
-.refresh-btn{min-height:40px;padding:7px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;font-weight:700}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:11px;max-height:650px}
-table{width:100%;border-collapse:collapse;min-width:700px;font-size:12px}
-thead th{position:sticky;top:0;z-index:2;background:#eef3f9;color:#34445e;border-bottom:1px solid var(--line);padding:9px 8px;text-align:center;white-space:nowrap}
-tbody td{border-bottom:1px solid #e8edf3;padding:8px;text-align:center;white-space:nowrap}
-tbody tr{cursor:pointer}
-tbody tr:hover{background:#f5f8fc}
-tbody tr.selected{background:#eaf1ff;outline:2px solid rgba(31,94,255,.28);outline-offset:-2px}
-.empty{padding:35px 12px!important;color:var(--muted);text-align:center!important}
-.count{font-size:12px;color:var(--muted);margin-top:8px;text-align:right}
-.loading{
-  display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.45);
-  align-items:center;justify-content:center;padding:20px
-}
-.loading.show{display:flex}
-.loading-box{background:#fff;border-radius:14px;padding:17px 22px;box-shadow:var(--shadow);font-weight:800}
-@media(max-width:900px){
-  .layout{grid-template-columns:1fr}
-  .table-wrap{max-height:none}
-}
-@media(max-width:600px){
-  .page{padding:8px}
-  .topbar{border-radius:10px;padding:11px}
-  .brand h1{font-size:15px}
-  .brand p{display:none}
-  .top-actions{gap:5px}
-  .top-btn{padding:6px 8px;font-size:11px}
-  .card{border-radius:12px;padding:12px}
-  .form-grid{grid-template-columns:1fr}
-  .field.full{grid-column:auto}
-  .button-row{grid-template-columns:1fr 1fr}
-  table{min-width:650px}
-}
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --line: #cfd6e1;
+      --line-soft: #e3e8ef;
+      --text: #1f2937;
+      --muted: #64748b;
+      --blue: #1f5edb;
+      --blue-dark: #1647ad;
+      --green: #079660;
+      --green-dark: #05784d;
+      --red: #dc2f45;
+      --red-dark: #b91f34;
+      --orange: #e38b20;
+      --shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+      --radius: 9px;
+    }
 
+    * {
+      box-sizing: border-box;
+    }
 
-</style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    html.auth-pending body {
+      visibility: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .page {
+      width: 100%;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    /* 상단 제목 / 메인화면 프레임 */
+    .title-frame {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .title-area h1 {
+      margin: 0;
+      color: #0e3f9d;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+
+    .file-name {
+      margin-left: 5px;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      color: #5f6b7a;
+      font-size: 12px;
+    }
+
+    .main-button {
+      min-width: 112px;
+      height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #1f2937;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .main-button:hover {
+      background: #f8fafc;
+    }
+
+    /* 조회 프레임 */
+    .search-frame {
+      display: grid;
+      grid-template-columns: minmax(170px, 220px) minmax(220px, 320px) auto;
+      align-items: end;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: #445267;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid #c7d0dc;
+      border-radius: 7px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(31, 94, 219, 0.12);
+    }
+
+    .search-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      min-height: 40px;
+      padding: 8px 16px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: #1f2937;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      filter: brightness(0.97);
+    }
+
+    .btn-blue {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .btn-blue:hover {
+      background: var(--blue-dark);
+    }
+
+    .btn-green {
+      border-color: var(--green);
+      background: var(--green);
+      color: #fff;
+    }
+
+    .btn-green:hover {
+      background: var(--green-dark);
+    }
+
+    .btn-red {
+      border-color: var(--red);
+      background: var(--red);
+      color: #fff;
+    }
+
+    .btn-red:hover {
+      background: var(--red-dark);
+    }
+
+    .btn-orange {
+      border-color: var(--orange);
+      background: var(--orange);
+      color: #fff;
+    }
+
+    /* 안내 및 업무 버튼 프레임 */
+    .action-frame {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0;
+    }
+
+    .guide-text {
+      color: #617087;
+      font-size: 12px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* 등록/수정 입력 프레임 */
+    .editor-frame {
+      display: none;
+      margin-bottom: 12px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .editor-frame.show {
+      display: block;
+    }
+
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .editor-head h2 {
+      margin: 0;
+      color: #0e3f9d;
+      font-size: 17px;
+    }
+
+    .mode-badge {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #e9eef7;
+      color: #45556d;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .mode-badge.new {
+      background: #e6f7ef;
+      color: #047857;
+    }
+
+    .mode-badge.edit {
+      background: #fff3df;
+      color: #a35405;
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .editor-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    .char-count {
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 11px;
+      text-align: right;
+    }
+
+    /* 목록 프레임 */
+    .list-frame {
+      padding: 14px 16px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .list-title {
+      margin: 2px 0 12px;
+      color: #0e3f9d;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .table-wrap {
+      width: 100%;
+      max-height: 560px;
+      overflow: auto;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding: 10px 8px;
+      border-right: 1px solid #1248a9;
+      border-bottom: 1px solid #1248a9;
+      background: #1e5bd7;
+      color: #fff;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    tbody td,
+    tfoot td {
+      padding: 9px 8px;
+      border-right: 1px solid #d8dee8;
+      border-bottom: 1px solid #d8dee8;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background: #f5f8fd;
+    }
+
+    tbody tr.selected {
+      background: #e8f0ff;
+      outline: 2px solid rgba(31, 94, 219, 0.28);
+      outline-offset: -2px;
+    }
+
+    .notes-cell {
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tfoot td {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      background: #edf2ff;
+      color: #0e3f9d;
+      font-weight: 800;
+    }
+
+    .empty {
+      height: 130px;
+      color: #64748b;
+      text-align: center !important;
+    }
+
+    .list-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 10px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .notice {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    .notice.info {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .notice.success {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .notice.error {
+      background: #fff1f2;
+      color: #be123c;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .loading-box {
+      padding: 17px 22px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      .search-frame {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .search-buttons {
+        grid-column: 1 / -1;
+      }
+
+      .editor-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .action-frame {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .action-buttons {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 8px;
+      }
+
+      .title-area h1 {
+        font-size: 19px;
+      }
+
+      .file-name {
+        display: block;
+        margin: 3px 0 0;
+      }
+
+      .main-button {
+        min-width: 92px;
+        height: 38px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      .search-frame,
+      .editor-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .search-buttons {
+        grid-column: auto;
+        justify-content: stretch;
+      }
+
+      .search-buttons .btn {
+        flex: 1;
+      }
+
+      .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .action-buttons .btn {
+        width: 100%;
+      }
+
+      .list-frame {
+        padding: 10px;
+      }
+
+      table {
+        min-width: 900px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="page">
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">🛠</div>
-      <div>
-        <h1>재질 관리</h1>
-        <p>로그인 회사의 재질만 등록·수정·삭제합니다.</p>
-      </div>
+<main class="page">
+  <section class="title-frame">
+    <div class="title-area">
+      <h1>재질 관리 <span class="file-name">_system_edit_material.html</span></h1>
+      <div class="subtitle">HeatPro MES · 로그인 회사의 재질 조회·등록·수정·삭제</div>
     </div>
-    <div class="top-actions">
-      <button class="top-btn" type="button" onclick="goMain()">메인화면</button>
-      <button class="top-btn" type="button" onclick="logout()">로그아웃</button>
-    </div>
-  </header>
-
-  <section class="layout">
-    <article class="card">
-      <div class="card-title">
-        <div>
-          <h2>입력 화면</h2>
-          <p>등록 버튼으로 신규 입력을 시작하고, 목록 선택 후 수정 버튼을 누르세요.</p>
-        </div>
-        <span id="modeBadge" class="mode-badge">대기</span>
-      </div>
-
-      <form id="editForm" onsubmit="return false;">
-        
-<div class="form-grid">
-  <div class="field full">
-    <label for="materialName">재질명 *</label>
-    <input id="materialName" maxlength="120" autocomplete="off" disabled>
-  </div>
-  <div class="field full">
-    <label>사용 상태</label>
-    <div class="checkbox-line">
-      <input id="isActive" type="checkbox" checked disabled>
-      <label for="isActive">사용</label>
-    </div>
-  </div>
-</div>
-
-      </form>
-
-      <div class="button-row">
-        <button id="btnNew" class="action-btn primary" type="button" onclick="startNew()">등록</button>
-        <button id="btnEdit" class="action-btn edit" type="button" onclick="startEdit()" disabled>수정</button>
-        <button id="btnDelete" class="action-btn danger" type="button" onclick="deleteSelected()" disabled>삭제</button>
-        <button id="btnSave" class="action-btn" type="button" onclick="saveRecord()" disabled>저장</button>
-      </div>
-
-      <div id="notice" class="notice" role="status" aria-live="polite"></div>
-    </article>
-
-    <article class="card">
-      <div class="card-title">
-        <div>
-          <h2>등록 목록</h2>
-          <p>로그인 계정에 허용된 데이터만 표시됩니다.</p>
-        </div>
-        <span id="userLabel" class="mode-badge">관리자</span>
-      </div>
-
-      <div class="list-tools">
-        <input id="searchInput" class="search" type="search" placeholder="목록 검색" oninput="renderRows()">
-        <button class="refresh-btn" type="button" onclick="loadRows()">새로고침</button>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>NO</th><th>재질명</th><th>상태</th></tr></thead>
-          <tbody id="tableBody">
-            <tr><td class="empty" colspan="10">데이터를 불러오는 중입니다.</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="countLabel" class="count">0건</div>
-    </article>
+    <button class="main-button" type="button" onclick="goMain()">⌂ 메인화면</button>
   </section>
-</div>
+
+  
+<section class="search-frame">
+  <div class="field"><label for="searchMaterialName">재질명</label><input id="searchMaterialName" placeholder="전체"></div>
+  <div class="search-buttons"><button class="btn btn-blue" onclick="searchRows()">🔍 조회</button><button class="btn" onclick="resetSearch()">초기화</button></div>
+</section>
+
+  <section class="action-frame">
+    <div id="guideText" class="guide-text">데이터를 불러오는 중입니다.</div>
+    <div class="action-buttons">
+      <button id="btnNew" class="btn btn-green" type="button" onclick="startNew()">＋ 등록</button>
+      <button id="btnEdit" class="btn btn-blue" type="button" onclick="startEdit()" disabled>✎ 수정</button>
+      <button id="btnDelete" class="btn btn-red" type="button" onclick="deleteSelected()" disabled>▣ 삭제</button>
+      <button id="btnSave" class="btn btn-green" type="button" onclick="saveRecord()" disabled>▣ 저장</button>
+    </div>
+  </section>
+
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+  
+<section id="editorFrame" class="editor-frame"><div class="editor-head"><h2>재질정보 입력</h2><span id="modeBadge" class="mode-badge">대기</span></div>
+<form id="editForm" onsubmit="return false;"><div class="editor-grid">
+<div class="field"><label for="materialName">재질명 *</label><input id="materialName" maxlength="120" disabled></div>
+<div class="field"><label>사용 상태</label><div class="checkbox-line"><input id="isActive" type="checkbox" checked disabled><label for="isActive">사용</label></div></div>
+</div></form></section>
+
+  
+<section class="list-frame"><h2 class="list-title">재질 상세현황</h2><div class="table-wrap"><table style="min-width:650px"><thead><tr><th>NO</th><th>재질명</th><th>상태</th></tr></thead><tbody id="tableBody"><tr><td class="empty" colspan="3">데이터를 불러오는 중입니다.</td></tr></tbody><tfoot><tr><td>합계</td><td id="totalCount" colspan="2">0건</td></tr></tfoot></table></div><div id="countLabel" class="list-footer">총 0건</div></section>
+</main>
 
 <div id="loadingOverlay" class="loading">
   <div id="loadingText" class="loading-box">처리 중입니다...</div>
 </div>
 
 <script>
+
 "use strict";
-
-const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
-const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
-const QGIS_COMPANY_ID = "17f2ff71-20db-49ff-b682-279989776817";
-const LOGIN_PAGE_URL = "../index.html";
-const MAIN_PAGE_URL = "main1.html";
-
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
-
-let currentUser = null;
-let currentProfile = null;
-
-function showLoading(show, text = "처리 중입니다...") {
-  const overlay = document.getElementById("loadingOverlay");
-  const label = document.getElementById("loadingText");
-  if (label) label.textContent = text;
-  if (overlay) overlay.classList.toggle("show", Boolean(show));
+const SUPABASE_URL="https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY="sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const LOGIN_PAGE_URL="../index.html";
+const MAIN_PAGE_URL="main1.html";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+let currentProfile=null,allRows=[],visibleRows=[],selectedId=null,mode="view";
+function n(v){return String(v??"").trim()}
+function e(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function loading(show,text="처리 중입니다..."){document.getElementById("loadingText").textContent=text;document.getElementById("loadingOverlay").classList.toggle("show",!!show)}
+function notice(text,type="info"){const x=document.getElementById("notice");x.textContent=text;x.className="notice show "+type}
+function clearNotice(){const x=document.getElementById("notice");x.textContent="";x.className="notice"}
+function guide(t){document.getElementById("guideText").textContent=t}
+function dbError(x){if(!x)return"알 수 없는 오류입니다.";if(x.code==="23505")return"같은 회사에 중복된 값이 있습니다.";if(x.code==="23503")return"다른 업무 데이터에서 사용 중이므로 삭제할 수 없습니다.";if(x.code==="42501")return"권한이 없습니다. RLS 정책을 확인해 주세요.";return x.message||String(x)}
+async function auth(){
+ const {data:u,error:ue}=await sb.auth.getUser(); const user=u?.user;
+ if(ue||!user){location.replace(LOGIN_PAGE_URL);return false}
+ const {data:p,error:pe}=await sb.from("profiles").select("company_id,is_active").eq("user_id",user.id).single();
+ if(pe||!p||p.is_active!==true||!p.company_id){await sb.auth.signOut({scope:"local"});location.replace(LOGIN_PAGE_URL);return false}
+ currentProfile=p;document.documentElement.classList.remove("auth-pending");return true
 }
+function goMain(){location.href=MAIN_PAGE_URL}
+sb.auth.onAuthStateChange(ev=>{if(ev==="SIGNED_OUT")location.replace(LOGIN_PAGE_URL)});
 
-function showNotice(text, type = "info") {
-  const box = document.getElementById("notice");
-  if (!box) return;
-  box.textContent = text;
-  box.className = "notice show " + type;
-}
-
-function clearNotice() {
-  const box = document.getElementById("notice");
-  if (!box) return;
-  box.textContent = "";
-  box.className = "notice";
-}
-
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, ch => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  })[ch]);
-}
-
-function normalizeText(value) {
-  return String(value ?? "").trim();
-}
-
-function formatDbError(error) {
-  if (!error) return "알 수 없는 오류입니다.";
-  if (error.code === "23505") return "같은 관리번호 또는 같은 데이터가 이미 등록되어 있습니다.";
-  if (error.code === "23503") return "다른 데이터에서 사용 중이므로 삭제하거나 변경할 수 없습니다.";
-  if (error.code === "42501") return "이 작업에 대한 Supabase 권한이 없습니다. RLS 정책을 확인해 주세요.";
-  return error.message || String(error);
-}
-
-async function verifyQgisAccess(extraColumns = "") {
-  const { data: userData, error: userError } = await sb.auth.getUser();
-  const user = userData?.user;
-
-  if (userError || !user) {
-    window.location.replace(LOGIN_PAGE_URL);
-    return null;
-  }
-
-  const columns = "company_id,is_active" + (extraColumns ? "," + extraColumns : "");
-  const { data: profile, error: profileError } = await sb
-    .from("profiles")
-    .select(columns)
-    .eq("user_id", user.id)
-    .single();
-
-  if (
-    profileError ||
-    !profile ||
-    profile.is_active !== true ||
-    profile.company_id !== QGIS_COMPANY_ID
-  ) {
-    console.error("QGIS 권한 확인 실패:", profileError);
-    await sb.auth.signOut({ scope: "local" });
-    window.location.replace(LOGIN_PAGE_URL);
-    return null;
-  }
-
-  currentUser = user;
-  currentProfile = profile;
-
-  const userLabel = document.getElementById("userLabel");
-  if (userLabel) userLabel.textContent = user.email || "관리자";
-
-  document.documentElement.classList.remove("auth-pending");
-  return { user, profile };
-}
-
-async function logout() {
-  await sb.auth.signOut({ scope: "local" });
-  window.location.replace(LOGIN_PAGE_URL);
-}
-
-function goMain() {
-  window.location.href = MAIN_PAGE_URL;
-}
-
-sb.auth.onAuthStateChange(event => {
-  if (event === "SIGNED_OUT") window.location.replace(LOGIN_PAGE_URL);
-});
-
-
-let rows = [];
-let selectedId = null;
-let mode = "view";
-
-function setMode(nextMode) {
-  mode = nextMode;
-  const editing = mode === "new" || mode === "edit";
-  document.getElementById("materialName").disabled = !editing;
-  document.getElementById("isActive").disabled = !editing;
-  document.getElementById("btnSave").disabled = !editing;
-  document.getElementById("btnEdit").disabled = !selectedId || editing;
-  document.getElementById("btnDelete").disabled = !selectedId || editing;
-
-  const badge = document.getElementById("modeBadge");
-  badge.className = "mode-badge" + (mode === "new" ? " new" : mode === "edit" ? " edit" : "");
-  badge.textContent = mode === "new" ? "신규등록" : mode === "edit" ? "수정중" : selectedId ? "선택됨" : "대기";
-}
-
-function clearForm() {
-  selectedId = null;
-  document.getElementById("editForm").reset();
-  document.getElementById("isActive").checked = true;
-  document.querySelectorAll("#tableBody tr").forEach(tr => tr.classList.remove("selected"));
-}
-
-function startNew() {
-  clearNotice(); clearForm(); setMode("new");
-  document.getElementById("materialName").focus();
-}
-
-function startEdit() {
-  if (!selectedId) return showNotice("수정할 재질을 선택해 주세요.", "error");
-  clearNotice(); setMode("edit");
-  document.getElementById("materialName").focus();
-}
-
-async function loadRows() {
-  showLoading(true, "재질 목록을 불러오는 중입니다...");
-  const { data, error } = await sb
-    .from("materials")
-    .select("material_system_id,material_name,is_active")
-    .eq("company_id", currentProfile.company_id)
-    .order("material_name", { ascending: true });
-  showLoading(false);
-
-  if (error) {
-    rows = []; renderRows();
-    return showNotice("조회 실패: " + formatDbError(error), "error");
-  }
-
-  rows = data || [];
-  selectedId = null; setMode("view"); renderRows();
-}
-
-function renderRows() {
-  const q = normalizeText(document.getElementById("searchInput").value).toLowerCase();
-  const filtered = rows.filter(row => String(row.material_name || "").toLowerCase().includes(q));
-  const body = document.getElementById("tableBody");
-
-  body.innerHTML = filtered.length ? filtered.map((row,index) => `
-    <tr data-id="${escapeHtml(row.material_system_id)}" onclick="selectRow('${escapeHtml(row.material_system_id)}')">
-      <td>${index+1}</td>
-      <td>${escapeHtml(row.material_name)}</td>
-      <td>${row.is_active ? "사용" : "중지"}</td>
-    </tr>
-  `).join("") : '<tr><td class="empty" colspan="3">표시할 재질이 없습니다.</td></tr>';
-
-  document.getElementById("countLabel").textContent = filtered.length + "건";
-}
-
-function selectRow(id) {
-  const row = rows.find(item => item.material_system_id === id);
-  if (!row) return;
-  selectedId = id;
-  document.getElementById("materialName").value = row.material_name || "";
-  document.getElementById("isActive").checked = row.is_active !== false;
-  document.querySelectorAll("#tableBody tr").forEach(tr =>
-    tr.classList.toggle("selected", tr.dataset.id === id)
-  );
-  clearNotice(); setMode("view");
-}
-
-async function saveRecord() {
-  if (mode !== "new" && mode !== "edit") return showNotice("등록 또는 수정 버튼을 먼저 눌러 주세요.", "error");
-
-  const payload = {
-    company_id: currentProfile.company_id,
-    material_name: normalizeText(document.getElementById("materialName").value),
-    is_active: document.getElementById("isActive").checked
-  };
-
-  if (!payload.material_name) return showNotice("재질명을 입력해 주세요.", "error");
-
-  showLoading(true, "재질 정보를 저장하는 중입니다...");
-  let result;
-  if (mode === "new") {
-    result = await sb.from("materials").insert(payload);
-  } else {
-    result = await sb.from("materials").update(payload)
-      .eq("material_system_id", selectedId)
-      .eq("company_id", currentProfile.company_id);
-  }
-  showLoading(false);
-
-  if (result.error) return showNotice("저장 실패: " + formatDbError(result.error), "error");
-
-  showNotice(mode === "new" ? "재질이 등록되었습니다." : "재질 정보가 수정되었습니다.", "success");
-  clearForm(); setMode("view"); await loadRows();
-}
-
-async function deleteSelected() {
-  if (!selectedId) return showNotice("삭제할 재질을 선택해 주세요.", "error");
-  const row = rows.find(item => item.material_system_id === selectedId);
-  if (!confirm(`${row?.material_name || "선택한 재질"}을 삭제하시겠습니까?\n업무 데이터에서 사용 중이면 삭제되지 않습니다.`)) return;
-
-  showLoading(true, "재질을 삭제하는 중입니다...");
-  const { error } = await sb.from("materials").delete()
-    .eq("material_system_id", selectedId)
-    .eq("company_id", currentProfile.company_id);
-  showLoading(false);
-
-  if (error) return showNotice("삭제 실패: " + formatDbError(error), "error");
-
-  showNotice("재질이 삭제되었습니다.", "success");
-  clearForm(); setMode("view"); await loadRows();
-}
-
-async function initializePage() {
-  const access = await verifyQgisAccess();
-  if (!access) return;
-  await loadRows();
-}
-
-window.addEventListener("load", initializePage);
+const fields=["materialName","isActive"];
+function setMode(m){mode=m;const ed=m==="new"||m==="edit";fields.forEach(id=>document.getElementById(id).disabled=!ed);btnSave.disabled=!ed;btnEdit.disabled=!selectedId||ed;btnDelete.disabled=!selectedId||ed;editorFrame.classList.toggle("show",ed||!!selectedId);modeBadge.textContent=m==="new"?"신규등록":m==="edit"?"수정중":selectedId?"선택됨":"대기";modeBadge.className="mode-badge"+(m==="new"?" new":m==="edit"?" edit":"")}
+function clearForm(){selectedId=null;editForm.reset();isActive.checked=true}
+function fill(r){materialName.value=r.material_name||"";isActive.checked=r.is_active!==false}
+async function loadRows(){loading(true,"재질정보를 불러오는 중입니다...");clearNotice();const {data,error}=await sb.from("materials").select("material_system_id,material_name,is_active").eq("company_id",currentProfile.company_id).order("material_name");loading(false);if(error){allRows=[];visibleRows=[];render();return notice("조회 실패: "+dbError(error),"error")}allRows=data||[];apply();clearForm();setMode("view");guide("재질정보 "+allRows.length+"건을 불러왔습니다.")}
+function apply(){const a=n(searchMaterialName.value).toLowerCase();visibleRows=allRows.filter(r=>!a||String(r.material_name||"").toLowerCase().includes(a));selectedId=null;render();setMode("view")}
+async function searchRows(){if(!allRows.length)await loadRows();else apply();guide("조회조건에 맞는 재질 "+visibleRows.length+"건을 표시합니다.")}
+function resetSearch(){searchMaterialName.value="";apply();guide("조회조건을 초기화했습니다.")}
+function render(){tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`<tr data-id="${e(r.material_system_id)}" onclick="selectRow('${e(r.material_system_id)}')"><td>${i+1}</td><td>${e(r.material_name)}</td><td>${r.is_active?"사용":"중지"}</td></tr>`).join(""):'<tr><td class="empty" colspan="3">표시할 재질이 없습니다.</td></tr>';totalCount.textContent=visibleRows.length+"건";countLabel.textContent="총 "+visibleRows.length+"건"}
+function selectRow(id){const r=allRows.find(x=>x.material_system_id===id);if(!r)return;selectedId=id;fill(r);document.querySelectorAll("#tableBody tr").forEach(x=>x.classList.toggle("selected",x.dataset.id===id));setMode("view");guide("선택한 재질을 수정하거나 삭제할 수 있습니다.")}
+function startNew(){clearForm();setMode("new");materialName.focus();guide("신규 재질정보를 입력한 후 저장 버튼을 누르세요.")}
+function startEdit(){if(!selectedId)return notice("수정할 재질을 선택해 주세요.","error");setMode("edit");guide("수정할 내용을 입력한 후 저장 버튼을 누르세요.")}
+async function saveRecord(){if(mode!=="new"&&mode!=="edit")return notice("등록 또는 수정 버튼을 먼저 눌러 주세요.","error");const p={company_id:currentProfile.company_id,material_name:n(materialName.value),is_active:isActive.checked};if(!p.material_name)return notice("재질명을 입력해 주세요.","error");loading(true,"저장 중입니다...");const res=mode==="new"?await sb.from("materials").insert(p):await sb.from("materials").update(p).eq("material_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(res.error)return notice("저장 실패: "+dbError(res.error),"error");notice("재질정보가 저장되었습니다.","success");await loadRows()}
+async function deleteSelected(){if(!selectedId)return notice("삭제할 재질을 선택해 주세요.","error");if(!confirm("선택한 재질을 삭제하시겠습니까?"))return;loading(true,"삭제 중입니다...");const {error}=await sb.from("materials").delete().eq("material_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(error)return notice("삭제 실패: "+dbError(error),"error");notice("재질정보가 삭제되었습니다.","success");await loadRows()}
+async function init(){try{if(await auth()){setMode("view");await loadRows()}}catch(x){document.documentElement.classList.remove("auth-pending");notice("화면 초기화 오류: "+dbError(x),"error")}}
+addEventListener("load",init);
 
 </script>
 </body>
