@@ -145,7 +145,60 @@
     margin-right: 6px; white-space: nowrap; cursor: pointer;
   }
   .cb-group label { font-size: 14px; cursor: pointer; }
-  input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; accent-color: #1a3a5c; }
+  input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 2px solid #334155;
+    border-radius: 3px;
+    background: #ffffff;
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+    vertical-align: middle;
+    opacity: 1;
+  }
+
+  input[type="checkbox"]::before {
+    content: "";
+    width: 8px;
+    height: 4px;
+    border-left: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(-45deg) scale(0);
+    transform-origin: center;
+  }
+
+  input[type="checkbox"]:checked {
+    background: #123a5c;
+    border-color: #123a5c;
+  }
+
+  input[type="checkbox"]:checked::before {
+    transform: rotate(-45deg) scale(1);
+  }
+
+  input[type="checkbox"]:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+  }
+
+  input[type="checkbox"]:disabled:not(:checked) {
+    background: #f8fafc;
+    border-color: #64748b;
+  }
+
+  input[type="checkbox"]:disabled:checked {
+    background: #123a5c;
+    border-color: #123a5c;
+  }
+
+  .cb-group label {
+    color: #111827;
+    opacity: 1;
+  }
   .cb-slash { font-size: 14px; margin: 0 3px; color: #666; }
 
   .worker-cell { display: flex; align-items: center; gap: 6px; }
