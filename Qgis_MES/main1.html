@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HeatPro MES — 대시보드</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#15181D;--panel:#1F242C;--panel-2:#262C36;--line:#323A46;--text:#EAF0F6;--muted:#8A99AC;--accent:#FF6B35;--accent-glow:rgba(255,107,53,0.35);--good:#43D17A;--bad:#FF5C5C;--info:#4FA8FF;--font-display:'Space Grotesk','Noto Sans KR',sans-serif;--font-body:'Noto Sans KR',sans-serif;--font-mono:'IBM Plex Mono',monospace;}
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -963,7 +961,19 @@
     <!-- 8. ISO9001 -->
     <a class="nav-item" href="ISO9001_AutoDoc_main.html"><div class="nav-left"><span class="icon">✅</span> ISO 9001</div></a>
     <div class="nav-divider"></div>
-    <a class="nav-item"><div class="nav-left"><span class="icon">🛠️</span> SYSTEM설정</div></a>
+    <!-- 9. SYSTEM설정 -->
+    <div class="nav-item" id="m-system" onclick="toggleMenu('system')">
+      <div class="nav-left">
+        <span class="icon">🛠️</span> SYSTEM설정
+      </div>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="sub-menu" id="sub-system">
+      <a class="sub-item" href="system_edit_company.html">회사추가</a>
+      <a class="sub-item" href="system_edit_customer.html">고객사추가</a>
+      <a class="sub-item" href="system_edit_item.html">아이템추가</a>
+      <a class="sub-item" href="system_edit_material.html">재질추가</a>
+    </div>
   </nav>
 
   <main class="main">
