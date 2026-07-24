@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>일작업현황 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --blue:#1a56db; --blue-dark:#123a99; --gray-bg:#f3f4f6; --border:#d1d5db;
+    --text:#111827; --sub:#6b7280; --red:#dc2626; --green:#059669; --dirty:#fff7d6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Malgun Gothic','Segoe UI',sans-serif; background:var(--gray-bg);
+    color:var(--text); min-height:100vh;
+  }
+  .container{ max-width:1280px; margin:0 auto; padding:20px; width:100%; }
+
+  header{ margin-bottom:16px; }
+  header h1{ font-size:20px; margin:0 0 2px 0; color:var(--blue-dark); text-align:left; }
+  header h1 .title-suffix{ font-size:0.5em; font-weight:400; color:var(--sub); margin-left:6px; }
+  header .sub{ font-size:12px; color:var(--sub); }
+
+  .filter-bar{
+    background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px 16px;
+    display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:12px;
+  }
+  .filter-item{ display:flex; flex-direction:column; gap:4px; }
+  .filter-item label{ font-size:12px; color:var(--sub); }
+  .filter-item input, .filter-item select{
+    padding:6px 8px; border:1px solid var(--border); border-radius:5px; font-size:13px; background:#fff;
+  }
+  .filter-item.range{ flex-direction:row; align-items:center; gap:6px; }
+  .filter-item.range > div{ display:flex; flex-direction:column; gap:4px; }
+  .filter-sep{ color:var(--sub); padding-top:18px; }
+
+  .btn{
+    padding:7px 14px; border-radius:5px; border:1px solid var(--border); background:#fff;
+    font-size:13px; cursor:pointer; white-space:nowrap;
+  }
+  .btn:hover{ background:#f3f4f6; }
+  .btn-primary{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .btn-primary:hover{ background:var(--blue-dark); }
+  .btn-save{ background:var(--green); border-color:var(--green); color:#fff; }
+  .btn-save:hover{ opacity:0.9; }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  .action-bar{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    margin-bottom:10px;
+  }
+  .summary{ font-size:13px; color:var(--sub); }
+  .summary b{ color:var(--text); }
+  .action-buttons{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  #doc-container{ background:#fff; border-radius:8px; padding:16px; border:1px solid var(--border); }
+  .doc-title{ text-align:center; font-size:17px; font-weight:700; margin-bottom:10px; color:var(--blue-dark); }
+
+  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table{ width:100%; min-width:1150px; border-collapse:collapse; font-size:12px; }
+  thead th{
+    position:sticky; top:0; background:var(--blue); color:#fff; font-weight:600;
+    padding:7px 4px; border:1px solid #234; text-align:center; white-space:nowrap;
+  }
+  tbody td{ padding:4px 3px; border:1px solid var(--border); text-align:center; white-space:nowrap; }
+  tbody tr:nth-child(even){ background:#fafafa; }
+  tbody tr.dirty{ background:var(--dirty) !important; }
+  tfoot td{
+    padding:7px 4px; border:1px solid var(--border); text-align:center; font-weight:700;
+    background:#eef2ff; color:var(--blue-dark);
+  }
+  td input, td select{
+    width:100%; border:1px solid transparent; background:transparent; text-align:center;
+    font-size:12px; padding:3px 2px; border-radius:3px; font-family:inherit;
+  }
+  td input:focus, td select:focus{ border-color:var(--blue); background:#fff; outline:none; }
+  td.readonly{ color:#374151; background:#f9fafb; }
+  td.num input{ text-align:right; }
+
+  #loadingOverlay{
+    position:fixed; inset:0; background:rgba(255,255,255,0.75); display:none;
+    align-items:center; justify-content:center; font-size:15px; color:var(--blue-dark); z-index:999;
+  }
+  .empty-msg{ text-align:center; color:var(--sub); padding:30px; font-size:13px; }
+
+  @media (max-width:768px){
+    header h1{ font-size:16px; }
+    .filter-bar{ flex-direction:column; align-items:stretch; }
+    table{ font-size:11px; }
+  }
+
+  /* PDF 캡처용(화면에는 노출 안 됨) */
+  #printRoot{ position:fixed; left:-99999px; top:0; background:#fff; }
+  #printRoot table{ border-collapse:collapse; }
+  #printRoot th, #printRoot td{ border:1px solid #888; padding:5px 4px; font-size:13px; text-align:center; white-space:nowrap; }
+  #printRoot thead th{ background:#1a56db; color:#fff; }
+  #printRoot tfoot td{ background:#eef2ff; font-weight:700; }
+  #printRoot .print-title{ font-size:18px; font-weight:700; text-align:center; margin-bottom:8px; color:#123a99; }
+  #printRoot .print-page{ font-size:10px; text-align:right; color:#666; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1 id="pageTitle">생산실적 상세현황</h1>
+    <div class="sub">HeatPro MES · 일작업현황</div>
+  </header>
+
+  <div class="filter-bar">
+    <div class="filter-item range">
+      <div>
+        <label>작업기간(시작)</label>
+        <input type="date" id="fFrom">
+      </div>
+      <span class="filter-sep">~</span>
+      <div>
+        <label>작업기간(종료)</label>
+        <input type="date" id="fTo">
+      </div>
+    </div>
+    <div class="filter-item">
+      <label>고객사</label>
+      <select id="fCustomer"><option value="">전체</option></select>
+    </div>
+    <div class="filter-item">
+      <label>품명</label>
+      <select id="fProduct"><option value="">전체</option></select>
+    </div>
+    <div class="filter-item">
+      <label>품번</label>
+      <select id="fPartNo"><option value="">전체</option></select>
+    </div>
+    <div class="filter-item">
+      <label>재질</label>
+      <select id="fMaterial"><option value="">전체</option></select>
+    </div>
+    <button class="btn btn-primary" id="btnSearch">🔍 조회</button>
+    <button class="btn" id="btnReset">초기화</button>
+  </div>
+
+  <div class="action-bar">
+    <div class="summary" id="summaryText">조회 버튼을 눌러 데이터를 불러오세요.</div>
+    <div class="action-buttons">
+      <button class="btn btn-save" id="btnSave">💾 저장</button>
+      <button class="btn" id="btnCsv">⬇ CSV 다운로드</button>
+      <button class="btn" id="btnPdf">🖨 PDF 다운로드</button>
+    </div>
+  </div>
+
+  <div id="doc-container">
+    <div class="doc-title" id="docTitle">생산실적 상세현황</div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th style="min-width:40px;">번호</th>
+            <th style="min-width:80px;">입고일</th>
+            <th style="min-width:80px;">작업일</th>
+            <th style="min-width:90px;">고객사</th>
+            <th style="min-width:90px;">품명</th>
+            <th style="min-width:110px;">품번</th>
+            <th style="min-width:70px;">재질</th>
+            <th style="min-width:80px;">열처리(QT)</th>
+            <th style="min-width:65px;">투입수량</th>
+            <th style="min-width:65px;">양품수량</th>
+            <th style="min-width:65px;">불량수량</th>
+            <th style="min-width:70px;">재작업수량</th>
+            <th style="min-width:65px;">가동시간</th>
+            <th style="min-width:70px;">비가동시간</th>
+            <th style="min-width:70px;">코일번호</th>
+            <th style="min-width:75px;">템퍼링작업</th>
+            <th style="min-width:70px;">교정작업</th>
+            <th style="min-width:80px;">출하일</th>
+            <th style="min-width:100px;">특이사항</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="19" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="8">합&nbsp;&nbsp;계</td>
+            <td id="sumInput">0</td>
+            <td id="sumGood">0</td>
+            <td id="sumBad">0</td>
+            <td id="sumRework">0</td>
+            <td id="sumOp">0.0</td>
+            <td id="sumNonOp">0.0</td>
+            <td colspan="5"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="loadingOverlay">⏳ 처리 중입니다...</div>
+<div id="printRoot"></div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════
+   Supabase 연결 및 테이블 설정
+   ══════════════════════════════════════════════ */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME = "Total_Production_DB";
+const LOGIN_PAGE_URL = "../index.html";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let currentRows = [];
+let masterProducts = {};
+
+const COLS = [
+  { key:"receiving_date", label:"입고일", type:"date", editable:true },
+  { key:"work_date", label:"작업일", type:"text", editable:false },
+  { key:"customer_name", label:"고객사", type:"text", editable:false },
+  { key:"item_name", label:"품명", type:"text", editable:false },
+  { key:"item_number", label:"품번", type:"text", editable:false },
+  { key:"material_name", label:"재질", type:"text", editable:true },
+  { key:"receiving_heat_treatment_qt", label:"열처리(QT)", type:"text", editable:true },
+  { key:"input_quantity", label:"투입수량", type:"number", editable:true, step:1 },
+  { key:"good_quantity", label:"양품수량", type:"number", editable:true, step:1 },
+  { key:"defect_quantity", label:"불량수량", type:"number", editable:true, step:1 },
+  { key:"rework_quantity", label:"재작업수량", type:"number", editable:true, step:1 },
+  { key:"operation_hours", label:"가동시간", type:"number", editable:true, step:0.1 },
+  { key:"downtime_hours", label:"비가동시간", type:"number", editable:true, step:0.1 },
+  { key:"coil_number", label:"코일번호", type:"text", editable:true },
+  { key:"tempering_work", label:"템퍼링작업", type:"select", editable:true, options:["미실시","실시"] },
+  { key:"straightening_work", label:"교정작업", type:"select", editable:true, options:["미실시","실시"] },
+  { key:"shipping_date", label:"출하일", type:"date", editable:true },
+  { key:"special_notes", label:"특이사항", type:"text", editable:true }
+];
+
+const NUM_KEYS = [
+  "input_quantity",
+  "good_quantity",
+  "defect_quantity",
+  "rework_quantity",
+  "operation_hours",
+  "downtime_hours"
+];
+
+const SELECT_COLUMNS = [
+  "production_system_id",
+  "company_id",
+  "receiving_date",
+  "work_date",
+  "customer_name",
+  "item_name",
+  "item_number",
+  "material_name",
+  "receiving_heat_treatment_qt",
+  "input_quantity",
+  "good_quantity",
+  "defect_quantity",
+  "rework_quantity",
+  "operation_hours",
+  "downtime_hours",
+  "coil_number",
+  "tempering_work",
+  "straightening_work",
+  "shipping_date",
+  "special_notes"
+].join(",");
+
+/* ══════════════════════════════════════════════
+   인증 및 회사 권한
+   ══════════════════════════════════════════════ */
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const { data:userData, error:userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if (userError || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const { data:profile, error:profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope:"local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  return true;
+}
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") {
+    redirectToLogin();
+  }
+});
+
+/* ══════════════════════════════════════════════
+   공통 유틸
+   ══════════════════════════════════════════════ */
+function showLoading(msg) {
+  const el = document.getElementById("loadingOverlay");
+  el.textContent = msg || "⏳ 처리 중입니다...";
+  el.style.display = "flex";
+}
+
+function hideLoading() {
+  document.getElementById("loadingOverlay").style.display = "none";
+}
+
+function toNum(v) {
+  const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function fmt(n) {
+  return Number(n || 0).toLocaleString();
+}
+
+function monthRange() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  const f = (x) =>
+    x.getFullYear() + "-" +
+    String(x.getMonth() + 1).padStart(2, "0") + "-" +
+    String(x.getDate()).padStart(2, "0");
+
+  return { from:f(first), to:f(last) };
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[c]));
+}
+
+function escapeAttr(s) {
+  return escapeHtml(s);
+}
+
+function normalizeDbValue(col, value) {
+  if (col.type === "date") {
+    return value || null;
+  }
+
+  if (col.type === "number") {
+    if (value === "" || value == null) return 0;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  const textValue = String(value == null ? "" : value).trim();
+  return textValue === "" ? null : textValue;
+}
+
+function dbErrorMessage(error) {
+  if (!error) return "알 수 없는 오류";
+  return error.message || error.details || error.hint || String(error);
+}
+
+async function fetchAllRows(selectColumns, applyQuery) {
+  const pageSize = 1000;
+  let start = 0;
+  let resultRows = [];
+
+  while (true) {
+    let query = sb
+      .from(TABLE_NAME)
+      .select(selectColumns)
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true);
+
+    query = applyQuery(query);
+    query = query.range(start, start + pageSize - 1);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const pageRows = data || [];
+    resultRows = resultRows.concat(pageRows);
+
+    if (pageRows.length < pageSize) break;
+    start += pageSize;
+  }
+
+  return resultRows;
+}
+
+/* ══════════════════════════════════════════════
+   필터 기준정보
+   Total_Production_DB의 로그인 회사 데이터만 사용
+   ══════════════════════════════════════════════ */
+async function loadMasterData() {
+  const rows = await fetchAllRows(
+    "customer_name,item_name,item_number,material_name",
+    (query) => query
+      .order("customer_name", { ascending:true })
+      .order("item_name", { ascending:true })
+      .order("item_number", { ascending:true })
+  );
+
+  const customers = new Set();
+  const materials = new Set();
+  masterProducts = {};
+
+  rows.forEach((row) => {
+    const customer = String(row.customer_name || "").trim();
+    const product = String(row.item_name || "").trim();
+    const partNo = String(row.item_number || "").trim();
+    const material = String(row.material_name || "").trim();
+
+    if (customer) customers.add(customer);
+    if (material) materials.add(material);
+
+    if (customer && product) {
+      if (!masterProducts[customer]) masterProducts[customer] = {};
+      if (!masterProducts[customer][product]) {
+        masterProducts[customer][product] = [];
+      }
+
+      if (
+        partNo &&
+        !masterProducts[customer][product].includes(partNo)
+      ) {
+        masterProducts[customer][product].push(partNo);
+      }
+    }
+  });
+
+  fillSelect("fCustomer", Array.from(customers).sort());
+  fillSelect("fMaterial", Array.from(materials).sort());
+  refreshProductSelect();
+  refreshPartNoSelect();
+}
+
+function fillSelect(id, list) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+
+  sel.innerHTML =
+    '<option value="">전체</option>' +
+    list.map((v) =>
+      `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`
+    ).join("");
+
+  sel.value = list.includes(cur) ? cur : "";
+}
+
+function refreshProductSelect() {
+  const customer = document.getElementById("fCustomer").value;
+  const names = new Set();
+
+  if (customer && masterProducts[customer]) {
+    Object.keys(masterProducts[customer]).forEach((name) => names.add(name));
+  } else {
+    Object.keys(masterProducts).forEach((companyName) => {
+      Object.keys(masterProducts[companyName] || {}).forEach((name) => {
+        names.add(name);
+      });
+    });
+  }
+
+  fillSelect("fProduct", Array.from(names).sort());
+}
+
+function refreshPartNoSelect() {
+  const customer = document.getElementById("fCustomer").value;
+  const product = document.getElementById("fProduct").value;
+  const list = new Set();
+
+  if (customer && masterProducts[customer]) {
+    if (product && masterProducts[customer][product]) {
+      masterProducts[customer][product].forEach((partNo) => list.add(partNo));
+    } else {
+      Object.values(masterProducts[customer]).forEach((partNos) => {
+        partNos.forEach((partNo) => list.add(partNo));
+      });
+    }
+  } else {
+    Object.keys(masterProducts).forEach((companyName) => {
+      Object.keys(masterProducts[companyName] || {}).forEach((itemName) => {
+        if (!product || itemName === product) {
+          masterProducts[companyName][itemName].forEach((partNo) => {
+            list.add(partNo);
+          });
+        }
+      });
+    });
+  }
+
+  fillSelect("fPartNo", Array.from(list).sort());
+}
+
+document.getElementById("fCustomer").addEventListener("change", () => {
+  refreshProductSelect();
+  refreshPartNoSelect();
+});
+
+document.getElementById("fProduct").addEventListener(
+  "change",
+  refreshPartNoSelect
+);
+
+/* ══════════════════════════════════════════════
+   제목
+   ══════════════════════════════════════════════ */
+function updateTitle(from, to) {
+  let title;
+
+  if (from && to && from.substring(0, 7) === to.substring(0, 7)) {
+    const yy = from.substring(2, 4);
+    const mm = parseInt(from.substring(5, 7), 10);
+    title = `${yy}년 ${mm}월 생산실적 상세현황`;
+  } else if (from && to) {
+    title = `생산실적 상세현황 (${from} ~ ${to})`;
+  } else {
+    title = "생산실적 상세현황";
+  }
+
+  document.getElementById("pageTitle").innerHTML =
+    `${escapeHtml(title)}<span class="title-suffix">_Daily_Work_Check.html</span>`;
+
+  document.getElementById("docTitle").textContent = title;
+  document.title = title + " | HeatPro MES";
+}
+
+/* ══════════════════════════════════════════════
+   조회
+   ══════════════════════════════════════════════ */
+async function searchData() {
+  if (!currentProfile) {
+    alert("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+  const customer = document.getElementById("fCustomer").value;
+  const product = document.getElementById("fProduct").value;
+  const partNo = document.getElementById("fPartNo").value;
+  const material = document.getElementById("fMaterial").value;
+
+  updateTitle(from, to);
+  showLoading("조회 중입니다...");
+
+  try {
+    currentRows = await fetchAllRows(
+      SELECT_COLUMNS,
+      (query) => {
+        let filtered = query;
+
+        if (from) filtered = filtered.gte("work_date", from);
+        if (to) filtered = filtered.lte("work_date", to);
+        if (customer) filtered = filtered.eq("customer_name", customer);
+        if (product) filtered = filtered.eq("item_name", product);
+        if (partNo) filtered = filtered.eq("item_number", partNo);
+        if (material) filtered = filtered.eq("material_name", material);
+
+        return filtered
+          .order("work_date", { ascending:true, nullsFirst:false })
+          .order("customer_name", { ascending:true })
+          .order("item_name", { ascending:true })
+          .order("production_system_id", { ascending:true });
+      }
+    );
+
+    renderTable();
+  } catch (error) {
+    console.error(error);
+    alert("조회 중 오류가 발생했습니다: " + dbErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   테이블 렌더링
+   ══════════════════════════════════════════════ */
+function renderTable() {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  if (!currentRows.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="19" class="empty-msg">조회된 데이터가 없습니다.</td></tr>';
+    updateSummary();
+    return;
+  }
+
+  currentRows.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    tr.dataset.rowIndex = String(index);
+
+    const tdNo = document.createElement("td");
+    tdNo.textContent = String(index + 1);
+    tdNo.className = "readonly";
+    tr.appendChild(tdNo);
+
+    COLS.forEach((col) => {
+      const td = document.createElement("td");
+      td.dataset.field = col.key;
+      const value = row[col.key];
+
+      if (!col.editable) {
+        td.textContent = value == null ? "" : value;
+        td.className = "readonly";
+      } else if (col.type === "select") {
+        const currentValue = String(value == null ? "" : value).trim();
+
+        td.innerHTML =
+          "<select>" +
+          col.options.map((option) =>
+            `<option value="${escapeAttr(option)}" ${
+              currentValue === option ? "selected" : ""
+            }>${escapeHtml(option)}</option>`
+          ).join("") +
+          "</select>";
+
+        td.querySelector("select").addEventListener("change", () => {
+          markDirty(tr);
+        });
+      } else if (col.type === "date") {
+        td.innerHTML =
+          `<input type="date" value="${escapeAttr(value || "")}">`;
+
+        td.querySelector("input").addEventListener("change", () => {
+          markDirty(tr);
+        });
+      } else if (col.type === "number") {
+        if (NUM_KEYS.includes(col.key)) td.className = "num";
+
+        td.innerHTML =
+          `<input type="number" step="${col.step || 1}" value="${
+            value === "" || value == null ? 0 : escapeAttr(value)
+          }">`;
+
+        td.querySelector("input").addEventListener("input", () => {
+          markDirty(tr);
+          updateSummary();
+        });
+      } else {
+        td.innerHTML =
+          `<input type="text" value="${escapeAttr(value || "")}">`;
+
+        td.querySelector("input").addEventListener("change", () => {
+          markDirty(tr);
+        });
+      }
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  updateSummary();
+}
+
+function markDirty(tr) {
+  tr.classList.add("dirty");
+  updateSummary();
+}
+
+function getFieldValue(tr, field) {
+  const td = tr.querySelector(`td[data-field="${field}"]`);
+  if (!td) return "";
+
+  const input = td.querySelector("input, select");
+  return input ? input.value : td.textContent;
+}
+
+function updateSummary() {
+  let sumInput = 0;
+  let sumGood = 0;
+  let sumBad = 0;
+  let sumRework = 0;
+  let sumOperation = 0;
+  let sumDowntime = 0;
+
+  document.querySelectorAll("#tbody tr[data-row-index]").forEach((tr) => {
+    sumInput += toNum(getFieldValue(tr, "input_quantity"));
+    sumGood += toNum(getFieldValue(tr, "good_quantity"));
+    sumBad += toNum(getFieldValue(tr, "defect_quantity"));
+    sumRework += toNum(getFieldValue(tr, "rework_quantity"));
+    sumOperation += toNum(getFieldValue(tr, "operation_hours"));
+    sumDowntime += toNum(getFieldValue(tr, "downtime_hours"));
+  });
+
+  document.getElementById("sumInput").textContent = fmt(sumInput);
+  document.getElementById("sumGood").textContent = fmt(sumGood);
+  document.getElementById("sumBad").textContent = fmt(sumBad);
+  document.getElementById("sumRework").textContent = fmt(sumRework);
+  document.getElementById("sumOp").textContent = sumOperation.toFixed(1);
+  document.getElementById("sumNonOp").textContent = sumDowntime.toFixed(1);
+
+  const count =
+    document.querySelectorAll("#tbody tr[data-row-index]").length;
+  const dirtyCount =
+    document.querySelectorAll("#tbody tr.dirty").length;
+
+  document.getElementById("summaryText").innerHTML =
+    `총 <b>${count}</b>건 조회됨` +
+    (
+      dirtyCount
+        ? ` · <span style="color:#dc2626;">수정된 항목 ${dirtyCount}건 (저장 필요)</span>`
+        : ""
+    );
+}
+
+/* ══════════════════════════════════════════════
+   저장
+   production_system_id + 로그인 회사 company_id 조건
+   ══════════════════════════════════════════════ */
+async function saveData() {
+  if (!currentProfile) {
+    alert("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const dirtyRows = Array.from(
+    document.querySelectorAll("#tbody tr.dirty")
+  );
+
+  if (!dirtyRows.length) {
+    alert("수정된 항목이 없습니다.");
+    return;
+  }
+
+  if (!confirm(`수정된 ${dirtyRows.length}건을 저장하시겠습니까?`)) {
+    return;
+  }
+
+  showLoading(`저장 중입니다... (0/${dirtyRows.length})`);
+
+  let successCount = 0;
+  const failList = [];
+
+  for (let i = 0; i < dirtyRows.length; i += 1) {
+    const tr = dirtyRows[i];
+    const rowIndex = Number(tr.dataset.rowIndex);
+    const originalRow = currentRows[rowIndex];
+
+    showLoading(`저장 중입니다... (${i + 1}/${dirtyRows.length})`);
+
+    if (
+      !originalRow ||
+      !originalRow.production_system_id
+    ) {
+      failList.push(`${rowIndex + 1}번 행: 내부 레코드 식별값 없음`);
+      continue;
+    }
+
+    const updateData = {};
+    COLS.filter((col) => col.editable).forEach((col) => {
+      updateData[col.key] = normalizeDbValue(
+        col,
+        getFieldValue(tr, col.key)
+      );
+    });
+
+    try {
+      const { data, error } = await sb
+        .from(TABLE_NAME)
+        .update(updateData)
+        .eq("production_system_id", originalRow.production_system_id)
+        .eq("company_id", currentProfile.company_id)
+        .select("production_system_id")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        throw new Error(
+          "저장 대상이 없거나 회사 권한으로 수정할 수 없습니다."
+        );
+      }
+
+      Object.assign(originalRow, updateData);
+      tr.classList.remove("dirty");
+      successCount += 1;
+    } catch (error) {
+      console.error(error);
+      failList.push(
+        `${rowIndex + 1}번 행: ${dbErrorMessage(error)}`
+      );
+    }
+  }
+
+  hideLoading();
+  updateSummary();
+
+  if (!failList.length) {
+    alert(`저장 완료 (${successCount}건)`);
+  } else {
+    alert(
+      `저장 완료 ${successCount}건 / 실패 ${failList.length}건\n\n` +
+      "[실패 내역]\n" +
+      failList.join("\n") +
+      "\n\n실패한 항목은 조회 후 다시 확인해주세요."
+    );
+  }
+}
+
+/* ══════════════════════════════════════════════
+   CSV 다운로드
+   ══════════════════════════════════════════════ */
+function csvEscape(v) {
+  const s = String(v == null ? "" : v);
+  if (/[",\n]/.test(s)) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function exportCSV() {
+  const rows =
+    document.querySelectorAll("#tbody tr[data-row-index]");
+
+  if (!rows.length) {
+    alert("다운로드할 데이터가 없습니다.");
+    return;
+  }
+
+  const headers = [
+    "번호",
+    "입고일",
+    "작업일",
+    "고객사",
+    "품명",
+    "품번",
+    "재질",
+    "열처리(QT)",
+    "투입수량",
+    "양품수량",
+    "불량수량",
+    "재작업수량",
+    "가동시간",
+    "비가동시간",
+    "코일번호",
+    "템퍼링작업",
+    "교정작업",
+    "출하일",
+    "특이사항"
+  ];
+
+  const lines = [headers.map(csvEscape).join(",")];
+
+  rows.forEach((tr, index) => {
+    const line = [index + 1];
+    COLS.forEach((col) => {
+      line.push(getFieldValue(tr, col.key));
+    });
+    lines.push(line.map(csvEscape).join(","));
+  });
+
+  const sumLine = [
+    "합계","","","","","","","",
+    document.getElementById("sumInput").textContent.replace(/,/g, ""),
+    document.getElementById("sumGood").textContent.replace(/,/g, ""),
+    document.getElementById("sumBad").textContent.replace(/,/g, ""),
+    document.getElementById("sumRework").textContent.replace(/,/g, ""),
+    document.getElementById("sumOp").textContent,
+    document.getElementById("sumNonOp").textContent,
+    "","","","",""
+  ];
+
+  lines.push(sumLine.map(csvEscape).join(","));
+
+  const csvContent = "\ufeff" + lines.join("\r\n");
+  const blob = new Blob([csvContent], {
+    type:"text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const from = document.getElementById("fFrom").value || "";
+  const to = document.getElementById("fTo").value || "";
+
+  a.href = url;
+  a.download = `일작업현황_${from}_${to}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ══════════════════════════════════════════════
+   PDF 다운로드
+   ══════════════════════════════════════════════ */
+async function exportPDF() {
+  const rows =
+    document.querySelectorAll("#tbody tr[data-row-index]");
+
+  if (!rows.length) {
+    alert("다운로드할 데이터가 없습니다.");
+    return;
+  }
+
+  const btn = document.getElementById("btnPdf");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "PDF 생성 중...";
+  showLoading("PDF 생성 중입니다...");
+
+  try {
+    const titleText =
+      document.getElementById("docTitle").textContent;
+    const printRoot =
+      document.getElementById("printRoot");
+    printRoot.innerHTML = "";
+
+    const printWidthPx = 1500;
+    const pdf = new window.jspdf.jsPDF({
+      orientation:"landscape",
+      unit:"mm",
+      format:"a4"
+    });
+
+    const pageWidthMm =
+      pdf.internal.pageSize.getWidth();
+    const pageHeightMm =
+      pdf.internal.pageSize.getHeight();
+    const marginMm = 8;
+    const usableWidthMm =
+      pageWidthMm - marginMm * 2;
+    const usableHeightMm =
+      pageHeightMm - marginMm * 2;
+    const usableHeightPx =
+      usableHeightMm * (printWidthPx / usableWidthMm);
+
+    const measureWrap = document.createElement("div");
+    measureWrap.style.width = printWidthPx + "px";
+    measureWrap.innerHTML = `
+      <div class="print-title">${escapeHtml(titleText)}</div>
+      <table style="width:100%;">
+        <thead><tr>${buildPrintHeaderCells()}</tr></thead>
+        <tbody>${
+          Array.from(rows)
+            .map((tr, index) => buildPrintRowHtml(tr, index))
+            .join("")
+        }</tbody>
+      </table>`;
+
+    printRoot.appendChild(measureWrap);
+
+    const titleHeight =
+      measureWrap.querySelector(".print-title")
+        .getBoundingClientRect().height;
+    const headHeight =
+      measureWrap.querySelector("thead")
+        .getBoundingClientRect().height;
+    const bodyRows =
+      Array.from(measureWrap.querySelectorAll("tbody tr"));
+    const rowHeights =
+      bodyRows.map((row) => row.getBoundingClientRect().height);
+
+    const sumWrap = document.createElement("div");
+    sumWrap.style.width = printWidthPx + "px";
+    sumWrap.innerHTML =
+      `<table style="width:100%;"><tfoot>${
+        buildPrintSumRowHtml()
+      }</tfoot></table>`;
+    printRoot.appendChild(sumWrap);
+
+    const sumHeight =
+      sumWrap.querySelector("tfoot")
+        .getBoundingClientRect().height;
+
+    const pages = [];
+    let currentPage = [];
+    let currentHeight = titleHeight + headHeight;
+
+    rowHeights.forEach((height, index) => {
+      if (
+        currentHeight + height > usableHeightPx &&
+        currentPage.length
+      ) {
+        pages.push(currentPage);
+        currentPage = [];
+        currentHeight = titleHeight + headHeight;
+      }
+
+      currentPage.push(index);
+      currentHeight += height;
+    });
+
+    if (currentPage.length) pages.push(currentPage);
+    if (!pages.length) pages.push([]);
+
+    const lastPageIndexes = pages[pages.length - 1];
+    const lastPageHeight =
+      titleHeight +
+      headHeight +
+      lastPageIndexes.reduce(
+        (sum, index) => sum + rowHeights[index],
+        0
+      );
+
+    const sumOnNewPage =
+      lastPageHeight + sumHeight > usableHeightPx;
+
+    printRoot.removeChild(measureWrap);
+    printRoot.removeChild(sumWrap);
+
+    const totalPages =
+      pages.length + (sumOnNewPage ? 1 : 0);
+
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+      const indexes = pages[pageIndex];
+      const isLast = pageIndex === pages.length - 1;
+      const pageDiv = document.createElement("div");
+
+      pageDiv.style.width = printWidthPx + "px";
+      pageDiv.style.background = "#fff";
+      pageDiv.innerHTML = `
+        <div class="print-title">${escapeHtml(titleText)}</div>
+        <table style="width:100%;">
+          <thead><tr>${buildPrintHeaderCells()}</tr></thead>
+          <tbody>${
+            indexes.map((index) =>
+              buildPrintRowHtml(rows[index], index)
+            ).join("")
+          }</tbody>
+          ${
+            isLast && !sumOnNewPage
+              ? `<tfoot>${buildPrintSumRowHtml()}</tfoot>`
+              : ""
+          }
+        </table>
+        <div class="print-page">${
+          totalPages > 1
+            ? `${pageIndex + 1} / ${totalPages} 페이지`
+            : ""
+        }</div>`;
+
+      printRoot.appendChild(pageDiv);
+
+      const canvas = await html2canvas(pageDiv, {
+        scale:2,
+        backgroundColor:"#ffffff",
+        useCORS:true,
+        allowTaint:true,
+        logging:false
+      });
+
+      const imageData = canvas.toDataURL("image/png");
+      const imageHeightMm =
+        canvas.height * usableWidthMm / canvas.width;
+
+      if (pageIndex > 0) pdf.addPage();
+
+      pdf.addImage(
+        imageData,
+        "PNG",
+        marginMm,
+        marginMm,
+        usableWidthMm,
+        imageHeightMm
+      );
+
+      printRoot.removeChild(pageDiv);
+    }
+
+    if (sumOnNewPage) {
+      const pageDiv = document.createElement("div");
+      pageDiv.style.width = printWidthPx + "px";
+      pageDiv.style.background = "#fff";
+      pageDiv.innerHTML = `
+        <div class="print-title">${escapeHtml(titleText)}</div>
+        <table style="width:100%;">
+          <thead><tr>${buildPrintHeaderCells()}</tr></thead>
+          <tfoot>${buildPrintSumRowHtml()}</tfoot>
+        </table>
+        <div class="print-page">${totalPages} / ${totalPages} 페이지</div>`;
+
+      printRoot.appendChild(pageDiv);
+
+      const canvas = await html2canvas(pageDiv, {
+        scale:2,
+        backgroundColor:"#ffffff",
+        useCORS:true,
+        allowTaint:true,
+        logging:false
+      });
+
+      const imageData = canvas.toDataURL("image/png");
+      const imageHeightMm =
+        canvas.height * usableWidthMm / canvas.width;
+
+      pdf.addPage();
+      pdf.addImage(
+        imageData,
+        "PNG",
+        marginMm,
+        marginMm,
+        usableWidthMm,
+        imageHeightMm
+      );
+
+      printRoot.removeChild(pageDiv);
+    }
+
+    const from = document.getElementById("fFrom").value || "";
+    const to = document.getElementById("fTo").value || "";
+    pdf.save(`일작업현황_${from}_${to}.pdf`);
+  } catch (error) {
+    console.error(error);
+    alert("PDF 생성 오류: " + dbErrorMessage(error));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+    hideLoading();
+  }
+}
+
+function buildPrintHeaderCells() {
+  const labels = [
+    "번호",
+    "입고일",
+    "작업일",
+    "고객사",
+    "품명",
+    "품번",
+    "재질",
+    "열처리(QT)",
+    "투입수량",
+    "양품수량",
+    "불량수량",
+    "재작업수량",
+    "가동시간",
+    "비가동시간",
+    "코일번호",
+    "템퍼링작업",
+    "교정작업",
+    "출하일",
+    "특이사항"
+  ];
+
+  return labels.map((label) =>
+    `<th>${escapeHtml(label)}</th>`
+  ).join("");
+}
+
+function buildPrintRowHtml(tr, index) {
+  const cells = [index + 1];
+  COLS.forEach((col) => {
+    cells.push(getFieldValue(tr, col.key));
+  });
+
+  return (
+    "<tr>" +
+    cells.map((value) =>
+      `<td>${escapeHtml(value)}</td>`
+    ).join("") +
+    "</tr>"
+  );
+}
+
+function buildPrintSumRowHtml() {
+  return `<tr>
+    <td colspan="8">합&nbsp;&nbsp;계</td>
+    <td>${document.getElementById("sumInput").textContent}</td>
+    <td>${document.getElementById("sumGood").textContent}</td>
+    <td>${document.getElementById("sumBad").textContent}</td>
+    <td>${document.getElementById("sumRework").textContent}</td>
+    <td>${document.getElementById("sumOp").textContent}</td>
+    <td>${document.getElementById("sumNonOp").textContent}</td>
+    <td colspan="5"></td>
+  </tr>`;
+}
+
+/* ══════════════════════════════════════════════
+   버튼 및 초기 실행
+   ══════════════════════════════════════════════ */
+document.getElementById("btnSearch").addEventListener(
+  "click",
+  searchData
+);
+
+document.getElementById("btnReset").addEventListener("click", () => {
+  const range = monthRange();
+
+  document.getElementById("fFrom").value = range.from;
+  document.getElementById("fTo").value = range.to;
+  document.getElementById("fCustomer").value = "";
+  document.getElementById("fProduct").value = "";
+  document.getElementById("fPartNo").value = "";
+  document.getElementById("fMaterial").value = "";
+
+  refreshProductSelect();
+  refreshPartNoSelect();
+  updateTitle(range.from, range.to);
+
+  currentRows = [];
+  document.getElementById("tbody").innerHTML =
+    '<tr><td colspan="19" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>';
+
+  document.getElementById("sumInput").textContent = "0";
+  document.getElementById("sumGood").textContent = "0";
+  document.getElementById("sumBad").textContent = "0";
+  document.getElementById("sumRework").textContent = "0";
+  document.getElementById("sumOp").textContent = "0.0";
+  document.getElementById("sumNonOp").textContent = "0.0";
+  document.getElementById("summaryText").textContent =
+    "조회 버튼을 눌러 데이터를 불러오세요.";
+});
+
+document.getElementById("btnSave").addEventListener(
+  "click",
+  saveData
+);
+document.getElementById("btnCsv").addEventListener(
+  "click",
+  exportCSV
+);
+document.getElementById("btnPdf").addEventListener(
+  "click",
+  exportPDF
+);
+
+window.addEventListener("beforeunload", (event) => {
+  if (document.querySelectorAll("#tbody tr.dirty").length) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+
+(async function init() {
+  const range = monthRange();
+  document.getElementById("fFrom").value = range.from;
+  document.getElementById("fTo").value = range.to;
+  updateTitle(range.from, range.to);
+
+  showLoading("로그인 및 회사 권한을 확인하는 중입니다...");
+
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    await loadMasterData();
+
+    document.getElementById("summaryText").textContent =
+      "조회 버튼을 눌러 데이터를 불러오세요.";
+  } catch (error) {
+    console.error(error);
+    alert(
+      "초기 데이터 연결 중 오류가 발생했습니다: " +
+      dbErrorMessage(error)
+    );
+  } finally {
+    hideLoading();
+  }
+})();
+</script>
+</body>
+</html>
