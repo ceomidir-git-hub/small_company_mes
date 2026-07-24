@@ -915,9 +915,15 @@
       setMode("view");
     }
 
-    function searchRows() {
+    async function searchRows() {
       clearNotice();
-      applySearch();
+
+      if (!allRows.length) {
+        await loadRows();
+      } else {
+        applySearch();
+      }
+
       updateGuide("조회조건에 맞는 회사 " + visibleRows.length + "건을 표시합니다.");
     }
 
@@ -1124,6 +1130,7 @@
         if (!allowed) return;
 
         setMode("view");
+        await loadRows();
       } catch (error) {
         document.documentElement.classList.remove("auth-pending");
         showNotice("화면 초기화 오류: " + formatDbError(error), "error");
