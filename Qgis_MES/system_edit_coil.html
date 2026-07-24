@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>코일 관리 | HeatPro MES</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --line: #cfd6e1;
+      --line-soft: #e3e8ef;
+      --text: #1f2937;
+      --muted: #64748b;
+      --blue: #1f5edb;
+      --blue-dark: #1647ad;
+      --green: #079660;
+      --green-dark: #05784d;
+      --red: #dc2f45;
+      --red-dark: #b91f34;
+      --orange: #e38b20;
+      --shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+      --radius: 9px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    html.auth-pending body {
+      visibility: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .page {
+      width: 100%;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    /* 상단 제목 / 메인화면 프레임 */
+    .title-frame {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .title-area h1 {
+      margin: 0;
+      color: #0e3f9d;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+
+    .file-name {
+      margin-left: 5px;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      color: #5f6b7a;
+      font-size: 12px;
+    }
+
+    .main-button {
+      min-width: 112px;
+      height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #1f2937;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .main-button:hover {
+      background: #f8fafc;
+    }
+
+    /* 조회 프레임 */
+    .search-frame {
+      display: grid;
+      grid-template-columns: minmax(170px, 220px) minmax(220px, 320px) auto;
+      align-items: end;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: #445267;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid #c7d0dc;
+      border-radius: 7px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 92px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(31, 94, 219, 0.12);
+    }
+
+    .search-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      min-height: 40px;
+      padding: 8px 16px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: #1f2937;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      filter: brightness(0.97);
+    }
+
+    .btn-blue {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .btn-blue:hover {
+      background: var(--blue-dark);
+    }
+
+    .btn-green {
+      border-color: var(--green);
+      background: var(--green);
+      color: #fff;
+    }
+
+    .btn-green:hover {
+      background: var(--green-dark);
+    }
+
+    .btn-red {
+      border-color: var(--red);
+      background: var(--red);
+      color: #fff;
+    }
+
+    .btn-red:hover {
+      background: var(--red-dark);
+    }
+
+    .btn-orange {
+      border-color: var(--orange);
+      background: var(--orange);
+      color: #fff;
+    }
+
+    /* 안내 및 업무 버튼 프레임 */
+    .action-frame {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0;
+    }
+
+    .guide-text {
+      color: #617087;
+      font-size: 12px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    /* 등록/수정 입력 프레임 */
+    .editor-frame {
+      display: none;
+      margin-bottom: 12px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .editor-frame.show {
+      display: block;
+    }
+
+    .editor-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .editor-head h2 {
+      margin: 0;
+      color: #0e3f9d;
+      font-size: 17px;
+    }
+
+    .mode-badge {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #e9eef7;
+      color: #45556d;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .mode-badge.new {
+      background: #e6f7ef;
+      color: #047857;
+    }
+
+    .mode-badge.edit {
+      background: #fff3df;
+      color: #a35405;
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .editor-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    .char-count {
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 11px;
+      text-align: right;
+    }
+
+    /* 목록 프레임 */
+    .list-frame {
+      padding: 14px 16px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .list-title {
+      margin: 2px 0 12px;
+      color: #0e3f9d;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    .table-wrap {
+      width: 100%;
+      max-height: 560px;
+      overflow: auto;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 12px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding: 10px 8px;
+      border-right: 1px solid #1248a9;
+      border-bottom: 1px solid #1248a9;
+      background: #1e5bd7;
+      color: #fff;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    tbody td,
+    tfoot td {
+      padding: 9px 8px;
+      border-right: 1px solid #d8dee8;
+      border-bottom: 1px solid #d8dee8;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    tbody tr {
+      cursor: pointer;
+    }
+
+    tbody tr:hover {
+      background: #f5f8fd;
+    }
+
+    tbody tr.selected {
+      background: #e8f0ff;
+      outline: 2px solid rgba(31, 94, 219, 0.28);
+      outline-offset: -2px;
+    }
+
+    .notes-cell {
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tfoot td {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      background: #edf2ff;
+      color: #0e3f9d;
+      font-weight: 800;
+    }
+
+    .empty {
+      height: 130px;
+      color: #64748b;
+      text-align: center !important;
+    }
+
+    .list-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 10px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .notice {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 7px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    .notice.info {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .notice.success {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .notice.error {
+      background: #fff1f2;
+      color: #be123c;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .loading-box {
+      padding: 17px 22px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+      font-weight: 800;
+    }
+
+    @media (max-width: 900px) {
+      .search-frame {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .search-buttons {
+        grid-column: 1 / -1;
+      }
+
+      .editor-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .action-frame {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .action-buttons {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 8px;
+      }
+
+      .title-area h1 {
+        font-size: 19px;
+      }
+
+      .file-name {
+        display: block;
+        margin: 3px 0 0;
+      }
+
+      .main-button {
+        min-width: 92px;
+        height: 38px;
+        padding: 0 10px;
+        font-size: 12px;
+      }
+
+      .search-frame,
+      .editor-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .search-buttons {
+        grid-column: auto;
+        justify-content: stretch;
+      }
+
+      .search-buttons .btn {
+        flex: 1;
+      }
+
+      .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .action-buttons .btn {
+        width: 100%;
+      }
+
+      .list-frame {
+        padding: 10px;
+      }
+
+      table {
+        min-width: 900px;
+      }
+    }
+  
+    .checkbox-line{
+      min-height:40px;display:flex;align-items:center;gap:8px;
+      padding:8px 10px;border:1px solid #c7d0dc;border-radius:7px;background:#fff
+    }
+    .checkbox-line input{width:18px;height:18px;min-height:auto}
+    .number-cell{text-align:right!important;font-variant-numeric:tabular-nums}
+    </style>
+    
+</head>
+
+<body>
+<main class="page">
+  <section class="title-frame">
+    <div class="title-area">
+      <h1>코일 관리 <span class="file-name">_system_edit_coil.html</span></h1>
+      <div class="subtitle">HeatPro MES · 로그인 회사의 코일관리대장 조회·등록·수정·삭제</div>
+    </div>
+    <button class="main-button" type="button" onclick="goMain()">⌂ 메인화면</button>
+  </section>
+
+  <section class="search-frame" aria-label="코일 조회 조건">
+    <div class="field">
+      <label for="searchIdentificationCode">식별코드</label>
+      <input id="searchIdentificationCode" maxlength="20" placeholder="전체">
+    </div>
+    <div class="field">
+      <label for="searchCoilIdentifier">코일식별번호</label>
+      <input id="searchCoilIdentifier" maxlength="50" placeholder="전체">
+    </div>
+    <div class="field">
+      <label for="searchClassificationName">분류명</label>
+      <input id="searchClassificationName" maxlength="200" placeholder="전체">
+    </div>
+    <div class="search-buttons">
+      <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
+      <button class="btn" type="button" onclick="resetSearch()">초기화</button>
+    </div>
+  </section>
+
+  <section class="action-frame">
+    <div id="guideText" class="guide-text">코일 데이터를 불러오는 중입니다.</div>
+    <div class="action-buttons">
+      <button id="btnNew" class="btn btn-green" type="button" onclick="startNew()">＋ 등록</button>
+      <button id="btnEdit" class="btn btn-blue" type="button" onclick="startEdit()" disabled>✎ 수정</button>
+      <button id="btnDelete" class="btn btn-red" type="button" onclick="deleteSelected()" disabled>▣ 삭제</button>
+      <button id="btnSave" class="btn btn-green" type="button" onclick="saveRecord()" disabled>▣ 저장</button>
+    </div>
+  </section>
+
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+  <section id="editorFrame" class="editor-frame">
+    <div class="editor-head">
+      <h2>코일정보 입력</h2>
+      <span id="modeBadge" class="mode-badge">대기</span>
+    </div>
+
+    <form id="coilForm" onsubmit="return false;">
+      <div class="editor-grid">
+        <div class="field">
+          <label for="identificationCode">식별코드 *</label>
+          <input id="identificationCode" maxlength="20" disabled>
+        </div>
+        <div class="field">
+          <label for="coilIdentifier">코일식별번호 *</label>
+          <input id="coilIdentifier" maxlength="50" disabled>
+        </div>
+        <div class="field">
+          <label for="coilSpec">코일규격</label>
+          <input id="coilSpec" maxlength="100" disabled>
+        </div>
+        <div class="field">
+          <label for="classificationName">분류명</label>
+          <input id="classificationName" maxlength="200" disabled>
+        </div>
+        <div class="field">
+          <label for="appliedProcess">적용공정</label>
+          <input id="appliedProcess" maxlength="100" disabled>
+        </div>
+        <div class="field">
+          <label for="manufacturedDate">제작년도</label>
+          <input id="manufacturedDate" type="date" disabled>
+        </div>
+        <div class="field">
+          <label for="serviceLife">수명</label>
+          <input id="serviceLife" type="number" min="0" step="1" disabled>
+        </div>
+        <div class="field">
+          <label for="stockQuantity">재고수량</label>
+          <input id="stockQuantity" type="number" min="0" step="1" disabled>
+        </div>
+        <div class="field">
+          <label>사용 상태</label>
+          <div class="checkbox-line">
+            <input id="isActive" type="checkbox" checked disabled>
+            <label for="isActive">사용</label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section class="list-frame">
+    <h2 class="list-title">코일관리대장 상세현황</h2>
+    <div class="table-wrap">
+      <table style="min-width:1250px">
+        <thead>
+          <tr>
+            <th>NO</th>
+            <th>식별코드</th>
+            <th>코일식별번호</th>
+            <th>코일규격</th>
+            <th>분류명</th>
+            <th>적용공정</th>
+            <th>제작년도</th>
+            <th>수명</th>
+            <th>재고수량</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td class="empty" colspan="10">코일 데이터를 불러오는 중입니다.</td></tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">합계</td>
+            <td id="totalCount" colspan="5">0건</td>
+            <td id="totalStock">재고 0개</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div id="countLabel" class="list-footer">총 0건</div>
+  </section>
+</main>
+
+<div id="loadingOverlay" class="loading">
+  <div id="loadingText" class="loading-box">처리 중입니다...</div>
+</div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const LOGIN_PAGE_URL = "../index.html";
+const MAIN_PAGE_URL = "main1.html";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentProfile = null;
+let allRows = [];
+let visibleRows = [];
+let selectedId = null;
+let mode = "view";
+
+const editableIds = [
+  "identificationCode",
+  "coilIdentifier",
+  "coilSpec",
+  "classificationName",
+  "appliedProcess",
+  "manufacturedDate",
+  "serviceLife",
+  "stockQuantity",
+  "isActive"
+];
+
+function normalizeText(value) {
+  return String(value ?? "").trim();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, function (character) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[character];
+  });
+}
+
+function showLoading(show, text = "처리 중입니다...") {
+  document.getElementById("loadingText").textContent = text;
+  document.getElementById("loadingOverlay").classList.toggle("show", Boolean(show));
+}
+
+function showNotice(text, type = "info") {
+  const target = document.getElementById("notice");
+  target.textContent = text;
+  target.className = "notice show " + type;
+}
+
+function clearNotice() {
+  const target = document.getElementById("notice");
+  target.textContent = "";
+  target.className = "notice";
+}
+
+function updateGuide(text) {
+  document.getElementById("guideText").textContent = text;
+}
+
+function formatDbError(error) {
+  if (!error) return "알 수 없는 오류입니다.";
+  if (error.code === "23505") return "같은 회사에 같은 코일식별번호가 이미 등록되어 있습니다.";
+  if (error.code === "23503") return "다른 업무 데이터에서 사용 중이므로 삭제할 수 없습니다.";
+  if (error.code === "23514") return "수명과 재고수량은 0 이상이어야 합니다.";
+  if (error.code === "42501") return "이 작업에 대한 권한이 없습니다. RLS 정책을 확인해 주세요.";
+  return error.message || String(error);
+}
+
+async function verifyCompanyAccess() {
+  const { data: userData, error: userError } = await sb.auth.getUser();
+  const user = userData?.user;
+
+  if (userError || !user) {
+    window.location.replace(LOGIN_PAGE_URL);
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    await sb.auth.signOut({ scope: "local" });
+    window.location.replace(LOGIN_PAGE_URL);
+    return false;
+  }
+
+  currentProfile = profile;
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+function setMode(nextMode) {
+  mode = nextMode;
+  const editing = mode === "new" || mode === "edit";
+
+  editableIds.forEach(function (id) {
+    document.getElementById(id).disabled = !editing;
+  });
+
+  document.getElementById("btnSave").disabled = !editing;
+  document.getElementById("btnEdit").disabled = !selectedId || editing;
+  document.getElementById("btnDelete").disabled = !selectedId || editing;
+  document.getElementById("editorFrame").classList.toggle(
+    "show",
+    editing || Boolean(selectedId)
+  );
+
+  const badge = document.getElementById("modeBadge");
+  badge.className =
+    "mode-badge" +
+    (mode === "new" ? " new" : mode === "edit" ? " edit" : "");
+
+  badge.textContent =
+    mode === "new"
+      ? "신규등록"
+      : mode === "edit"
+        ? "수정중"
+        : selectedId
+          ? "선택됨"
+          : "대기";
+}
+
+function clearForm() {
+  selectedId = null;
+  document.getElementById("coilForm").reset();
+  document.getElementById("serviceLife").value = 10000;
+  document.getElementById("stockQuantity").value = 1;
+  document.getElementById("isActive").checked = true;
+
+  document.querySelectorAll("#tableBody tr").forEach(function (row) {
+    row.classList.remove("selected");
+  });
+}
+
+function fillForm(row) {
+  document.getElementById("identificationCode").value = row.identification_code || "";
+  document.getElementById("coilIdentifier").value = row.coil_identifier || "";
+  document.getElementById("coilSpec").value = row.coil_spec || "";
+  document.getElementById("classificationName").value = row.classification_name || "";
+  document.getElementById("appliedProcess").value = row.applied_process || "";
+  document.getElementById("manufacturedDate").value = row.manufactured_date || "";
+  document.getElementById("serviceLife").value = row.service_life ?? 0;
+  document.getElementById("stockQuantity").value = row.stock_quantity ?? 0;
+  document.getElementById("isActive").checked = row.is_active !== false;
+}
+
+async function loadRows() {
+  showLoading(true, "코일정보를 불러오는 중입니다...");
+  clearNotice();
+
+  const { data, error } = await sb
+    .from("coils")
+    .select(
+      "coil_system_id,identification_code,coil_identifier,coil_spec,classification_name,applied_process,manufactured_date,service_life,stock_quantity,is_active"
+    )
+    .eq("company_id", currentProfile.company_id)
+    .order("identification_code", { ascending: true })
+    .order("coil_identifier", { ascending: true });
+
+  showLoading(false);
+
+  if (error) {
+    allRows = [];
+    visibleRows = [];
+    renderRows();
+    showNotice("조회 실패: " + formatDbError(error), "error");
+    updateGuide("코일정보 조회에 실패했습니다.");
+    return;
+  }
+
+  allRows = data || [];
+  applySearch();
+  clearForm();
+  setMode("view");
+  updateGuide("코일정보 " + allRows.length + "건을 불러왔습니다.");
+}
+
+function applySearch() {
+  const identification = normalizeText(
+    document.getElementById("searchIdentificationCode").value
+  ).toLowerCase();
+
+  const identifier = normalizeText(
+    document.getElementById("searchCoilIdentifier").value
+  ).toLowerCase();
+
+  const classification = normalizeText(
+    document.getElementById("searchClassificationName").value
+  ).toLowerCase();
+
+  visibleRows = allRows.filter(function (row) {
+    return (
+      (!identification ||
+        String(row.identification_code || "").toLowerCase().includes(identification)) &&
+      (!identifier ||
+        String(row.coil_identifier || "").toLowerCase().includes(identifier)) &&
+      (!classification ||
+        String(row.classification_name || "").toLowerCase().includes(classification))
+    );
+  });
+
+  selectedId = null;
+  renderRows();
+  setMode("view");
+}
+
+async function searchRows() {
+  clearNotice();
+
+  if (!allRows.length) {
+    await loadRows();
+  } else {
+    applySearch();
+  }
+
+  updateGuide(
+    "조회조건에 맞는 코일 " + visibleRows.length + "건을 표시합니다."
+  );
+}
+
+function resetSearch() {
+  document.getElementById("searchIdentificationCode").value = "";
+  document.getElementById("searchCoilIdentifier").value = "";
+  document.getElementById("searchClassificationName").value = "";
+  clearNotice();
+  applySearch();
+  updateGuide("조회조건을 초기화했습니다.");
+}
+
+function renderRows() {
+  const body = document.getElementById("tableBody");
+
+  if (!visibleRows.length) {
+    body.innerHTML =
+      '<tr><td class="empty" colspan="10">표시할 코일정보가 없습니다.</td></tr>';
+  } else {
+    body.innerHTML = visibleRows.map(function (row, index) {
+      return `
+        <tr
+          data-id="${escapeHtml(row.coil_system_id)}"
+          onclick="selectRow('${escapeHtml(row.coil_system_id)}')"
+        >
+          <td>${index + 1}</td>
+          <td>${escapeHtml(row.identification_code)}</td>
+          <td>${escapeHtml(row.coil_identifier)}</td>
+          <td>${escapeHtml(row.coil_spec)}</td>
+          <td class="notes-cell" title="${escapeHtml(row.classification_name)}">${escapeHtml(row.classification_name)}</td>
+          <td>${escapeHtml(row.applied_process)}</td>
+          <td>${escapeHtml(row.manufactured_date)}</td>
+          <td class="number-cell">${Number(row.service_life || 0).toLocaleString()}</td>
+          <td class="number-cell">${Number(row.stock_quantity || 0).toLocaleString()}</td>
+          <td>${row.is_active ? "사용" : "중지"}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  const stockTotal = visibleRows.reduce(function (sum, row) {
+    return sum + Number(row.stock_quantity || 0);
+  }, 0);
+
+  document.getElementById("totalCount").textContent =
+    visibleRows.length + "건";
+
+  document.getElementById("totalStock").textContent =
+    "재고 " + stockTotal.toLocaleString() + "개";
+
+  document.getElementById("countLabel").textContent =
+    "총 " + visibleRows.length + "건";
+}
+
+function selectRow(id) {
+  const row = allRows.find(function (item) {
+    return item.coil_system_id === id;
+  });
+
+  if (!row) return;
+
+  selectedId = id;
+  fillForm(row);
+
+  document.querySelectorAll("#tableBody tr").forEach(function (tableRow) {
+    tableRow.classList.toggle("selected", tableRow.dataset.id === id);
+  });
+
+  clearNotice();
+  setMode("view");
+  updateGuide("선택한 코일정보를 수정하거나 삭제할 수 있습니다.");
+}
+
+function startNew() {
+  clearNotice();
+  clearForm();
+  setMode("new");
+  updateGuide("신규 코일정보를 입력한 후 저장 버튼을 누르세요.");
+  document.getElementById("identificationCode").focus();
+}
+
+function startEdit() {
+  if (!selectedId) {
+    showNotice("수정할 코일을 목록에서 선택해 주세요.", "error");
+    return;
+  }
+
+  clearNotice();
+  setMode("edit");
+  updateGuide("수정할 내용을 입력한 후 저장 버튼을 누르세요.");
+}
+
+async function saveRecord() {
+  if (mode !== "new" && mode !== "edit") {
+    showNotice("등록 또는 수정 버튼을 먼저 눌러 주세요.", "error");
+    return;
+  }
+
+  const payload = {
+    company_id: currentProfile.company_id,
+    identification_code: normalizeText(
+      document.getElementById("identificationCode").value
+    ).toUpperCase(),
+    coil_identifier: normalizeText(
+      document.getElementById("coilIdentifier").value
+    ).toUpperCase(),
+    coil_spec: normalizeText(
+      document.getElementById("coilSpec").value
+    ) || null,
+    classification_name: normalizeText(
+      document.getElementById("classificationName").value
+    ) || null,
+    applied_process: normalizeText(
+      document.getElementById("appliedProcess").value
+    ) || null,
+    manufactured_date:
+      document.getElementById("manufacturedDate").value || null,
+    service_life: Number(
+      document.getElementById("serviceLife").value || 0
+    ),
+    stock_quantity: Number(
+      document.getElementById("stockQuantity").value || 0
+    ),
+    is_active: document.getElementById("isActive").checked
+  };
+
+  if (!payload.identification_code || !payload.coil_identifier) {
+    showNotice("식별코드와 코일식별번호를 입력해 주세요.", "error");
+    return;
+  }
+
+  if (payload.service_life < 0 || payload.stock_quantity < 0) {
+    showNotice("수명과 재고수량은 0 이상이어야 합니다.", "error");
+    return;
+  }
+
+  showLoading(true, "코일정보를 Supabase에 저장하는 중입니다...");
+
+  let result;
+
+  if (mode === "new") {
+    result = await sb.from("coils").insert(payload);
+  } else {
+    result = await sb
+      .from("coils")
+      .update(payload)
+      .eq("coil_system_id", selectedId)
+      .eq("company_id", currentProfile.company_id);
+  }
+
+  showLoading(false);
+
+  if (result.error) {
+    showNotice("저장 실패: " + formatDbError(result.error), "error");
+    return;
+  }
+
+  showNotice(
+    mode === "new"
+      ? "코일정보가 신규 등록되었습니다."
+      : "코일정보가 수정 저장되었습니다.",
+    "success"
+  );
+
+  await loadRows();
+}
+
+async function deleteSelected() {
+  if (!selectedId) {
+    showNotice("삭제할 코일을 목록에서 선택해 주세요.", "error");
+    return;
+  }
+
+  const row = allRows.find(function (item) {
+    return item.coil_system_id === selectedId;
+  });
+
+  if (!confirm((row?.coil_identifier || "선택한 코일") + "을 삭제하시겠습니까?")) {
+    return;
+  }
+
+  showLoading(true, "코일정보를 삭제하는 중입니다...");
+
+  const { error } = await sb
+    .from("coils")
+    .delete()
+    .eq("coil_system_id", selectedId)
+    .eq("company_id", currentProfile.company_id);
+
+  showLoading(false);
+
+  if (error) {
+    showNotice("삭제 실패: " + formatDbError(error), "error");
+    return;
+  }
+
+  showNotice("코일정보가 삭제되었습니다.", "success");
+  await loadRows();
+}
+
+function goMain() {
+  window.location.href = MAIN_PAGE_URL;
+}
+
+sb.auth.onAuthStateChange(function (event) {
+  if (event === "SIGNED_OUT") {
+    window.location.replace(LOGIN_PAGE_URL);
+  }
+});
+
+async function initializePage() {
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    setMode("view");
+    await loadRows();
+  } catch (error) {
+    document.documentElement.classList.remove("auth-pending");
+    showNotice("화면 초기화 오류: " + formatDbError(error), "error");
+  }
+}
+
+window.addEventListener("load", initializePage);
+</script>
+</body>
+</html>
