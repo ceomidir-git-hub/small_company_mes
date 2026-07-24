@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>작업일보</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+    background: #dde3ea;
+    padding: 24px 16px 40px;
+    color: #111;
+    min-height: 100vh;
+  }
+
+  /* ── 로딩 모달 ── */
+  #load-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 99999;
+  }
+  .load-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 40px 48px;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+    min-width: 360px;
+  }
+  .load-box .load-icon { font-size: 48px; margin-bottom: 16px; }
+  .load-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #1a3a5c; }
+  .load-box p  { font-size: 13px; color: #666; margin-bottom: 24px; line-height: 1.6; }
+  .load-box .load-filename {
+    display: inline-block;
+    background: #eaf1fb; border: 1.5px solid #1a3a5c;
+    border-radius: 4px; padding: 4px 14px;
+    font-size: 13px; font-weight: 700; color: #1a3a5c;
+    margin-bottom: 24px;
+  }
+  #file-pick-btn {
+    display: inline-block;
+    padding: 11px 32px;
+    background: #1a3a5c; color: #fff;
+    border: none; border-radius: 5px;
+    font-size: 15px; font-weight: 700;
+    font-family: 'Noto Sans KR','Malgun Gothic',sans-serif;
+    cursor: pointer; letter-spacing: 1px;
+    transition: background 0.15s;
+  }
+  #file-pick-btn:hover { background: #25527d; }
+  #load-status { font-size: 13px; color: #888; margin-top: 14px; min-height: 18px; }
+  #load-status.err { color: #c0392b; }
+  #load-status.ok  { color: #27ae60; font-weight: 700; }
+
+  /* ── 상단 데이터 소스 표시 ── */
+  #data-source-bar {
+    display: none;
+    background: #eaf1fb;
+    border: 1.5px solid #1a3a5c;
+    border-radius: 5px;
+    padding: 7px 16px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: #1a3a5c;
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+  #data-source-bar span { flex: 1; }
+  #reload-btn {
+    font-size: 12px; font-family: 'Noto Sans KR','Malgun Gothic',sans-serif;
+    padding: 3px 10px; border: 1.5px solid #1a3a5c; border-radius: 3px;
+    background: #fff; color: #1a3a5c; cursor: pointer; font-weight: 600;
+    transition: background 0.15s;
+  }
+  #reload-btn:hover { background: #1a3a5c; color: #fff; }
+
+  /* Page */
+  .page {
+    background: #fff;
+    width: 100%;
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 30px 30px 36px;
+    border: 1px solid #aaa;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+  }
+
+  /* Title */
+  .title-row { margin-bottom: 20px; text-align: center; }
+  .main-title { font-size: 28px; font-weight: 700; letter-spacing: 12px; padding: 8px 0; }
+
+  /* Section title */
+  .section-title {
+    font-size: 15px; font-weight: 700; margin: 16px 0 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title input[type="date"] {
+    border: none; border-bottom: 1.5px solid #444;
+    font-family: inherit; font-size: 14px; background: transparent;
+    outline: none; padding: 1px 2px; width: 140px; cursor: pointer;
+  }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+  th, td { border: 1.5px solid #444; padding: 5px 8px; vertical-align: middle; }
+  th {
+    background: #dce3ec; font-weight: 700; text-align: center;
+    font-size: 14px; white-space: nowrap;
+  }
+  td { font-size: 14px; }
+  td.label {
+    background: #dce3ec; font-weight: 700; text-align: center; white-space: nowrap;
+  }
+  td.no-cell {
+    text-align: center; font-weight: 700; background: #dce3ec; width: 38px;
+  }
+
+  /* Inputs */
+  input[type="text"], input[type="number"], input[type="date"], textarea {
+    border: none; border-bottom: 1px solid #aaa; width: 100%;
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-size: 14px; background: transparent; padding: 2px 3px;
+    outline: none; transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, input[type="number"]:focus,
+  input[type="date"]:focus, textarea:focus {
+    border-bottom: 1.5px solid #1a3a5c; background: #f4f8ff;
+  }
+  input[type="date"] { min-width: 110px; cursor: pointer; }
+  textarea {
+    resize: vertical; min-height: 50px;
+    border: none; border-bottom: 1px solid #aaa;
+  }
+  textarea:focus { border-bottom: 1.5px solid #1a3a5c; background: #f4f8ff; }
+
+  /* Checkboxes */
+  .cb-group {
+    display: inline-flex; align-items: center; gap: 3px;
+    margin-right: 6px; white-space: nowrap; cursor: pointer;
+  }
+  .cb-group label { font-size: 14px; cursor: pointer; }
+  input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; accent-color: #1a3a5c; }
+  .cb-slash { font-size: 14px; margin: 0 3px; color: #666; }
+
+  .worker-cell { display: flex; align-items: center; gap: 6px; }
+  .worker-cell input { flex: 1; }
+  .worker-cell span { white-space: nowrap; font-size: 15px; color: #555; }
+
+  .preset { display: flex; align-items: center; gap: 4px; }
+  .preset span { white-space: nowrap; font-size: 15px; color: #444; font-weight: 600; }
+  .preset input { flex: 1; min-width: 0; }
+
+  .sensor-bad-row { display: flex; align-items: center; gap: 4px; }
+  .sensor-bad-row label { font-size: 15px; white-space: nowrap; }
+  .sensor-bad-row input[type="text"] { flex: 1; min-width: 0; }
+
+  /* 커스텀 드롭다운 */
+  .dd-wrap { position: relative; width: 100%; }
+  .dd-input {
+    width: 100%; border: none; border-bottom: 1px solid #aaa;
+    background: transparent; font-family: 'Noto Sans KR','Malgun Gothic',sans-serif;
+    font-size: 14px; padding: 2px 20px 2px 3px; outline: none;
+    cursor: pointer; caret-color: transparent; transition: border-color .15s;
+  }
+  .dd-input:focus { border-bottom: 1.5px solid #1a3a5c; background: #f4f8ff; }
+  .dd-input.disabled { background: #f5f5f5; color: #bbb; cursor: not-allowed; }
+  .dd-arrow {
+    position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; color: #888; pointer-events: none;
+  }
+  .dd-list {
+    display: none; position: absolute;
+    top: calc(100% + 2px); left: 0;
+    min-width: 100%; max-width: 320px;
+    background: #fff; border: 1.5px solid #1a3a5c;
+    border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    z-index: 9000; max-height: 200px; overflow-y: auto;
+  }
+  .dd-list.open { display: block; }
+  .dd-item {
+    padding: 7px 12px; font-size: 13px; cursor: pointer;
+    white-space: nowrap; border-bottom: 1px solid #eee;
+    font-family: 'Noto Sans KR','Malgun Gothic',sans-serif;
+  }
+  .dd-item:last-child { border-bottom: none; }
+  .dd-item:hover { background: #eaf1fb; color: #1a3a5c; font-weight: 600; }
+  .dd-item.selected { background: #d0e4fa; color: #1a3a5c; font-weight: 700; }
+
+  /* 표준 버튼 */
+  .th-with-btn {
+    display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px; white-space: nowrap;
+  }
+  .std-btn {
+    display: inline-block; padding: 2px 8px;
+    font-size: 11px; font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    font-weight: 700; color: #1a3a5c; background: #eaf1fb;
+    border: 1.5px solid #1a3a5c; border-radius: 3px; cursor: pointer;
+    letter-spacing: 1px; transition: background 0.15s, color 0.15s; vertical-align: middle;
+  }
+  .std-btn:hover { background: #1a3a5c; color: #fff; }
+
+  /* Button row */
+  .btn-row {
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+  }
+  .btn {
+    padding: 9px 26px; font-size: 15px;
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    border: 1.5px solid #333; background: #fff; cursor: pointer;
+    border-radius: 3px; font-weight: 600; transition: all 0.15s; letter-spacing: 1px;
+  }
+  .btn:hover { background: #e8edf5; }
+  .btn.reset { border-color: #888; color: #555; }
+  .btn.reset:hover { background: #f3f3f3; border-color: #555; }
+  .btn.pdf-btn  { border-color: #6b3fa0; color: #6b3fa0; }
+  .btn.pdf-btn:hover { background: #f3eeff; }
+  .btn.print-btn { border-color: #555; color: #333; }
+  .btn.save-btn {
+    background: #1a3a5c; color: #fff; border-color: #1a3a5c;
+    box-shadow: 0 2px 8px rgba(26,58,92,0.18);
+  }
+  .btn.save-btn:hover { background: #25527d; }
+  .btn.db-save-btn {
+    background: #217346; color: #fff; border-color: #217346;
+    box-shadow: 0 2px 8px rgba(33,115,70,0.18);
+  }
+  .btn.db-save-btn:hover { background: #2a9158; }
+  .btn.db-export-btn {
+    background: #c55a11; color: #fff; border-color: #c55a11;
+    box-shadow: 0 2px 8px rgba(197,90,17,0.18);
+  }
+  .btn.db-export-btn:hover { background: #e06c1a; }
+  .db-badge {
+    display: inline-block; background: rgba(255,255,255,0.25);
+    border-radius: 10px; font-size: 11px; font-weight: 700;
+    padding: 1px 7px; margin-left: 5px; vertical-align: middle;
+  }
+
+  /* Toast */
+  #toast {
+    display: none; position: fixed; bottom: 36px; left: 50%;
+    transform: translateX(-50%); background: #1a3a5c; color: #fff;
+    padding: 12px 28px; border-radius: 30px; font-size: 15px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 9999; animation: fadeIn 0.2s;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* ── DB 조회 바 ── */
+  .nav-btn {
+    padding: 5px 14px;
+    background: #eaf1fb; border: 1.5px solid #1a3a5c;
+    border-radius: 3px; font-size: 15px; color: #1a3a5c;
+    cursor: pointer; font-weight: 700;
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+  }
+  .nav-btn:hover:not(:disabled) { background: #1a3a5c; color: #fff; }
+  .nav-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+
+  /* ── 조회 조건 드롭다운 (신규 2026-07-05) ── */
+  .qf-wrap { position: relative; min-width: 130px; }
+  .qf-input {
+    width: 100%; min-width: 130px;
+    border: 1.5px solid #aaa; border-radius: 3px;
+    background: #fff; font-family: 'Noto Sans KR','Malgun Gothic',sans-serif;
+    font-size: 13px; padding: 6px 22px 6px 8px; outline: none;
+    cursor: pointer; caret-color: transparent;
+  }
+  .qf-input:focus { border-color: #217346; }
+  .qf-input.disabled { background: #f5f5f5; color: #bbb; cursor: not-allowed; }
+  .qf-arrow {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; color: #888; pointer-events: none;
+  }
+  .qf-list {
+    display: none; position: absolute;
+    top: calc(100% + 2px); left: 0;
+    min-width: 100%; max-width: 260px;
+    background: #fff; border: 1.5px solid #217346;
+    border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    z-index: 9500; max-height: 200px; overflow-y: auto;
+  }
+  .qf-list.open { display: block; }
+  .qf-item {
+    padding: 7px 10px; font-size: 13px; cursor: pointer;
+    white-space: nowrap; border-bottom: 1px solid #eee;
+  }
+  .qf-item:last-child { border-bottom: none; }
+  .qf-item:hover { background: #eaf5ef; color: #217346; font-weight: 600; }
+  .qf-item.qf-empty { color: #999; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; border: none; padding: 10px; }
+    .btn-row { display: none; }
+    #data-source-bar { display: none !important; }
+    #query-bar { display: none !important; }
+  }
+
+  /* ── Supabase 입력·조회·수정·저장 상태 ── */
+  .mode-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:78px; padding:6px 12px; border-radius:999px;
+    background:#e9eef7; color:#45556d; font-size:12px; font-weight:800;
+  }
+  .mode-badge.new { background:#e6f7ef; color:#047857; }
+  .mode-badge.edit { background:#fff3df; color:#a35405; }
+  .mode-badge.view { background:#eaf1fb; color:#1a3a5c; }
+  .btn:disabled, .std-btn:disabled { opacity:.45; cursor:not-allowed; }
+  #report-form.form-locked input,
+  #report-form.form-locked textarea { cursor:not-allowed; }
+  .numeric-warning {
+    display:none; max-width:940px; margin:0 auto 10px;
+    padding:9px 12px; border-radius:5px; font-size:12px; line-height:1.5;
+  }
+  .numeric-warning.show { display:block; }
+  .numeric-warning.info { background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe; }
+  .numeric-warning.error { background:#fff1f2; color:#b91c1c; border:1px solid #fecdd3; }
+
+</style>
+</head>
+<body>
+
+<!-- ══ Supabase 연결 모달 ══ -->
+<div id="load-modal">
+  <div class="load-box">
+    <div class="load-icon">🔐</div>
+    <h2>Supabase 연결 확인</h2>
+    <p>로그인 계정과 회사 권한을 확인하고<br>작업일보 기준정보를 불러오는 중입니다.</p>
+    <div class="load-filename">Total_Production_DB</div><br>
+    <div id="load-status">⏳ 연결 중...</div>
+  </div>
+</div>
+
+<!-- ══ Supabase 데이터 소스 및 모드 표시 ══ -->
+<div id="data-source-bar" style="display:none; max-width:940px; margin:0 auto 10px;">
+  <span id="source-label">🗄️ 데이터 소스: Supabase</span>
+  <span id="mode-badge" class="mode-badge new">신규입력</span>
+  <button id="reload-btn" type="button" onclick="reloadMasterData()">🔄 기준정보 새로고침</button>
+</div>
+<div id="numeric-warning" class="numeric-warning info"></div>
+
+<!-- ══ DB 조회 바 (2026-07-05 수정: 작업일/고객사/품명/품번 각각 선택 조회) ══ -->
+<div id="query-bar" style="display:none; max-width:940px; margin:0 auto 10px; background:#fff; border:1.5px solid #217346; border-radius:5px; padding:12px 16px; flex-wrap:wrap; align-items:flex-end; gap:14px;">
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; width:100%;">
+    <span style="font-weight:700; color:#217346; font-size:14px; white-space:nowrap;">📋 DB 조회</span>
+
+    <div style="display:flex; flex-direction:column; gap:3px;">
+      <label style="font-size:11px; color:#888;">작업일</label>
+      <input type="date" id="query-date-input"
+        style="border:1.5px solid #aaa; border-radius:3px; padding:6px 8px;
+               font-family:'Noto Sans KR','Malgun Gothic',sans-serif; font-size:13px;
+               outline:none; cursor:pointer; background:#fff;">
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:3px;">
+      <label style="font-size:11px; color:#888;">고객사</label>
+      <div class="qf-wrap">
+        <input class="qf-input" id="q-customer" placeholder="전체" readonly onclick="toggleQf('qf-q-customer')">
+        <span class="qf-arrow">▾</span>
+        <div class="qf-list" id="qf-q-customer"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:3px;">
+      <label style="font-size:11px; color:#888;">품명</label>
+      <div class="qf-wrap">
+        <input class="qf-input" id="q-product" placeholder="전체" readonly onclick="toggleQf('qf-q-product')">
+        <span class="qf-arrow">▾</span>
+        <div class="qf-list" id="qf-q-product"></div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:3px;">
+      <label style="font-size:11px; color:#888;">품번</label>
+      <div class="qf-wrap">
+        <input class="qf-input" id="q-partno" placeholder="전체" readonly onclick="toggleQf('qf-q-partno')">
+        <span class="qf-arrow">▾</span>
+        <div class="qf-list" id="qf-q-partno"></div>
+      </div>
+    </div>
+
+    <button onclick="queryByDate()"
+      style="padding:8px 18px; background:#217346; color:#fff; border:none; border-radius:3px;
+             font-size:14px; font-weight:700; cursor:pointer; letter-spacing:1px;
+             font-family:'Noto Sans KR','Malgun Gothic',sans-serif;">🔍 조회</button>
+
+    <button onclick="resetQueryFilters()"
+      style="padding:8px 14px; background:#fff; color:#888; border:1.5px solid #ccc; border-radius:3px;
+             font-size:13px; font-weight:600; cursor:pointer;
+             font-family:'Noto Sans KR','Malgun Gothic',sans-serif;">↺ 조건 초기화</button>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:12px; width:100%;">
+    <div id="query-nav" style="display:none; align-items:center; gap:8px;">
+      <button id="prev-btn" class="nav-btn" onclick="navigateRecord(-1)" disabled>◀</button>
+      <span id="query-counter" style="font-size:14px; font-weight:700; color:#333; min-width:64px; text-align:center; white-space:nowrap;"></span>
+      <button id="next-btn" class="nav-btn" onclick="navigateRecord(1)">▶</button>
+    </div>
+    <span id="query-result-msg" style="font-size:13px; color:#888;"></span>
+  </div>
+</div>
+
+<div class="page" id="report-form">
+
+  <!-- 제목 -->
+  <div class="title-row">
+    <div class="main-title">작 업 일 보</div>
+  </div>
+
+  <!-- 1. 기본관리항목 -->
+  <div class="section-title">1. 기본관리항목</div>
+  <table>
+    <colgroup>
+      <col style="width:13%"><col style="width:20.3%">
+      <col style="width:13%"><col style="width:20.3%">
+      <col style="width:13%"><col style="width:20.4%">
+    </colgroup>
+    <tr>
+      <td class="label">작업일</td>
+      <td><input type="date" id="work-date"></td>
+      <td class="label">주/야간</td>
+      <td style="text-align:center">
+        <span class="cb-group"><input type="checkbox" id="day-shift"><label for="day-shift">주간</label></span>
+        <span class="cb-group"><input type="checkbox" id="night-shift"><label for="night-shift">야간</label></span>
+      </td>
+      <td class="label">작업자</td>
+      <td>
+        <div class="worker-cell">
+          <div class="dd-wrap" style="flex:1">
+            <input class="dd-input" id="worker" placeholder="선택" readonly onclick="toggleDd('dd-worker')">
+            <span class="dd-arrow">▾</span>
+            <div class="dd-list" id="dd-worker"></div>
+          </div>
+          <span>(인)</span>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="label">고객사</td>
+      <td>
+        <div class="dd-wrap">
+          <input class="dd-input" id="customer" placeholder="선택▾" readonly onclick="toggleDd('dd-customer')">
+          <span class="dd-arrow">▾</span>
+          <div class="dd-list" id="dd-customer"></div>
+        </div>
+      </td>
+      <td class="label">품명</td>
+      <td>
+        <div class="dd-wrap">
+          <input class="dd-input disabled" id="product-name" placeholder="고객사 먼저 선택" readonly onclick="toggleDd('dd-product-name')">
+          <span class="dd-arrow">▾</span>
+          <div class="dd-list" id="dd-product-name"></div>
+        </div>
+      </td>
+      <td class="label">품번</td>
+      <td>
+        <div class="dd-wrap">
+          <input class="dd-input disabled" id="product-no" placeholder="품명 먼저 선택" readonly onclick="toggleDd('dd-product-no')">
+          <span class="dd-arrow">▾</span>
+          <div class="dd-list" id="dd-product-no"></div>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td class="label">도면</td>
+      <td style="text-align:center">
+        <span class="cb-group"><input type="checkbox" id="draw-yes"><label for="draw-yes">유</label></span>
+        <span class="cb-group"><input type="checkbox" id="draw-no"><label for="draw-no">무</label></span>
+      </td>
+      <td class="label">재질</td>
+      <td>
+        <div class="dd-wrap">
+          <input class="dd-input" id="material" placeholder="선택▾" readonly onclick="toggleDd('dd-material')">
+          <span class="dd-arrow">▾</span>
+          <div class="dd-list" id="dd-material"></div>
+        </div>
+      </td>
+      <td class="label">소재상태</td>
+      <td style="text-align:center">
+        <span class="cb-group"><input type="checkbox" id="mat-ok"><label for="mat-ok">양호</label></span>
+        <span class="cb-group"><input type="checkbox" id="mat-bad"><label for="mat-bad">불량</label></span>
+      </td>
+    </tr>
+    <tr>
+      <td class="label">설비명</td>
+      <td>
+        <div class="dd-wrap">
+          <input class="dd-input" id="equip-name" placeholder="선택▾" readonly onclick="toggleDd('dd-equip-name')">
+          <span class="dd-arrow">▾</span>
+          <div class="dd-list" id="dd-equip-name"></div>
+        </div>
+      </td>
+      <td class="label">설비번호</td>
+      <td><input type="text" id="equip-no" readonly
+            style="background:#f5f7fa;color:#333;cursor:default;"
+            placeholder="설비명 선택 시 자동입력"></td>
+      <td class="label">설비상태</td>
+      <td style="text-align:center">
+        <span class="cb-group"><input type="checkbox" id="equip-ok"><label for="equip-ok">양호</label></span>
+        <span class="cb-group"><input type="checkbox" id="equip-bad"><label for="equip-bad">이상</label></span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- 2. 생산수량현황 -->
+  <div class="section-title">2. 생산수량현황</div>
+  <table>
+    <tr>
+      <th>계획수량</th><th>투입수량</th><th>양품수량</th>
+      <th>불량수량</th><th>재작업수량</th><th>가동시간</th><th>비가동시간</th>
+      <th>템퍼링작업</th><th>교정작업</th>
+    </tr>
+    <tr>
+      <td><input type="number" id="plan-qty" min="0"></td>
+      <td><input type="number" id="input-qty" min="0"></td>
+      <td><input type="number" id="good-qty" min="0"></td>
+      <td><input type="number" id="bad-qty" min="0"></td>
+      <td><input type="number" id="rework-qty" min="0"></td>
+      <td><input type="text" id="op-time"></td>
+      <td><input type="text" id="non-op-time"></td>
+      <td style="text-align:center">
+        <div><span class="cb-group"><input type="checkbox" id="temper-do"><label for="temper-do">실시</label></span></div>
+        <div><span class="cb-group"><input type="checkbox" id="temper-skip"><label for="temper-skip">미실시</label></span></div>
+      </td>
+      <td style="text-align:center">
+        <div><span class="cb-group"><input type="checkbox" id="correct-do"><label for="correct-do">실시</label></span></div>
+        <div><span class="cb-group"><input type="checkbox" id="correct-skip"><label for="correct-skip">미실시</label></span></div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- 3. 주요공정 파라미터 -->
+  <div class="section-title">3. 주요공정 파라미터</div>
+  <table>
+    <!-- 설정값 헤더 → 6열: 표면경도 (경도값→표면경도) -->
+    <tr>
+      <th style="width:70px">항목</th>
+      <th><span class="th-with-btn">전압(V)<button class="std-btn" onclick="setStd('volt-set','12.5')">표준</button></span></th>
+      <th><span class="th-with-btn">전류(A)<button class="std-btn" onclick="setStd('amp-set','8.25')">표준</button></span></th>
+      <th><span class="th-with-btn">출력(kW)<button class="std-btn" onclick="setStd('kw-set','1.25')">표준</button></span></th>
+      <th><span class="th-with-btn">주파수(kHz)<button class="std-btn" onclick="setStd('khz-set','120')">표준</button></span></th>
+      <th><span class="th-with-btn" style="font-size:8.4px;">NO2<button class="std-btn" onclick="setStd('no2-set','')">표준</button></span></th>
+      <th>표면경도</th>
+    </tr>
+    <!-- 설정값 입력 → 6열: P1 / 입력 -->
+    <tr>
+      <td class="label">설정값</td>
+      <td><div class="preset"><span>st 12.5/</span><input type="text" id="volt-set"></div></td>
+      <td><div class="preset"><span>st 8.25/</span><input type="text" id="amp-set"></div></td>
+      <td><div class="preset"><span>st 1.25/</span><input type="text" id="kw-set"></div></td>
+      <td><div class="preset"><span>st 120/</span><input type="text" id="khz-set"></div></td>
+      <td style="text-align:center;"><input type="text" id="no2-set" placeholder="NO3" style="text-align:center;font-size:8.4px;"></td>
+      <td style="padding:3px 5px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P1 /</span>
+          <input type="text" id="p1-val" style="flex:1;text-align:center;">
+        </div>
+      </td>
+    </tr>
+    <!-- 가열조건 헤더 → 6열: P2 / 입력 -->
+    <tr>
+      <th>항목</th><th>가열시간(sec)</th><th>이동속도(mm/s)</th>
+      <th>코일-제품간격(mm)</th><th>회전수(RPM)</th>
+      <th style="font-size:8.4px;">NO4</th>
+      <td style="padding:3px 5px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P2 /</span>
+          <input type="text" id="p2-val" style="flex:1;text-align:center;">
+        </div>
+      </td>
+    </tr>
+    <!-- 가열조건 입력 → 6열: P3 / 입력 -->
+    <tr>
+      <td class="label">가열조건</td>
+      <td><input type="text" id="heat-time" style="text-align:center;"></td>
+      <td><input type="text" id="move-speed" style="text-align:center;"></td>
+      <td><input type="text" id="coil-gap" style="text-align:center;"></td>
+      <td><input type="text" id="rpm" style="text-align:center;"></td>
+      <td style="text-align:center;"><input type="text" id="no3-set" placeholder="NO5" style="text-align:center;font-size:8.4px;"></td>
+      <td style="padding:3px 5px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P3 /</span>
+          <input type="text" id="p3-val" style="flex:1;text-align:center;">
+        </div>
+      </td>
+    </tr>
+    <!-- 냉각조건 헤더 → 6열: 경화깊이 (표면경도→경화깊이) -->
+    <tr>
+      <th>항목</th><th>냉각수압력(bar)</th><th>냉각수온도(℃)</th>
+      <th>냉각시간(sec)</th><th>LOT NO</th>
+      <th style="font-size:8.4px;">NO6</th>
+      <th>경화깊이</th>
+    </tr>
+    <!-- 냉각조건 입력 → 6열: 입력칸 -->
+    <tr>
+      <td class="label">냉각조건</td>
+      <td><input type="text" id="cool-bar" style="text-align:center;"></td>
+      <td><input type="text" id="cool-temp" style="text-align:center;"></td>
+      <td><input type="text" id="cool-time" style="text-align:center;"></td>
+      <td><input type="text" id="lot-no" style="text-align:center;"></td>
+      <td style="text-align:center;"><input type="text" id="no5-set" placeholder="NO7" style="text-align:center;font-size:8.4px;"></td>
+      <td style="padding:3px 5px;">
+        <input type="text" id="surface-hard" style="width:100%;text-align:center;">
+      </td>
+    </tr>
+    <!-- 조건값 헤더 → 6열: 심부경도 / 템퍼링경도→표준경도(HRC,HS,HV) -->
+    <tr>
+      <th>항목</th><th>템퍼링온도(℃)</th><th>템퍼링시간(sec)</th>
+      <th>표준경도(HRC,HS,HV)</th><th>교정값(mm)</th>
+      <th style="font-size:8.4px;">NO8</th>
+      <th>심부경도</th>
+    </tr>
+    <!-- 조건값 입력 → 6열: 입력칸 -->
+    <tr>
+      <td class="label">조건값</td>
+      <td><input type="text" id="temper-temp" style="text-align:center;"></td>
+      <td><input type="text" id="temper-time" style="text-align:center;"></td>
+      <td><input type="text" id="temper-hard" style="text-align:center;"></td>
+      <td><input type="text" id="correct-val" style="text-align:center;"></td>
+      <td style="text-align:center;"><input type="text" id="no7-set" placeholder="NO9" style="text-align:center;font-size:8.4px;"></td>
+      <td style="padding:3px 5px;">
+        <input type="text" id="depth-hard" style="width:100%;text-align:center;">
+      </td>
+    </tr>
+  </table>
+
+  <!-- 4. 설비 및 코일점검 -->
+  <div class="section-title">4. 설비 및 코일점검</div>
+  <table>
+    <tr>
+      <th style="width:68px">코일번호</th>
+      <th style="width:110px">코일 세척</th>
+      <th style="width:120px">변형/스파크흔</th>
+      <th style="width:100px">냉각수농도(%)</th>
+      <th style="width:100px">냉각수 오염도</th>
+      <th>센서(온도/압력) 상태</th>
+    </tr>
+    <tr>
+      <td><input type="text" id="coil-no"></td>
+      <td>
+        <div><span class="cb-group"><input type="checkbox" id="wash-done"><label for="wash-done">완료</label></span></div>
+        <div><span class="cb-group"><input type="checkbox" id="wash-skip"><label for="wash-skip">미시행</label></span></div>
+      </td>
+      <td>
+        <div><span class="cb-group"><input type="checkbox" id="deform-no"><label for="deform-no">이상없음</label></span></div>
+        <div><span class="cb-group"><input type="checkbox" id="deform-yes"><label for="deform-yes">이상있음</label></span></div>
+      </td>
+      <td><input type="text" id="cool-conc" placeholder="예) 5%"></td>
+      <td>
+        <div><span class="cb-group"><input type="checkbox" id="water-ok"><label for="water-ok">양호</label></span></div>
+        <div><span class="cb-group"><input type="checkbox" id="water-rep"><label for="water-rep">요교체</label></span></div>
+      </td>
+      <td>
+        <div><span class="cb-group"><input type="checkbox" id="sensor-ok"><label for="sensor-ok">정상</label></span></div>
+        <div class="sensor-bad-row">
+          <input type="checkbox" id="sensor-bad">
+          <label for="sensor-bad">이상(내용:</label>
+          <input type="text" id="sensor-detail" placeholder="">
+          <span style="font-size:13px">)</span>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- 5. 비가동 유무 -->
+  <div class="section-title">5. 비가동 유무</div>
+  <table>
+    <tr>
+      <th style="width:38px">No.</th>
+      <th>비가동 유형</th>
+      <th style="width:80px">비가동Hr</th>
+      <th style="width:72px">부품교체</th>
+      <th style="width:72px">SPARE품</th>
+      <th>조치/비고</th>
+    </tr>
+    <tr>
+      <td class="no-cell">1</td>
+      <td><input type="text" id="non-type1"></td>
+      <td><input type="text" id="non-hr1"></td>
+      <td><input type="text" id="part-rep1"></td>
+      <td><input type="text" id="spare1"></td>
+      <td><input type="text" id="action1"></td>
+    </tr>
+  </table>
+
+  <!-- 6. 소재입고검사 -->
+  <div class="section-title">6. 소재입고검사</div>
+  <table>
+    <tr>
+      <th style="width:120px">입고일</th>
+      <th style="width:70px">입고수량</th>
+      <th style="width:60px">외관</th>
+      <th style="width:80px">도면(사양)</th>
+      <th style="width:110px">열처리(QT)</th>
+      <th style="width:120px">출고일</th>
+      <th style="width:70px">출고수량</th>
+      <th style="width:80px">발청작업</th>
+      <th style="width:80px">검사결과</th>
+    </tr>
+    <tr>
+      <td style="padding:2px 3px;"><input type="date" id="inspect-date" style="width:100%;font-size:12px;padding:1px 2px;"></td>
+      <td><input type="number" id="insp-qty" min="0"></td>
+      <td style="text-align:center;">
+        <span class="cb-group"><input type="checkbox" id="insp-outer-ok"><label for="insp-outer-ok">양호</label></span>
+        <span class="cb-group"><input type="checkbox" id="insp-outer-bad"><label for="insp-outer-bad">불량</label></span>
+      </td>
+      <td style="text-align:center;">
+        <span class="cb-group"><input type="checkbox" id="insp-draw-ok"><label for="insp-draw-ok">확인</label></span>
+        <span class="cb-group"><input type="checkbox" id="insp-draw-no"><label for="insp-draw-no">미확인</label></span>
+      </td>
+      <td style="text-align:center;">
+        <span class="cb-group"><input type="checkbox" id="qt-do"><label for="qt-do">실시</label></span>
+        <span class="cb-group"><input type="checkbox" id="qt-skip"><label for="qt-skip">미실시</label></span>
+      </td>
+      <td style="padding:2px 3px;"><input type="date" id="tag-date" style="width:100%;font-size:12px;padding:1px 2px;"></td>
+      <td><input type="number" id="tag-qty" min="0"></td>
+      <td style="text-align:center;">
+        <span class="cb-group"><input type="checkbox" id="trade-write"><label for="trade-write">발청작업</label></span>
+      </td>
+      <td style="text-align:center;">
+        <span class="cb-group"><input type="checkbox" id="insp-result-ok"><label for="insp-result-ok">양호</label></span>
+        <span class="cb-group"><input type="checkbox" id="insp-result-bad"><label for="insp-result-bad">불량</label></span>
+      </td>
+    </tr>
+  </table>
+
+  <!-- 7. 특이 사항 -->
+  <table style="margin-top:8px">
+    <tr>
+      <td class="label" style="width:72px;vertical-align:top;padding-top:8px">7. 특이 사항</td>
+      <td><textarea id="special-note" placeholder="특이 사항을 입력하세요."></textarea></td>
+    </tr>
+  </table>
+
+  <!-- 버튼 -->
+  <div class="btn-row">
+    <button class="btn" id="btn-new" type="button" onclick="startNew()">신규입력</button>
+    <button class="btn" id="btn-edit" type="button" onclick="startEdit()" disabled>수정</button>
+    <button class="btn reset" id="btn-reset" type="button" onclick="resetCurrentForm()">초기화</button>
+    <button class="btn db-save-btn" id="btn-save" type="button" onclick="saveRecord()">💾 저장</button>
+  </div>
+</div>
+
+<div id="toast">처리되었습니다.</div>
+
+
+<script>
+"use strict";
+
+/* =========================================================
+   Supabase / 멀티테넌트 설정
+   ========================================================= */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME = "Total_Production_DB";
+const LOGIN_PAGE_URL = "../index.html";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let currentCompanyName = "";
+let mode = "new";             // new | view | edit
+let selectedRecordId = null;
+let formDirty = false;
+
+let EMPLOYEES = [];
+let CUSTOMERS = [];
+let MATERIALS = [];
+let EQUIPMENT_LIST = [];
+let PRODUCT_DATA = {};
+let queryResults = [];
+let queryIndex = 0;
+let openDdId = null;
+let openQfId = null;
+
+const SELECT_COLUMNS = [
+  "production_system_id","company_id","source_record_key","company_name_raw",
+  "work_date","receiving_date","customer_name","item_name","item_number",
+  "day_night_shift","worker_name","drawing_status","material_name",
+  "material_condition","equipment_name","equipment_number","equipment_condition",
+  "planned_quantity","input_quantity","good_quantity","defect_quantity",
+  "rework_quantity","operation_hours","downtime_hours","tempering_work",
+  "straightening_work","voltage_v","current_a","output_kw","frequency_khz",
+  "heating_time_sec","moving_speed_mm_sec","coil_product_gap_mm","rotation_rpm",
+  "cooling_water_pressure_bar","cooling_water_temperature_c","cooling_time_sec",
+  "lot_no","tempering_temperature_c","tempering_time_sec",
+  "tempering_hardness_hrc","straightening_value_mm","coil_number",
+  "coil_cleaning","deformation_spark_mark","cooling_water_concentration_pct",
+  "cooling_water_contamination","sensor_status","sensor_abnormal_detail",
+  "downtime_type","downtime_hr","part_replacement","spare_part","action_notes",
+  "receiving_quantity","receiving_appearance","receiving_drawing",
+  "receiving_heat_treatment_qt","shipping_date","shipping_quantity",
+  "rust_prevention_work","inspection_result","working_hours","p1","p2","p3",
+  "hardening_depth","core_hardness","special_notes","is_active"
+].join(",");
+
+/* =========================================================
+   인증 및 회사 권한
+   ========================================================= */
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const { data:userData, error:userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if (userError || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const { data:profile, error:profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope:"local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+
+  const companyResult = await sb
+    .from("companies")
+    .select("company_name")
+    .eq("company_id", profile.company_id)
+    .maybeSingle();
+
+  if (!companyResult.error && companyResult.data) {
+    currentCompanyName = companyResult.data.company_name || "";
+  }
+
+  return true;
+}
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") redirectToLogin();
+});
+
+/* =========================================================
+   공통 유틸
+   ========================================================= */
+function todayLocal() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function val(id) {
+  return (document.getElementById(id)?.value || "").trim();
+}
+
+function cb(id) {
+  return !!document.getElementById(id)?.checked;
+}
+
+function textOrNull(id) {
+  const value = val(id);
+  return value === "" ? null : value;
+}
+
+function integerOrNull(id) {
+  const value = val(id).replace(/,/g, "");
+  if (value === "") return null;
+  const number = Number(value);
+  return Number.isInteger(number) ? number : NaN;
+}
+
+function decimalOrNull(id) {
+  const value = val(id).replace(/,/g, "");
+  if (value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : NaN;
+}
+
+function choice(yesId, yesText, noId, noText) {
+  if (cb(yesId)) return yesText;
+  if (cb(noId)) return noText;
+  return null;
+}
+
+function setValue(id, value) {
+  const element = document.getElementById(id);
+  if (!element) return;
+  element.value = value === null || value === undefined ? "" : String(value);
+}
+
+function setChecked(id, checked) {
+  const element = document.getElementById(id);
+  if (element) element.checked = !!checked;
+}
+
+function setChoice(yesId, noId, value, yesText, noText) {
+  setChecked(yesId, String(value || "") === yesText);
+  setChecked(noId, String(value || "") === noText);
+}
+
+function dbErrorMessage(error) {
+  if (!error) return "알 수 없는 오류";
+  return error.message || error.details || error.hint || String(error);
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.style.display = "block";
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => {
+    toast.style.display = "none";
+  }, 2800);
+}
+
+function showWarning(message, type = "info") {
+  const box = document.getElementById("numeric-warning");
+  box.className = "numeric-warning show " + type;
+  box.textContent = message;
+}
+
+function clearWarning() {
+  const box = document.getElementById("numeric-warning");
+  box.className = "numeric-warning info";
+  box.textContent = "";
+}
+
+function setLoading(show, message) {
+  const modal = document.getElementById("load-modal");
+  const status = document.getElementById("load-status");
+  if (status && message) status.textContent = message;
+  modal.style.display = show ? "flex" : "none";
+}
+
+function generateSourceRecordKey() {
+  const uuid = crypto.randomUUID
+    ? crypto.randomUUID().replace(/-/g, "")
+    : Date.now().toString(36) + Math.random().toString(36).slice(2);
+  return "web_" + uuid;
+}
+
+/* =========================================================
+   모드 관리: 입력 / 조회 / 수정 / 저장
+   ========================================================= */
+function setFormEnabled(enabled) {
+  const form = document.getElementById("report-form");
+  form.classList.toggle("form-locked", !enabled);
+
+  form.querySelectorAll("input, textarea").forEach((element) => {
+    element.disabled = !enabled;
+  });
+
+  // 설비번호는 항상 자동입력·읽기전용
+  const equipmentNumber = document.getElementById("equip-no");
+  equipmentNumber.disabled = !enabled;
+  equipmentNumber.readOnly = true;
+
+  form.querySelectorAll(".std-btn").forEach((button) => {
+    button.disabled = !enabled;
+  });
+}
+
+function setMode(nextMode) {
+  mode = nextMode;
+  const editing = mode === "new" || mode === "edit";
+  setFormEnabled(editing);
+
+  const badge = document.getElementById("mode-badge");
+  badge.className = "mode-badge " + mode;
+  badge.textContent =
+    mode === "new" ? "신규입력" :
+    mode === "edit" ? "수정중" : "조회됨";
+
+  document.getElementById("btn-edit").disabled =
+    !selectedRecordId || editing;
+  document.getElementById("btn-save").disabled = !editing;
+}
+
+function clearFormValues() {
+  const form = document.getElementById("report-form");
+
+  form.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]')
+    .forEach((element) => { element.value = ""; });
+
+  form.querySelectorAll('input[type="checkbox"]')
+    .forEach((element) => { element.checked = false; });
+
+  form.querySelectorAll("textarea")
+    .forEach((element) => { element.value = ""; });
+
+  document.getElementById("work-date").value = todayLocal();
+  document.getElementById("day-shift").checked = true;
+
+  document.getElementById("product-name").classList.add("disabled");
+  document.getElementById("product-name").placeholder = "고객사 먼저 선택";
+  document.getElementById("product-no").classList.add("disabled");
+  document.getElementById("product-no").placeholder = "품명 먼저 선택";
+
+  selectedRecordId = null;
+  formDirty = false;
+  clearWarning();
+}
+
+function startNew() {
+  if (formDirty && !confirm("저장하지 않은 입력 내용이 있습니다. 신규 입력으로 전환하시겠습니까?")) {
+    return;
+  }
+  clearFormValues();
+  setMode("new");
+  document.getElementById("work-date").focus();
+  showWarning("신규 작업일보를 입력한 후 저장 버튼을 누르세요.", "info");
+}
+
+function startEdit() {
+  if (!selectedRecordId) {
+    showToast("⚠️ 조회한 작업일보가 없습니다.");
+    return;
+  }
+  formDirty = false;
+  setMode("edit");
+  showWarning("조회한 작업일보를 수정 중입니다. 수정 후 저장 버튼을 누르세요.", "info");
+}
+
+function resetCurrentForm() {
+  if (!confirm("현재 입력 내용을 초기화하시겠습니까?")) return;
+
+  if (mode === "view" && queryResults[queryIndex]) {
+    loadRecordToForm(queryResults[queryIndex]);
+    return;
+  }
+
+  clearFormValues();
+  setMode("new");
+}
+
+/* =========================================================
+   상반 체크박스 동시 선택 방지
+   ========================================================= */
+const CHECK_PAIRS = [
+  ["day-shift","night-shift"],
+  ["draw-yes","draw-no"],
+  ["mat-ok","mat-bad"],
+  ["equip-ok","equip-bad"],
+  ["temper-do","temper-skip"],
+  ["correct-do","correct-skip"],
+  ["wash-done","wash-skip"],
+  ["deform-no","deform-yes"],
+  ["water-ok","water-rep"],
+  ["sensor-ok","sensor-bad"],
+  ["insp-outer-ok","insp-outer-bad"],
+  ["insp-draw-ok","insp-draw-no"],
+  ["qt-do","qt-skip"],
+  ["insp-result-ok","insp-result-bad"]
+];
+
+function bindExclusiveCheckboxes() {
+  CHECK_PAIRS.forEach(([firstId, secondId]) => {
+    const first = document.getElementById(firstId);
+    const second = document.getElementById(secondId);
+
+    first?.addEventListener("change", () => {
+      if (first.checked && second) second.checked = false;
+    });
+
+    second?.addEventListener("change", () => {
+      if (second.checked && first) first.checked = false;
+    });
+  });
+}
+
+/* =========================================================
+   기준정보: 로그인 회사의 데이터만 조회
+   ========================================================= */
+async function loadMasterData() {
+  if (!currentProfile) return;
+
+  const companyId = currentProfile.company_id;
+
+  const [
+    employeeResult,
+    customerResult,
+    itemResult,
+    materialResult,
+    equipmentResult
+  ] = await Promise.all([
+    sb.from("employees")
+      .select("employee_name")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .order("employee_name"),
+
+    sb.from("customers")
+      .select("customer_system_id,customer_name")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .order("customer_name"),
+
+    sb.from("items")
+      .select("item_system_id,customer_system_id,item_name,item_number")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .order("item_name")
+      .order("item_number"),
+
+    sb.from("materials")
+      .select("material_name")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .order("material_name"),
+
+    sb.from("equipment")
+      .select("equipment_name,equipment_number")
+      .eq("company_id", companyId)
+      .eq("is_active", true)
+      .order("equipment_number")
+  ]);
+
+  const errors = [
+    employeeResult.error,
+    customerResult.error,
+    itemResult.error,
+    materialResult.error,
+    equipmentResult.error
+  ].filter(Boolean);
+
+  if (errors.length) throw errors[0];
+
+  EMPLOYEES = [...new Set((employeeResult.data || [])
+    .map((row) => String(row.employee_name || "").trim())
+    .filter(Boolean))];
+
+  const customerRows = customerResult.data || [];
+  const customerMap = new Map(
+    customerRows.map((row) => [row.customer_system_id, row.customer_name])
+  );
+
+  CUSTOMERS = [...new Set(customerRows
+    .map((row) => String(row.customer_name || "").trim())
+    .filter(Boolean))];
+
+  MATERIALS = [...new Set((materialResult.data || [])
+    .map((row) => String(row.material_name || "").trim())
+    .filter(Boolean))];
+
+  EQUIPMENT_LIST = (equipmentResult.data || [])
+    .map((row) => ({
+      name:String(row.equipment_name || "").trim(),
+      no:String(row.equipment_number || "").trim()
+    }))
+    .filter((row) => row.name);
+
+  PRODUCT_DATA = {};
+  (itemResult.data || []).forEach((row) => {
+    const customerName = customerMap.get(row.customer_system_id);
+    const itemName = String(row.item_name || "").trim();
+    const itemNumber = String(row.item_number || "").trim();
+
+    if (!customerName || !itemName) return;
+    if (!PRODUCT_DATA[customerName]) PRODUCT_DATA[customerName] = {};
+    if (!PRODUCT_DATA[customerName][itemName]) {
+      PRODUCT_DATA[customerName][itemName] = [];
+    }
+    if (
+      itemNumber &&
+      !PRODUCT_DATA[customerName][itemName].includes(itemNumber)
+    ) {
+      PRODUCT_DATA[customerName][itemName].push(itemNumber);
+    }
+  });
+
+  applyDataToForm();
+  initQueryFilters();
+
+  document.getElementById("source-label").textContent =
+    "🗄️ Supabase · " + (currentCompanyName || "로그인 회사") +
+    " | 작업자 " + EMPLOYEES.length + "명" +
+    " · 고객사 " + CUSTOMERS.length + "곳" +
+    " · 재질 " + MATERIALS.length + "종" +
+    " · 설비 " + EQUIPMENT_LIST.length + "개";
+}
+
+async function reloadMasterData() {
+  setLoading(true, "⏳ 기준정보를 새로 불러오는 중입니다...");
+  try {
+    await loadMasterData();
+    showToast("✅ 기준정보를 새로 불러왔습니다.");
+  } catch (error) {
+    alert("기준정보 조회 오류: " + dbErrorMessage(error));
+  } finally {
+    setLoading(false);
+  }
+}
+
+/* =========================================================
+   입력폼 드롭다운
+   ========================================================= */
+function closeDd() {
+  if (openDdId) {
+    document.getElementById(openDdId)?.classList.remove("open");
+    openDdId = null;
+  }
+}
+
+function toggleDd(ddId) {
+  const input = document.getElementById(ddId.replace("dd-", ""));
+  if (!input || input.disabled || input.classList.contains("disabled")) return;
+  if (openDdId === ddId) {
+    closeDd();
+    return;
+  }
+  closeDd();
+  document.getElementById(ddId)?.classList.add("open");
+  openDdId = ddId;
+}
+
+function buildList(ddId, items, onSelect) {
+  const list = document.getElementById(ddId);
+  if (!list) return;
+  list.innerHTML = "";
+
+  items.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "dd-item";
+    div.textContent = item;
+    div.onclick = (event) => {
+      event.stopPropagation();
+      onSelect(item);
+      closeDd();
+      formDirty = true;
+    };
+    list.appendChild(div);
+  });
+}
+
+function applyDataToForm() {
+  buildList("dd-worker", EMPLOYEES, (value) => {
+    document.getElementById("worker").value = value;
+  });
+
+  buildList("dd-material", MATERIALS, (value) => {
+    document.getElementById("material").value = value;
+  });
+
+  buildList("dd-equip-name", EQUIPMENT_LIST.map((row) => row.name), (value) => {
+    document.getElementById("equip-name").value = value;
+    const found = EQUIPMENT_LIST.find((row) => row.name === value);
+    document.getElementById("equip-no").value = found ? found.no : "";
+  });
+
+  buildList("dd-customer", CUSTOMERS, (customerName) => {
+    document.getElementById("customer").value = customerName;
+
+    const itemNameInput = document.getElementById("product-name");
+    const itemNumberInput = document.getElementById("product-no");
+
+    itemNameInput.value = "";
+    itemNameInput.placeholder = "선택▾";
+    itemNameInput.classList.remove("disabled");
+
+    itemNumberInput.value = "";
+    itemNumberInput.placeholder = "품명 먼저 선택";
+    itemNumberInput.classList.add("disabled");
+
+    const itemNames = Object.keys(PRODUCT_DATA[customerName] || {});
+    buildList("dd-product-name", itemNames, (itemName) => {
+      itemNameInput.value = itemName;
+
+      itemNumberInput.value = "";
+      itemNumberInput.placeholder = "선택▾";
+      itemNumberInput.classList.remove("disabled");
+
+      const itemNumbers =
+        (PRODUCT_DATA[customerName] || {})[itemName] || [];
+
+      buildList("dd-product-no", itemNumbers, (itemNumber) => {
+        itemNumberInput.value = itemNumber;
+        setChecked("draw-yes", true);
+        setChecked("draw-no", false);
+      });
+    });
+  });
+}
+
+/* =========================================================
+   조회조건 드롭다운
+   ========================================================= */
+function closeQf() {
+  if (openQfId) {
+    document.getElementById(openQfId)?.classList.remove("open");
+    openQfId = null;
+  }
+}
+
+function toggleQf(qfId) {
+  const input = document.getElementById(qfId.replace("qf-", ""));
+  if (!input || input.disabled || input.classList.contains("disabled")) return;
+  if (openQfId === qfId) {
+    closeQf();
+    return;
+  }
+  closeQf();
+  document.getElementById(qfId)?.classList.add("open");
+  openQfId = qfId;
+}
+
+function buildQfList(qfId, items, onSelect) {
+  const list = document.getElementById(qfId);
+  if (!list) return;
+  list.innerHTML = "";
+
+  const allDiv = document.createElement("div");
+  allDiv.className = "qf-item qf-empty";
+  allDiv.textContent = "전체 (선택 안 함)";
+  allDiv.onclick = (event) => {
+    event.stopPropagation();
+    onSelect("");
+    closeQf();
+  };
+  list.appendChild(allDiv);
+
+  items.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "qf-item";
+    div.textContent = item;
+    div.onclick = (event) => {
+      event.stopPropagation();
+      onSelect(item);
+      closeQf();
+    };
+    list.appendChild(div);
+  });
+}
+
+function initQueryFilters() {
+  buildQfList("qf-q-customer", CUSTOMERS, (customerName) => {
+    document.getElementById("q-customer").value = customerName;
+    document.getElementById("q-product").value = "";
+    document.getElementById("q-partno").value = "";
+    refreshQProductList(customerName);
+  });
+  refreshQProductList("");
+}
+
+function refreshQProductList(customerName) {
+  const names = new Set();
+
+  if (customerName && PRODUCT_DATA[customerName]) {
+    Object.keys(PRODUCT_DATA[customerName]).forEach((name) => names.add(name));
+  } else {
+    Object.values(PRODUCT_DATA).forEach((items) => {
+      Object.keys(items || {}).forEach((name) => names.add(name));
+    });
+  }
+
+  buildQfList("qf-q-product", [...names].sort(), (itemName) => {
+    document.getElementById("q-product").value = itemName;
+    document.getElementById("q-partno").value = "";
+    refreshQPartNoList(
+      document.getElementById("q-customer").value,
+      itemName
+    );
+  });
+
+  refreshQPartNoList(
+    customerName,
+    document.getElementById("q-product").value
+  );
+}
+
+function refreshQPartNoList(customerName, itemName) {
+  const numbers = new Set();
+
+  if (customerName && PRODUCT_DATA[customerName]) {
+    if (itemName) {
+      (PRODUCT_DATA[customerName][itemName] || [])
+        .forEach((number) => numbers.add(number));
+    } else {
+      Object.values(PRODUCT_DATA[customerName])
+        .forEach((list) => list.forEach((number) => numbers.add(number)));
+    }
+  } else {
+    Object.values(PRODUCT_DATA).forEach((items) => {
+      Object.entries(items || {}).forEach(([name, list]) => {
+        if (!itemName || name === itemName) {
+          list.forEach((number) => numbers.add(number));
+        }
+      });
+    });
+  }
+
+  buildQfList("qf-q-partno", [...numbers].sort(), (itemNumber) => {
+    document.getElementById("q-partno").value = itemNumber;
+  });
+}
+
+function resetQueryFilters() {
+  document.getElementById("query-date-input").value = "";
+  document.getElementById("q-customer").value = "";
+  document.getElementById("q-product").value = "";
+  document.getElementById("q-partno").value = "";
+  document.getElementById("query-result-msg").textContent = "";
+  document.getElementById("query-nav").style.display = "none";
+  refreshQProductList("");
+}
+
+/* =========================================================
+   작업일보 조회
+   ========================================================= */
+async function queryByDate() {
+  const dateValue = val("query-date-input");
+  const customerValue = val("q-customer");
+  const itemNameValue = val("q-product");
+  const itemNumberValue = val("q-partno");
+
+  if (!dateValue && !customerValue && !itemNameValue && !itemNumberValue) {
+    showToast("⚠️ 작업일·고객사·품명·품번 중 최소 1개를 입력하세요.");
+    return;
+  }
+
+  if (
+    formDirty &&
+    (mode === "new" || mode === "edit") &&
+    !confirm("저장하지 않은 입력 내용이 있습니다. 조회를 계속하시겠습니까?")
+  ) {
+    return;
+  }
+
+  const message = document.getElementById("query-result-msg");
+  message.style.color = "#888";
+  message.textContent = "⏳ Supabase 조회 중...";
+  document.getElementById("query-nav").style.display = "none";
+
+  try {
+    let query = sb
+      .from(TABLE_NAME)
+      .select(SELECT_COLUMNS)
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true);
+
+    if (dateValue) query = query.eq("work_date", dateValue);
+    if (customerValue) query = query.eq("customer_name", customerValue);
+    if (itemNameValue) query = query.eq("item_name", itemNameValue);
+    if (itemNumberValue) query = query.eq("item_number", itemNumberValue);
+
+    const { data, error } = await query
+      .order("work_date", { ascending:false, nullsFirst:false })
+      .order("customer_name", { ascending:true })
+      .order("item_name", { ascending:true })
+      .limit(500);
+
+    if (error) throw error;
+
+    queryResults = data || [];
+    queryIndex = 0;
+
+    if (!queryResults.length) {
+      clearFormValues();
+      message.style.color = "#c0392b";
+      message.textContent = "조회 결과 없음";
+      setMode("new");
+      return;
+    }
+
+    message.style.color = "#27ae60";
+    message.textContent = queryResults.length + "건 조회됨";
+    document.getElementById("query-nav").style.display = "flex";
+    updateQueryNav();
+    loadRecordToForm(queryResults[0]);
+  } catch (error) {
+    console.error(error);
+    message.style.color = "#c0392b";
+    message.textContent = "❌ 조회 오류: " + dbErrorMessage(error);
+  }
+}
+
+function updateQueryNav() {
+  const total = queryResults.length;
+  document.getElementById("query-counter").textContent =
+    (queryIndex + 1) + " / " + total + "건";
+  document.getElementById("prev-btn").disabled = queryIndex <= 0;
+  document.getElementById("next-btn").disabled = queryIndex >= total - 1;
+}
+
+function navigateRecord(direction) {
+  const nextIndex = queryIndex + direction;
+  if (nextIndex < 0 || nextIndex >= queryResults.length) return;
+  queryIndex = nextIndex;
+  updateQueryNav();
+  loadRecordToForm(queryResults[queryIndex]);
+}
+
+/* =========================================================
+   조회 결과를 작업일보 폼에 표시
+   ========================================================= */
+function loadRecordToForm(record) {
+  clearFormValues();
+
+  selectedRecordId = record.production_system_id;
+
+  setValue("work-date", record.work_date);
+  setChoice(
+    "day-shift","night-shift",
+    record.day_night_shift,"주간","야간"
+  );
+  setValue("worker", record.worker_name);
+  setValue("customer", record.customer_name);
+  setValue("product-name", record.item_name);
+  setValue("product-no", record.item_number);
+
+  if (record.item_name) {
+    document.getElementById("product-name").classList.remove("disabled");
+  }
+  if (record.item_number) {
+    document.getElementById("product-no").classList.remove("disabled");
+  }
+
+  setChoice("draw-yes","draw-no",record.drawing_status,"유","무");
+  setValue("material", record.material_name);
+  setChoice("mat-ok","mat-bad",record.material_condition,"양호","불량");
+  setValue("equip-name", record.equipment_name);
+  setValue("equip-no", record.equipment_number);
+  setChoice("equip-ok","equip-bad",record.equipment_condition,"양호","이상");
+
+  setValue("plan-qty", record.planned_quantity);
+  setValue("input-qty", record.input_quantity);
+  setValue("good-qty", record.good_quantity);
+  setValue("bad-qty", record.defect_quantity);
+  setValue("rework-qty", record.rework_quantity);
+  setValue("op-time", record.operation_hours);
+  setValue("non-op-time", record.downtime_hours);
+  setChoice("temper-do","temper-skip",record.tempering_work,"실시","미실시");
+  setChoice("correct-do","correct-skip",record.straightening_work,"실시","미실시");
+
+  setValue("volt-set", record.voltage_v);
+  setValue("amp-set", record.current_a);
+  setValue("kw-set", record.output_kw);
+  setValue("khz-set", record.frequency_khz);
+  setValue("heat-time", record.heating_time_sec);
+  setValue("move-speed", record.moving_speed_mm_sec);
+  setValue("coil-gap", record.coil_product_gap_mm);
+  setValue("rpm", record.rotation_rpm);
+  setValue("cool-bar", record.cooling_water_pressure_bar);
+  setValue("cool-temp", record.cooling_water_temperature_c);
+  setValue("cool-time", record.cooling_time_sec);
+  setValue("lot-no", record.lot_no);
+  setValue("temper-temp", record.tempering_temperature_c);
+  setValue("temper-time", record.tempering_time_sec);
+  setValue("temper-hard", record.tempering_hardness_hrc);
+  setValue("correct-val", record.straightening_value_mm);
+  setValue("p1-val", record.p1);
+  setValue("p2-val", record.p2);
+  setValue("p3-val", record.p3);
+  setValue("surface-hard", record.hardening_depth);
+  setValue("depth-hard", record.core_hardness);
+
+  setValue("coil-no", record.coil_number);
+  setChoice("wash-done","wash-skip",record.coil_cleaning,"완료","미시행");
+  setChoice(
+    "deform-no","deform-yes",
+    record.deformation_spark_mark,"이상없음","이상있음"
+  );
+  setValue("cool-conc", record.cooling_water_concentration_pct);
+  setChoice(
+    "water-ok","water-rep",
+    record.cooling_water_contamination,"양호","요교체"
+  );
+  setChoice("sensor-ok","sensor-bad",record.sensor_status,"정상","이상");
+  setValue("sensor-detail", record.sensor_abnormal_detail);
+
+  setValue("non-type1", record.downtime_type);
+  setValue("non-hr1", record.downtime_hr);
+  setValue("part-rep1", record.part_replacement);
+  setValue("spare1", record.spare_part);
+  setValue("action1", record.action_notes);
+
+  setValue("inspect-date", record.receiving_date);
+  setValue("insp-qty", record.receiving_quantity);
+  setChoice(
+    "insp-outer-ok","insp-outer-bad",
+    record.receiving_appearance,"양호","불량"
+  );
+  setChoice(
+    "insp-draw-ok","insp-draw-no",
+    record.receiving_drawing,"확인","미확인"
+  );
+  setChoice(
+    "qt-do","qt-skip",
+    record.receiving_heat_treatment_qt,"실시","미실시"
+  );
+  setValue("tag-date", record.shipping_date);
+  setValue("tag-qty", record.shipping_quantity);
+  setChecked(
+    "trade-write",
+    String(record.rust_prevention_work || "") === "발청작업"
+  );
+  setChoice(
+    "insp-result-ok","insp-result-bad",
+    record.inspection_result,"양호","불량"
+  );
+  setValue("special-note", record.special_notes);
+
+  formDirty = false;
+  setMode("view");
+  clearWarning();
+  showToast("✅ 작업일보를 불러왔습니다.");
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+/* =========================================================
+   정확한 수치 검증
+   ========================================================= */
+const TEXT_NUMERIC_FIELDS = [
+  ["volt-set","전압"],
+  ["amp-set","전류"],
+  ["kw-set","출력"],
+  ["khz-set","주파수"],
+  ["heat-time","가열시간"],
+  ["coil-gap","코일-제품간격"],
+  ["rpm","회전수"],
+  ["cool-bar","냉각수압력"],
+  ["cool-temp","냉각수온도"],
+  ["cool-time","냉각시간"],
+  ["temper-temp","템퍼링온도"],
+  ["temper-time","템퍼링시간"],
+  ["correct-val","교정값"],
+  ["cool-conc","냉각수농도"],
+  ["non-hr1","비가동 상세시간"],
+  ["p1-val","P1"],
+  ["p2-val","P2"],
+  ["p3-val","P3"]
+];
+
+function validateRecord() {
+  const errors = [];
+
+  if (!val("work-date")) errors.push("작업일을 입력해 주세요.");
+  if (!val("customer")) errors.push("고객사를 선택해 주세요.");
+  if (!val("product-name")) errors.push("품명을 선택해 주세요.");
+  if (!val("product-no")) errors.push("품번을 선택해 주세요.");
+
+  const integerFields = [
+    ["plan-qty","계획수량"],
+    ["input-qty","투입수량"],
+    ["good-qty","양품수량"],
+    ["bad-qty","불량수량"],
+    ["rework-qty","재작업수량"],
+    ["insp-qty","입고수량"],
+    ["tag-qty","출고수량"]
+  ];
+
+  integerFields.forEach(([id, label]) => {
+    const number = integerOrNull(id);
+    if (Number.isNaN(number)) {
+      errors.push(label + "은 0 이상의 정수로 입력해 주세요.");
+    } else if (number !== null && number < 0) {
+      errors.push(label + "은 음수로 입력할 수 없습니다.");
+    }
+  });
+
+  const operationHours = decimalOrNull("op-time");
+  const downtimeHours = decimalOrNull("non-op-time");
+
+  if (Number.isNaN(operationHours) || (operationHours !== null && operationHours < 0)) {
+    errors.push("가동시간은 0 이상의 숫자로 입력해 주세요.");
+  }
+  if (Number.isNaN(downtimeHours) || (downtimeHours !== null && downtimeHours < 0)) {
+    errors.push("비가동시간은 0 이상의 숫자로 입력해 주세요.");
+  }
+
+  TEXT_NUMERIC_FIELDS.forEach(([id, label]) => {
+    const value = val(id);
+    if (value !== "" && !Number.isFinite(Number(value.replace(/,/g, "")))) {
+      errors.push(label + "은 숫자로 입력해 주세요.");
+    }
+  });
+
+  const inputQuantity = integerOrNull("input-qty");
+  const goodQuantity = integerOrNull("good-qty");
+  const defectQuantity = integerOrNull("bad-qty");
+
+  if (
+    inputQuantity !== null &&
+    goodQuantity !== null &&
+    defectQuantity !== null &&
+    goodQuantity + defectQuantity !== inputQuantity
+  ) {
+    errors.push(
+      "수량 불일치: 양품수량(" + goodQuantity +
+      ") + 불량수량(" + defectQuantity +
+      ")은 투입수량(" + inputQuantity + ")과 같아야 합니다."
+    );
+  }
+
+  const receivingDate = val("inspect-date");
+  const shippingDate = val("tag-date");
+  if (receivingDate && shippingDate && shippingDate < receivingDate) {
+    errors.push("출고일은 입고일보다 빠를 수 없습니다.");
+  }
+
+  const downtimeDetail = decimalOrNull("non-hr1");
+  if (
+    downtimeHours !== null &&
+    downtimeDetail !== null &&
+    Math.abs(downtimeHours - downtimeDetail) > 0.000001
+  ) {
+    errors.push(
+      "비가동시간(" + downtimeHours +
+      ")과 비가동 상세시간(" + downtimeDetail +
+      ")이 일치하지 않습니다."
+    );
+  }
+
+  if (downtimeHours && !val("non-type1")) {
+    errors.push("비가동시간이 있으면 비가동 유형을 입력해 주세요.");
+  }
+
+  if (cb("sensor-bad") && !val("sensor-detail")) {
+    errors.push("센서 이상을 선택한 경우 이상 내용을 입력해 주세요.");
+  }
+
+  return errors;
+}
+
+/* =========================================================
+   DB 저장 payload
+   ========================================================= */
+function buildPayload() {
+  return {
+    company_name_raw: currentCompanyName || null,
+    work_date: textOrNull("work-date"),
+    receiving_date: textOrNull("inspect-date"),
+    customer_name: textOrNull("customer"),
+    item_name: textOrNull("product-name"),
+    item_number: textOrNull("product-no"),
+    day_night_shift: choice("day-shift","주간","night-shift","야간"),
+    worker_name: textOrNull("worker"),
+    drawing_status: choice("draw-yes","유","draw-no","무"),
+    material_name: textOrNull("material"),
+    material_condition: choice("mat-ok","양호","mat-bad","불량"),
+    equipment_name: textOrNull("equip-name"),
+    equipment_number: textOrNull("equip-no"),
+    equipment_condition: choice("equip-ok","양호","equip-bad","이상"),
+
+    planned_quantity: integerOrNull("plan-qty"),
+    input_quantity: integerOrNull("input-qty"),
+    good_quantity: integerOrNull("good-qty"),
+    defect_quantity: integerOrNull("bad-qty"),
+    rework_quantity: integerOrNull("rework-qty"),
+    operation_hours: decimalOrNull("op-time"),
+    downtime_hours: decimalOrNull("non-op-time"),
+    tempering_work: choice("temper-do","실시","temper-skip","미실시"),
+    straightening_work: choice("correct-do","실시","correct-skip","미실시"),
+
+    voltage_v: textOrNull("volt-set"),
+    current_a: textOrNull("amp-set"),
+    output_kw: textOrNull("kw-set"),
+    frequency_khz: textOrNull("khz-set"),
+    heating_time_sec: textOrNull("heat-time"),
+    moving_speed_mm_sec: textOrNull("move-speed"),
+    coil_product_gap_mm: textOrNull("coil-gap"),
+    rotation_rpm: textOrNull("rpm"),
+    cooling_water_pressure_bar: textOrNull("cool-bar"),
+    cooling_water_temperature_c: textOrNull("cool-temp"),
+    cooling_time_sec: textOrNull("cool-time"),
+    lot_no: textOrNull("lot-no"),
+    tempering_temperature_c: textOrNull("temper-temp"),
+    tempering_time_sec: textOrNull("temper-time"),
+    tempering_hardness_hrc: textOrNull("temper-hard"),
+    straightening_value_mm: textOrNull("correct-val"),
+    p1: textOrNull("p1-val"),
+    p2: textOrNull("p2-val"),
+    p3: textOrNull("p3-val"),
+    hardening_depth: textOrNull("surface-hard"),
+    core_hardness: textOrNull("depth-hard"),
+
+    coil_number: textOrNull("coil-no"),
+    coil_cleaning: choice("wash-done","완료","wash-skip","미시행"),
+    deformation_spark_mark:
+      choice("deform-no","이상없음","deform-yes","이상있음"),
+    cooling_water_concentration_pct: textOrNull("cool-conc"),
+    cooling_water_contamination:
+      choice("water-ok","양호","water-rep","요교체"),
+    sensor_status: choice("sensor-ok","정상","sensor-bad","이상"),
+    sensor_abnormal_detail: textOrNull("sensor-detail"),
+
+    downtime_type: textOrNull("non-type1"),
+    downtime_hr: textOrNull("non-hr1"),
+    part_replacement: textOrNull("part-rep1"),
+    spare_part: textOrNull("spare1"),
+    action_notes: textOrNull("action1"),
+
+    receiving_quantity: integerOrNull("insp-qty"),
+    receiving_appearance:
+      choice("insp-outer-ok","양호","insp-outer-bad","불량"),
+    receiving_drawing:
+      choice("insp-draw-ok","확인","insp-draw-no","미확인"),
+    receiving_heat_treatment_qt:
+      choice("qt-do","실시","qt-skip","미실시"),
+    shipping_date: textOrNull("tag-date"),
+    shipping_quantity: integerOrNull("tag-qty"),
+    rust_prevention_work: cb("trade-write") ? "발청작업" : null,
+    inspection_result:
+      choice("insp-result-ok","양호","insp-result-bad","불량"),
+    special_notes: textOrNull("special-note")
+  };
+}
+
+/* =========================================================
+   신규 입력 저장 / 조회 데이터 수정 저장
+   ========================================================= */
+async function saveRecord() {
+  if (!currentProfile) {
+    alert("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  if (mode !== "new" && mode !== "edit") {
+    showToast("⚠️ 신규입력 또는 수정 버튼을 먼저 누르세요.");
+    return;
+  }
+
+  const validationErrors = validateRecord();
+  if (validationErrors.length) {
+    showWarning(validationErrors.join(" "), "error");
+    alert("[입력값 확인]\n\n" + validationErrors.join("\n"));
+    return;
+  }
+
+  const payload = buildPayload();
+  const saveButton = document.getElementById("btn-save");
+  const oldText = saveButton.textContent;
+  saveButton.disabled = true;
+  saveButton.textContent = "⏳ 저장 중...";
+
+  try {
+    let result;
+
+    if (mode === "new") {
+      result = await sb
+        .from(TABLE_NAME)
+        .insert({
+          ...payload,
+          company_id: currentProfile.company_id,
+          source_record_key: generateSourceRecordKey(),
+          is_active: true
+        })
+        .select(SELECT_COLUMNS)
+        .single();
+    } else {
+      result = await sb
+        .from(TABLE_NAME)
+        .update(payload)
+        .eq("production_system_id", selectedRecordId)
+        .eq("company_id", currentProfile.company_id)
+        .select(SELECT_COLUMNS)
+        .maybeSingle();
+    }
+
+    if (result.error) throw result.error;
+    if (!result.data) {
+      throw new Error("저장 대상이 없거나 회사 권한으로 수정할 수 없습니다.");
+    }
+
+    const savedAsNew = mode === "new";
+    selectedRecordId = result.data.production_system_id;
+    formDirty = false;
+    setMode("view");
+
+    const resultIndex = queryResults.findIndex(
+      (row) => row.production_system_id === selectedRecordId
+    );
+    if (resultIndex >= 0) {
+      queryResults[resultIndex] = result.data;
+    }
+
+    showWarning(
+      savedAsNew
+        ? "Supabase에 신규 작업일보가 저장되었습니다."
+        : "Supabase의 작업일보가 수정 저장되었습니다.",
+      "info"
+    );
+    showToast("✅ 저장 완료");
+  } catch (error) {
+    console.error(error);
+    showWarning("저장 실패: " + dbErrorMessage(error), "error");
+    alert("Supabase 저장 오류: " + dbErrorMessage(error));
+  } finally {
+    saveButton.textContent = oldText;
+    saveButton.disabled = !(mode === "new" || mode === "edit");
+  }
+}
+
+/* =========================================================
+   기타 기존 UI 기능
+   ========================================================= */
+function setStd(id, value) {
+  if (mode !== "new" && mode !== "edit") return;
+  const element = document.getElementById(id);
+  if (!element) return;
+  element.value = value;
+  formDirty = true;
+}
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".dd-wrap")) closeDd();
+  if (!event.target.closest(".qf-wrap")) closeQf();
+
+  if (event.target?.id === "q-product") {
+    refreshQProductList(val("q-customer"));
+  }
+  if (event.target?.id === "q-partno") {
+    refreshQPartNoList(val("q-customer"), val("q-product"));
+  }
+});
+
+document.getElementById("report-form").addEventListener("input", () => {
+  if (mode === "new" || mode === "edit") formDirty = true;
+});
+document.getElementById("report-form").addEventListener("change", () => {
+  if (mode === "new" || mode === "edit") formDirty = true;
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (formDirty) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+
+/* =========================================================
+   초기 실행
+   ========================================================= */
+(async function initializePage() {
+  setLoading(true, "⏳ 로그인 및 회사 권한을 확인하는 중입니다...");
+
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    setLoading(true, "⏳ 회사별 기준정보를 불러오는 중입니다...");
+    await loadMasterData();
+
+    document.getElementById("data-source-bar").style.display = "flex";
+    bindExclusiveCheckboxes();
+    clearFormValues();
+    setMode("new");
+    showWarning(
+      "작업일보는 Total_Production_DB에서 입력·조회·수정·저장됩니다. 다른 회사 데이터는 RLS로 차단됩니다.",
+      "info"
+    );
+  } catch (error) {
+    console.error(error);
+    document.getElementById("data-source-bar").style.display = "flex";
+    showWarning("화면 초기화 오류: " + dbErrorMessage(error), "error");
+    alert("초기화 오류: " + dbErrorMessage(error));
+  } finally {
+    setLoading(false);
+  }
+})();
+</script>
+
+</body>
+</html>
