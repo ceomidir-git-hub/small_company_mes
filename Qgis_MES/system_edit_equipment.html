@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>설비 관리 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f3f6fa;
+  --card:#ffffff;
+  --line:#d8e0ea;
+  --text:#18212f;
+  --muted:#64748b;
+  --primary:#1f5eff;
+  --primary-dark:#1747bf;
+  --danger:#dc2626;
+  --success:#047857;
+  --shadow:0 12px 34px rgba(15,23,42,.08);
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  min-height:100%;
+  font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text)
+}
+html.auth-pending body{visibility:hidden}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.48}
+.page{width:min(1380px,100%);margin:0 auto;padding:12px}
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:13px 15px;
+  margin-bottom:12px;
+  border-radius:14px;
+  background:#152238;
+  color:#fff;
+  box-shadow:var(--shadow)
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{
+  width:36px;height:36px;display:grid;place-items:center;
+  flex:0 0 auto;border-radius:10px;background:#ff6b35;font-size:19px
+}
+.brand h1{margin:0;font-size:18px}
+.brand p{margin:3px 0 0;font-size:11px;color:#b8c4d6}
+.top-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.top-btn{
+  min-height:36px;padding:7px 11px;border:1px solid #40506a;
+  border-radius:9px;background:#22324b;color:#fff;font-size:12px
+}
+.top-btn:hover{border-color:#ff8a5c}
+.layout{
+  display:grid;
+  grid-template-columns:minmax(330px,430px) minmax(0,1fr);
+  gap:12px;
+  align-items:start
+}
+.card{
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background:var(--card);
+  box-shadow:var(--shadow)
+}
+.card-title{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:10px;margin-bottom:13px
+}
+.card-title h2{margin:0;font-size:18px}
+.card-title p{margin:3px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
+.badge{
+  flex:0 0 auto;padding:5px 9px;border-radius:999px;
+  background:#e8eef8;color:#34445e;font-size:11px;font-weight:700
+}
+.badge.new{background:#e6f7ef;color:#047857}
+.badge.edit{background:#fff1db;color:#9a4d00}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:12px;color:#40506a;font-weight:700}
+.field input,.field select,.field textarea{
+  width:100%;min-height:42px;padding:9px 10px;
+  border:1px solid #cbd5e1;border-radius:9px;
+  background:#fff;color:var(--text);outline:none
+}
+.field textarea{min-height:76px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(31,94,255,.12)
+}
+.field input:disabled,.field select:disabled,.field textarea:disabled{
+  background:#f1f5f9;color:#64748b
+}
+.checkbox-line{
+  min-height:42px;display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border:1px solid #cbd5e1;border-radius:9px
+}
+.checkbox-line input{width:18px;height:18px;min-height:auto}
+.button-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:7px;margin-top:14px
+}
+.action-btn{
+  min-height:42px;border:1px solid #cbd5e1;border-radius:9px;
+  background:#fff;color:#263449;font-size:13px;font-weight:800
+}
+.action-btn:hover{background:#f8fafc}
+.action-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.action-btn.primary:hover{background:var(--primary-dark)}
+.action-btn.edit{background:#fff7ed;border-color:#fed7aa;color:#9a4d00}
+.action-btn.danger{background:#fff1f2;border-color:#fecdd3;color:var(--danger)}
+.notice{
+  display:none;margin-top:11px;padding:9px 11px;
+  border-radius:9px;font-size:12px;line-height:1.5
+}
+.notice.show{display:block}
+.notice.info{background:#eff6ff;color:#1e40af}
+.notice.success{background:#ecfdf5;color:#047857}
+.notice.error{background:#fff1f2;color:#b91c1c}
+.list-tools{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.search{
+  flex:1;min-height:40px;padding:8px 10px;
+  border:1px solid #cbd5e1;border-radius:9px
+}
+.refresh-btn{
+  min-height:40px;padding:7px 12px;border:1px solid #cbd5e1;
+  border-radius:9px;background:#fff;font-weight:700
+}
+.table-wrap{
+  max-height:690px;
+  overflow:auto;
+  border:1px solid var(--line);
+  border-radius:11px
+}
+table{width:100%;min-width:1320px;border-collapse:collapse;font-size:12px}
+thead th{
+  position:sticky;top:0;z-index:2;
+  padding:9px 8px;border-bottom:1px solid var(--line);
+  background:#eef3f9;color:#34445e;text-align:center;white-space:nowrap
+}
+tbody td{
+  padding:8px;border-bottom:1px solid #e8edf3;
+  text-align:center;white-space:nowrap
+}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#f5f8fc}
+tbody tr.selected{
+  background:#eaf1ff;
+  outline:2px solid rgba(31,94,255,.28);
+  outline-offset:-2px
+}
+.empty{padding:35px 12px!important;color:var(--muted);text-align:center!important}
+.count{margin-top:8px;color:var(--muted);font-size:12px;text-align:right}
+.loading{
+  display:none;position:fixed;inset:0;z-index:9999;
+  align-items:center;justify-content:center;padding:20px;
+  background:rgba(15,23,42,.45)
+}
+.loading.show{display:flex}
+.loading-box{
+  padding:17px 22px;border-radius:14px;
+  background:#fff;box-shadow:var(--shadow);font-weight:800
+}
+@media(max-width:950px){
+  .layout{grid-template-columns:1fr}
+  .table-wrap{max-height:none}
+}
+@media(max-width:600px){
+  .page{padding:7px}
+  .topbar{padding:11px;border-radius:10px}
+  .brand h1{font-size:15px}
+  .brand p{display:none}
+  .top-btn{padding:6px 8px;font-size:11px}
+  .card{padding:12px;border-radius:12px}
+  .form-grid{grid-template-columns:1fr}
+  .field.full{grid-column:auto}
+  .button-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">⚙️</div>
+      <div>
+        <h1>설비 관리</h1>
+        <p>로그인 회사의 설비만 등록·수정·삭제·저장합니다.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="top-btn" type="button" onclick="goMain()">메인화면</button>
+      <button class="top-btn" type="button" onclick="logout()">로그아웃</button>
+    </div>
+  </header>
+
+  <section class="layout">
+    <article class="card">
+      <div class="card-title">
+        <div>
+          <h2>설비 입력</h2>
+          <p>목록에서 설비를 선택하면 수정과 삭제를 할 수 있습니다.</p>
+        </div>
+        <span id="modeBadge" class="badge">대기</span>
+      </div>
+
+      <form id="editForm" onsubmit="return false;">
+        <div class="form-grid">
+          <div class="field">
+            <label for="equipmentNumber">설비번호 *</label>
+            <input id="equipmentNumber" maxlength="60" autocomplete="off" disabled>
+          </div>
+
+          <div class="field">
+            <label for="equipmentName">제조설비명 *</label>
+            <input id="equipmentName" maxlength="160" autocomplete="off" disabled>
+          </div>
+
+          <div class="field">
+            <label for="capacitySpec">용량/공칭능력</label>
+            <input id="capacitySpec" maxlength="100" autocomplete="off" disabled>
+          </div>
+
+          <div class="field">
+            <label for="quantity">대수</label>
+            <input id="quantity" type="number" min="1" step="1" inputmode="numeric" disabled>
+          </div>
+
+          <div class="field">
+            <label for="manufacturer">제작사</label>
+            <input id="manufacturer" maxlength="160" autocomplete="off" disabled>
+          </div>
+
+          <div class="field">
+            <label for="installationMonth">설치일자</label>
+            <input id="installationMonth" type="month" disabled>
+          </div>
+
+          <div class="field">
+            <label for="lineName">LINE명</label>
+            <input id="lineName" maxlength="80" autocomplete="off" disabled>
+          </div>
+
+          <div class="field">
+            <label for="processName">공정</label>
+            <input id="processName" maxlength="100" autocomplete="off" disabled>
+          </div>
+
+          <div class="field full">
+            <label for="purchasePrice">구입가(원)</label>
+            <input
+              id="purchasePrice"
+              type="text"
+              inputmode="numeric"
+              maxlength="18"
+              placeholder="숫자만 입력"
+              autocomplete="off"
+              disabled
+            >
+          </div>
+
+          <div class="field full">
+            <label for="specialNotes">특이사항</label>
+            <textarea id="specialNotes" maxlength="500" disabled></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="remarks">비고</label>
+            <textarea id="remarks" maxlength="500" disabled></textarea>
+          </div>
+
+          <div class="field full">
+            <label>사용 상태</label>
+            <div class="checkbox-line">
+              <input id="isActive" type="checkbox" checked disabled>
+              <label for="isActive">사용</label>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div class="button-row">
+        <button id="btnNew" class="action-btn primary" type="button" onclick="startNew()">등록</button>
+        <button id="btnEdit" class="action-btn edit" type="button" onclick="startEdit()" disabled>수정</button>
+        <button id="btnDelete" class="action-btn danger" type="button" onclick="deleteSelected()" disabled>삭제</button>
+        <button id="btnSave" class="action-btn" type="button" onclick="saveRecord()" disabled>저장</button>
+      </div>
+
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+    </article>
+
+    <article class="card">
+      <div class="card-title">
+        <div>
+          <h2>설비 목록</h2>
+          <p>내부 UUID와 회사 ID는 화면에 표시하지 않습니다.</p>
+        </div>
+        <span id="userLabel" class="badge">사용자</span>
+      </div>
+
+      <div class="list-tools">
+        <input
+          id="searchInput"
+          class="search"
+          type="search"
+          placeholder="설비번호, 설비명, 제작사, LINE, 공정 검색"
+          oninput="renderRows()"
+        >
+        <button class="refresh-btn" type="button" onclick="loadRows()">새로고침</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>NO</th>
+              <th>설비번호</th>
+              <th>제조설비명</th>
+              <th>용량/공칭능력</th>
+              <th>대수</th>
+              <th>제작사</th>
+              <th>설치일자</th>
+              <th>LINE명</th>
+              <th>공정</th>
+              <th>구입가</th>
+              <th>특이사항</th>
+              <th>비고</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td class="empty" colspan="13">데이터를 불러오는 중입니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="countLabel" class="count">0건</div>
+    </article>
+  </section>
+</div>
+
+<div id="loadingOverlay" class="loading">
+  <div id="loadingText" class="loading-box">처리 중입니다...</div>
+</div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const LOGIN_PAGE_URL = "../index.html";
+const MAIN_PAGE_URL = "main1.html";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let rows = [];
+let selectedId = null;
+let mode = "view";
+
+const fieldIds = [
+  "equipmentNumber",
+  "equipmentName",
+  "capacitySpec",
+  "quantity",
+  "manufacturer",
+  "installationMonth",
+  "lineName",
+  "processName",
+  "purchasePrice",
+  "specialNotes",
+  "remarks",
+  "isActive"
+];
+
+function normalizeText(value) {
+  return String(value ?? "").trim();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, function(ch) {
+    return {
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;"
+    }[ch];
+  });
+}
+
+function showLoading(show, text) {
+  document.getElementById("loadingText").textContent = text || "처리 중입니다...";
+  document.getElementById("loadingOverlay").classList.toggle("show", Boolean(show));
+}
+
+function showNotice(text, type) {
+  const box = document.getElementById("notice");
+  box.textContent = text;
+  box.className = "notice show " + (type || "info");
+}
+
+function clearNotice() {
+  const box = document.getElementById("notice");
+  box.textContent = "";
+  box.className = "notice";
+}
+
+function formatDbError(error) {
+  if (!error) return "알 수 없는 오류입니다.";
+  if (error.code === "23505") return "같은 회사에 같은 설비번호가 이미 등록되어 있습니다.";
+  if (error.code === "23503") return "다른 업무 데이터에서 사용 중이므로 삭제할 수 없습니다.";
+  if (error.code === "23514") return "대수와 구입가 입력값을 확인해 주세요.";
+  if (error.code === "42501") return "이 작업에 대한 권한이 없습니다. RLS 정책을 확인해 주세요.";
+  return error.message || String(error);
+}
+
+function toMonth(dateValue) {
+  if (!dateValue) return "";
+  return String(dateValue).slice(0, 7);
+}
+
+function toDate(monthValue) {
+  return monthValue ? monthValue + "-01" : null;
+}
+
+function cleanMoney(value) {
+  const cleaned = normalizeText(value).replace(/,/g, "");
+  if (!cleaned) return null;
+  if (!/^\d{1,18}$/.test(cleaned)) {
+    throw new Error("구입가는 18자리 이하의 숫자만 입력해 주세요.");
+  }
+  return cleaned;
+}
+
+function formatMoney(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const text = String(value);
+  if (!/^\d+$/.test(text)) return text;
+  return text.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+async function verifyCompanyAccess() {
+  const { data: userData, error: userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if (userError || !user) {
+    window.location.replace(LOGIN_PAGE_URL);
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError || !profile || profile.is_active !== true || !profile.company_id) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope: "local" });
+    window.location.replace(LOGIN_PAGE_URL);
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  document.getElementById("userLabel").textContent = user.email || "사용자";
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+function setMode(nextMode) {
+  mode = nextMode;
+  const editing = mode === "new" || mode === "edit";
+
+  fieldIds.forEach(function(id) {
+    document.getElementById(id).disabled = !editing;
+  });
+
+  document.getElementById("btnSave").disabled = !editing;
+  document.getElementById("btnEdit").disabled = !selectedId || editing;
+  document.getElementById("btnDelete").disabled = !selectedId || editing;
+
+  const badge = document.getElementById("modeBadge");
+  badge.className =
+    "badge" +
+    (mode === "new" ? " new" : mode === "edit" ? " edit" : "");
+
+  badge.textContent =
+    mode === "new"
+      ? "신규등록"
+      : mode === "edit"
+        ? "수정중"
+        : selectedId
+          ? "선택됨"
+          : "대기";
+}
+
+function clearForm() {
+  selectedId = null;
+  document.getElementById("editForm").reset();
+  document.getElementById("isActive").checked = true;
+
+  document.querySelectorAll("#tableBody tr").forEach(function(tr) {
+    tr.classList.remove("selected");
+  });
+}
+
+function startNew() {
+  clearNotice();
+  clearForm();
+  setMode("new");
+  document.getElementById("equipmentNumber").focus();
+}
+
+function startEdit() {
+  if (!selectedId) {
+    showNotice("수정할 설비를 목록에서 선택해 주세요.", "error");
+    return;
+  }
+
+  clearNotice();
+  setMode("edit");
+  document.getElementById("equipmentName").focus();
+}
+
+async function loadRows() {
+  if (!currentProfile) return;
+
+  showLoading(true, "설비 목록을 불러오는 중입니다...");
+  clearNotice();
+
+  const { data, error } = await sb
+    .from("equipment")
+    .select(
+      "equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_date,line_name,process_name,purchase_price,special_notes,remarks,is_active"
+    )
+    .eq("company_id", currentProfile.company_id)
+    .order("equipment_number", { ascending: true });
+
+  showLoading(false);
+
+  if (error) {
+    rows = [];
+    renderRows();
+    showNotice("조회 실패: " + formatDbError(error), "error");
+    return;
+  }
+
+  rows = data || [];
+  selectedId = null;
+  setMode("view");
+  renderRows();
+}
+
+function renderRows() {
+  const query = normalizeText(
+    document.getElementById("searchInput").value
+  ).toLowerCase();
+
+  const filtered = rows.filter(function(row) {
+    return [
+      row.equipment_number,
+      row.equipment_name,
+      row.capacity_spec,
+      row.manufacturer,
+      row.line_name,
+      row.process_name,
+      row.special_notes,
+      row.remarks
+    ].join(" ").toLowerCase().includes(query);
+  });
+
+  const body = document.getElementById("tableBody");
+
+  if (!filtered.length) {
+    body.innerHTML =
+      '<tr><td class="empty" colspan="13">표시할 설비가 없습니다.</td></tr>';
+  } else {
+    body.innerHTML = filtered.map(function(row, index) {
+      return `
+        <tr
+          data-id="${escapeHtml(row.equipment_system_id)}"
+          onclick="selectRow('${escapeHtml(row.equipment_system_id)}')"
+        >
+          <td>${index + 1}</td>
+          <td>${escapeHtml(row.equipment_number)}</td>
+          <td>${escapeHtml(row.equipment_name)}</td>
+          <td>${escapeHtml(row.capacity_spec)}</td>
+          <td>${escapeHtml(row.quantity)}</td>
+          <td>${escapeHtml(row.manufacturer)}</td>
+          <td>${escapeHtml(toMonth(row.installation_date))}</td>
+          <td>${escapeHtml(row.line_name)}</td>
+          <td>${escapeHtml(row.process_name)}</td>
+          <td>${escapeHtml(formatMoney(row.purchase_price))}</td>
+          <td>${escapeHtml(row.special_notes)}</td>
+          <td>${escapeHtml(row.remarks)}</td>
+          <td>${row.is_active ? "사용" : "중지"}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  document.getElementById("countLabel").textContent = filtered.length + "건";
+}
+
+function selectRow(id) {
+  const row = rows.find(function(item) {
+    return item.equipment_system_id === id;
+  });
+
+  if (!row) return;
+
+  selectedId = id;
+  document.getElementById("equipmentNumber").value = row.equipment_number || "";
+  document.getElementById("equipmentName").value = row.equipment_name || "";
+  document.getElementById("capacitySpec").value = row.capacity_spec || "";
+  document.getElementById("quantity").value = row.quantity ?? "";
+  document.getElementById("manufacturer").value = row.manufacturer || "";
+  document.getElementById("installationMonth").value = toMonth(row.installation_date);
+  document.getElementById("lineName").value = row.line_name || "";
+  document.getElementById("processName").value = row.process_name || "";
+  document.getElementById("purchasePrice").value = row.purchase_price ?? "";
+  document.getElementById("specialNotes").value = row.special_notes || "";
+  document.getElementById("remarks").value = row.remarks || "";
+  document.getElementById("isActive").checked = row.is_active !== false;
+
+  document.querySelectorAll("#tableBody tr").forEach(function(tr) {
+    tr.classList.toggle("selected", tr.dataset.id === id);
+  });
+
+  clearNotice();
+  setMode("view");
+}
+
+async function saveRecord() {
+  if (mode !== "new" && mode !== "edit") {
+    showNotice("등록 또는 수정 버튼을 먼저 눌러 주세요.", "error");
+    return;
+  }
+
+  let purchasePrice;
+
+  try {
+    purchasePrice = cleanMoney(
+      document.getElementById("purchasePrice").value
+    );
+  } catch (error) {
+    showNotice(error.message, "error");
+    return;
+  }
+
+  const quantityText = normalizeText(
+    document.getElementById("quantity").value
+  );
+
+  const payload = {
+    company_id: currentProfile.company_id,
+    equipment_number: normalizeText(
+      document.getElementById("equipmentNumber").value
+    ),
+    equipment_name: normalizeText(
+      document.getElementById("equipmentName").value
+    ),
+    capacity_spec:
+      normalizeText(document.getElementById("capacitySpec").value) || null,
+    quantity: quantityText ? Number(quantityText) : null,
+    manufacturer:
+      normalizeText(document.getElementById("manufacturer").value) || null,
+    installation_date: toDate(
+      document.getElementById("installationMonth").value
+    ),
+    line_name:
+      normalizeText(document.getElementById("lineName").value) || null,
+    process_name:
+      normalizeText(document.getElementById("processName").value) || null,
+    purchase_price: purchasePrice,
+    special_notes:
+      normalizeText(document.getElementById("specialNotes").value) || null,
+    remarks:
+      normalizeText(document.getElementById("remarks").value) || null,
+    is_active: document.getElementById("isActive").checked
+  };
+
+  if (!payload.equipment_number || !payload.equipment_name) {
+    showNotice("설비번호와 제조설비명을 입력해 주세요.", "error");
+    return;
+  }
+
+  if (
+    payload.quantity !== null &&
+    (!Number.isInteger(payload.quantity) || payload.quantity < 1)
+  ) {
+    showNotice("대수는 1 이상의 정수로 입력해 주세요.", "error");
+    return;
+  }
+
+  showLoading(true, "설비 정보를 저장하는 중입니다...");
+
+  let result;
+
+  if (mode === "new") {
+    result = await sb
+      .from("equipment")
+      .insert(payload);
+  } else {
+    result = await sb
+      .from("equipment")
+      .update(payload)
+      .eq("equipment_system_id", selectedId)
+      .eq("company_id", currentProfile.company_id);
+  }
+
+  showLoading(false);
+
+  if (result.error) {
+    showNotice("저장 실패: " + formatDbError(result.error), "error");
+    return;
+  }
+
+  showNotice(
+    mode === "new"
+      ? "설비가 등록되었습니다."
+      : "설비 정보가 수정되었습니다.",
+    "success"
+  );
+
+  clearForm();
+  setMode("view");
+  await loadRows();
+}
+
+async function deleteSelected() {
+  if (!selectedId) {
+    showNotice("삭제할 설비를 목록에서 선택해 주세요.", "error");
+    return;
+  }
+
+  const row = rows.find(function(item) {
+    return item.equipment_system_id === selectedId;
+  });
+
+  const confirmed = confirm(
+    (row ? row.equipment_number + " / " + row.equipment_name : "선택한 설비") +
+    "를 삭제하시겠습니까?\n생산실적 등에서 사용 중이면 삭제되지 않습니다."
+  );
+
+  if (!confirmed) return;
+
+  showLoading(true, "설비를 삭제하는 중입니다...");
+
+  const { error } = await sb
+    .from("equipment")
+    .delete()
+    .eq("equipment_system_id", selectedId)
+    .eq("company_id", currentProfile.company_id);
+
+  showLoading(false);
+
+  if (error) {
+    showNotice("삭제 실패: " + formatDbError(error), "error");
+    return;
+  }
+
+  showNotice("설비가 삭제되었습니다.", "success");
+  clearForm();
+  setMode("view");
+  await loadRows();
+}
+
+function goMain() {
+  window.location.href = MAIN_PAGE_URL;
+}
+
+async function logout() {
+  await sb.auth.signOut({ scope: "local" });
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+sb.auth.onAuthStateChange(function(event) {
+  if (event === "SIGNED_OUT") {
+    window.location.replace(LOGIN_PAGE_URL);
+  }
+});
+
+async function initializePage() {
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+    await loadRows();
+  } catch (error) {
+    document.documentElement.classList.remove("auth-pending");
+    showNotice("화면 초기화 오류: " + formatDbError(error), "error");
+  }
+}
+
+window.addEventListener("load", initializePage);
+</script>
+</body>
+</html>
