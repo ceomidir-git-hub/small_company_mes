@@ -489,77 +489,37 @@
     text-align:center; white-space:nowrap;
   }
 
-  /* 작업시간 표 */
-  .work-time-detail-modal { width:min(820px, 100%); }
-  .work-time-table { min-width:650px; }
-  .time-input-btn {
-    width:100%; min-height:46px; padding:7px 10px;
-    border:1.5px solid #8fa0b5; border-radius:5px;
-    background:#fff; color:#111827; cursor:pointer;
-    font-family:inherit; font-size:20px; font-weight:800;
+  /* 작업시간 표: 시작·종료시간 직접 입력 */
+  .work-time-detail-modal {
+    width:min(650px, calc(100% - 28px));
+    max-height:86vh;
+  }
+  .work-time-table { min-width:560px; }
+  .time-direct-input {
+    width:100%; min-height:42px; padding:7px 8px;
+    border:1.5px solid #8fa0b5 !important; border-radius:5px;
+    background:#fff !important; color:#111827;
+    font-family:inherit; font-size:19px !important; font-weight:800;
     letter-spacing:1px; text-align:center;
   }
-  .time-input-btn:hover, .time-input-btn:focus {
-    border-color:#1a3a5c; background:#f4f8ff;
+  .time-direct-input:hover, .time-direct-input:focus {
+    border-color:#1a3a5c !important; background:#f4f8ff !important;
     box-shadow:0 0 0 2px rgba(26,58,92,.10); outline:none;
   }
-  .time-input-btn:disabled { background:#f3f6fa; color:#64748b; cursor:not-allowed; }
+  .time-direct-input:disabled {
+    background:#f3f6fa !important; color:#64748b; cursor:not-allowed;
+  }
   .work-time-auto-value {
     display:flex; align-items:center; justify-content:center;
-    min-height:46px; color:#1a3a5c; font-size:17px; font-weight:800;
+    min-height:42px; color:#1a3a5c; font-size:16px; font-weight:800;
     white-space:nowrap;
   }
   .work-time-separator { text-align:center; font-size:20px; font-weight:800; }
-
-  /* 시간 키패드 */
-  .time-keypad-overlay { z-index:21000; }
-  .time-keypad-panel {
-    width:min(610px, 100%); background:#fff; border-radius:10px;
-    box-shadow:0 20px 70px rgba(0,0,0,.38); overflow:hidden;
-  }
-  .time-keypad-body { padding:18px; }
-  .time-keypad-display {
-    width:100%; padding:12px 16px; margin-bottom:10px;
-    border:2px solid #2563eb; border-radius:7px;
-    background:#f8fbff; color:#111827;
-    text-align:center; font-size:34px; font-weight:900; letter-spacing:3px;
-  }
-  .time-quick-list {
-    display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;
-  }
-  .time-quick-list button {
-    flex:1 1 70px; min-height:36px; padding:5px 8px;
-    border:1px solid #aab4c2; border-radius:4px;
-    background:#fff; color:#334155; cursor:pointer;
-    font-family:inherit; font-size:13px; font-weight:700;
-  }
-  .time-quick-list button:hover { background:#eaf1fb; border-color:#1a3a5c; }
-  .time-keypad-grid {
-    display:grid; grid-template-columns:minmax(0, 1fr) 132px; gap:10px;
-  }
-  .time-keypad-numbers {
-    display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:7px;
-  }
-  .time-keypad-actions { display:grid; grid-template-rows:1fr 1fr 2fr; gap:7px; }
-  .time-keypad-numbers button,
-  .time-keypad-actions button {
-    min-height:58px; border:1px solid #b7c0cc; border-radius:5px;
-    background:#fff; color:#111827; cursor:pointer;
-    font-family:inherit; font-size:24px; font-weight:800;
-  }
-  .time-keypad-numbers button:hover,
-  .time-keypad-actions button:hover { background:#edf4ff; border-color:#1a3a5c; }
-  .time-keypad-numbers .keypad-colon { background:#f3f4f6; color:#64748b; }
-  .time-keypad-actions .keypad-back,
-  .time-keypad-actions .keypad-clear { font-size:18px; background:#f3f4f6; }
-  .time-keypad-actions .keypad-confirm {
-    background:#1a3a5c; color:#fff; border-color:#1a3a5c; font-size:20px;
-  }
-  .time-keypad-actions .keypad-confirm:hover { background:#25527d; }
-  .time-keypad-help {
-    margin-top:12px; padding:9px 11px; border:1px solid #bfdbfe;
-    border-radius:5px; background:#eff6ff; color:#1e3a5f;
-    font-size:12px; line-height:1.5;
+  .work-time-example {
+    margin:9px 0 12px; padding:9px 11px;
+    border:1px solid #bfdbfe; border-radius:5px;
+    background:#eff6ff; color:#1e3a5f;
+    font-size:12px; line-height:1.55;
   }
 
   @media (max-width:700px) {
@@ -576,11 +536,14 @@
     .work-time-main-cell { gap:4px; }
     .work-time-open-btn { padding:4px 6px; font-size:10px; }
     .work-time-summary { min-width:42px; font-size:11px; }
-    .time-keypad-panel { width:100%; height:100%; border-radius:0; display:flex; flex-direction:column; }
-    .time-keypad-body { flex:1; overflow:auto; padding:12px; }
-    .time-keypad-display { font-size:30px; }
-    .time-keypad-grid { grid-template-columns:minmax(0,1fr) 105px; }
-    .time-keypad-numbers button, .time-keypad-actions button { min-height:54px; }
+    .work-time-detail-modal {
+      width:calc(100% - 20px) !important;
+      height:auto !important;
+      max-height:90vh !important;
+      margin:auto;
+      border-radius:8px !important;
+    }
+    .work-time-detail-modal .detail-modal-body { overflow:auto; }
   }
 
   @media print {
@@ -692,7 +655,7 @@
       <td class="label">작업시간</td>
       <td>
         <div class="work-time-main-cell">
-          <button type="button" id="work-time-btn" class="work-time-open-btn" onclick="openWorkTimeModal()">키패드 입력</button>
+          <button type="button" id="work-time-btn" class="work-time-open-btn" onclick="openWorkTimeModal()">시간 입력</button>
           <span id="work-time-summary" class="work-time-summary">0분</span>
         </div>
       </td>
@@ -788,7 +751,7 @@
     <tr>
       <td><input type="number" id="plan-qty" min="0"></td>
       <td><input type="number" id="input-qty" min="0"></td>
-      <td><input type="number" id="good-qty" min="0"></td>
+      <td><input type="number" id="good-qty" readonly style="background:#f3f6fa;color:#1a3a5c;font-weight:700;text-align:center;" title="양품수량 = 투입수량 - 불량수량으로 자동 계산됩니다."></td>
       <td><input type="number" id="bad-qty" min="0"></td>
       <td><input type="number" id="rework-qty" min="0"></td>
       <td><input type="text" id="op-time" readonly style="background:#f3f6fa;color:#1a3a5c;font-weight:700;text-align:center;" title="작업시간 상세에서 자동 계산됩니다."></td>
@@ -872,7 +835,7 @@
       <td><input type="text" id="cool-bar" style="text-align:center;"></td>
       <td><input type="text" id="cool-temp" style="text-align:center;"></td>
       <td><input type="text" id="cool-time" style="text-align:center;"></td>
-      <td><input type="text" id="lot-no" style="text-align:center;"></td>
+      <td><input type="text" id="lot-no" readonly style="text-align:center;background:#f3f6fa;color:#1a3a5c;font-weight:700;" title="신규입력 시 회사별 다음 LOT NO가 자동 표시됩니다."></td>
       <td style="text-align:center;"><input type="text" id="no5-set" placeholder="NO7" style="text-align:center;font-size:8.4px;"></td>
       <td style="padding:3px 5px;">
         <input type="text" id="surface-hard" style="width:100%;text-align:center;">
@@ -1023,14 +986,19 @@
     <div class="detail-modal-header">
       <div>
         <h3 id="work-time-modal-title">작업시간 상세</h3>
-        <p>시작시간과 종료시간만 키패드로 입력합니다.</p>
+        <p>시작시간과 종료시간만 직접 입력합니다.</p>
       </div>
       <button type="button" class="detail-modal-close" onclick="closeDetailModal('work-time-modal')" aria-label="닫기">×</button>
     </div>
     <div class="detail-modal-body">
       <div id="work-time-readonly-note" class="detail-readonly-note">조회 상태입니다. 수정 버튼을 누른 후 작업시간을 변경할 수 있습니다.</div>
       <div class="detail-help">
-        시작시간과 종료시간을 24시간 형식으로 입력하세요. 작업 구간이 점심시간(12:00~13:00)과 겹치면 겹친 시간이 자동 제외됩니다. 별도의 휴식시간은 계산하지 않습니다.
+        시작시간과 종료시간을 숫자 4자리로 직접 입력하세요. 작업 구간이 점심시간(12:00~13:00)과 겹치면 겹친 시간이 자동 제외됩니다. 별도의 휴식시간은 계산하지 않습니다.
+      </div>
+      <div class="work-time-example">
+        <strong>입력 예시</strong><br>
+        0800 입력 → 08:00 표시 / 1730 입력 → 17:30 표시<br>
+        08:00 ~ 17:00 입력 → 점심시간 1시간 제외 → 작업시간 8시간
       </div>
       <div class="detail-table-wrap">
         <table class="detail-table work-time-table">
@@ -1059,53 +1027,6 @@
     <div class="detail-modal-footer">
       <button type="button" class="detail-modal-btn" onclick="closeDetailModal('work-time-modal')">닫기</button>
       <button type="button" id="work-time-apply-btn" class="detail-modal-btn apply" data-edit-only onclick="applyWorkTimeModal()">적용</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ 시간 키패드 팝업 ══ -->
-<div id="time-keypad-modal" class="detail-modal-overlay time-keypad-overlay" onclick="closeModalByBackdrop(event, 'time-keypad-modal')">
-  <div class="time-keypad-panel" role="dialog" aria-modal="true" aria-labelledby="time-keypad-title">
-    <div class="detail-modal-header">
-      <div>
-        <h3 id="time-keypad-title">시간 입력</h3>
-        <p id="time-keypad-target-label">24시간 형식</p>
-      </div>
-      <button type="button" class="detail-modal-close" onclick="closeTimeKeypad()" aria-label="닫기">×</button>
-    </div>
-    <div class="time-keypad-body">
-      <div id="time-keypad-display" class="time-keypad-display">--:--</div>
-      <div class="time-quick-list" aria-label="빠른 시간 선택">
-        <button type="button" onclick="setQuickTime('08:00')">08:00</button>
-        <button type="button" onclick="setQuickTime('12:00')">12:00</button>
-        <button type="button" onclick="setQuickTime('13:00')">13:00</button>
-        <button type="button" onclick="setQuickTime('17:00')">17:00</button>
-        <button type="button" onclick="setQuickTime('18:00')">18:00</button>
-        <button type="button" onclick="setQuickTime('22:00')">22:00</button>
-        <button type="button" onclick="setQuickTime('06:00')">06:00</button>
-      </div>
-      <div class="time-keypad-grid">
-        <div class="time-keypad-numbers">
-          <button type="button" onclick="pressTimeKey('1')">1</button>
-          <button type="button" onclick="pressTimeKey('2')">2</button>
-          <button type="button" onclick="pressTimeKey('3')">3</button>
-          <button type="button" onclick="pressTimeKey('4')">4</button>
-          <button type="button" onclick="pressTimeKey('5')">5</button>
-          <button type="button" onclick="pressTimeKey('6')">6</button>
-          <button type="button" onclick="pressTimeKey('7')">7</button>
-          <button type="button" onclick="pressTimeKey('8')">8</button>
-          <button type="button" onclick="pressTimeKey('9')">9</button>
-          <button type="button" onclick="pressTimeKey('00')">00</button>
-          <button type="button" onclick="pressTimeKey('0')">0</button>
-          <button type="button" class="keypad-colon" disabled>:</button>
-        </div>
-        <div class="time-keypad-actions">
-          <button type="button" class="keypad-back" onclick="backspaceTimeKey()">⌫</button>
-          <button type="button" class="keypad-clear" onclick="clearTimeKeypad()">지우기</button>
-          <button type="button" class="keypad-confirm" onclick="confirmTimeKeypad()">확인</button>
-        </div>
-      </div>
-      <div class="time-keypad-help">입력 예시: 숫자 <strong>0 → 8 → 0 → 0</strong>을 누르면 <strong>08:00</strong>으로 입력됩니다.</div>
     </div>
   </div>
 </div>
@@ -1363,6 +1284,34 @@ function setValue(id, value) {
   element.value = value === null || value === undefined ? "" : String(value);
 }
 
+function updateGoodQuantity() {
+  const inputElement = document.getElementById("input-qty");
+  const defectElement = document.getElementById("bad-qty");
+  const goodElement = document.getElementById("good-qty");
+  if (!inputElement || !defectElement || !goodElement) return;
+
+  const inputText = String(inputElement.value || "").trim();
+  const defectText = String(defectElement.value || "").trim();
+
+  if (inputText === "") {
+    goodElement.value = "";
+    return;
+  }
+
+  const inputQuantity = Number(inputText);
+  const defectQuantity = defectText === "" ? 0 : Number(defectText);
+
+  if (
+    !Number.isInteger(inputQuantity) ||
+    !Number.isInteger(defectQuantity)
+  ) {
+    goodElement.value = "";
+    return;
+  }
+
+  goodElement.value = String(inputQuantity - defectQuantity);
+}
+
 function setChecked(id, checked) {
   const element = document.getElementById(id);
   if (element) element.checked = !!checked;
@@ -1412,6 +1361,65 @@ function generateSourceRecordKey() {
     ? crypto.randomUUID().replace(/-/g, "")
     : Date.now().toString(36) + Math.random().toString(36).slice(2);
   return "web_" + uuid;
+}
+
+function formatLotNumber(sequence) {
+  return "HT-" + String(sequence).padStart(3, "0") + "-01";
+}
+
+async function loadNextLotNo() {
+  if (!currentProfile || mode !== "new") return;
+
+  const lotInput = document.getElementById("lot-no");
+  lotInput.readOnly = true;
+  lotInput.value = "조회 중...";
+
+  try {
+    const { data, error } = await sb
+      .from(TABLE_NAME)
+      .select("lot_no")
+      .eq("company_id", currentProfile.company_id)
+      .not("lot_no", "is", null)
+      .like("lot_no", "HT-%-01")
+      .limit(5000);
+
+    if (error) throw error;
+
+    let maxSequence = 0;
+    (data || []).forEach((row) => {
+      const match = /^HT-(\d+)-01$/.exec(String(row.lot_no || "").trim());
+      if (!match) return;
+      maxSequence = Math.max(maxSequence, Number(match[1]) || 0);
+    });
+
+    lotInput.value = formatLotNumber(maxSequence + 1);
+    lotInput.title = "로그인 회사의 다음 LOT NO가 자동 설정되었습니다.";
+  } catch (error) {
+    lotInput.value = "";
+    showWarning("LOT NO 조회 실패: " + dbErrorMessage(error), "error");
+    showToast("❌ 다음 LOT NO를 불러오지 못했습니다.");
+  }
+}
+
+async function findDuplicateWorkRecord() {
+  let query = sb
+    .from(TABLE_NAME)
+    .select("production_system_id,lot_no")
+    .eq("company_id", currentProfile.company_id)
+    .eq("work_date", val("work-date"))
+    .eq("customer_name", val("customer"))
+    .eq("item_name", val("product-name"))
+    .eq("item_number", val("product-no"))
+    .eq("is_active", true)
+    .limit(1);
+
+  if (mode === "edit" && selectedRecordId) {
+    query = query.neq("production_system_id", selectedRecordId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || [])[0] || null;
 }
 
 /* =========================================================
@@ -1477,14 +1485,15 @@ function clearFormValues() {
   clearWarning();
 }
 
-function startNew() {
+async function startNew() {
   if (formDirty && !confirm("저장하지 않은 입력 내용이 있습니다. 신규 입력으로 전환하시겠습니까?")) {
     return;
   }
   clearFormValues();
   setMode("new");
+  await loadNextLotNo();
   document.getElementById("work-date").focus();
-  showWarning("신규 작업일보를 입력한 후 저장 버튼을 누르세요.", "info");
+  showWarning("신규 작업일보를 입력한 후 저장 버튼을 누르세요. LOT NO는 자동 설정됩니다.", "info");
 }
 
 function startEdit() {
@@ -1507,6 +1516,7 @@ async function resetCurrentForm() {
 
   clearFormValues();
   setMode("new");
+  await loadNextLotNo();
 }
 
 /* =========================================================
@@ -1938,6 +1948,7 @@ async function queryByDate() {
       message.style.color = "#c0392b";
       message.textContent = "조회 결과 없음";
       setMode("new");
+      await loadNextLotNo();
       return;
     }
 
@@ -2009,8 +2020,8 @@ async function loadRecordToForm(record) {
 
   setValue("plan-qty", record.planned_quantity);
   setValue("input-qty", record.input_quantity);
-  setValue("good-qty", record.good_quantity);
   setValue("bad-qty", record.defect_quantity);
+  updateGoodQuantity();
   setValue("rework-qty", record.rework_quantity);
   setValue("op-time", record.operation_hours);
   updateDetailButtonTitles();
@@ -2291,19 +2302,12 @@ function closeAllDetailModals() {
   document.querySelectorAll(".detail-modal-overlay.open").forEach((modal) => {
     modal.classList.remove("open");
   });
-  timeKeypadRowIndex = null;
-  timeKeypadField = null;
-  timeKeypadDigits = "";
   document.body.style.overflow = "";
 }
 
 function closeModalByBackdrop(event, modalId) {
   if (event.target?.id === modalId) closeDetailModal(modalId);
 }
-
-let timeKeypadRowIndex = null;
-let timeKeypadField = null;
-let timeKeypadDigits = "";
 
 function openWorkTimeModal() {
   tempWorkTimeDetails = deepCopy(workTimeDetails).map((row, index) => ({
@@ -2347,13 +2351,19 @@ function renderWorkTimeRows() {
     tr.innerHTML = `
       <td style="text-align:center;font-weight:700">${index + 1}</td>
       <td>
-        <button type="button" id="work-start-${index}" class="time-input-btn"
-          onclick="openTimeKeypad(${index}, 'start')">${escapeHtml(row.start_time || "--:--")}</button>
+        <input type="text" id="work-start-${index}" class="time-direct-input"
+          inputmode="numeric" maxlength="5" autocomplete="off" placeholder="08:00"
+          value="${escapeHtml(row.start_time || "")}"
+          oninput="handleDirectTimeInput(${index}, 'start', this)"
+          onblur="finalizeDirectTimeInput(${index}, 'start', this)">
       </td>
       <td class="work-time-separator">~</td>
       <td>
-        <button type="button" id="work-end-${index}" class="time-input-btn"
-          onclick="openTimeKeypad(${index}, 'end')">${escapeHtml(row.end_time || "--:--")}</button>
+        <input type="text" id="work-end-${index}" class="time-direct-input"
+          inputmode="numeric" maxlength="5" autocomplete="off" placeholder="17:00"
+          value="${escapeHtml(row.end_time || "")}"
+          oninput="handleDirectTimeInput(${index}, 'end', this)"
+          onblur="finalizeDirectTimeInput(${index}, 'end', this)">
       </td>
       <td><div id="work-minutes-${index}" class="work-time-auto-value">${formatMinutes(row.work_minutes)}</div></td>
       <td style="text-align:center"><button type="button" class="detail-row-delete" onclick="removeWorkTimeRow(${index})">삭제</button></td>
@@ -2369,6 +2379,64 @@ function renderWorkTimeRows() {
 
   updateWorkTimeModalTotal();
   setDetailModalEditable("work-time-modal", mode === "new" || mode === "edit");
+}
+
+function normalizeDirectTimeText(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+  if (!digits) return "";
+  if (digits.length <= 2) return digits;
+  return digits.slice(0, 2) + ":" + digits.slice(2);
+}
+
+function isValidTimeText(value) {
+  if (!/^\d{2}:\d{2}$/.test(value)) return false;
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+}
+
+function handleDirectTimeInput(index, field, input) {
+  const row = tempWorkTimeDetails[index];
+  if (!row) return;
+
+  input.value = normalizeDirectTimeText(input.value);
+  const normalized = isValidTimeText(input.value) ? input.value : "";
+  if (field === "start") row.start_time = normalized;
+  else row.end_time = normalized;
+
+  row.shift_type = inferShiftType(row.start_time);
+  row.break_minutes = 0;
+  row.remarks = "";
+  row.work_minutes = calculateWorkMinutes(row.start_time, row.end_time);
+
+  const workValue = document.getElementById(`work-minutes-${index}`);
+  if (workValue) workValue.textContent = formatMinutes(row.work_minutes);
+  updateWorkTimeModalTotal();
+}
+
+function finalizeDirectTimeInput(index, field, input) {
+  const rawDigits = String(input.value || "").replace(/\D/g, "");
+  if (!rawDigits) {
+    handleDirectTimeInput(index, field, input);
+    return;
+  }
+
+  if (rawDigits.length !== 4) {
+    showToast("⚠️ 시간을 숫자 4자리로 입력해 주세요. 예: 0800");
+    input.value = "";
+    handleDirectTimeInput(index, field, input);
+    return;
+  }
+
+  const normalized = rawDigits.slice(0, 2) + ":" + rawDigits.slice(2);
+  if (!isValidTimeText(normalized)) {
+    showToast("⚠️ 올바른 시간을 입력해 주세요. 시간 00~23, 분 00~59");
+    input.value = "";
+    handleDirectTimeInput(index, field, input);
+    return;
+  }
+
+  input.value = normalized;
+  handleDirectTimeInput(index, field, input);
 }
 
 function syncWorkTimeRowsFromDom() {
@@ -2456,98 +2524,6 @@ function applyWorkTimeModal() {
   showToast("✅ 작업시간이 자동 계산되어 가동시간에 반영되었습니다.");
 }
 
-function openTimeKeypad(rowIndex, field) {
-  if (mode !== "new" && mode !== "edit") return;
-  const row = tempWorkTimeDetails[rowIndex];
-  if (!row) return;
-
-  timeKeypadRowIndex = rowIndex;
-  timeKeypadField = field;
-  const currentValue = field === "start" ? row.start_time : row.end_time;
-  timeKeypadDigits = String(currentValue || "").replace(/\D/g, "").slice(0,4);
-
-  document.getElementById("time-keypad-target-label").textContent =
-    (rowIndex + 1) + "번 행 · " + (field === "start" ? "시작시간" : "종료시간");
-  updateTimeKeypadDisplay();
-  openDetailModal("time-keypad-modal");
-}
-
-function closeTimeKeypad() {
-  closeDetailModal("time-keypad-modal");
-  timeKeypadRowIndex = null;
-  timeKeypadField = null;
-  timeKeypadDigits = "";
-}
-
-function formatTimeDigits(digits) {
-  const clean = String(digits || "").replace(/\D/g, "").slice(0,4);
-  if (!clean) return "--:--";
-  if (clean.length <= 2) return clean.padEnd(2, "_") + ":__";
-  return clean.slice(0,2) + ":" + clean.slice(2).padEnd(2, "_");
-}
-
-function updateTimeKeypadDisplay() {
-  const display = document.getElementById("time-keypad-display");
-  if (display) display.textContent = formatTimeDigits(timeKeypadDigits);
-}
-
-function pressTimeKey(value) {
-  const append = String(value || "").replace(/\D/g, "");
-  if (!append || timeKeypadDigits.length >= 4) return;
-  timeKeypadDigits = (timeKeypadDigits + append).slice(0,4);
-  updateTimeKeypadDisplay();
-}
-
-function backspaceTimeKey() {
-  timeKeypadDigits = timeKeypadDigits.slice(0, -1);
-  updateTimeKeypadDisplay();
-}
-
-function clearTimeKeypad() {
-  timeKeypadDigits = "";
-  updateTimeKeypadDisplay();
-}
-
-function setQuickTime(value) {
-  timeKeypadDigits = String(value || "").replace(/\D/g, "").slice(0,4);
-  updateTimeKeypadDisplay();
-}
-
-function confirmTimeKeypad() {
-  if (timeKeypadRowIndex === null || !timeKeypadField) return;
-  if (timeKeypadDigits.length !== 4) {
-    showToast("⚠️ 시간을 네 자리로 입력해 주세요. 예: 0800");
-    return;
-  }
-
-  const hours = Number(timeKeypadDigits.slice(0,2));
-  const minutes = Number(timeKeypadDigits.slice(2,4));
-  if (!Number.isInteger(hours) || hours < 0 || hours > 23 ||
-      !Number.isInteger(minutes) || minutes < 0 || minutes > 59) {
-    showToast("⚠️ 올바른 시간을 입력해 주세요. 시간 00~23, 분 00~59");
-    return;
-  }
-
-  const timeValue = String(hours).padStart(2,"0") + ":" + String(minutes).padStart(2,"0");
-  const row = tempWorkTimeDetails[timeKeypadRowIndex];
-  if (timeKeypadField === "start") row.start_time = timeValue;
-  else row.end_time = timeValue;
-
-  row.shift_type = inferShiftType(row.start_time);
-  row.break_minutes = 0;
-  row.remarks = "";
-  row.work_minutes = calculateWorkMinutes(row.start_time, row.end_time);
-
-  const currentRowIndex = timeKeypadRowIndex;
-  const nextField = timeKeypadField === "start" ? "end" : null;
-  closeTimeKeypad();
-  renderWorkTimeRows();
-
-  if (nextField) {
-    setTimeout(() => openTimeKeypad(currentRowIndex, "end"), 120);
-  }
-}
-
 function openDefectModal() {
   tempDefectDetails = deepCopy(defectDetails);
   renderDefectRows();
@@ -2610,6 +2586,7 @@ function applyDefectModal() {
 
   defectDetails = deepCopy(tempDefectDetails);
   setValue("bad-qty", getDefectTotal());
+  updateGoodQuantity();
   formDirty = true;
   updateDetailButtonTitles();
   closeDetailModal("defect-modal");
@@ -2762,6 +2739,7 @@ async function loadDetailRecords(productionSystemId) {
   }
   if ((defectResult.data || []).length) {
     setValue("bad-qty", getDefectTotal());
+    updateGoodQuantity();
   }
   if ((downtimeResult.data || []).length) {
     setValue("non-op-time", hoursValueFromMinutes(getDowntimeTotalMinutes()));
@@ -2879,17 +2857,18 @@ const TEXT_NUMERIC_FIELDS = [
 ];
 
 function validateRecord() {
+  updateGoodQuantity();
   const errors = [];
 
   if (!val("work-date")) errors.push("작업일을 입력해 주세요.");
   if (!val("customer")) errors.push("고객사를 선택해 주세요.");
   if (!val("product-name")) errors.push("품명을 선택해 주세요.");
   if (!val("product-no")) errors.push("품번을 선택해 주세요.");
+  if (mode === "new" && !/^HT-\d{3,}-01$/.test(val("lot-no"))) errors.push("LOT NO를 불러오지 못했습니다. 신규입력을 다시 눌러 주세요.");
 
   const integerFields = [
     ["plan-qty","계획수량"],
     ["input-qty","투입수량"],
-    ["good-qty","양품수량"],
     ["bad-qty","불량수량"],
     ["rework-qty","재작업수량"],
     ["insp-qty","입고수량"],
@@ -2925,6 +2904,16 @@ function validateRecord() {
   const inputQuantity = integerOrNull("input-qty");
   const goodQuantity = integerOrNull("good-qty");
   const defectQuantity = integerOrNull("bad-qty");
+
+  if (
+    inputQuantity !== null &&
+    defectQuantity !== null &&
+    !Number.isNaN(inputQuantity) &&
+    !Number.isNaN(defectQuantity) &&
+    defectQuantity > inputQuantity
+  ) {
+    errors.push("불량수량은 투입수량보다 클 수 없습니다.");
+  }
 
   if (
     inputQuantity !== null &&
@@ -3112,6 +3101,17 @@ async function saveRecord() {
   saveButton.textContent = "⏳ 저장 중...";
 
   try {
+    const duplicateRecord = await findDuplicateWorkRecord();
+    if (duplicateRecord) {
+      const duplicateMessage =
+        "동일한 작업일자·고객사·품명·품번의 작업일보가 이미 등록되어 있습니다." +
+        (duplicateRecord.lot_no ? " 기존 LOT NO: " + duplicateRecord.lot_no : "") +
+        " 기존 작업일보를 조회하여 수정해 주세요.";
+      showWarning("저장 실패: " + duplicateMessage, "error");
+      alert("[중복 작업일보]\n\n" + duplicateMessage);
+      return;
+    }
+
     let result;
 
     if (savedAsNew) {
@@ -3166,6 +3166,13 @@ async function saveRecord() {
   } catch (error) {
     console.error(error);
 
+    if (error?.code === "23505" || String(error?.message || "").includes("total_production_company_work_item_unique")) {
+      const duplicateMessage = "동일한 작업일자·고객사·품명·품번의 작업일보가 이미 등록되어 있습니다. 기존 작업일보를 조회하여 수정해 주세요.";
+      showWarning("저장 실패: " + duplicateMessage, "error");
+      alert("[중복 작업일보]\n\n" + duplicateMessage);
+      return;
+    }
+
     if (parentSaved) {
       setMode("edit");
       formDirty = true;
@@ -3213,6 +3220,9 @@ document.addEventListener("click", (event) => {
   }
 });
 
+document.getElementById("input-qty").addEventListener("input", updateGoodQuantity);
+document.getElementById("bad-qty").addEventListener("input", updateGoodQuantity);
+
 document.getElementById("report-form").addEventListener("input", () => {
   if (mode === "new" || mode === "edit") formDirty = true;
 });
@@ -3221,24 +3231,6 @@ document.getElementById("report-form").addEventListener("change", () => {
 });
 
 document.addEventListener("keydown", (event) => {
-  const keypadOpen = document.getElementById("time-keypad-modal")?.classList.contains("open");
-  if (keypadOpen) {
-    if (/^\d$/.test(event.key)) {
-      event.preventDefault();
-      pressTimeKey(event.key);
-      return;
-    }
-    if (event.key === "Backspace") {
-      event.preventDefault();
-      backspaceTimeKey();
-      return;
-    }
-    if (event.key === "Enter") {
-      event.preventDefault();
-      confirmTimeKeypad();
-      return;
-    }
-  }
   if (event.key === "Escape") closeAllDetailModals();
 });
 
@@ -3267,8 +3259,9 @@ window.addEventListener("beforeunload", (event) => {
     bindExclusiveCheckboxes();
     clearFormValues();
     setMode("new");
+    await loadNextLotNo();
     showWarning(
-      "작업일보는 Total_Production_DB에서 입력·조회·수정·저장됩니다. 다른 회사 데이터는 RLS로 차단됩니다.",
+      "작업일보는 Total_Production_DB에서 입력·조회·수정·저장됩니다. LOT NO는 회사별 마지막 번호 다음 값으로 자동 설정되며, 동일 작업일자·고객사·품명·품번의 중복 저장은 차단됩니다.",
       "info"
     );
   } catch (error) {
