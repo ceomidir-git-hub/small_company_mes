@@ -84,14 +84,14 @@
     .file-name {
       margin-left: 5px;
       color: #667085;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 400;
     }
 
     .subtitle {
       margin-top: 5px;
       color: #5f6b7a;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .main-button {
@@ -113,7 +113,7 @@
     /* 조회 프레임 */
     .search-frame {
       display: grid;
-      grid-template-columns: minmax(170px, 220px) minmax(220px, 320px) auto;
+      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) minmax(170px, 1fr) auto;
       align-items: end;
       gap: 14px;
       padding: 16px;
@@ -132,7 +132,7 @@
 
     .field label {
       color: #445267;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -175,7 +175,7 @@
       border-radius: 7px;
       background: #fff;
       color: #1f2937;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -231,7 +231,7 @@
 
     .guide-text {
       color: #617087;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .action-buttons {
@@ -335,7 +335,7 @@
       min-width: 980px;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     thead th {
@@ -402,7 +402,7 @@
       justify-content: flex-end;
       padding-top: 10px;
       color: #475569;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -411,7 +411,7 @@
       margin-bottom: 12px;
       padding: 10px 12px;
       border-radius: 7px;
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1.5;
     }
 
@@ -456,6 +456,105 @@
       font-weight: 800;
     }
 
+
+    .print-title {
+      display: none;
+      margin: 0 0 12px;
+      color: #000;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .equipment-table .col-no { width: 2.5%; }
+    .equipment-table .col-number { width: 7%; }
+    .equipment-table .col-name { width: 12%; }
+    .equipment-table .col-capacity { width: 9%; }
+    .equipment-table .col-quantity { width: 4%; }
+    .equipment-table .col-maker { width: 10%; }
+    .equipment-table .col-date { width: 7%; }
+    .equipment-table .col-line { width: 6%; }
+    .equipment-table .col-process { width: 6%; }
+    .equipment-table .col-price { width: 8%; }
+    .equipment-table .col-special { width: 12%; }
+    .equipment-table .col-remarks { width: 11%; }
+    .equipment-table .col-status { width: 5.5%; }
+
+    .equipment-table th,
+    .equipment-table td {
+      white-space: nowrap;
+    }
+
+    @page {
+      size: A4 landscape;
+      margin: 8mm;
+    }
+
+    @media print {
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+
+      .page {
+        padding: 0;
+      }
+
+      .title-frame,
+      .screen-title,
+      .search-frame,
+      .action-frame,
+      .editor-frame,
+      .notice,
+      .loading,
+      .list-footer {
+        display: none !important;
+      }
+
+      .print-title {
+        display: block !important;
+      }
+
+      .list-frame {
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+        background: #fff !important;
+      }
+
+      .table-wrap {
+        max-height: none;
+        overflow: visible;
+        border: 1px solid #000;
+      }
+
+      table {
+        min-width: 0 !important;
+        width: 100% !important;
+        font-size: 7.2pt !important;
+        color: #000 !important;
+      }
+
+      thead th,
+      tbody td,
+      tfoot td {
+        position: static !important;
+        padding: 4px 3px !important;
+        border: 1px solid #000 !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+
+      tbody tr.selected {
+        outline: none;
+        background: #fff !important;
+      }
+
+      .notes-cell {
+        overflow: visible;
+        text-overflow: clip;
+      }
+    }
+
     @media (max-width: 900px) {
       .search-frame {
         grid-template-columns: 1fr 1fr;
@@ -498,7 +597,7 @@
         min-width: 92px;
         height: 38px;
         padding: 0 10px;
-        font-size: 12px;
+        font-size: 14px;
       }
 
       .search-frame,
@@ -549,7 +648,12 @@
 <section class="search-frame">
   <div class="field"><label for="searchNumber">설비번호</label><input id="searchNumber" placeholder="전체"></div>
   <div class="field"><label for="searchName">제조설비명</label><input id="searchName" placeholder="전체"></div>
-  <div class="search-buttons"><button class="btn btn-blue" onclick="searchRows()">🔍 조회</button><button class="btn" onclick="resetSearch()">초기화</button></div>
+  <div class="field"><label for="searchProcess">공정</label><select id="searchProcess"><option value="">전체</option></select></div>
+  <div class="search-buttons">
+    <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
+    <button class="btn" type="button" onclick="resetSearch()">초기화</button>
+    <button class="btn btn-red" type="button" onclick="savePdf()">PDF 저장</button>
+  </div>
 </section>
 
   <section class="action-frame">
@@ -573,7 +677,7 @@
     <div class="field"><label for="capacitySpec">용량/공칭능력</label><input id="capacitySpec" maxlength="100" disabled></div>
     <div class="field"><label for="quantity">대수</label><input id="quantity" type="number" min="1" step="1" disabled></div>
     <div class="field"><label for="manufacturer">제작사</label><input id="manufacturer" maxlength="160" disabled></div>
-    <div class="field"><label for="installationMonth">설치일자</label><input id="installationMonth" type="month" disabled></div>
+    <div class="field"><label for="installationMonth">설치일자</label><input id="installationMonth" type="date" disabled></div>
     <div class="field"><label for="lineName">LINE명</label><input id="lineName" maxlength="80" disabled></div>
     <div class="field"><label for="processName">공정</label><input id="processName" maxlength="100" disabled></div>
     <div class="field"><label for="purchasePrice">구입가격</label><input id="purchasePrice" type="number" min="0" step="1" disabled></div>
@@ -584,10 +688,33 @@
 </section>
 
   
-<section class="list-frame"><h2 class="list-title">설비 상세현황</h2><div class="table-wrap"><table style="min-width:1500px">
-<thead><tr><th>NO</th><th>설비번호</th><th>제조설비명</th><th>용량/공칭능력</th><th>대수</th><th>제작사</th><th>설치일자</th><th>LINE명</th><th>공정</th><th>구입가격</th><th>특이사항</th><th>비고</th><th>상태</th></tr></thead>
-<tbody id="tableBody"><tr><td class="empty" colspan="13">데이터를 불러오는 중입니다.</td></tr></tbody>
-<tfoot><tr><td colspan="3">합계</td><td id="totalCount" colspan="10">0건</td></tr></tfoot></table></div><div id="countLabel" class="list-footer">총 0건</div></section>
+<section class="list-frame">
+  <h2 class="list-title screen-title">설비 상세현황</h2>
+  <h2 class="print-title">Qgis 제조설비별 상세현황</h2>
+  <div class="table-wrap">
+    <table class="equipment-table" style="min-width:1500px">
+      <colgroup>
+        <col class="col-no"><col class="col-number"><col class="col-name"><col class="col-capacity">
+        <col class="col-quantity"><col class="col-maker"><col class="col-date"><col class="col-line">
+        <col class="col-process"><col class="col-price"><col class="col-special"><col class="col-remarks">
+        <col class="col-status">
+      </colgroup>
+      <thead><tr><th>NO</th><th>설비번호</th><th>제조설비명</th><th>용량/공칭능력</th><th>대수</th><th>제작사</th><th>설치일자</th><th>LINE명</th><th>공정</th><th>구입가격</th><th>특이사항</th><th>비고</th><th>상태</th></tr></thead>
+      <tbody id="tableBody"><tr><td class="empty" colspan="13">데이터를 불러오는 중입니다.</td></tr></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">합계</td>
+          <td>조회 <span id="totalCount">0건</span></td>
+          <td id="totalQuantity">0대</td>
+          <td colspan="4"></td>
+          <td id="totalPurchasePrice">0원</td>
+          <td colspan="3"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div id="countLabel" class="list-footer">총 0건 · 대수 0대 · 구입가격 0원</div>
+</section>
 </main>
 
 <div id="loadingOverlay" class="loading">
@@ -623,17 +750,92 @@ sb.auth.onAuthStateChange(ev=>{if(ev==="SIGNED_OUT")location.replace(LOGIN_PAGE_
 const fields=["equipmentNumber","equipmentName","capacitySpec","quantity","manufacturer","installationMonth","lineName","processName","purchasePrice","specialNotes","remarks","isActive"];
 function setMode(m){mode=m;const ed=m==="new"||m==="edit";fields.forEach(id=>document.getElementById(id).disabled=!ed);btnSave.disabled=!ed;btnEdit.disabled=!selectedId||ed;btnDelete.disabled=!selectedId||ed;editorFrame.classList.toggle("show",ed||!!selectedId);modeBadge.textContent=m==="new"?"신규등록":m==="edit"?"수정중":selectedId?"선택됨":"대기";modeBadge.className="mode-badge"+(m==="new"?" new":m==="edit"?" edit":"")}
 function clearForm(){selectedId=null;editForm.reset();isActive.checked=true}
-function fill(r){equipmentNumber.value=r.equipment_number||"";equipmentName.value=r.equipment_name||"";capacitySpec.value=r.capacity_spec||"";quantity.value=r.quantity??1;manufacturer.value=r.manufacturer||"";installationMonth.value=r.installation_month||"";lineName.value=r.line_name||"";processName.value=r.process_name||"";purchasePrice.value=r.purchase_price??"";specialNotes.value=r.special_notes||"";remarks.value=r.remarks||"";isActive.checked=r.is_active!==false}
-async function loadRows(){loading(true,"설비정보를 불러오는 중입니다...");clearNotice();const {data,error}=await sb.from("equipment").select("equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_month,line_name,process_name,purchase_price,special_notes,remarks,is_active").eq("company_id",currentProfile.company_id).order("equipment_number");loading(false);if(error){allRows=[];visibleRows=[];render();return notice("조회 실패: "+dbError(error),"error")}allRows=data||[];apply();clearForm();setMode("view");guide("설비정보 "+allRows.length+"건을 불러왔습니다.")}
-function apply(){const a=n(searchNumber.value).toLowerCase(),b=n(searchName.value).toLowerCase();visibleRows=allRows.filter(r=>(!a||String(r.equipment_number||"").toLowerCase().includes(a))&&(!b||String(r.equipment_name||"").toLowerCase().includes(b)));selectedId=null;render();setMode("view")}
-async function searchRows(){if(!allRows.length)await loadRows();else apply();guide("조회조건에 맞는 설비 "+visibleRows.length+"건을 표시합니다.")}
-function resetSearch(){searchNumber.value="";searchName.value="";apply();guide("조회조건을 초기화했습니다.")}
-function render(){tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`<tr data-id="${e(r.equipment_system_id)}" onclick="selectRow('${e(r.equipment_system_id)}')"><td>${i+1}</td><td>${e(r.equipment_number)}</td><td>${e(r.equipment_name)}</td><td>${e(r.capacity_spec)}</td><td>${e(r.quantity)}</td><td>${e(r.manufacturer)}</td><td>${e(r.installation_month)}</td><td>${e(r.line_name)}</td><td>${e(r.process_name)}</td><td>${r.purchase_price==null?"":Number(r.purchase_price).toLocaleString()}</td><td class="notes-cell">${e(r.special_notes)}</td><td class="notes-cell">${e(r.remarks)}</td><td>${r.is_active?"사용":"중지"}</td></tr>`).join(""):'<tr><td class="empty" colspan="13">표시할 설비가 없습니다.</td></tr>';totalCount.textContent=visibleRows.length+"건";countLabel.textContent="총 "+visibleRows.length+"건"}
+function fill(r){equipmentNumber.value=r.equipment_number||"";equipmentName.value=r.equipment_name||"";capacitySpec.value=r.capacity_spec||"";quantity.value=r.quantity??1;manufacturer.value=r.manufacturer||"";installationMonth.value=r.installation_date||"";lineName.value=r.line_name||"";processName.value=r.process_name||"";purchasePrice.value=r.purchase_price??"";specialNotes.value=r.special_notes||"";remarks.value=r.remarks||"";isActive.checked=r.is_active!==false}
+function updateProcessOptions(){
+ const previous=n(searchProcess.value);
+ const processes=[...new Set(allRows.map(r=>n(r.process_name)).filter(Boolean))]
+   .sort((a,b)=>a.localeCompare(b,"ko",{numeric:true,sensitivity:"base"}));
+ searchProcess.innerHTML='<option value="">전체</option>'+processes.map(v=>`<option value="${e(v)}">${e(v)}</option>`).join("");
+ searchProcess.value=processes.includes(previous)?previous:"";
+}
+async function loadRows(){
+ loading(true,"설비정보를 불러오는 중입니다...");
+ clearNotice();
+ const {data,error}=await sb.from("equipment")
+   .select("equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_date,line_name,process_name,purchase_price,special_notes,remarks,is_active")
+   .eq("company_id",currentProfile.company_id)
+   .order("installation_date",{ascending:true,nullsFirst:false})
+   .order("equipment_number",{ascending:true})
+   .order("equipment_name",{ascending:true});
+ loading(false);
+ if(error){
+   allRows=[];
+   visibleRows=[];
+   updateProcessOptions();
+   render();
+   return notice("조회 실패: "+dbError(error),"error");
+ }
+ allRows=data||[];
+ updateProcessOptions();
+ apply();
+ clearForm();
+ setMode("view");
+ guide("설비정보 "+allRows.length+"건을 설치일자 오름차순으로 불러왔습니다.");
+}
+function apply(){
+ const number=n(searchNumber.value).toLowerCase();
+ const name=n(searchName.value).toLowerCase();
+ const process=n(searchProcess.value);
+ visibleRows=allRows.filter(r=>
+   (!number||String(r.equipment_number||"").toLowerCase().includes(number))&&
+   (!name||String(r.equipment_name||"").toLowerCase().includes(name))&&
+   (!process||n(r.process_name)===process)
+ );
+ visibleRows.sort((a,b)=>{
+   const dateA=a.installation_date||"9999-12-31";
+   const dateB=b.installation_date||"9999-12-31";
+   const dateCompare=String(dateA).localeCompare(String(dateB));
+   if(dateCompare!==0)return dateCompare;
+   const numberCompare=String(a.equipment_number||"").localeCompare(String(b.equipment_number||""),"ko",{numeric:true,sensitivity:"base"});
+   if(numberCompare!==0)return numberCompare;
+   return String(a.equipment_name||"").localeCompare(String(b.equipment_name||""),"ko",{numeric:true,sensitivity:"base"});
+ });
+ selectedId=null;
+ render();
+ setMode("view");
+}
+async function searchRows(){
+ await loadRows();
+ guide("조회조건에 맞는 설비 "+visibleRows.length+"건을 설치일자 오름차순으로 표시합니다.");
+ notice("설비 조회가 완료되었습니다. 조회 건수: "+visibleRows.length+"건","success");
+}
+function resetSearch(){
+ searchNumber.value="";
+ searchName.value="";
+ searchProcess.value="";
+ apply();
+ guide("조회조건을 초기화하고 전체 설비 "+visibleRows.length+"건을 표시합니다.");
+ notice("설비 조회조건을 초기화했습니다.","success");
+}
+function render(){
+ const quantityTotal=visibleRows.reduce((sum,r)=>sum+(Number(r.quantity)||0),0);
+ const priceTotal=visibleRows.reduce((sum,r)=>sum+(Number(r.purchase_price)||0),0);
+ tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`<tr data-id="${e(r.equipment_system_id)}" onclick="selectRow('${e(r.equipment_system_id)}')"><td>${i+1}</td><td>${e(r.equipment_number)}</td><td>${e(r.equipment_name)}</td><td>${e(r.capacity_spec)}</td><td>${r.quantity==null?"":Number(r.quantity).toLocaleString("ko-KR")}</td><td>${e(r.manufacturer)}</td><td>${e(r.installation_date)}</td><td>${e(r.line_name)}</td><td>${e(r.process_name)}</td><td>${r.purchase_price==null?"":Number(r.purchase_price).toLocaleString("ko-KR")}</td><td class="notes-cell">${e(r.special_notes)}</td><td class="notes-cell">${e(r.remarks)}</td><td>${r.is_active?"사용":"중지"}</td></tr>`).join(""):'<tr><td class="empty" colspan="13">표시할 설비가 없습니다.</td></tr>';
+ totalCount.textContent=visibleRows.length+"건";
+ totalQuantity.textContent=quantityTotal.toLocaleString("ko-KR")+"대";
+ totalPurchasePrice.textContent=priceTotal.toLocaleString("ko-KR")+"원";
+ countLabel.textContent="총 "+visibleRows.length+"건 · 대수 "+quantityTotal.toLocaleString("ko-KR")+"대 · 구입가격 "+priceTotal.toLocaleString("ko-KR")+"원";
+}
+function savePdf(){
+ if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");
+ notice("조회된 설비 "+visibleRows.length+"건을 PDF 저장용 화면으로 변환했습니다.","success");
+ setTimeout(()=>window.print(),100);
+}
 function selectRow(id){const r=allRows.find(x=>x.equipment_system_id===id);if(!r)return;selectedId=id;fill(r);document.querySelectorAll("#tableBody tr").forEach(x=>x.classList.toggle("selected",x.dataset.id===id));setMode("view");guide("선택한 설비를 수정하거나 삭제할 수 있습니다.")}
-function startNew(){clearForm();setMode("new");equipmentNumber.focus();guide("신규 설비정보를 입력한 후 저장 버튼을 누르세요.")}
-function startEdit(){if(!selectedId)return notice("수정할 설비를 선택해 주세요.","error");setMode("edit");guide("수정할 내용을 입력한 후 저장 버튼을 누르세요.")}
-async function saveRecord(){if(mode!=="new"&&mode!=="edit")return notice("등록 또는 수정 버튼을 먼저 눌러 주세요.","error");const p={company_id:currentProfile.company_id,equipment_number:n(equipmentNumber.value),equipment_name:n(equipmentName.value),capacity_spec:n(capacitySpec.value)||null,quantity:Number(quantity.value||1),manufacturer:n(manufacturer.value)||null,installation_month:installationMonth.value||null,line_name:n(lineName.value)||null,process_name:n(processName.value)||null,purchase_price:purchasePrice.value?Number(purchasePrice.value):null,special_notes:n(specialNotes.value)||null,remarks:n(remarks.value)||null,is_active:isActive.checked};if(!p.equipment_number||!p.equipment_name)return notice("설비번호와 제조설비명을 입력해 주세요.","error");loading(true,"저장 중입니다...");const res=mode==="new"?await sb.from("equipment").insert(p):await sb.from("equipment").update(p).eq("equipment_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(res.error)return notice("저장 실패: "+dbError(res.error),"error");notice("설비정보가 저장되었습니다.","success");await loadRows()}
-async function deleteSelected(){if(!selectedId)return notice("삭제할 설비를 선택해 주세요.","error");if(!confirm("선택한 설비를 삭제하시겠습니까?"))return;loading(true,"삭제 중입니다...");const {error}=await sb.from("equipment").delete().eq("equipment_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(error)return notice("삭제 실패: "+dbError(error),"error");notice("설비정보가 삭제되었습니다.","success");await loadRows()}
+function startNew(){clearForm();setMode("new");equipmentNumber.focus();guide("신규 설비정보를 입력한 후 저장 버튼을 누르세요.");notice("신규 설비 등록 입력을 시작했습니다.","info")}
+function startEdit(){if(!selectedId)return notice("수정할 설비를 선택해 주세요.","error");setMode("edit");guide("수정할 내용을 입력한 후 저장 버튼을 누르세요.");notice("선택한 설비의 수정 입력을 시작했습니다.","info")}
+async function saveRecord(){if(mode!=="new"&&mode!=="edit")return notice("등록 또는 수정 버튼을 먼저 눌러 주세요.","error");const p={company_id:currentProfile.company_id,equipment_number:n(equipmentNumber.value),equipment_name:n(equipmentName.value),capacity_spec:n(capacitySpec.value)||null,quantity:Number(quantity.value||1),manufacturer:n(manufacturer.value)||null,installation_date:installationMonth.value||null,line_name:n(lineName.value)||null,process_name:n(processName.value)||null,purchase_price:purchasePrice.value?Number(purchasePrice.value):null,special_notes:n(specialNotes.value)||null,remarks:n(remarks.value)||null,is_active:isActive.checked};if(!p.equipment_number||!p.equipment_name)return notice("설비번호와 제조설비명을 입력해 주세요.","error");loading(true,"저장 중입니다...");const res=mode==="new"?await sb.from("equipment").insert(p):await sb.from("equipment").update(p).eq("equipment_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(res.error)return notice("저장 실패: "+dbError(res.error),"error");await loadRows();notice("설비정보가 저장되었습니다.","success")}
+async function deleteSelected(){if(!selectedId)return notice("삭제할 설비를 선택해 주세요.","error");if(!confirm("선택한 설비를 삭제하시겠습니까?"))return;loading(true,"삭제 중입니다...");const {error}=await sb.from("equipment").delete().eq("equipment_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(error)return notice("삭제 실패: "+dbError(error),"error");await loadRows();notice("설비정보가 삭제되었습니다.","success")}
 async function init(){try{if(await auth()){setMode("view");await loadRows()}}catch(x){document.documentElement.classList.remove("auth-pending");notice("화면 초기화 오류: "+dbError(x),"error")}}
 addEventListener("load",init);
 
