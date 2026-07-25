@@ -36,6 +36,8 @@
       font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
     }
 
     html.auth-pending body {
@@ -84,14 +86,14 @@
     .file-name {
       margin-left: 5px;
       color: #667085;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 400;
     }
 
     .subtitle {
       margin-top: 5px;
       color: #5f6b7a;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .main-button {
@@ -132,7 +134,7 @@
 
     .field label {
       color: #445267;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -175,7 +177,7 @@
       border-radius: 7px;
       background: #fff;
       color: #1f2937;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -220,6 +222,16 @@
       color: #fff;
     }
 
+    .btn-pdf {
+      border-color: #374151;
+      background: #374151;
+      color: #fff;
+    }
+
+    .btn-pdf:hover {
+      background: #111827;
+    }
+
     /* 안내 및 업무 버튼 프레임 */
     .action-frame {
       display: flex;
@@ -231,7 +243,7 @@
 
     .guide-text {
       color: #617087;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .action-buttons {
@@ -275,7 +287,7 @@
       border-radius: 999px;
       background: #e9eef7;
       color: #45556d;
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 800;
     }
 
@@ -302,7 +314,7 @@
     .char-count {
       margin-top: 4px;
       color: #64748b;
-      font-size: 11px;
+      font-size: 13px;
       text-align: right;
     }
 
@@ -335,7 +347,7 @@
       min-width: 980px;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     thead th {
@@ -402,7 +414,7 @@
       justify-content: flex-end;
       padding-top: 10px;
       color: #475569;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -411,7 +423,7 @@
       margin-bottom: 12px;
       padding: 10px 12px;
       border-radius: 7px;
-      font-size: 12px;
+      font-size: 15px;
       line-height: 1.5;
     }
 
@@ -498,7 +510,7 @@
         min-width: 92px;
         height: 38px;
         padding: 0 10px;
-        font-size: 12px;
+        font-size: 14px;
       }
 
       .search-frame,
@@ -532,6 +544,145 @@
         min-width: 900px;
       }
     }
+
+
+    /* A4 가로 PDF/인쇄 전용 설정 */
+    @page {
+      size: A4 landscape;
+      margin: 9mm;
+    }
+
+    @media print {
+      html,
+      body {
+        width: 100%;
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 10pt;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      html.auth-pending body {
+        visibility: visible;
+      }
+
+      .title-frame,
+      .search-frame,
+      .action-frame,
+      .editor-frame,
+      .notice,
+      .loading,
+      .list-footer {
+        display: none !important;
+      }
+
+      .page {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .list-frame {
+        display: block !important;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: #fff !important;
+        box-shadow: none;
+      }
+
+      .list-title {
+        margin: 0 0 5mm;
+        color: #000 !important;
+        font-size: 16pt;
+        text-align: center;
+      }
+
+      .table-wrap {
+        width: 100%;
+        max-height: none;
+        overflow: visible;
+        border: 1px solid #000;
+        background: #fff !important;
+      }
+
+      table {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+        border-collapse: collapse;
+        background: #fff !important;
+        color: #000 !important;
+        font-size: 8.5pt;
+      }
+
+      colgroup col:nth-child(1) { width: 5% !important; }
+      colgroup col:nth-child(2) { width: 12% !important; }
+      colgroup col:nth-child(3) { width: 18% !important; }
+      colgroup col:nth-child(4) { width: 10% !important; }
+      colgroup col:nth-child(5) { width: 10% !important; }
+      colgroup col:nth-child(6) { width: 13% !important; }
+      colgroup col:nth-child(7) { width: 25% !important; }
+      colgroup col:nth-child(8) { width: 7% !important; }
+
+      thead {
+        display: table-header-group;
+      }
+
+      tfoot {
+        display: table-footer-group;
+      }
+
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      thead th,
+      tbody td,
+      tfoot td {
+        position: static;
+        padding: 6px 5px;
+        border: 1px solid #000 !important;
+        background: #fff !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        outline: none !important;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      thead th,
+      tfoot td {
+        font-weight: 800;
+      }
+
+      tbody tr,
+      tbody tr:hover,
+      tbody tr.selected {
+        background: #fff !important;
+        outline: none !important;
+      }
+
+      .notes-cell {
+        overflow: visible;
+        text-align: left;
+        text-overflow: clip;
+        white-space: normal;
+      }
+
+      .empty {
+        height: 60px;
+        color: #000 !important;
+      }
+    }
+
   </style>
 </head>
 
@@ -575,6 +726,7 @@
       <div class="search-buttons">
         <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
         <button class="btn" type="button" onclick="resetSearch()">초기화</button>
+        <button class="btn btn-pdf" type="button" onclick="savePdf()">PDF 저장</button>
       </div>
     </section>
 
@@ -856,11 +1008,13 @@
       document.getElementById("isActive").checked = row.is_active !== false;
     }
 
-    async function loadRows() {
+    async function loadRows(options = {}) {
       if (!currentProfile) return;
 
+      const preserveNotice = Boolean(options.preserveNotice);
+
       showLoading(true, "고객사 목록을 불러오는 중입니다...");
-      clearNotice();
+      if (!preserveNotice) clearNotice();
 
       const { data, error } = await sb
         .from("customers")
@@ -928,6 +1082,10 @@
         applySearch();
       }
 
+      const resultMessage =
+        "고객사 조회를 완료했습니다. 조회 결과는 " + visibleRows.length + "건입니다.";
+
+      showNotice(resultMessage, "success");
       updateGuide(
         "조회조건에 맞는 고객사 " + visibleRows.length + "건을 표시합니다."
       );
@@ -936,9 +1094,42 @@
     function resetSearch() {
       document.getElementById("searchCompanyNumber").value = "";
       document.getElementById("searchCustomerName").value = "";
-      clearNotice();
       applySearch();
+      showNotice("조회조건 초기화를 완료했습니다.", "success");
       updateGuide("조회조건을 초기화했습니다.");
+    }
+
+    function savePdf() {
+      if (!visibleRows.length) {
+        showNotice("PDF로 저장할 조회 결과가 없습니다.", "error");
+        return;
+      }
+
+      const originalTitle = document.title;
+      const today = new Date();
+      const dateText = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0")
+      ].join("-");
+
+      document.title = "고객사_상세현황_" + dateText;
+      showNotice(
+        "PDF 저장 화면을 열었습니다. 인쇄 대상에서 'PDF로 저장'을 선택해 주세요.",
+        "info"
+      );
+
+      const restoreTitle = function () {
+        document.title = originalTitle;
+        window.removeEventListener("afterprint", restoreTitle);
+      };
+
+      window.addEventListener("afterprint", restoreTitle);
+      window.print();
+
+      window.setTimeout(function () {
+        document.title = originalTitle;
+      }, 1000);
     }
 
     function renderRows() {
@@ -994,9 +1185,12 @@
     }
 
     function startNew() {
-      clearNotice();
       clearForm();
       setMode("new");
+      showNotice(
+        "등록 작업을 시작했습니다. 고객사 정보를 입력한 후 저장 버튼을 눌러 주세요.",
+        "info"
+      );
       updateGuide("신규 고객사 정보를 입력한 후 저장 버튼을 누르세요.");
       document.getElementById("companyNumber").focus();
     }
@@ -1007,8 +1201,11 @@
         return;
       }
 
-      clearNotice();
       setMode("edit");
+      showNotice(
+        "수정 작업을 시작했습니다. 변경할 내용을 입력한 후 저장 버튼을 눌러 주세요.",
+        "info"
+      );
       updateGuide("수정할 내용을 입력한 후 저장 버튼을 누르세요.");
       document.getElementById("customerName").focus();
     }
@@ -1062,14 +1259,16 @@
         return;
       }
 
+      const completedMode = mode;
+
+      await loadRows({ preserveNotice: true });
+
       showNotice(
-        mode === "new"
-          ? "고객사가 Supabase에 신규 등록되었습니다."
-          : "고객사 정보가 Supabase에 수정 저장되었습니다.",
+        completedMode === "new"
+          ? "등록 및 저장을 완료했습니다. 고객사가 Supabase에 신규 등록되었습니다."
+          : "수정 및 저장을 완료했습니다. 고객사 정보가 Supabase에 반영되었습니다.",
         "success"
       );
-
-      await loadRows();
     }
 
     async function deleteSelected() {
@@ -1087,7 +1286,10 @@
         "를 삭제하시겠습니까?\n품목 등에서 사용 중이면 삭제되지 않습니다."
       );
 
-      if (!confirmed) return;
+      if (!confirmed) {
+        showNotice("삭제 작업을 취소했습니다.", "info");
+        return;
+      }
 
       showLoading(true, "고객사를 Supabase에서 삭제하는 중입니다...");
 
@@ -1104,8 +1306,14 @@
         return;
       }
 
-      showNotice("고객사가 Supabase에서 삭제되었습니다.", "success");
-      await loadRows();
+      const deletedCustomerName = row?.customer_name || "선택한 고객사";
+
+      await loadRows({ preserveNotice: true });
+
+      showNotice(
+        "삭제를 완료했습니다. " + deletedCustomerName + " 고객사가 Supabase에서 삭제되었습니다.",
+        "success"
+      );
     }
 
     function goMain() {
