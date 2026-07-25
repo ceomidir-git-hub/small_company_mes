@@ -646,7 +646,7 @@
 
   
 <section class="search-frame">
-  <div class="field"><label for="searchNumber">설비번호</label><input id="searchNumber" placeholder="전체"></div>
+  <div class="field"><label for="searchNumber">설비번호</label><select id="searchNumber"><option value="">전체</option></select></div>
   <div class="field"><label for="searchName">제조설비명</label><input id="searchName" placeholder="전체"></div>
   <div class="field"><label for="searchProcess">공정</label><select id="searchProcess"><option value="">전체</option></select></div>
   <div class="search-buttons">
@@ -751,6 +751,13 @@ const fields=["equipmentNumber","equipmentName","capacitySpec","quantity","manuf
 function setMode(m){mode=m;const ed=m==="new"||m==="edit";fields.forEach(id=>document.getElementById(id).disabled=!ed);btnSave.disabled=!ed;btnEdit.disabled=!selectedId||ed;btnDelete.disabled=!selectedId||ed;editorFrame.classList.toggle("show",ed||!!selectedId);modeBadge.textContent=m==="new"?"신규등록":m==="edit"?"수정중":selectedId?"선택됨":"대기";modeBadge.className="mode-badge"+(m==="new"?" new":m==="edit"?" edit":"")}
 function clearForm(){selectedId=null;editForm.reset();isActive.checked=true}
 function fill(r){equipmentNumber.value=r.equipment_number||"";equipmentName.value=r.equipment_name||"";capacitySpec.value=r.capacity_spec||"";quantity.value=r.quantity??1;manufacturer.value=r.manufacturer||"";installationMonth.value=r.installation_date||"";lineName.value=r.line_name||"";processName.value=r.process_name||"";purchasePrice.value=r.purchase_price??"";specialNotes.value=r.special_notes||"";remarks.value=r.remarks||"";isActive.checked=r.is_active!==false}
+function updateEquipmentNumberOptions(){
+ const previous=n(searchNumber.value);
+ const numbers=[...new Set(allRows.map(r=>n(r.equipment_number)).filter(Boolean))]
+   .sort((a,b)=>a.localeCompare(b,"ko",{numeric:true,sensitivity:"base"}));
+ searchNumber.innerHTML='<option value="">전체</option>'+numbers.map(v=>`<option value="${e(v)}">${e(v)}</option>`).join("");
+ searchNumber.value=numbers.includes(previous)?previous:"";
+}
 function updateProcessOptions(){
  const previous=n(searchProcess.value);
  const processes=[...new Set(allRows.map(r=>n(r.process_name)).filter(Boolean))]
@@ -764,41 +771,51 @@ async function loadRows(){
  const {data,error}=await sb.from("equipment")
    .select("equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_date,line_name,process_name,purchase_price,special_notes,remarks,is_active")
    .eq("company_id",currentProfile.company_id)
-   .order("installation_date",{ascending:true,nullsFirst:false})
    .order("equipment_number",{ascending:true})
-   .order("equipment_name",{ascending:true});
+   .order("equipment_name",{ascending:true})
+   .order("installation_date",{ascending:true,nullsFirst:false});
  loading(false);
  if(error){
    allRows=[];
    visibleRows=[];
+   updateEquipmentNumberOptions();
    updateProcessOptions();
    render();
    return notice("조회 실패: "+dbError(error),"error");
  }
  allRows=data||[];
+ updateEquipmentNumberOptions();
  updateProcessOptions();
  apply();
  clearForm();
  setMode("view");
- guide("설비정보 "+allRows.length+"건을 설치일자 오름차순으로 불러왔습니다.");
+ guide("설비정보 "+allRows.length+"건을 설비번호 오름차순으로 불러왔습니다.");
 }
 function apply(){
- const number=n(searchNumber.value).toLowerCase();
+ const number=n(searchNumber.value);
  const name=n(searchName.value).toLowerCase();
  const process=n(searchProcess.value);
  visibleRows=allRows.filter(r=>
-   (!number||String(r.equipment_number||"").toLowerCase().includes(number))&&
+   (!number||n(r.equipment_number)===number)&&
    (!name||String(r.equipment_name||"").toLowerCase().includes(name))&&
    (!process||n(r.process_name)===process)
  );
  visibleRows.sort((a,b)=>{
+   const numberCompare=String(a.equipment_number||"").localeCompare(
+     String(b.equipment_number||""),
+     "ko",
+     {numeric:true,sensitivity:"base"}
+   );
+   if(numberCompare!==0)return numberCompare;
+   const nameCompare=String(a.equipment_name||"").localeCompare(
+     String(b.equipment_name||""),
+     "ko",
+     {numeric:true,sensitivity:"base"}
+   );
+   if(nameCompare!==0)return nameCompare;
    const dateA=a.installation_date||"9999-12-31";
    const dateB=b.installation_date||"9999-12-31";
-   const dateCompare=String(dateA).localeCompare(String(dateB));
-   if(dateCompare!==0)return dateCompare;
-   const numberCompare=String(a.equipment_number||"").localeCompare(String(b.equipment_number||""),"ko",{numeric:true,sensitivity:"base"});
-   if(numberCompare!==0)return numberCompare;
-   return String(a.equipment_name||"").localeCompare(String(b.equipment_name||""),"ko",{numeric:true,sensitivity:"base"});
+   return String(dateA).localeCompare(String(dateB));
  });
  selectedId=null;
  render();
@@ -806,7 +823,7 @@ function apply(){
 }
 async function searchRows(){
  await loadRows();
- guide("조회조건에 맞는 설비 "+visibleRows.length+"건을 설치일자 오름차순으로 표시합니다.");
+ guide("조회조건에 맞는 설비 "+visibleRows.length+"건을 설비번호 오름차순으로 표시합니다.");
  notice("설비 조회가 완료되었습니다. 조회 건수: "+visibleRows.length+"건","success");
 }
 function resetSearch(){
