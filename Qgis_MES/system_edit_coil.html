@@ -84,14 +84,14 @@
     .file-name {
       margin-left: 5px;
       color: #667085;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 400;
     }
 
     .subtitle {
       margin-top: 5px;
       color: #5f6b7a;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .main-button {
@@ -113,7 +113,7 @@
     /* 조회 프레임 */
     .search-frame {
       display: grid;
-      grid-template-columns: minmax(170px, 220px) minmax(220px, 320px) auto;
+      grid-template-columns: minmax(150px, 0.8fr) minmax(190px, 1fr) minmax(220px, 1.35fr) auto;
       align-items: end;
       gap: 14px;
       padding: 16px;
@@ -132,7 +132,7 @@
 
     .field label {
       color: #445267;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -175,7 +175,7 @@
       border-radius: 7px;
       background: #fff;
       color: #1f2937;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -231,7 +231,7 @@
 
     .guide-text {
       color: #617087;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .action-buttons {
@@ -335,7 +335,7 @@
       min-width: 980px;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     thead th {
@@ -402,7 +402,7 @@
       justify-content: flex-end;
       padding-top: 10px;
       color: #475569;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
 
@@ -411,7 +411,7 @@
       margin-bottom: 12px;
       padding: 10px 12px;
       border-radius: 7px;
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1.5;
     }
 
@@ -456,6 +456,113 @@
       font-weight: 800;
     }
 
+
+    .print-title {
+      display: none;
+      margin: 0 0 12px;
+      color: #000;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .coil-table {
+      width: 100%;
+      min-width: 1320px;
+      table-layout: fixed;
+    }
+
+    /* 총합 100%: 5 + 8 + 11 + 11 + 22 + 11 + 10 + 8 + 8 + 6 */
+    .coil-table .col-no { width: 5%; }
+    .coil-table .col-identification { width: 8%; }
+    .coil-table .col-identifier { width: 11%; }
+    .coil-table .col-spec { width: 11%; }
+    .coil-table .col-classification { width: 22%; }
+    .coil-table .col-process { width: 11%; }
+    .coil-table .col-date { width: 10%; }
+    .coil-table .col-life { width: 8%; }
+    .coil-table .col-stock { width: 8%; }
+    .coil-table .col-status { width: 6%; }
+
+    .coil-table th,
+    .coil-table td {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .coil-table .number-cell {
+      text-align: right !important;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @page {
+      size: A4 landscape;
+      margin: 8mm;
+    }
+
+    @media print {
+      html,
+      body {
+        background: #fff !important;
+        color: #000 !important;
+      }
+
+      .page {
+        padding: 0;
+      }
+
+      .title-frame,
+      .screen-title,
+      .search-frame,
+      .action-frame,
+      .editor-frame,
+      .notice,
+      .loading,
+      .list-footer {
+        display: none !important;
+      }
+
+      .print-title {
+        display: block !important;
+      }
+
+      .list-frame {
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+        background: #fff !important;
+      }
+
+      .table-wrap {
+        max-height: none;
+        overflow: visible;
+        border: 1px solid #000;
+      }
+
+      .coil-table {
+        min-width: 0 !important;
+        width: 100% !important;
+        font-size: 8pt !important;
+        color: #000 !important;
+      }
+
+      .coil-table thead th,
+      .coil-table tbody td,
+      .coil-table tfoot td {
+        position: static !important;
+        padding: 4px 3px !important;
+        border: 1px solid #000 !important;
+        background: #fff !important;
+        color: #000 !important;
+        white-space: nowrap !important;
+      }
+
+      tbody tr.selected {
+        outline: none;
+        background: #fff !important;
+      }
+    }
+
     @media (max-width: 900px) {
       .search-frame {
         grid-template-columns: 1fr 1fr;
@@ -498,7 +605,7 @@
         min-width: 92px;
         height: 38px;
         padding: 0 10px;
-        font-size: 12px;
+        font-size: 14px;
       }
 
       .search-frame,
@@ -547,7 +654,7 @@
 <main class="page">
   <section class="title-frame">
     <div class="title-area">
-      <h1>코일 관리 <span class="file-name">_system_edit_coil.html</span></h1>
+      <h1>코일 관리 <span class="file-name">_system_edit_coil.html <small style="font-size:11px">rev.20260725-1</small></span></h1>
       <div class="subtitle">HeatPro MES · 로그인 회사의 코일관리대장 조회·등록·수정·삭제</div>
     </div>
     <button class="main-button" type="button" onclick="goMain()">⌂ 메인화면</button>
@@ -556,19 +663,26 @@
   <section class="search-frame" aria-label="코일 조회 조건">
     <div class="field">
       <label for="searchIdentificationCode">식별코드</label>
-      <input id="searchIdentificationCode" maxlength="20" placeholder="전체">
+      <select id="searchIdentificationCode">
+        <option value="">전체</option>
+      </select>
     </div>
     <div class="field">
       <label for="searchCoilIdentifier">코일식별번호</label>
-      <input id="searchCoilIdentifier" maxlength="50" placeholder="전체">
+      <select id="searchCoilIdentifier">
+        <option value="">전체</option>
+      </select>
     </div>
     <div class="field">
       <label for="searchClassificationName">분류명</label>
-      <input id="searchClassificationName" maxlength="200" placeholder="전체">
+      <select id="searchClassificationName">
+        <option value="">전체</option>
+      </select>
     </div>
     <div class="search-buttons">
       <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
       <button class="btn" type="button" onclick="resetSearch()">초기화</button>
+      <button class="btn btn-red" type="button" onclick="savePdf()">PDF 저장</button>
     </div>
   </section>
 
@@ -636,9 +750,22 @@
   </section>
 
   <section class="list-frame">
-    <h2 class="list-title">코일관리대장 상세현황</h2>
+    <h2 class="list-title screen-title">코일관리대장 상세현황</h2>
+    <h2 class="print-title">Qgis 코일관리대장 상세현황</h2>
     <div class="table-wrap">
-      <table style="min-width:1250px">
+      <table class="coil-table">
+        <colgroup>
+          <col class="col-no">
+          <col class="col-identification">
+          <col class="col-identifier">
+          <col class="col-spec">
+          <col class="col-classification">
+          <col class="col-process">
+          <col class="col-date">
+          <col class="col-life">
+          <col class="col-stock">
+          <col class="col-status">
+        </colgroup>
         <thead>
           <tr>
             <th>NO</th>
@@ -659,14 +786,16 @@
         <tfoot>
           <tr>
             <td colspan="3">합계</td>
-            <td id="totalCount" colspan="5">0건</td>
-            <td id="totalStock">재고 0개</td>
+            <td>조회 <span id="totalCount">0건</span></td>
+            <td colspan="3"></td>
+            <td id="totalLife">0</td>
+            <td id="totalStock">0개</td>
             <td></td>
           </tr>
         </tfoot>
       </table>
     </div>
-    <div id="countLabel" class="list-footer">총 0건</div>
+    <div id="countLabel" class="list-footer">총 0건 · 수명 합계 0 · 재고 0개</div>
   </section>
 </main>
 
@@ -840,6 +969,118 @@ function fillForm(row) {
   document.getElementById("isActive").checked = row.is_active !== false;
 }
 
+
+function compareNaturalCode(leftValue, rightValue) {
+  const left = normalizeText(leftValue);
+  const right = normalizeText(rightValue);
+  const leftParts = left.match(/\d+|\D+/g) || [left];
+  const rightParts = right.match(/\d+|\D+/g) || [right];
+  const maxLength = Math.max(leftParts.length, rightParts.length);
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const leftPart = leftParts[index] ?? "";
+    const rightPart = rightParts[index] ?? "";
+    const leftIsNumber = /^\d+$/.test(leftPart);
+    const rightIsNumber = /^\d+$/.test(rightPart);
+
+    if (leftIsNumber && rightIsNumber) {
+      const difference = Number(leftPart) - Number(rightPart);
+      if (difference !== 0) return difference;
+    } else {
+      const difference = leftPart.localeCompare(
+        rightPart,
+        "ko",
+        { sensitivity: "base" }
+      );
+      if (difference !== 0) return difference;
+    }
+  }
+
+  return left.localeCompare(right, "ko", { sensitivity: "base" });
+}
+
+function makeOption(value) {
+  return '<option value="' + escapeHtml(value) + '">' +
+    escapeHtml(value) + '</option>';
+}
+
+function updateIdentificationOptions() {
+  const previous = normalizeText(
+    document.getElementById("searchIdentificationCode").value
+  );
+
+  const values = [...new Set(
+    allRows
+      .map(function (row) { return normalizeText(row.identification_code); })
+      .filter(Boolean)
+  )].sort(compareNaturalCode);
+
+  document.getElementById("searchIdentificationCode").innerHTML =
+    '<option value="">전체</option>' + values.map(makeOption).join("");
+
+  document.getElementById("searchIdentificationCode").value =
+    values.includes(previous) ? previous : "";
+}
+
+function updateLinkedSearchOptions() {
+  const selectedIdentification = normalizeText(
+    document.getElementById("searchIdentificationCode").value
+  );
+
+  const selectedIdentifier = normalizeText(
+    document.getElementById("searchCoilIdentifier").value
+  );
+
+  const selectedClassification = normalizeText(
+    document.getElementById("searchClassificationName").value
+  );
+
+  const identificationRows = allRows.filter(function (row) {
+    return !selectedIdentification ||
+      normalizeText(row.identification_code) === selectedIdentification;
+  });
+
+  const identifiers = [...new Set(
+    identificationRows
+      .map(function (row) { return normalizeText(row.coil_identifier); })
+      .filter(Boolean)
+  )].sort(compareNaturalCode);
+
+  document.getElementById("searchCoilIdentifier").innerHTML =
+    '<option value="">전체</option>' + identifiers.map(makeOption).join("");
+
+  document.getElementById("searchCoilIdentifier").value =
+    identifiers.includes(selectedIdentifier) ? selectedIdentifier : "";
+
+  const identifierValue = normalizeText(
+    document.getElementById("searchCoilIdentifier").value
+  );
+
+  const classificationRows = identificationRows.filter(function (row) {
+    return !identifierValue ||
+      normalizeText(row.coil_identifier) === identifierValue;
+  });
+
+  const classifications = [...new Set(
+    classificationRows
+      .map(function (row) { return normalizeText(row.classification_name); })
+      .filter(Boolean)
+  )].sort(function (left, right) {
+    return left.localeCompare(right, "ko", {
+      numeric: true,
+      sensitivity: "base"
+    });
+  });
+
+  document.getElementById("searchClassificationName").innerHTML =
+    '<option value="">전체</option>' + classifications.map(makeOption).join("");
+
+  document.getElementById("searchClassificationName").value =
+    classifications.includes(selectedClassification)
+      ? selectedClassification
+      : "";
+}
+
 async function loadRows() {
   showLoading(true, "코일정보를 불러오는 중입니다...");
   clearNotice();
@@ -858,6 +1099,8 @@ async function loadRows() {
   if (error) {
     allRows = [];
     visibleRows = [];
+    updateIdentificationOptions();
+    updateLinkedSearchOptions();
     renderRows();
     showNotice("조회 실패: " + formatDbError(error), "error");
     updateGuide("코일정보 조회에 실패했습니다.");
@@ -865,33 +1108,60 @@ async function loadRows() {
   }
 
   allRows = data || [];
+  updateIdentificationOptions();
+  updateLinkedSearchOptions();
   applySearch();
   clearForm();
   setMode("view");
-  updateGuide("코일정보 " + allRows.length + "건을 불러왔습니다.");
+  updateGuide(
+    "코일정보 " + allRows.length +
+    "건을 식별코드와 코일식별번호 숫자 기준 오름차순으로 불러왔습니다."
+  );
 }
 
 function applySearch() {
   const identification = normalizeText(
     document.getElementById("searchIdentificationCode").value
-  ).toLowerCase();
+  );
 
   const identifier = normalizeText(
     document.getElementById("searchCoilIdentifier").value
-  ).toLowerCase();
+  );
 
   const classification = normalizeText(
     document.getElementById("searchClassificationName").value
-  ).toLowerCase();
+  );
 
   visibleRows = allRows.filter(function (row) {
     return (
       (!identification ||
-        String(row.identification_code || "").toLowerCase().includes(identification)) &&
+        normalizeText(row.identification_code) === identification) &&
       (!identifier ||
-        String(row.coil_identifier || "").toLowerCase().includes(identifier)) &&
+        normalizeText(row.coil_identifier) === identifier) &&
       (!classification ||
-        String(row.classification_name || "").toLowerCase().includes(classification))
+        normalizeText(row.classification_name) === classification)
+    );
+  });
+
+  visibleRows.sort(function (left, right) {
+    const identificationCompare = compareNaturalCode(
+      left.identification_code,
+      right.identification_code
+    );
+
+    if (identificationCompare !== 0) return identificationCompare;
+
+    const identifierCompare = compareNaturalCode(
+      left.coil_identifier,
+      right.coil_identifier
+    );
+
+    if (identifierCompare !== 0) return identifierCompare;
+
+    return String(left.classification_name || "").localeCompare(
+      String(right.classification_name || ""),
+      "ko",
+      { numeric: true, sensitivity: "base" }
     );
   });
 
@@ -901,26 +1171,35 @@ function applySearch() {
 }
 
 async function searchRows() {
-  clearNotice();
-
-  if (!allRows.length) {
-    await loadRows();
-  } else {
-    applySearch();
-  }
+  await loadRows();
 
   updateGuide(
-    "조회조건에 맞는 코일 " + visibleRows.length + "건을 표시합니다."
+    "조회조건에 맞는 코일 " + visibleRows.length +
+    "건을 식별코드와 코일식별번호 숫자 기준 오름차순으로 표시합니다."
+  );
+
+  showNotice(
+    "코일 조회가 완료되었습니다. 조회 건수: " +
+    visibleRows.length + "건",
+    "success"
   );
 }
 
 function resetSearch() {
   document.getElementById("searchIdentificationCode").value = "";
+  updateLinkedSearchOptions();
   document.getElementById("searchCoilIdentifier").value = "";
+  updateLinkedSearchOptions();
   document.getElementById("searchClassificationName").value = "";
-  clearNotice();
+
   applySearch();
-  updateGuide("조회조건을 초기화했습니다.");
+
+  updateGuide(
+    "조회조건을 초기화하고 전체 코일 " +
+    visibleRows.length + "건을 표시합니다."
+  );
+
+  showNotice("코일 조회조건을 초기화했습니다.", "success");
 }
 
 function renderRows() {
@@ -937,32 +1216,58 @@ function renderRows() {
           onclick="selectRow('${escapeHtml(row.coil_system_id)}')"
         >
           <td>${index + 1}</td>
-          <td>${escapeHtml(row.identification_code)}</td>
-          <td>${escapeHtml(row.coil_identifier)}</td>
-          <td>${escapeHtml(row.coil_spec)}</td>
-          <td class="notes-cell" title="${escapeHtml(row.classification_name)}">${escapeHtml(row.classification_name)}</td>
-          <td>${escapeHtml(row.applied_process)}</td>
+          <td title="${escapeHtml(row.identification_code)}">${escapeHtml(row.identification_code)}</td>
+          <td title="${escapeHtml(row.coil_identifier)}">${escapeHtml(row.coil_identifier)}</td>
+          <td title="${escapeHtml(row.coil_spec)}">${escapeHtml(row.coil_spec)}</td>
+          <td title="${escapeHtml(row.classification_name)}">${escapeHtml(row.classification_name)}</td>
+          <td title="${escapeHtml(row.applied_process)}">${escapeHtml(row.applied_process)}</td>
           <td>${escapeHtml(row.manufactured_date)}</td>
-          <td class="number-cell">${Number(row.service_life || 0).toLocaleString()}</td>
-          <td class="number-cell">${Number(row.stock_quantity || 0).toLocaleString()}</td>
+          <td class="number-cell">${Number(row.service_life || 0).toLocaleString("ko-KR")}</td>
+          <td class="number-cell">${Number(row.stock_quantity || 0).toLocaleString("ko-KR")}</td>
           <td>${row.is_active ? "사용" : "중지"}</td>
         </tr>
       `;
     }).join("");
   }
 
+  const lifeTotal = visibleRows.reduce(function (sum, row) {
+    return sum + Number(row.service_life || 0);
+  }, 0);
+
   const stockTotal = visibleRows.reduce(function (sum, row) {
     return sum + Number(row.stock_quantity || 0);
   }, 0);
 
   document.getElementById("totalCount").textContent =
-    visibleRows.length + "건";
+    visibleRows.length.toLocaleString("ko-KR") + "건";
+
+  document.getElementById("totalLife").textContent =
+    lifeTotal.toLocaleString("ko-KR");
 
   document.getElementById("totalStock").textContent =
-    "재고 " + stockTotal.toLocaleString() + "개";
+    stockTotal.toLocaleString("ko-KR") + "개";
 
   document.getElementById("countLabel").textContent =
-    "총 " + visibleRows.length + "건";
+    "총 " + visibleRows.length.toLocaleString("ko-KR") +
+    "건 · 수명 합계 " + lifeTotal.toLocaleString("ko-KR") +
+    " · 재고 " + stockTotal.toLocaleString("ko-KR") + "개";
+}
+
+function savePdf() {
+  if (!visibleRows.length) {
+    showNotice("PDF로 저장할 조회 데이터가 없습니다.", "error");
+    return;
+  }
+
+  showNotice(
+    "조회된 코일 " + visibleRows.length +
+    "건을 PDF 저장용 화면으로 변환했습니다.",
+    "success"
+  );
+
+  window.setTimeout(function () {
+    window.print();
+  }, 100);
 }
 
 function selectRow(id) {
@@ -1068,14 +1373,13 @@ async function saveRecord() {
     return;
   }
 
-  showNotice(
+  const successMessage =
     mode === "new"
       ? "코일정보가 신규 등록되었습니다."
-      : "코일정보가 수정 저장되었습니다.",
-    "success"
-  );
+      : "코일정보가 수정 저장되었습니다.";
 
   await loadRows();
+  showNotice(successMessage, "success");
 }
 
 async function deleteSelected() {
@@ -1107,8 +1411,8 @@ async function deleteSelected() {
     return;
   }
 
-  showNotice("코일정보가 삭제되었습니다.", "success");
   await loadRows();
+  showNotice("코일정보가 삭제되었습니다.", "success");
 }
 
 function goMain() {
@@ -1133,6 +1437,24 @@ async function initializePage() {
     showNotice("화면 초기화 오류: " + formatDbError(error), "error");
   }
 }
+
+
+document.getElementById("searchIdentificationCode").addEventListener(
+  "change",
+  function () {
+    document.getElementById("searchCoilIdentifier").value = "";
+    document.getElementById("searchClassificationName").value = "";
+    updateLinkedSearchOptions();
+  }
+);
+
+document.getElementById("searchCoilIdentifier").addEventListener(
+  "change",
+  function () {
+    document.getElementById("searchClassificationName").value = "";
+    updateLinkedSearchOptions();
+  }
+);
 
 window.addEventListener("load", initializePage);
 </script>
