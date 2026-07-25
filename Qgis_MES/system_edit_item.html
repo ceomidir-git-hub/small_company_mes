@@ -456,6 +456,28 @@
       font-weight: 800;
     }
 
+
+    .print-title {
+      display: none;
+      margin: 0 0 12px;
+      color: #000;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .item-table .col-no { width: 4%; }
+    .item-table .col-date { width: 12%; }
+    .item-table .col-company-no { width: 14%; }
+    .item-table .col-customer { width: 18%; }
+    .item-table .col-item-number { width: 19%; }
+    .item-table .col-item-name { width: 25%; }
+    .item-table .col-status { width: 8%; }
+
+    .item-table th,
+    .item-table td {
+      white-space: nowrap;
+    }
+
     @page {
       size: A4 landscape;
       margin: 10mm;
@@ -472,6 +494,7 @@
       }
 
       .title-frame,
+      .screen-title,
       .search-frame,
       .action-frame,
       .editor-frame,
@@ -479,6 +502,10 @@
       .loading,
       .list-footer {
         display: none !important;
+      }
+
+      .print-title {
+        display: block !important;
       }
 
       .list-frame {
@@ -606,7 +633,7 @@
   
 <section class="search-frame">
   <div class="field"><label for="searchCustomerId">고객사명</label><select id="searchCustomerId"><option value="">전체</option></select></div>
-  <div class="field"><label for="searchItemName">품명</label><input id="searchItemName" placeholder="전체"></div>
+  <div class="field"><label for="searchItemName">품명</label><select id="searchItemName"><option value="">전체</option></select></div>
   <div class="field"><label for="searchItemNumber">품번</label><input id="searchItemNumber" placeholder="전체"></div>
   <div class="search-buttons">
     <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
@@ -638,7 +665,7 @@
 </div></form></section>
 
   
-<section class="list-frame"><h2 class="list-title">아이템 상세현황</h2><div class="table-wrap"><table style="min-width:900px"><thead><tr><th>NO</th><th>등록일</th><th>고객관리번호</th><th>고객사명</th><th>품번</th><th>품명</th><th>상태</th></tr></thead><tbody id="tableBody"><tr><td class="empty" colspan="7">데이터를 불러오는 중입니다.</td></tr></tbody><tfoot><tr><td colspan="2">합계</td><td id="totalCount" colspan="5">0건</td></tr></tfoot></table></div><div id="countLabel" class="list-footer">총 0건</div></section>
+<section class="list-frame"><h2 class="list-title screen-title">아이템 상세현황</h2><h2 class="print-title">Qgis 고객사별 Item별 상세현황</h2><div class="table-wrap"><table class="item-table"><colgroup><col class="col-no"><col class="col-date"><col class="col-company-no"><col class="col-customer"><col class="col-item-number"><col class="col-item-name"><col class="col-status"></colgroup><thead><tr><th>NO</th><th>등록일</th><th>고객관리번호</th><th>고객사명</th><th>품번</th><th>품명</th><th>상태</th></tr></thead><tbody id="tableBody"><tr><td class="empty" colspan="7">데이터를 불러오는 중입니다.</td></tr></tbody><tfoot><tr><td colspan="2">합계</td><td id="totalCount" colspan="5">0건</td></tr></tfoot></table></div><div id="countLabel" class="list-footer">총 0건</div></section>
 </main>
 
 <div id="loadingOverlay" class="loading">
@@ -675,19 +702,72 @@ let customers=[];const fields=["registeredDate","customerId","itemNumber","itemN
 function setMode(m){mode=m;const ed=m==="new"||m==="edit";fields.forEach(id=>document.getElementById(id).disabled=!ed);btnSave.disabled=!ed;btnEdit.disabled=!selectedId||ed;btnDelete.disabled=!selectedId||ed;editorFrame.classList.toggle("show",ed||!!selectedId);modeBadge.textContent=m==="new"?"신규등록":m==="edit"?"수정중":selectedId?"선택됨":"대기";modeBadge.className="mode-badge"+(m==="new"?" new":m==="edit"?" edit":"")}
 function clearForm(){selectedId=null;editForm.reset();registeredDate.value=new Date().toISOString().slice(0,10);isActive.checked=true}
 function fill(r){registeredDate.value=r.registered_date||"";customerId.value=r.customer_system_id||"";itemNumber.value=r.item_number||"";itemName.value=r.item_name||"";isActive.checked=r.is_active!==false}
-async function loadCustomers(){const {data,error}=await sb.from("customers").select("customer_system_id,company_number,customer_name,is_active").eq("company_id",currentProfile.company_id).order("company_number");if(error)throw error;customers=data||[];const activeCustomers=customers.filter(x=>x.is_active!==false&&n(x.customer_name));customerId.innerHTML='<option value="">고객사 선택</option>'+activeCustomers.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.company_number)} · ${e(x.customer_name)}</option>`).join("");searchCustomerId.innerHTML='<option value="">전체</option>'+activeCustomers.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.customer_name)}</option>`).join("")}
-async function loadRows(){loading(true,"아이템정보를 불러오는 중입니다...");clearNotice();await loadCustomers();const {data,error}=await sb.from("items").select("item_system_id,customer_system_id,registered_date,item_name,item_number,is_active").eq("company_id",currentProfile.company_id).order("registered_date",{ascending:false,nullsFirst:false}).order("customer_system_id",{ascending:true}).order("item_name",{ascending:true}).order("item_number",{ascending:true});loading(false);if(error){allRows=[];visibleRows=[];render();return notice("조회 실패: "+dbError(error),"error")}allRows=(data||[]).map(r=>{const c=customers.find(x=>x.customer_system_id===r.customer_system_id)||{};return {...r,company_number:c.company_number||"",customer_name:c.customer_name||""}});apply();clearForm();setMode("view");guide("아이템정보 "+allRows.length+"건을 등록일 내림차순으로 불러왔습니다.")}
-function apply(){const customer=n(searchCustomerId.value),itemName=n(searchItemName.value).toLowerCase(),itemNumber=n(searchItemNumber.value).toLowerCase();visibleRows=allRows.filter(r=>(!customer||r.customer_system_id===customer)&&(!itemName||String(r.item_name||"").toLowerCase().includes(itemName))&&(!itemNumber||String(r.item_number||"").toLowerCase().includes(itemNumber)));visibleRows.sort((a,b)=>{const dateCompare=String(b.registered_date||"").localeCompare(String(a.registered_date||""));if(dateCompare!==0)return dateCompare;const customerCompare=String(a.company_number||"").localeCompare(String(b.company_number||""),"ko",{numeric:true,sensitivity:"base"});if(customerCompare!==0)return customerCompare;const nameCompare=String(a.item_name||"").localeCompare(String(b.item_name||""),"ko",{numeric:true,sensitivity:"base"});if(nameCompare!==0)return nameCompare;return String(a.item_number||"").localeCompare(String(b.item_number||""),"ko",{numeric:true,sensitivity:"base"})});selectedId=null;render();setMode("view")}
-async function searchRows(){await loadRows();guide("조회조건에 맞는 아이템 "+visibleRows.length+"건을 등록일 내림차순으로 표시합니다.");notice("아이템 조회가 완료되었습니다.","success")}
-function resetSearch(){searchCustomerId.value="";searchItemName.value="";searchItemNumber.value="";apply();guide("조회조건을 초기화했습니다.");notice("조회조건을 초기화했습니다.","success")}
+async function loadCustomers(){
+ const previousSearchCustomer=n(searchCustomerId.value);
+ const previousEditorCustomer=n(customerId.value);
+ const {data,error}=await sb.from("customers").select("customer_system_id,company_number,customer_name,is_active").eq("company_id",currentProfile.company_id).order("company_number");
+ if(error)throw error;
+ customers=data||[];
+ const activeCustomers=customers.filter(x=>x.is_active!==false&&n(x.customer_name));
+ customerId.innerHTML='<option value="">고객사 선택</option>'+activeCustomers.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.company_number)} · ${e(x.customer_name)}</option>`).join("");
+ searchCustomerId.innerHTML='<option value="">전체</option>'+activeCustomers.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.customer_name)}</option>`).join("");
+ if(activeCustomers.some(x=>x.customer_system_id===previousSearchCustomer))searchCustomerId.value=previousSearchCustomer;
+ if(activeCustomers.some(x=>x.customer_system_id===previousEditorCustomer))customerId.value=previousEditorCustomer;
+}
+function updateSearchItemNames(){
+ const customer=n(searchCustomerId.value);
+ const names=[...new Set(allRows.filter(r=>!customer||r.customer_system_id===customer).map(r=>n(r.item_name)).filter(Boolean))]
+   .sort((a,b)=>a.localeCompare(b,"ko",{numeric:true,sensitivity:"base"}));
+ const previous=n(searchItemName.value);
+ searchItemName.innerHTML='<option value="">전체</option>'+names.map(name=>`<option value="${e(name)}">${e(name)}</option>`).join("");
+ searchItemName.value=names.includes(previous)?previous:"";
+}
+async function loadRows(){
+ loading(true,"아이템정보를 불러오는 중입니다...");
+ clearNotice();
+ await loadCustomers();
+ const {data,error}=await sb.from("items")
+  .select("item_system_id,customer_system_id,registered_date,item_name,item_number,is_active")
+  .eq("company_id",currentProfile.company_id)
+  .order("registered_date",{ascending:true,nullsFirst:false})
+  .order("item_name",{ascending:true})
+  .order("item_number",{ascending:true});
+ loading(false);
+ if(error){allRows=[];visibleRows=[];render();return notice("조회 실패: "+dbError(error),"error")}
+ allRows=(data||[]).map(r=>{const c=customers.find(x=>x.customer_system_id===r.customer_system_id)||{};return {...r,company_number:c.company_number||"",customer_name:c.customer_name||""}});
+ updateSearchItemNames();
+ apply();
+ clearForm();
+ setMode("view");
+ guide("아이템정보 "+allRows.length+"건을 등록일 오름차순으로 불러왔습니다.");
+}
+function apply(){
+ const customer=n(searchCustomerId.value),itemName=n(searchItemName.value),itemNumber=n(searchItemNumber.value).toLowerCase();
+ visibleRows=allRows.filter(r=>(!customer||r.customer_system_id===customer)&&(!itemName||n(r.item_name)===itemName)&&(!itemNumber||String(r.item_number||"").toLowerCase().includes(itemNumber)));
+ visibleRows.sort((a,b)=>{
+  const dateCompare=String(a.registered_date||"9999-12-31").localeCompare(String(b.registered_date||"9999-12-31"));
+  if(dateCompare!==0)return dateCompare;
+  const customerCompare=String(a.company_number||"").localeCompare(String(b.company_number||""),"ko",{numeric:true,sensitivity:"base"});
+  if(customerCompare!==0)return customerCompare;
+  const nameCompare=String(a.item_name||"").localeCompare(String(b.item_name||""),"ko",{numeric:true,sensitivity:"base"});
+  if(nameCompare!==0)return nameCompare;
+  return String(a.item_number||"").localeCompare(String(b.item_number||""),"ko",{numeric:true,sensitivity:"base"});
+ });
+ selectedId=null;
+ render();
+ setMode("view");
+}
+async function searchRows(){await loadRows();guide("조회조건에 맞는 아이템 "+visibleRows.length+"건을 등록일 오름차순으로 표시합니다.");notice("아이템 조회가 완료되었습니다. 조회 건수: "+visibleRows.length+"건","success")}
+function resetSearch(){searchCustomerId.value="";updateSearchItemNames();searchItemName.value="";searchItemNumber.value="";apply();guide("조회조건을 초기화했습니다.");notice("조회조건을 초기화했습니다. 전체 "+visibleRows.length+"건을 표시합니다.","success")}
 function render(){tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`<tr data-id="${e(r.item_system_id)}" onclick="selectRow('${e(r.item_system_id)}')"><td>${i+1}</td><td>${e(r.registered_date)}</td><td>${e(r.company_number)}</td><td>${e(r.customer_name)}</td><td>${e(r.item_number)}</td><td>${e(r.item_name)}</td><td>${r.is_active?"사용":"중지"}</td></tr>`).join(""):'<tr><td class="empty" colspan="7">표시할 아이템이 없습니다.</td></tr>';totalCount.textContent=visibleRows.length+"건";countLabel.textContent="총 "+visibleRows.length+"건"}
 function selectRow(id){const r=allRows.find(x=>x.item_system_id===id);if(!r)return;selectedId=id;fill(r);document.querySelectorAll("#tableBody tr").forEach(x=>x.classList.toggle("selected",x.dataset.id===id));setMode("view");guide("선택한 아이템을 수정하거나 삭제할 수 있습니다.")}
 function startNew(){clearForm();setMode("new");customerId.focus();guide("신규 아이템정보를 입력한 후 저장 버튼을 누르세요.")}
 function startEdit(){if(!selectedId)return notice("수정할 아이템을 선택해 주세요.","error");setMode("edit");guide("수정할 내용을 입력한 후 저장 버튼을 누르세요.")}
 async function saveRecord(){if(mode!=="new"&&mode!=="edit")return notice("등록 또는 수정 버튼을 먼저 눌러 주세요.","error");const selectedCustomer=customers.find(x=>x.customer_system_id===customerId.value&&x.is_active!==false&&n(x.customer_name));const p={company_id:currentProfile.company_id,registered_date:registeredDate.value||null,customer_system_id:selectedCustomer?.customer_system_id||null,item_number:n(itemNumber.value),item_name:n(itemName.value),is_active:isActive.checked};if(!selectedCustomer)return notice("고객사명이 등록된 고객사를 반드시 선택해 주세요. 고객사명이 없으면 신규 등록할 수 없습니다.","error");if(!p.item_number||!p.item_name)return notice("품번과 품명을 입력해 주세요.","error");loading(true,"저장 중입니다...");const res=mode==="new"?await sb.from("items").insert(p):await sb.from("items").update(p).eq("item_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(res.error)return notice("저장 실패: "+dbError(res.error),"error");await loadRows();notice(mode==="new"?"아이템 신규 등록이 완료되었습니다.":"아이템 수정 및 저장이 완료되었습니다.","success")}
 async function deleteSelected(){if(!selectedId)return notice("삭제할 아이템을 선택해 주세요.","error");if(!confirm("선택한 아이템을 삭제하시겠습니까?"))return;loading(true,"삭제 중입니다...");const {error}=await sb.from("items").delete().eq("item_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(error)return notice("삭제 실패: "+dbError(error),"error");await loadRows();notice("아이템 삭제가 완료되었습니다.","success")}
-function savePdf(){if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");notice("PDF 저장용 인쇄 화면을 열었습니다.","success");setTimeout(()=>window.print(),100)}
+function savePdf(){if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");notice("조회된 "+visibleRows.length+"건을 PDF 저장용 화면으로 변환했습니다.","success");setTimeout(()=>window.print(),100)}
 async function init(){try{if(await auth()){setMode("view");await loadRows()}}catch(x){document.documentElement.classList.remove("auth-pending");notice("화면 초기화 오류: "+dbError(x),"error")}}
+searchCustomerId.addEventListener("change",()=>{updateSearchItemNames();apply();guide("선택한 고객사에 연결된 품명 목록을 표시했습니다.");});
 addEventListener("load",init);
 
 </script>
