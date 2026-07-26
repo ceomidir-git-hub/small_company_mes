@@ -10,7 +10,7 @@
 <style>
   :root{
     --blue:#1a56db; --blue-dark:#123a99; --gray-bg:#f3f4f6; --border:#d1d5db;
-    --text:#111827; --sub:#6b7280; --red:#dc2626; --green:#059669; --dirty:#fff7d6;
+    --text:#111827; --sub:#6b7280; --red:#dc2626; --green:#059669; --yellow:#f59e0b; --dirty:#fff7d6;
   }
   *{box-sizing:border-box;}
   body{
@@ -44,6 +44,10 @@
   .btn:hover{ background:#f3f4f6; }
   .btn-primary{ background:var(--blue); border-color:var(--blue); color:#fff; }
   .btn-primary:hover{ background:var(--blue-dark); }
+  .btn-edit{ background:var(--yellow); border-color:var(--yellow); color:#fff; }
+  .btn-edit:hover{ background:#d97706; }
+  .btn-delete{ background:var(--red); border-color:var(--red); color:#fff; }
+  .btn-delete:hover{ background:#b91c1c; }
   .btn-save{ background:var(--green); border-color:var(--green); color:#fff; }
   .btn-save:hover{ opacity:0.9; }
   .btn:disabled{ opacity:0.5; cursor:not-allowed; }
@@ -67,7 +71,11 @@
   }
   tbody td{ padding:4px 3px; border:1px solid var(--border); text-align:center; white-space:nowrap; }
   tbody tr:nth-child(even){ background:#fafafa; }
+  tbody tr.selected{ background:#e8f1ff !important; }
+  tbody tr.editing{ background:#fffbea !important; }
   tbody tr.dirty{ background:var(--dirty) !important; }
+  .select-cell{ width:38px; min-width:38px; }
+  .row-selector, #selectAllRows{ width:17px; height:17px; cursor:pointer; accent-color:var(--blue); }
   tfoot td{
     padding:7px 4px; border:1px solid var(--border); text-align:center; font-weight:700;
     background:#eef2ff; color:var(--blue-dark);
@@ -85,6 +93,9 @@
     align-items:center; justify-content:center; font-size:15px; color:var(--blue-dark); z-index:999;
   }
   .empty-msg{ text-align:center; color:var(--sub); padding:30px; font-size:13px; }
+  .action-message{ min-height:20px; margin:-2px 0 10px; font-size:12px; font-weight:600; color:var(--sub); }
+  .action-message.success{ color:var(--green); }
+  .action-message.error{ color:var(--red); }
 
   @media (max-width:768px){
     header h1{ font-size:16px; }
@@ -144,11 +155,14 @@
   <div class="action-bar">
     <div class="summary" id="summaryText">조회 버튼을 눌러 데이터를 불러오세요.</div>
     <div class="action-buttons">
-      <button class="btn btn-save" id="btnSave">💾 저장</button>
+      <button class="btn btn-edit" id="btnEdit" disabled>✏ 수정</button>
+      <button class="btn btn-delete" id="btnDelete" disabled>🗑 삭제</button>
+      <button class="btn btn-save" id="btnSave" disabled>💾 저장</button>
       <button class="btn" id="btnCsv">⬇ CSV 다운로드</button>
       <button class="btn" id="btnPdf">🖨 PDF 다운로드</button>
     </div>
   </div>
+  <div id="actionMessage" class="action-message" role="status" aria-live="polite"></div>
 
   <div id="doc-container">
     <div class="doc-title" id="docTitle">생산실적 상세현황</div>
@@ -156,6 +170,7 @@
       <table id="dataTable">
         <thead>
           <tr>
+            <th class="select-cell"><input type="checkbox" id="selectAllRows" aria-label="전체 선택"></th>
             <th style="min-width:40px;">번호</th>
             <th style="min-width:80px;">입고일</th>
             <th style="min-width:80px;">작업일</th>
@@ -178,11 +193,11 @@
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="19" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>
+          <tr><td colspan="20" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="8">합&nbsp;&nbsp;계</td>
+            <td colspan="9">합&nbsp;&nbsp;계</td>
             <td id="sumInput">0</td>
             <td id="sumGood">0</td>
             <td id="sumBad">0</td>
@@ -333,6 +348,12 @@ function showLoading(msg) {
 
 function hideLoading() {
   document.getElementById("loadingOverlay").style.display = "none";
+}
+
+function setActionMessage(message, type) {
+  const el = document.getElementById("actionMessage");
+  el.textContent = message || "";
+  el.className = "action-message" + (type ? " " + type : "");
 }
 
 function toNum(v) {
@@ -599,8 +620,10 @@ async function searchData() {
     );
 
     renderTable();
+    setActionMessage(`조회 완료: ${currentRows.length}건`, "success");
   } catch (error) {
     console.error(error);
+    setActionMessage("조회 실패: " + dbErrorMessage(error), "error");
     alert("조회 중 오류가 발생했습니다: " + dbErrorMessage(error));
   } finally {
     hideLoading();
@@ -608,15 +631,18 @@ async function searchData() {
 }
 
 /* ══════════════════════════════════════════════
-   테이블 렌더링
+   테이블 렌더링 / 선택 / 수정모드
    ══════════════════════════════════════════════ */
 function renderTable() {
   const tbody = document.getElementById("tbody");
+  const selectAll = document.getElementById("selectAllRows");
   tbody.innerHTML = "";
+  selectAll.checked = false;
+  selectAll.indeterminate = false;
 
   if (!currentRows.length) {
     tbody.innerHTML =
-      '<tr><td colspan="19" class="empty-msg">조회된 데이터가 없습니다.</td></tr>';
+      '<tr><td colspan="20" class="empty-msg">조회된 데이터가 없습니다.</td></tr>';
     updateSummary();
     return;
   }
@@ -624,6 +650,18 @@ function renderTable() {
   currentRows.forEach((row, index) => {
     const tr = document.createElement("tr");
     tr.dataset.rowIndex = String(index);
+    tr.dataset.editing = "false";
+
+    const tdSelect = document.createElement("td");
+    tdSelect.className = "select-cell readonly";
+    tdSelect.innerHTML = '<input type="checkbox" class="row-selector" aria-label="행 선택">';
+    const selector = tdSelect.querySelector("input");
+    selector.addEventListener("change", () => {
+      tr.classList.toggle("selected", selector.checked);
+      syncSelectAll();
+      updateSummary();
+    });
+    tr.appendChild(tdSelect);
 
     const tdNo = document.createElement("td");
     tdNo.textContent = String(index + 1);
@@ -633,60 +671,108 @@ function renderTable() {
     COLS.forEach((col) => {
       const td = document.createElement("td");
       td.dataset.field = col.key;
-      const value = row[col.key];
-
-      if (!col.editable) {
-        td.textContent = value == null ? "" : value;
-        td.className = "readonly";
-      } else if (col.type === "select") {
-        const currentValue = String(value == null ? "" : value).trim();
-
-        td.innerHTML =
-          "<select>" +
-          col.options.map((option) =>
-            `<option value="${escapeAttr(option)}" ${
-              currentValue === option ? "selected" : ""
-            }>${escapeHtml(option)}</option>`
-          ).join("") +
-          "</select>";
-
-        td.querySelector("select").addEventListener("change", () => {
-          markDirty(tr);
-        });
-      } else if (col.type === "date") {
-        td.innerHTML =
-          `<input type="date" value="${escapeAttr(value || "")}">`;
-
-        td.querySelector("input").addEventListener("change", () => {
-          markDirty(tr);
-        });
-      } else if (col.type === "number") {
-        if (NUM_KEYS.includes(col.key)) td.className = "num";
-
-        td.innerHTML =
-          `<input type="number" step="${col.step || 1}" value="${
-            value === "" || value == null ? 0 : escapeAttr(value)
-          }">`;
-
-        td.querySelector("input").addEventListener("input", () => {
-          markDirty(tr);
-          updateSummary();
-        });
-      } else {
-        td.innerHTML =
-          `<input type="text" value="${escapeAttr(value || "")}">`;
-
-        td.querySelector("input").addEventListener("change", () => {
-          markDirty(tr);
-        });
-      }
-
+      renderDisplayCell(td, col, row[col.key]);
       tr.appendChild(td);
     });
 
     tbody.appendChild(tr);
   });
 
+  updateSummary();
+}
+
+function renderDisplayCell(td, col, value) {
+  td.innerHTML = "";
+  td.className = "readonly";
+  if (NUM_KEYS.includes(col.key)) td.classList.add("num");
+
+  if (col.type === "number") {
+    const number = toNum(value);
+    td.textContent = ["operation_hours", "downtime_hours"].includes(col.key)
+      ? number.toFixed(1)
+      : fmt(number);
+  } else {
+    td.textContent = value == null ? "" : value;
+  }
+}
+
+function renderEditCell(td, col, value, tr) {
+  td.innerHTML = "";
+  td.className = "";
+  if (NUM_KEYS.includes(col.key)) td.classList.add("num");
+
+  if (col.type === "select") {
+    const currentValue = String(value == null ? "" : value).trim();
+    td.innerHTML =
+      "<select>" +
+      col.options.map((option) =>
+        `<option value="${escapeAttr(option)}" ${
+          currentValue === option ? "selected" : ""
+        }>${escapeHtml(option)}</option>`
+      ).join("") +
+      "</select>";
+    td.querySelector("select").addEventListener("change", () => markDirty(tr));
+  } else if (col.type === "date") {
+    td.innerHTML = `<input type="date" value="${escapeAttr(value || "")}">`;
+    td.querySelector("input").addEventListener("change", () => markDirty(tr));
+  } else if (col.type === "number") {
+    td.innerHTML = `<input type="number" step="${col.step || 1}" value="${
+      value === "" || value == null ? 0 : escapeAttr(value)
+    }">`;
+    td.querySelector("input").addEventListener("input", () => {
+      markDirty(tr);
+      updateSummary();
+    });
+  } else {
+    td.innerHTML = `<input type="text" value="${escapeAttr(value || "")}">`;
+    td.querySelector("input").addEventListener("change", () => markDirty(tr));
+  }
+}
+
+function getSelectedRows() {
+  return Array.from(document.querySelectorAll("#tbody tr[data-row-index]"))
+    .filter((tr) => tr.querySelector(".row-selector")?.checked);
+}
+
+function syncSelectAll() {
+  const all = Array.from(document.querySelectorAll(".row-selector"));
+  const checked = all.filter((checkbox) => checkbox.checked);
+  const selectAll = document.getElementById("selectAllRows");
+
+  selectAll.checked = all.length > 0 && checked.length === all.length;
+  selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+}
+
+function setRowEditMode(tr, enabled) {
+  const rowIndex = Number(tr.dataset.rowIndex);
+  const row = currentRows[rowIndex];
+  if (!row) return;
+
+  tr.dataset.editing = enabled ? "true" : "false";
+  tr.classList.toggle("editing", enabled);
+
+  COLS.forEach((col) => {
+    const td = tr.querySelector(`td[data-field="${col.key}"]`);
+    if (!td) return;
+
+    if (enabled && col.editable) {
+      renderEditCell(td, col, row[col.key], tr);
+    } else {
+      renderDisplayCell(td, col, row[col.key]);
+    }
+  });
+}
+
+function editSelectedRows() {
+  const selectedRows = getSelectedRows();
+  if (!selectedRows.length) {
+    setActionMessage("수정할 항목을 먼저 선택해 주세요.", "error");
+    alert("수정할 항목을 먼저 선택해 주세요.");
+    return;
+  }
+
+  selectedRows.forEach((tr) => setRowEditMode(tr, true));
+  setActionMessage(`수정 모드 실행: ${selectedRows.length}건`, "success");
   updateSummary();
 }
 
@@ -700,7 +786,7 @@ function getFieldValue(tr, field) {
   if (!td) return "";
 
   const input = td.querySelector("input, select");
-  return input ? input.value : td.textContent;
+  return input ? input.value : td.textContent.replace(/,/g, "");
 }
 
 function updateSummary() {
@@ -727,18 +813,97 @@ function updateSummary() {
   document.getElementById("sumOp").textContent = sumOperation.toFixed(1);
   document.getElementById("sumNonOp").textContent = sumDowntime.toFixed(1);
 
-  const count =
-    document.querySelectorAll("#tbody tr[data-row-index]").length;
-  const dirtyCount =
-    document.querySelectorAll("#tbody tr.dirty").length;
+  const count = document.querySelectorAll("#tbody tr[data-row-index]").length;
+  const selectedCount = getSelectedRows().length;
+  const dirtyCount = document.querySelectorAll("#tbody tr.dirty").length;
 
   document.getElementById("summaryText").innerHTML =
     `총 <b>${count}</b>건 조회됨` +
-    (
-      dirtyCount
-        ? ` · <span style="color:#dc2626;">수정된 항목 ${dirtyCount}건 (저장 필요)</span>`
-        : ""
+    (selectedCount ? ` · 선택 <b>${selectedCount}</b>건` : "") +
+    (dirtyCount
+      ? ` · <span style="color:#dc2626;">수정된 항목 ${dirtyCount}건 (저장 필요)</span>`
+      : "");
+
+  document.getElementById("btnEdit").disabled = selectedCount === 0;
+  document.getElementById("btnDelete").disabled = selectedCount === 0;
+  document.getElementById("btnSave").disabled = dirtyCount === 0;
+}
+
+/* ══════════════════════════════════════════════
+   삭제
+   production_system_id + 로그인 회사 company_id 조건
+   ══════════════════════════════════════════════ */
+async function deleteSelectedRows() {
+  if (!currentProfile) {
+    alert("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const selectedRows = getSelectedRows();
+  if (!selectedRows.length) {
+    setActionMessage("삭제할 항목을 먼저 선택해 주세요.", "error");
+    alert("삭제할 항목을 먼저 선택해 주세요.");
+    return;
+  }
+
+  if (!confirm(`선택한 ${selectedRows.length}건을 삭제하시겠습니까?
+삭제된 데이터는 복구할 수 없습니다.`)) {
+    return;
+  }
+
+  showLoading(`삭제 중입니다... (0/${selectedRows.length})`);
+
+  let successCount = 0;
+  const deletedIds = new Set();
+  const failList = [];
+
+  for (let i = 0; i < selectedRows.length; i += 1) {
+    const tr = selectedRows[i];
+    const rowIndex = Number(tr.dataset.rowIndex);
+    const row = currentRows[rowIndex];
+    showLoading(`삭제 중입니다... (${i + 1}/${selectedRows.length})`);
+
+    if (!row || !row.production_system_id) {
+      failList.push(`${rowIndex + 1}번 행: 내부 레코드 식별값 없음`);
+      continue;
+    }
+
+    try {
+      const { data, error } = await sb
+        .from(TABLE_NAME)
+        .delete()
+        .eq("production_system_id", row.production_system_id)
+        .eq("company_id", currentProfile.company_id)
+        .select("production_system_id")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        throw new Error("삭제 대상이 없거나 회사 권한으로 삭제할 수 없습니다.");
+      }
+
+      deletedIds.add(row.production_system_id);
+      successCount += 1;
+    } catch (error) {
+      console.error(error);
+      failList.push(`${rowIndex + 1}번 행: ${dbErrorMessage(error)}`);
+    }
+  }
+
+  currentRows = currentRows.filter((row) => !deletedIds.has(row.production_system_id));
+  renderTable();
+  hideLoading();
+
+  if (!failList.length) {
+    setActionMessage(`삭제 완료: ${successCount}건`, "success");
+    alert(`삭제 완료 (${successCount}건)`);
+  } else {
+    setActionMessage(`삭제 완료 ${successCount}건 / 실패 ${failList.length}건`, "error");
+    alert(
+      `삭제 완료 ${successCount}건 / 실패 ${failList.length}건\n\n` +
+      "[실패 내역]\n" + failList.join("\n")
     );
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -809,7 +974,10 @@ async function saveData() {
       }
 
       Object.assign(originalRow, updateData);
-      tr.classList.remove("dirty");
+      tr.classList.remove("dirty", "selected");
+      const selector = tr.querySelector(".row-selector");
+      if (selector) selector.checked = false;
+      setRowEditMode(tr, false);
       successCount += 1;
     } catch (error) {
       console.error(error);
@@ -820,11 +988,14 @@ async function saveData() {
   }
 
   hideLoading();
+  syncSelectAll();
   updateSummary();
 
   if (!failList.length) {
+    setActionMessage(`저장 완료: ${successCount}건`, "success");
     alert(`저장 완료 (${successCount}건)`);
   } else {
+    setActionMessage(`저장 완료 ${successCount}건 / 실패 ${failList.length}건`, "error");
     alert(
       `저장 완료 ${successCount}건 / 실패 ${failList.length}건\n\n` +
       "[실패 내역]\n" +
@@ -914,6 +1085,7 @@ function exportCSV() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  setActionMessage("CSV 다운로드를 완료했습니다.", "success");
 }
 
 /* ══════════════════════════════════════════════
@@ -1135,8 +1307,10 @@ async function exportPDF() {
     const from = document.getElementById("fFrom").value || "";
     const to = document.getElementById("fTo").value || "";
     pdf.save(`일작업현황_${from}_${to}.pdf`);
+    setActionMessage("PDF 다운로드를 완료했습니다.", "success");
   } catch (error) {
     console.error(error);
+    setActionMessage("PDF 다운로드 실패: " + dbErrorMessage(error), "error");
     alert("PDF 생성 오류: " + dbErrorMessage(error));
   } finally {
     btn.disabled = false;
@@ -1225,7 +1399,9 @@ document.getElementById("btnReset").addEventListener("click", () => {
 
   currentRows = [];
   document.getElementById("tbody").innerHTML =
-    '<tr><td colspan="19" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>';
+    '<tr><td colspan="20" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>';
+  document.getElementById("selectAllRows").checked = false;
+  document.getElementById("selectAllRows").indeterminate = false;
 
   document.getElementById("sumInput").textContent = "0";
   document.getElementById("sumGood").textContent = "0";
@@ -1235,8 +1411,29 @@ document.getElementById("btnReset").addEventListener("click", () => {
   document.getElementById("sumNonOp").textContent = "0.0";
   document.getElementById("summaryText").textContent =
     "조회 버튼을 눌러 데이터를 불러오세요.";
+  document.getElementById("btnEdit").disabled = true;
+  document.getElementById("btnDelete").disabled = true;
+  document.getElementById("btnSave").disabled = true;
+  setActionMessage("초기화를 완료했습니다.", "success");
 });
 
+document.getElementById("selectAllRows").addEventListener("change", (event) => {
+  const checked = event.target.checked;
+  document.querySelectorAll(".row-selector").forEach((checkbox) => {
+    checkbox.checked = checked;
+    checkbox.closest("tr")?.classList.toggle("selected", checked);
+  });
+  updateSummary();
+});
+
+document.getElementById("btnEdit").addEventListener(
+  "click",
+  editSelectedRows
+);
+document.getElementById("btnDelete").addEventListener(
+  "click",
+  deleteSelectedRows
+);
 document.getElementById("btnSave").addEventListener(
   "click",
   saveData
@@ -1273,6 +1470,7 @@ window.addEventListener("beforeunload", (event) => {
 
     document.getElementById("summaryText").textContent =
       "조회 버튼을 눌러 데이터를 불러오세요.";
+    setActionMessage("로그인 및 회사 권한 확인이 완료되었습니다.", "success");
   } catch (error) {
     console.error(error);
     alert(
