@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>불량률현황 | HeatPro MES</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#185FA5;--blue-lt:#E6F1FB;--blue-dk:#0C447C;
+  --green:#3B6D11;--green-lt:#EAF3DE;--green-dk:#27500A;
+  --amber:#854F0B;--amber-lt:#FAEEDA;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --pink:#72243E;--pink-lt:#FBEAF0;
+  --gray:#5F5E5A;--gray-lt:#F1EFE8;--gray-bd:#D3D1C7;
+  --bg:#F8F7F4;--white:#FFFFFF;--text:#2C2C2A;--text-sub:#888780;
+}
+body{font-family:'Noto Sans KR','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+.top-header{background:var(--white);border-bottom:1px solid var(--gray-bd);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--blue);text-decoration:none;}
+.logo svg{width:20px;height:20px;}
+nav{display:flex;gap:4px;}
+nav a{font-size:12px;color:var(--text-sub);text-decoration:none;padding:5px 10px;border-radius:6px;border:1px solid transparent;}
+nav a:hover{background:var(--gray-lt);color:var(--text);}
+nav a.active{background:var(--blue-lt);color:var(--blue-dk);border-color:#B5D4F4;font-weight:500;}
+.container{max-width:1280px;margin:0 auto;padding:20px 20px 48px;width:100%;}
+.page-title{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.page-title svg{width:20px;height:20px;color:var(--pink);flex-shrink:0;}
+.page-title h1{font-size:18px;font-weight:700;}
+.page-title .sub{font-size:12px;color:var(--text-sub);}
+.badge-wrap{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.year-badge{background:var(--blue-lt);color:var(--blue-dk);font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;}
+.unit-badge{background:var(--pink-lt);color:var(--pink);font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;}
+.filter-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:13px 16px;margin-bottom:12px;}
+.filter-label{font-size:11px;font-weight:600;color:var(--text-sub);letter-spacing:.05em;margin-bottom:9px;}
+.filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.filter-row:last-child{margin-bottom:0;}
+.fg{display:flex;align-items:center;gap:5px;}
+.fg label{font-size:12px;color:var(--text-sub);white-space:nowrap;}
+.fg input[type=date],.fg select{height:32px;border:1px solid var(--gray-bd);border-radius:6px;padding:0 8px;font-size:12px;color:var(--text);background:var(--white);outline:none;}
+.fg input[type=date]{width:125px;}
+.fg select{min-width:100px;}
+.fg input:focus,.fg select:focus{border-color:var(--blue);}
+.sep{font-size:12px;color:var(--text-sub);}
+.btn-row{display:flex;gap:6px;margin-left:auto;}
+.btn{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 13px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--gray-bd);background:var(--white);color:var(--text-sub);transition:background .1s;}
+.btn:hover{background:var(--gray-lt);}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn-today{background:var(--green-lt);color:var(--green-dk);border-color:#C0DD97;}
+.btn-today:hover{background:#C0DD97;}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-primary:hover{background:var(--blue-dk);}
+.btn:disabled{opacity:.55;cursor:default;}
+.dash-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:12px 14px;margin-bottom:12px;}
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.dash-title{font-size:12px;font-weight:600;color:var(--text);}
+.period-badge{font-size:11px;padding:2px 9px;border-radius:99px;font-weight:500;}
+.pb-single{background:var(--green-lt);color:var(--green-dk);}
+.pb-range{background:var(--blue-lt);color:var(--blue-dk);}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.kpi-item{background:var(--gray-lt);border-radius:8px;padding:9px 11px;}
+.kpi-label{font-size:10px;color:var(--text-sub);margin-bottom:3px;white-space:nowrap;}
+.kpi-val{font-size:16px;font-weight:700;color:var(--text);}
+.kpi-unit{font-size:10px;color:var(--text-sub);margin-left:1px;}
+.table-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;overflow:hidden;}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--gray-bd);gap:8px;flex-wrap:wrap;}
+.t-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px;}
+.cnt-badge{background:var(--blue-lt);color:var(--blue-dk);font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;}
+.toolbar-buttons{display:flex;gap:6px;}
+.table-wrap{overflow-x:auto;overflow-y:auto;max-height:420px;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:11px;min-width:1100px;}
+thead{position:sticky;top:0;z-index:10;}
+thead th{padding:6px 4px;text-align:center;font-size:10px;font-weight:600;background:var(--gray-lt);color:var(--text-sub);border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);white-space:nowrap;}
+thead th.th-db{background:#E6F1FB;color:var(--blue-dk);}
+thead th.th-input{background:#FAEEDA;color:#633806;}
+thead th.th-calc{background:#FBEAF0;color:var(--pink);}
+thead th:last-child{border-right:none;}
+tbody td{padding:5px 4px;text-align:center;border-bottom:1px solid #EEECEA;border-right:1px solid #EEECEA;color:var(--text);font-size:11px;}
+tbody td:last-child{border-right:none;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#FAFAF8;}
+.td-db{background:#EEF7FD;color:var(--blue-dk);font-weight:500;}
+.td-calc{background:#FBEAF0;color:var(--pink);font-weight:500;}
+.td-calc-bad{background:#FCEBEB;color:var(--red);font-weight:600;}
+.td-input{border:1px solid transparent;border-radius:3px;padding:2px 3px;font-size:11px;width:100%;background:transparent;color:var(--text);text-align:center;outline:none;font-family:inherit;min-width:34px;}
+.td-input:hover{border-color:var(--gray-bd);background:var(--gray-lt);}
+.td-input:focus{border-color:var(--blue);background:var(--white);}
+.td-input.modified{border-color:#EF9F27;background:#FAEEDA;}
+.save-btn{display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid var(--blue);background:var(--blue-lt);color:var(--blue-dk);transition:background .1s;}
+.save-btn:hover{background:#B5D4F4;}
+.save-btn.saved{border-color:var(--green);background:var(--green-lt);color:var(--green-dk);}
+.save-btn.saving{opacity:.6;pointer-events:none;}
+.status-bar{display:flex;align-items:center;gap:6px;padding:8px 14px;border-top:1px solid var(--gray-bd);font-size:11px;color:var(--text-sub);}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:var(--green);}
+.dot-loading{background:var(--amber);animation:pulse 1s infinite;}
+.dot-error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2C2C2A;color:#fff;font-size:13px;padding:10px 20px;border-radius:8px;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;}
+.toast.show{opacity:1;}
+#loadingOverlay{position:fixed;inset:0;background:rgba(255,255,255,.72);display:none;align-items:center;justify-content:center;color:var(--blue-dk);font-weight:600;z-index:9998;}
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .filter-row{flex-wrap:wrap;}
+  .top-header{padding:0 12px;}
+  nav{display:none;}
+  .container{padding:14px 10px 32px;}
+}
+</style>
+</head>
+
+<body>
+<header class="top-header">
+  <a class="logo" href="./main1.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    HeatPro MES
+  </a>
+  <nav>
+    <a href="./main1.html">대시보드</a>
+    <a href="./Supabase_Worksheet.html">작업일보</a>
+    <a href="./Monthly_Production_Record.html">월생산달성율</a>
+    <a class="active" href="./Defect_Rate.html">불량률현황</a>
+  </nav>
+</header>
+
+<main class="container" id="pdfArea">
+  <div class="page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <h1>불량률현황</h1>
+    <span class="sub">Defect Rate</span>
+    <div class="badge-wrap">
+      <span class="year-badge" id="yearBadge">2026년도</span>
+      <span class="unit-badge">[단위 : PPM]</span>
+    </div>
+  </div>
+
+  <div class="filter-card">
+    <div class="filter-label">조회 조건 (복합 AND 검색)</div>
+    <div class="filter-row">
+      <div class="fg">
+        <label>기간</label>
+        <input type="date" id="fFrom"/>
+        <span class="sep">~</span>
+        <input type="date" id="fTo"/>
+      </div>
+      <div class="fg">
+        <label>고객사</label>
+        <select id="selCust"><option value="">전체</option></select>
+      </div>
+      <div class="fg">
+        <label>품명</label>
+        <select id="selProd"><option value="">전체</option></select>
+      </div>
+      <div class="fg">
+        <label>품번</label>
+        <select id="selPartNo"><option value="">전체</option></select>
+      </div>
+      <div class="fg">
+        <label>설비명</label>
+        <select id="selEquip"><option value="">전체</option></select>
+      </div>
+    </div>
+    <div class="filter-row">
+      <div class="btn-row">
+        <button class="btn btn-today" id="btnToday" type="button">오늘</button>
+        <button class="btn" id="btnReset" type="button">초기화</button>
+        <button class="btn btn-primary" id="btnQuery" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          조회
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-card">
+    <div class="dash-header">
+      <span class="dash-title" id="dashTitle">조회 후 집계가 표시됩니다</span>
+      <span class="period-badge pb-range" id="periodBadge">기간 집계</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-item"><div class="kpi-label">총 투입수량</div><div class="kpi-val" id="dInput">—<span class="kpi-unit">ea</span></div></div>
+      <div class="kpi-item"><div class="kpi-label">총 양품수량</div><div class="kpi-val" id="dGood">—<span class="kpi-unit">ea</span></div></div>
+      <div class="kpi-item"><div class="kpi-label">총 불량수량</div><div class="kpi-val" id="dBad">—<span class="kpi-unit">ea</span></div></div>
+      <div class="kpi-item" id="dPpmCard">
+        <div class="kpi-label">불량률</div>
+        <div class="kpi-val" id="dPpm" style="color:var(--pink);">—<span class="kpi-unit">PPM</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-toolbar">
+      <span class="t-title">불량 내역<span class="cnt-badge" id="tCount">0건</span></span>
+      <div class="toolbar-buttons">
+        <button class="btn" id="btnCsv" type="button" style="height:28px;font-size:11px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV 내보내기
+        </button>
+        <button class="btn" id="btnPdf" type="button" style="height:28px;font-size:11px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF 다운로드
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap" id="tableWrap">
+      <table id="defectTable">
+        <thead>
+          <tr>
+            <th rowspan="2">작업일</th>
+            <th rowspan="2">고객사</th>
+            <th rowspan="2">품명</th>
+            <th rowspan="2">품번</th>
+            <th rowspan="2">설비명</th>
+            <th colspan="3" class="th-db">DB 합산</th>
+            <th colspan="6" class="th-input">불량 유형 입력 (ea)</th>
+            <th colspan="2" class="th-calc">자동 계산</th>
+            <th rowspan="2" style="width:44px;">저장</th>
+          </tr>
+          <tr>
+            <th class="th-db" style="width:54px;">투입수량</th>
+            <th class="th-db" style="width:54px;">양품수량</th>
+            <th class="th-db" style="width:54px;">불량수량</th>
+            <th class="th-input" style="width:40px;">외관</th>
+            <th class="th-input" style="width:40px;">오염</th>
+            <th class="th-input" style="width:40px;">찍힘</th>
+            <th class="th-input" style="width:40px;">탈락</th>
+            <th class="th-input" style="width:40px;">경도</th>
+            <th class="th-input" style="width:40px;">변형</th>
+            <th class="th-calc" style="width:58px;">불량합계</th>
+            <th class="th-calc" style="width:70px;">불량률(PPM)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="17" style="padding:30px;text-align:center;color:var(--text-sub);font-size:12px;">조회 조건을 선택 후 조회하세요.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="status-bar">
+      <span class="sdot dot-ok" id="sDot"></span>
+      <span id="sText">대기 중</span>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<div id="loadingOverlay">처리 중입니다...</div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+
+const PRODUCTION_TABLE = "Total_Production_DB";
+const DEFECT_TABLE = "production_defect_details";
+const LOGIN_PAGE_URL = "../index.html";
+
+const DEFECT_TYPES = ["외관","오염","찍힘","탈락","경도","변형"];
+const PAGE_SIZE = 1000;
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let queryRows = [];
+let productMaster = {};
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+function fmtDate(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+function fmtMonthFirst(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-01"; }
+function toN(v){
+  const n = Number(String(v == null ? "" : v).replace(/,/g,""));
+  return Number.isFinite(n) ? n : 0;
+}
+function esc(v){
+  return String(v == null ? "" : v).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function dbErrorMessage(error){
+  if(!error) return "알 수 없는 오류";
+  return error.message || error.details || error.hint || String(error);
+}
+function showLoading(message){
+  const el = document.getElementById("loadingOverlay");
+  el.textContent = message || "처리 중입니다...";
+  el.style.display = "flex";
+}
+function hideLoading(){
+  document.getElementById("loadingOverlay").style.display = "none";
+}
+function setButtonsDisabled(disabled){
+  ["btnToday","btnReset","btnQuery","btnCsv","btnPdf"].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.disabled = disabled;
+  });
+}
+function setStatus(type,msg){
+  document.getElementById("sDot").className =
+    "sdot " + (type==="loading" ? "dot-loading" : type==="error" ? "dot-error" : "dot-ok");
+  document.getElementById("sText").textContent = msg;
+}
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); },3500);
+}
+function redirectToLogin(){
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess(){
+  const { data:userData, error:userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if(userError || !user){
+    redirectToLogin();
+    return false;
+  }
+
+  const { data:profile, error:profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id",user.id)
+    .single();
+
+  if(profileError || !profile || profile.is_active !== true || !profile.company_id){
+    console.error("회사 권한 확인 실패:",profileError);
+    await sb.auth.signOut({scope:"local"});
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  return true;
+}
+
+sb.auth.onAuthStateChange(function(event){
+  if(event === "SIGNED_OUT") redirectToLogin();
+});
+
+async function fetchAll(tableName, columns, applyQuery){
+  let from = 0;
+  const result = [];
+
+  while(true){
+    let query = sb
+      .from(tableName)
+      .select(columns)
+      .eq("company_id",currentProfile.company_id);
+
+    query = applyQuery(query);
+    query = query.range(from,from+PAGE_SIZE-1);
+
+    const {data,error} = await query;
+    if(error) throw error;
+
+    const page = data || [];
+    result.push.apply(result,page);
+
+    if(page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return result;
+}
+
+function fillSel(id,arr){
+  const sel = document.getElementById(id);
+  const current = sel.value;
+  const unique = Array.from(new Set(arr.filter(Boolean))).sort(function(a,b){
+    return String(a).localeCompare(String(b),"ko");
+  });
+
+  sel.innerHTML = '<option value="">전체</option>' +
+    unique.map(function(v){
+      return '<option value="'+esc(v)+'">'+esc(v)+'</option>';
+    }).join("");
+
+  sel.value = unique.includes(current) ? current : "";
+}
+
+async function loadMeta(){
+  const rows = await fetchAll(
+    PRODUCTION_TABLE,
+    "customer_name,item_name,item_number,equipment_name,is_active",
+    function(query){
+      return query
+        .eq("is_active",true)
+        .order("customer_name",{ascending:true})
+        .order("item_name",{ascending:true})
+        .order("item_number",{ascending:true});
+    }
+  );
+
+  const customers = [];
+  const equipment = [];
+  productMaster = {};
+
+  rows.forEach(function(r){
+    const customer = String(r.customer_name || "").trim();
+    const product = String(r.item_name || "").trim();
+    const partNo = String(r.item_number || "").trim();
+    const equip = String(r.equipment_name || "").trim();
+
+    if(customer) customers.push(customer);
+    if(equip) equipment.push(equip);
+
+    if(customer && product){
+      if(!productMaster[customer]) productMaster[customer] = {};
+      if(!productMaster[customer][product]) productMaster[customer][product] = [];
+      if(partNo && !productMaster[customer][product].includes(partNo)){
+        productMaster[customer][product].push(partNo);
+      }
+    }
+  });
+
+  fillSel("selCust",customers);
+  fillSel("selEquip",equipment);
+  refreshProducts();
+  refreshPartNos();
+}
+
+function refreshProducts(){
+  const customer = document.getElementById("selCust").value;
+  const products = [];
+
+  if(customer && productMaster[customer]){
+    products.push.apply(products,Object.keys(productMaster[customer]));
+  }else{
+    Object.keys(productMaster).forEach(function(c){
+      products.push.apply(products,Object.keys(productMaster[c] || {}));
+    });
+  }
+
+  fillSel("selProd",products);
+}
+
+function refreshPartNos(){
+  const customer = document.getElementById("selCust").value;
+  const product = document.getElementById("selProd").value;
+  const parts = [];
+
+  Object.keys(productMaster).forEach(function(c){
+    if(customer && c !== customer) return;
+
+    Object.keys(productMaster[c] || {}).forEach(function(p){
+      if(product && p !== product) return;
+      parts.push.apply(parts,productMaster[c][p] || []);
+    });
+  });
+
+  fillSel("selPartNo",parts);
+}
+
+async function fetchDefectDetails(productionIds){
+  if(!productionIds.length) return [];
+
+  const result = [];
+  const chunkSize = 200;
+
+  for(let i=0;i<productionIds.length;i+=chunkSize){
+    const chunk = productionIds.slice(i,i+chunkSize);
+
+    const {data,error} = await sb
+      .from(DEFECT_TABLE)
+      .select("production_system_id,defect_type,defect_quantity,remarks")
+      .eq("company_id",currentProfile.company_id)
+      .eq("is_active",true)
+      .in("production_system_id",chunk);
+
+    if(error) throw error;
+    result.push.apply(result,data || []);
+  }
+
+  return result;
+}
+
+async function doQuery(){
+  if(!currentProfile){
+    showToast("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+  const cust = document.getElementById("selCust").value;
+  const prod = document.getElementById("selProd").value;
+  const partNo = document.getElementById("selPartNo").value;
+  const eq = document.getElementById("selEquip").value;
+
+  if(!from && !to && !cust && !prod && !partNo && !eq){
+    showToast("조회 조건을 하나 이상 선택하세요.");
+    return;
+  }
+
+  setButtonsDisabled(true);
+  showLoading("불량률 자료를 조회하는 중입니다...");
+  setStatus("loading","데이터 불러오는 중...");
+
+  try{
+    const productionRows = await fetchAll(
+      PRODUCTION_TABLE,
+      [
+        "production_system_id",
+        "company_id",
+        "work_date",
+        "customer_name",
+        "item_name",
+        "item_number",
+        "equipment_name",
+        "equipment_number",
+        "input_quantity",
+        "good_quantity",
+        "defect_quantity",
+        "is_active"
+      ].join(","),
+      function(query){
+        let filtered = query.eq("is_active",true);
+
+        if(from) filtered = filtered.gte("work_date",from);
+        if(to) filtered = filtered.lte("work_date",to);
+        if(cust) filtered = filtered.eq("customer_name",cust);
+        if(prod) filtered = filtered.eq("item_name",prod);
+        if(partNo) filtered = filtered.eq("item_number",partNo);
+        if(eq) filtered = filtered.eq("equipment_name",eq);
+
+        return filtered
+          .order("work_date",{ascending:true})
+          .order("customer_name",{ascending:true})
+          .order("item_name",{ascending:true})
+          .order("production_system_id",{ascending:true});
+      }
+    );
+
+    const ids = productionRows
+      .map(function(r){ return r.production_system_id; })
+      .filter(Boolean);
+
+    const details = await fetchDefectDetails(ids);
+    const detailMap = {};
+
+    details.forEach(function(d){
+      if(!detailMap[d.production_system_id]){
+        detailMap[d.production_system_id] = {};
+      }
+      detailMap[d.production_system_id][d.defect_type] = toN(d.defect_quantity);
+    });
+
+    queryRows = productionRows.map(function(r){
+      const detail = detailMap[r.production_system_id] || {};
+      const row = Object.assign({},r);
+      DEFECT_TYPES.forEach(function(type){
+        row[type] = toN(detail[type]);
+      });
+      return row;
+    });
+
+    renderTable(from,to,cust,prod,partNo,eq,queryRows);
+    setStatus("ok","조회 완료 · "+queryRows.length+"건");
+    showToast("조회 완료: "+queryRows.length+"건");
+  }catch(error){
+    console.error(error);
+    queryRows = [];
+    renderTable(from,to,cust,prod,partNo,eq,[]);
+    setStatus("error","조회 실패: "+dbErrorMessage(error));
+    showToast("조회 실패: "+dbErrorMessage(error));
+  }finally{
+    hideLoading();
+    setButtonsDisabled(false);
+  }
+}
+
+function renderTable(from,to,cust,prod,partNo,eq,rows){
+  const isSingle = from === to && from !== "";
+  const condParts = [];
+
+  if(from && to) condParts.push(from + (isSingle ? "" : " ~ "+to));
+  else if(from) condParts.push(from+" ~");
+  else if(to) condParts.push("~ "+to);
+  if(cust) condParts.push(cust);
+  if(prod) condParts.push(prod);
+  if(partNo) condParts.push(partNo);
+  if(eq) condParts.push(eq);
+
+  document.getElementById("dashTitle").textContent = condParts.join(" · ") || "전체";
+  document.getElementById("periodBadge").textContent = isSingle ? "당일" : "기간 집계";
+  document.getElementById("periodBadge").className =
+    "period-badge " + (isSingle ? "pb-single" : "pb-range");
+  document.getElementById("tCount").textContent = rows.length+"건";
+
+  if(rows.length === 0){
+    document.getElementById("tbody").innerHTML =
+      '<tr><td colspan="17" style="padding:30px;text-align:center;color:var(--text-sub);font-size:12px;">조회된 데이터가 없습니다.</td></tr>';
+    updateDash();
+    return;
+  }
+
+  const html = rows.map(function(r,idx){
+    const dbInput = toN(r.input_quantity);
+    const dbGood = toN(r.good_quantity);
+    const dbBad = toN(r.defect_quantity);
+    const badSum = DEFECT_TYPES.reduce(function(sum,type){ return sum+toN(r[type]); },0);
+    const ppm = dbInput > 0 ? Math.round(dbBad/dbInput*1000000) : 0;
+
+    return '<tr data-idx="'+idx+'"'
+      +' data-id="'+esc(r.production_system_id)+'"'
+      +' data-date="'+esc(r.work_date)+'"'
+      +' data-cust="'+esc(r.customer_name)+'"'
+      +' data-prod="'+esc(r.item_name)+'"'
+      +' data-partno="'+esc(r.item_number)+'"'
+      +' data-eq="'+esc(r.equipment_name)+'"'
+      +' data-eqno="'+esc(r.equipment_number || "")+'"'
+      +' data-dbinput="'+dbInput+'"'
+      +' data-dbgood="'+dbGood+'"'
+      +' data-dbbad="'+dbBad+'">'
+      +'<td style="white-space:nowrap;font-size:11px;">'+esc(r.work_date)+'</td>'
+      +'<td>'+esc(r.customer_name)+'</td>'
+      +'<td>'+esc(r.item_name)+'</td>'
+      +'<td>'+esc(r.item_number)+'</td>'
+      +'<td>'+esc(r.equipment_name)+'</td>'
+      +'<td class="td-db">'+dbInput.toLocaleString()+'</td>'
+      +'<td class="td-db">'+dbGood.toLocaleString()+'</td>'
+      +'<td class="td-db">'+dbBad.toLocaleString()+'</td>'
+      +DEFECT_TYPES.map(function(type){ return makeInput(idx,type,r[type]); }).join("")
+      +'<td class="td-calc" id="c-sum-'+idx+'">'+badSum.toLocaleString()+'</td>'
+      +'<td class="'+(ppm>0 ? "td-calc-bad" : "td-calc")+'" id="c-ppm-'+idx+'">'+ppm.toLocaleString()+'</td>'
+      +'<td><button class="save-btn" id="sbtn-'+idx+'" type="button" onclick="saveRow('+idx+')">저장</button></td>'
+      +'</tr>';
+  }).join("");
+
+  document.getElementById("tbody").innerHTML = html;
+  updateDash();
+}
+
+function makeInput(idx,field,val){
+  const v = toN(val);
+  return '<td><input class="td-input" type="number" min="0" step="1" value="'+v+'"'
+    +' data-field="'+esc(field)+'" data-idx="'+idx+'"'
+    +' oninput="markModified(this);recalc('+idx+')"></td>';
+}
+
+function markModified(el){
+  el.classList.add("modified");
+}
+
+function getDefectValue(tr,field){
+  const el = tr.querySelector('[data-field="'+field+'"]');
+  return el ? toN(el.value) : 0;
+}
+
+function recalc(idx){
+  const tr = document.querySelector('tr[data-idx="'+idx+'"]');
+  if(!tr) return;
+
+  const badSum = DEFECT_TYPES.reduce(function(sum,type){
+    return sum + getDefectValue(tr,type);
+  },0);
+
+  const dbInput = toN(tr.dataset.dbinput);
+  const ppm = dbInput > 0 ? Math.round(badSum/dbInput*1000000) : 0;
+  const sEl = document.getElementById("c-sum-"+idx);
+  const pEl = document.getElementById("c-ppm-"+idx);
+
+  if(sEl) sEl.textContent = badSum.toLocaleString();
+  if(pEl){
+    pEl.textContent = ppm.toLocaleString();
+    pEl.className = ppm > 0 ? "td-calc-bad" : "td-calc";
+  }
+}
+
+function updateDash(){
+  const trs = document.querySelectorAll("#tbody tr[data-idx]");
+  let totInput = 0;
+  let totGood = 0;
+  let totBad = 0;
+
+  trs.forEach(function(tr){
+    totInput += toN(tr.dataset.dbinput);
+    totGood += toN(tr.dataset.dbgood);
+    totBad += toN(tr.dataset.dbbad);
+  });
+
+  const ppm = totInput > 0 ? Math.round(totBad/totInput*1000000) : 0;
+  const isOk = ppm === 0;
+
+  document.getElementById("dInput").innerHTML =
+    totInput.toLocaleString()+'<span class="kpi-unit">ea</span>';
+  document.getElementById("dGood").innerHTML =
+    totGood.toLocaleString()+'<span class="kpi-unit">ea</span>';
+  document.getElementById("dBad").innerHTML =
+    totBad.toLocaleString()+'<span class="kpi-unit">ea</span>';
+
+  const pEl = document.getElementById("dPpm");
+  pEl.innerHTML = ppm.toLocaleString()+'<span class="kpi-unit">PPM</span>';
+  pEl.style.color = isOk ? "var(--green-dk)" : "var(--red)";
+  document.getElementById("dPpmCard").style.background =
+    isOk ? "var(--green-lt)" : "var(--red-lt)";
+}
+
+async function saveRow(idx){
+  if(!currentProfile){
+    showToast("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const tr = document.querySelector('tr[data-idx="'+idx+'"]');
+  const btn = document.getElementById("sbtn-"+idx);
+  if(!tr || !btn) return;
+
+  const productionId = tr.dataset.id;
+  if(!productionId){
+    showToast("저장 대상의 내부 식별값이 없습니다.");
+    return;
+  }
+
+  const quantities = {};
+  DEFECT_TYPES.forEach(function(type){
+    quantities[type] = getDefectValue(tr,type);
+  });
+
+  const badSum = DEFECT_TYPES.reduce(function(sum,type){
+    return sum + quantities[type];
+  },0);
+
+  const inputQuantity = toN(tr.dataset.dbinput);
+  const goodQuantity = Math.max(0,inputQuantity-badSum);
+
+  const detailRows = DEFECT_TYPES.map(function(type){
+    return {
+      company_id: currentProfile.company_id,
+      production_system_id: productionId,
+      defect_type: type,
+      defect_quantity: quantities[type],
+      is_active: true
+    };
+  });
+
+  btn.classList.add("saving");
+  btn.textContent = "저장중";
+  setStatus("loading","불량유형 저장 중...");
+  showLoading("불량유형을 저장하는 중입니다...");
+
+  try{
+    const {error:detailError} = await sb
+      .from(DEFECT_TABLE)
+      .upsert(detailRows,{
+        onConflict:"company_id,production_system_id,defect_type"
+      });
+
+    if(detailError) throw detailError;
+
+    const {data:updatedProduction,error:productionError} = await sb
+      .from(PRODUCTION_TABLE)
+      .update({
+        defect_quantity: badSum,
+        good_quantity: goodQuantity
+      })
+      .eq("production_system_id",productionId)
+      .eq("company_id",currentProfile.company_id)
+      .select("production_system_id")
+      .maybeSingle();
+
+    if(productionError) throw productionError;
+    if(!updatedProduction){
+      throw new Error("생산실적 수정 대상이 없거나 회사 권한으로 수정할 수 없습니다.");
+    }
+
+    tr.dataset.dbbad = String(badSum);
+    tr.dataset.dbgood = String(goodQuantity);
+
+    const dbCells = tr.querySelectorAll("td.td-db");
+    if(dbCells[0]) dbCells[0].textContent = inputQuantity.toLocaleString();
+    if(dbCells[1]) dbCells[1].textContent = goodQuantity.toLocaleString();
+    if(dbCells[2]) dbCells[2].textContent = badSum.toLocaleString();
+
+    const ppm = inputQuantity > 0 ? Math.round(badSum/inputQuantity*1000000) : 0;
+    const pEl = document.getElementById("c-ppm-"+idx);
+    if(pEl){
+      pEl.textContent = ppm.toLocaleString();
+      pEl.className = ppm > 0 ? "td-calc-bad" : "td-calc";
+    }
+
+    tr.querySelectorAll(".modified").forEach(function(el){
+      el.classList.remove("modified");
+    });
+
+    btn.classList.remove("saving");
+    btn.classList.add("saved");
+    btn.textContent = "완료";
+
+    updateDash();
+    setStatus("ok","저장 완료: "+tr.dataset.date+" "+tr.dataset.cust);
+    showToast("저장 완료: "+tr.dataset.date+" "+tr.dataset.cust);
+
+    setTimeout(function(){
+      btn.classList.remove("saved");
+      btn.textContent = "저장";
+    },2500);
+  }catch(error){
+    console.error(error);
+    btn.classList.remove("saving");
+    btn.textContent = "저장";
+    setStatus("error","저장 실패: "+dbErrorMessage(error));
+    showToast("저장 실패: "+dbErrorMessage(error));
+  }finally{
+    hideLoading();
+  }
+}
+
+function csvEscape(value){
+  const s = String(value == null ? "" : value);
+  return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+
+function exportCSV(){
+  const rows = document.querySelectorAll("#tbody tr[data-idx]");
+  if(rows.length === 0){
+    showToast("내보낼 데이터가 없습니다.");
+    return;
+  }
+
+  const headers = [
+    "작업일","고객사","품명","품번","설비명",
+    "투입수량(DB)","양품수량(DB)","불량수량(DB)",
+    "외관","오염","찍힘","탈락","경도","변형",
+    "불량합계","불량률(PPM)"
+  ];
+
+  const lines = [headers.map(csvEscape).join(",")];
+
+  rows.forEach(function(tr){
+    const idx = tr.dataset.idx;
+    const cells = [
+      tr.dataset.date,
+      tr.dataset.cust,
+      tr.dataset.prod,
+      tr.dataset.partno,
+      tr.dataset.eq,
+      tr.dataset.dbinput,
+      tr.dataset.dbgood,
+      tr.dataset.dbbad
+    ];
+
+    DEFECT_TYPES.forEach(function(type){
+      cells.push(getDefectValue(tr,type));
+    });
+
+    cells.push(
+      document.getElementById("c-sum-"+idx).textContent.replace(/,/g,""),
+      document.getElementById("c-ppm-"+idx).textContent.replace(/,/g,"")
+    );
+
+    lines.push(cells.map(csvEscape).join(","));
+  });
+
+  const blob = new Blob(["\uFEFF"+lines.join("\r\n")],{
+    type:"text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const from = document.getElementById("fFrom").value || "";
+  const to = document.getElementById("fTo").value || "";
+
+  a.href = url;
+  a.download = "Defect_Rate_"+from+"_"+to+".csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  setStatus("ok","CSV 내보내기 완료");
+  showToast("CSV 내보내기를 완료했습니다.");
+}
+
+async function exportPDF(){
+  const rows = document.querySelectorAll("#tbody tr[data-idx]");
+  if(rows.length === 0){
+    showToast("PDF로 저장할 데이터가 없습니다.");
+    return;
+  }
+
+  const btn = document.getElementById("btnPdf");
+  const originalText = btn.textContent;
+  const tableWrap = document.getElementById("tableWrap");
+  const originalMaxHeight = tableWrap.style.maxHeight;
+  const originalOverflow = tableWrap.style.overflow;
+
+  btn.disabled = true;
+  btn.textContent = "PDF 생성 중...";
+  showLoading("PDF를 생성하는 중입니다...");
+  setStatus("loading","PDF 생성 중...");
+
+  try{
+    tableWrap.style.maxHeight = "none";
+    tableWrap.style.overflow = "visible";
+
+    const canvas = await html2canvas(document.getElementById("pdfArea"),{
+      scale:2,
+      backgroundColor:"#ffffff",
+      useCORS:true,
+      logging:false
+    });
+
+    const pdf = new window.jspdf.jsPDF({
+      orientation:"landscape",
+      unit:"mm",
+      format:"a4"
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const maxWidth = pageWidth-margin*2;
+    const maxHeight = pageHeight-margin*2;
+    const ratio = Math.min(maxWidth/canvas.width,maxHeight/canvas.height);
+    const renderWidth = canvas.width*ratio;
+    const renderHeight = canvas.height*ratio;
+    const x = (pageWidth-renderWidth)/2;
+
+    pdf.addImage(
+      canvas.toDataURL("image/png"),
+      "PNG",
+      x,
+      margin,
+      renderWidth,
+      renderHeight
+    );
+
+    const from = document.getElementById("fFrom").value || "";
+    const to = document.getElementById("fTo").value || "";
+    pdf.save("Defect_Rate_"+from+"_"+to+".pdf");
+
+    setStatus("ok","PDF 다운로드 완료");
+    showToast("PDF 다운로드를 완료했습니다.");
+  }catch(error){
+    console.error(error);
+    setStatus("error","PDF 생성 실패: "+dbErrorMessage(error));
+    showToast("PDF 생성 실패: "+dbErrorMessage(error));
+  }finally{
+    tableWrap.style.maxHeight = originalMaxHeight;
+    tableWrap.style.overflow = originalOverflow;
+    btn.disabled = false;
+    btn.textContent = originalText;
+    hideLoading();
+  }
+}
+
+function setToday(){
+  const today = fmtDate(new Date());
+  document.getElementById("fFrom").value = today;
+  document.getElementById("fTo").value = today;
+  document.getElementById("yearBadge").textContent =
+    today.substring(0,4)+"년도";
+  setStatus("ok","오늘 날짜로 조회 조건을 설정했습니다.");
+}
+
+function resetFilter(){
+  const now = new Date();
+  document.getElementById("fFrom").value = fmtMonthFirst(now);
+  document.getElementById("fTo").value = fmtDate(now);
+  document.getElementById("selCust").value = "";
+  document.getElementById("selProd").value = "";
+  document.getElementById("selPartNo").value = "";
+  document.getElementById("selEquip").value = "";
+  document.getElementById("yearBadge").textContent =
+    now.getFullYear()+"년도";
+
+  refreshProducts();
+  refreshPartNos();
+
+  queryRows = [];
+  document.getElementById("tbody").innerHTML =
+    '<tr><td colspan="17" style="padding:30px;text-align:center;color:var(--text-sub);font-size:12px;">조회 조건을 선택 후 조회하세요.</td></tr>';
+  document.getElementById("tCount").textContent = "0건";
+  document.getElementById("dashTitle").textContent = "조회 후 집계가 표시됩니다";
+  document.getElementById("periodBadge").textContent = "기간 집계";
+  document.getElementById("periodBadge").className = "period-badge pb-range";
+  updateDash();
+  setStatus("ok","초기화를 완료했습니다.");
+  showToast("조회 조건을 초기화했습니다.");
+}
+
+document.getElementById("selCust").addEventListener("change",function(){
+  refreshProducts();
+  refreshPartNos();
+});
+document.getElementById("selProd").addEventListener("change",refreshPartNos);
+document.getElementById("btnToday").addEventListener("click",setToday);
+document.getElementById("btnReset").addEventListener("click",resetFilter);
+document.getElementById("btnQuery").addEventListener("click",doQuery);
+document.getElementById("btnCsv").addEventListener("click",exportCSV);
+document.getElementById("btnPdf").addEventListener("click",exportPDF);
+
+window.addEventListener("beforeunload",function(event){
+  if(document.querySelector(".td-input.modified")){
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+
+(async function init(){
+  const now = new Date();
+  document.getElementById("fFrom").value = fmtMonthFirst(now);
+  document.getElementById("fTo").value = fmtDate(now);
+  document.getElementById("yearBadge").textContent =
+    now.getFullYear()+"년도";
+
+  showLoading("로그인 및 회사 권한을 확인하는 중입니다...");
+  setStatus("loading","로그인 및 회사 권한 확인 중...");
+
+  try{
+    const allowed = await verifyCompanyAccess();
+    if(!allowed) return;
+
+    await loadMeta();
+    setStatus("ok","기준 정보 로드 완료");
+  }catch(error){
+    console.error(error);
+    setStatus("error","초기 연결 실패: "+dbErrorMessage(error));
+    showToast("초기 연결 실패: "+dbErrorMessage(error));
+  }finally{
+    hideLoading();
+  }
+})();
+</script>
+</body>
+</html>
