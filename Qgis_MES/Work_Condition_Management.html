@@ -68,14 +68,20 @@ body{
   font-weight:600;
 }
 .toolbar select,
-.toolbar input[type=text]{
-  height:28px;
+.toolbar input[type=text],
+.toolbar input[type=date]{
+  height:30px;
   border:1px solid #b0b8c1;
   border-radius:3px;
   padding:0 7px;
   font-size:11px;
   color:#222;
   background:#fff;
+}
+.toolbar input[type=date]{
+  width:132px;
+  color-scheme:light;
+  cursor:pointer;
 }
 .toolbar select:focus,
 .toolbar input:focus{
@@ -178,7 +184,8 @@ body{
   overflow-x:auto;
   border:1px solid var(--border);
   border-top:none;
-  max-height:390px;
+  min-height:520px;
+  max-height:calc(100vh - 205px);
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
 }
@@ -392,11 +399,9 @@ tr.editing td{
 <!-- 툴바 -->
 <div class="toolbar">
   <label>작업일</label>
-  <input type="text" id="dateFrom" value="" placeholder="2026-01-01"
-         style="width:95px;" maxlength="10" inputmode="numeric">
+  <input type="date" id="dateFrom" value="" aria-label="작업 시작일">
   <span style="color:#888;font-size:11px;">~</span>
-  <input type="text" id="dateTo" value="" placeholder="2026-12-31"
-         style="width:95px;" maxlength="10" inputmode="numeric">
+  <input type="date" id="dateTo" value="" aria-label="작업 종료일">
 
   <div class="sep"></div>
 
@@ -680,11 +685,20 @@ function dbErrorMessage(error){
   return error.message || error.details || error.hint || String(error);
 }
 
-function formatDateInput(element){
-  let value = element.value.replace(/[^0-9]/g, "");
-  if(value.length >= 5) value = value.slice(0,4) + "-" + value.slice(4);
-  if(value.length >= 8) value = value.slice(0,7) + "-" + value.slice(7,9);
-  element.value = value.slice(0,10);
+function formatLocalDate(date){
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+function setCurrentMonthDateRange(){
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  document.getElementById("dateFrom").value = formatLocalDate(firstDay);
+  document.getElementById("dateTo").value = formatLocalDate(lastDay);
 }
 
 function isValidDateText(value){
@@ -1124,8 +1138,7 @@ async function saveRow(){
    초기화
    ══════════════════════════════════════════════ */
 function resetFilter(){
-  document.getElementById("dateFrom").value = "";
-  document.getElementById("dateTo").value = "";
+  setCurrentMonthDateRange();
   document.getElementById("filterCustomer").value = "";
   document.getElementById("filterEquip").value = "";
   document.getElementById("filterProduct").value = "";
@@ -1135,7 +1148,10 @@ function resetFilter(){
   filteredRows = [];
   renderTable();
 
-  setNotice("success", "초기화를 완료했습니다.");
+  setNotice(
+    "success",
+    "초기화를 완료했습니다. 조회기간을 현재 월 1일~말일로 설정했습니다."
+  );
 }
 
 /* ══════════════════════════════════════════════
@@ -1218,12 +1234,6 @@ function exportCSV(){
 /* ══════════════════════════════════════════════
    이벤트 및 초기 실행
    ══════════════════════════════════════════════ */
-document.getElementById("dateFrom").addEventListener("input", function(){
-  formatDateInput(this);
-});
-document.getElementById("dateTo").addEventListener("input", function(){
-  formatDateInput(this);
-});
 document.getElementById("btnSearch").addEventListener("click", loadData);
 document.getElementById("btnReset").addEventListener("click", resetFilter);
 document.getElementById("btnCsv").addEventListener("click", exportCSV);
@@ -1248,6 +1258,8 @@ window.addEventListener("beforeunload", function(event){
 });
 
 (async function init(){
+  setCurrentMonthDateRange();
+
   showLoading(true, "로그인 및 회사 권한을 확인하는 중입니다...");
   setActionDisabled(true);
 
@@ -1259,7 +1271,7 @@ window.addEventListener("beforeunload", function(event){
 
     setNotice(
       "success",
-      "기준정보를 불러왔습니다. 조회 조건을 선택한 후 조회 버튼을 눌러 주세요."
+      "기준정보를 불러왔습니다. 조회기간은 현재 월 1일~말일로 설정되었습니다."
     );
   }catch(error){
     console.error(error);
