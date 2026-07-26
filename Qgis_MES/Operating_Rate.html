@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>설비가동률 입력 | HeatPro MES</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#185FA5;--blue-lt:#E6F1FB;--blue-dk:#0C447C;
+  --green:#3B6D11;--green-lt:#EAF3DE;--green-dk:#27500A;
+  --amber:#854F0B;--amber-lt:#FAEEDA;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --gray:#5F5E5A;--gray-lt:#F1EFE8;--gray-bd:#D3D1C7;
+  --bg:#F8F7F4;--white:#FFFFFF;--text:#2C2C2A;--text-sub:#888780;
+}
+body{font-family:'Noto Sans KR','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;}
+.top-header{background:var(--white);border-bottom:1px solid var(--gray-bd);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:var(--blue);text-decoration:none;}
+.logo svg{width:20px;height:20px;}
+nav{display:flex;gap:4px;}
+nav a{font-size:13px;color:var(--text-sub);text-decoration:none;padding:6px 11px;border-radius:6px;border:1px solid transparent;}
+nav a:hover{background:var(--gray-lt);color:var(--text);}
+nav a.active{background:var(--blue-lt);color:var(--blue-dk);border-color:#B5D4F4;font-weight:500;}
+.container{max-width:1280px;margin:0 auto;padding:20px 20px 48px;width:100%;}
+.page-title{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.page-title svg{width:20px;height:20px;color:var(--blue);flex-shrink:0;}
+.page-title h1{font-size:20px;font-weight:700;}
+.page-title .sub{font-size:13px;color:var(--text-sub);}
+.badge-wrap{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.year-badge{background:var(--blue-lt);color:var(--blue-dk);font-size:12px;font-weight:600;padding:4px 11px;border-radius:99px;}
+.target-badge{background:var(--red-lt);color:var(--red);font-size:12px;font-weight:600;padding:4px 11px;border-radius:99px;}
+.filter-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:13px 16px;margin-bottom:12px;}
+.filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.fg{display:flex;align-items:center;gap:6px;}
+.fg label{font-size:13px;color:var(--text-sub);font-weight:600;white-space:nowrap;}
+.fg input[type=date],.fg select{height:35px;border:1px solid var(--gray-bd);border-radius:6px;padding:0 9px;font-size:13px;color:var(--text);background:var(--white);outline:none;}
+.fg input[type=date]{width:130px;}
+.fg select{width:150px;}
+.fg input:focus,.fg select:focus{border-color:var(--blue);}
+.sep{font-size:13px;color:var(--text-sub);}
+.btn-row{display:flex;gap:6px;margin-left:auto;}
+.btn{display:inline-flex;align-items:center;gap:4px;height:35px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--gray-bd);background:var(--white);color:var(--text-sub);transition:background .1s;}
+.btn:hover{background:var(--gray-lt);}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn-today{background:var(--green-lt);color:var(--green-dk);border-color:#C0DD97;}
+.btn-today:hover{background:#C0DD97;}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-primary:hover{background:var(--blue-dk);}
+.dash-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:12px 14px;margin-bottom:12px;}
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.dash-title{font-size:13px;font-weight:700;color:var(--text);}
+.period-badge{font-size:12px;padding:3px 10px;border-radius:99px;font-weight:600;}
+.pb-single{background:var(--green-lt);color:var(--green-dk);}
+.pb-range{background:var(--blue-lt);color:var(--blue-dk);}
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+.kpi-item{background:var(--gray-lt);border-radius:8px;padding:9px 11px;}
+.kpi-label{font-size:12px;color:var(--text-sub);margin-bottom:4px;white-space:nowrap;}
+.kpi-val{font-size:18px;font-weight:700;color:var(--text);}
+.kpi-unit{font-size:11px;color:var(--text-sub);margin-left:2px;}
+.table-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;overflow:hidden;}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--gray-bd);}
+.t-title{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;}
+.cnt-badge{background:var(--blue-lt);color:var(--blue-dk);font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;}
+.table-wrap{overflow-x:auto;overflow-y:auto;max-height:420px;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:1180px;}
+thead{position:sticky;top:0;z-index:10;}
+thead th{padding:7px 5px;text-align:center;font-size:12px;font-weight:700;background:var(--gray-lt);color:var(--text-sub);border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);white-space:nowrap;}
+thead th.th-db{background:#E6F1FB;color:var(--blue-dk);}
+thead th.th-in{background:#EAF3DE;color:var(--green-dk);}
+thead th.th-eq{background:#FAEEDA;color:#633806;}
+thead th.th-jet{background:#FBEAF0;color:#72243E;}
+thead th.th-calc{background:var(--gray-lt);color:var(--gray);}
+thead th:last-child{border-right:none;}
+tbody td{padding:7px 5px;text-align:center;border-bottom:1px solid #EEECEA;border-right:1px solid #EEECEA;color:var(--text);font-size:12px;}
+tbody td:last-child{border-right:none;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#FAFAF8;}
+.td-sat{color:var(--blue);}
+.td-sun{color:var(--red);}
+.td-hol{color:var(--red);font-style:italic;}
+.td-db{background:#EEF7FD;color:var(--blue-dk);font-weight:500;}
+.td-calc{background:var(--gray-lt);color:var(--text-sub);font-weight:500;}
+/* ★ 2026-07-24 추가: 아직 오지 않은 날(미래일) — 집계 제외 표시 */
+tr.row-future td{background:#F7F6F3;color:#B8B6B0;}
+.td-rate-ok{color:var(--green-dk);font-weight:600;}
+.td-rate-ng{color:var(--red);font-weight:600;}
+.td-input{border:1px solid transparent;border-radius:3px;padding:4px 4px;font-size:12px;width:100%;background:transparent;color:var(--text);text-align:center;outline:none;font-family:inherit;min-width:38px;}
+.td-input:hover{border-color:var(--gray-bd);background:var(--gray-lt);}
+.td-input:focus{border-color:var(--blue);background:var(--white);}
+.td-input.modified{border-color:#EF9F27;background:#FAEEDA;}
+.save-btn{display:inline-flex;align-items:center;height:27px;padding:0 9px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--blue);background:var(--blue-lt);color:var(--blue-dk);transition:background .1s;}
+.save-btn:hover{background:#B5D4F4;}
+.save-btn.saved{border-color:var(--green);background:var(--green-lt);color:var(--green-dk);}
+.save-btn.saving{opacity:.6;pointer-events:none;}
+/* ★ 2026-07-22 추가: 잠금 */
+.lock-cb{width:14px;height:14px;cursor:pointer;accent-color:#EF9F27;}
+.td-lockin{border-color:#EF9F27 !important;background:#FAEEDA !important;font-weight:600;color:var(--amber) !important;}
+tr.row-locked td.td-db{background:#FAEEDA;color:var(--amber);}
+.status-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-top:1px solid var(--gray-bd);font-size:12px;color:var(--text-sub);}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:var(--green);}
+.dot-loading{background:var(--amber);animation:pulse 1s infinite;}
+.dot-error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2C2C2A;color:#fff;font-size:14px;padding:11px 22px;border-radius:8px;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;}
+.toast.show{opacity:1;}
+@media(max-width:768px){
+  .top-header{padding:0 12px;}
+  nav{display:none;}
+  .container{padding:14px 10px 32px;}
+  .page-title{align-items:flex-start;flex-wrap:wrap;}
+  .badge-wrap{width:100%;margin-left:30px;}
+  .filter-row{align-items:flex-end;flex-wrap:wrap;}
+  .btn-row{width:100%;margin-left:0;}
+  .btn{flex:1;justify-content:center;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .kpi-label{font-size:11px;}
+  table{min-width:1180px;}
+}
+</style>
+</head>
+<body>
+<header class="top-header">
+  <a class="logo" href="https://ceomidir-git-hub.github.io/heatPro-MES/">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>HeatPro MES
+  </a>
+  <nav>
+    <a href="https://ceomidir-git-hub.github.io/heatPro-MES/">대시보드</a>
+    <a href="https://ceomidir-git-hub.github.io/heatPro-MES/GitHub_Worksheet.html">작업일보</a>
+    <a href="https://ceomidir-git-hub.github.io/heatPro-MES/Monthly_Production_Record.html">월생산실적</a>
+    <a class="active" href="#">설비가동률 입력</a>
+  </nav>
+</header>
+<main class="container">
+  <div class="page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <h1>설비가동률 입력</h1>
+    <span class="sub">Operating Rate Input</span>
+    <div class="badge-wrap">
+      <span class="year-badge" id="yearBadge">2026년도</span>
+      <span class="target-badge">[목표 : 80%]</span>
+    </div>
+  </div>
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="fg">
+        <label>설비</label>
+        <select id="selEquip"></select>
+      </div>
+      <div class="fg">
+        <label>기간</label>
+        <input type="date" id="fFrom"/>
+        <span class="sep">~</span>
+        <input type="date" id="fTo"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-today" onclick="setToday()">오늘</button>
+        <button class="btn" onclick="resetFilter()">초기화</button>
+        <button class="btn btn-primary" onclick="doQuery()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          조회
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="dash-card">
+    <div class="dash-header">
+      <span class="dash-title" id="dashTitle">조회 후 집계가 표시됩니다</span>
+      <span class="period-badge pb-range" id="periodBadge">기간 집계</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-item"><div class="kpi-label">조업시간</div><div class="kpi-val" id="dOp">—<span class="kpi-unit">분</span></div></div>
+      <div class="kpi-item"><div class="kpi-label">계획정지</div><div class="kpi-val" id="dPlan">—<span class="kpi-unit">분</span></div></div>
+      <div class="kpi-item"><div class="kpi-label">부하시간</div><div class="kpi-val" id="dLoad">—<span class="kpi-unit">분</span></div></div>
+      <div class="kpi-item"><div class="kpi-label">비가동시간 (DB)</div><div class="kpi-val" id="dNon">—<span class="kpi-unit">분</span></div></div>
+      <div class="kpi-item"><div class="kpi-label">가동시간 (DB)</div><div class="kpi-val" id="dRun">—<span class="kpi-unit">분</span></div></div>
+      <div class="kpi-item" id="dRateCard"><div class="kpi-label">가동률</div><div class="kpi-val" id="dRate" style="color:var(--red);">—<span class="kpi-unit">%</span></div></div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="table-toolbar">
+      <span class="t-title">입력 내역<span class="cnt-badge" id="tCount">0건</span></span>
+      <button class="btn" onclick="exportCSV()" style="height:28px;font-size:11px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        CSV 내보내기
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2" style="width:82px;">작업일</th>
+            <th rowspan="2" style="width:28px;">요일</th>
+            <th rowspan="2" class="th-db" style="width:34px;">건수</th>
+            <th colspan="2" class="th-db">DB 합산</th>
+            <th rowspan="2" class="th-calc" style="width:48px;">조업시간</th>
+            <th colspan="5" class="th-in">계획정지 (분)</th>
+            <th colspan="4" class="th-eq">설비정지 (분)</th>
+            <th colspan="3" class="th-jet">제통 (분)</th>
+            <th colspan="4" class="th-calc">자동 계산</th>
+            <th rowspan="2" style="width:40px;" title="잠금 시 작업일보 저장의 자동 갱신에서 제외">🔒</th>
+            <th rowspan="2" style="width:44px;">저장</th>
+          </tr>
+          <tr>
+            <th class="th-db" style="width:52px;">가동시간(분)</th><th class="th-db" style="width:52px;">비가동시간(분)</th>
+            <th class="th-in" style="width:36px;">교육</th><th class="th-in" style="width:36px;">공사</th><th class="th-in" style="width:36px;">개발</th><th class="th-in" style="width:36px;">방문</th><th class="th-in" style="width:36px;">기타1</th>
+            <th class="th-eq" style="width:36px;">전기</th><th class="th-eq" style="width:36px;">냉각</th><th class="th-eq" style="width:36px;">코일</th><th class="th-eq" style="width:36px;">기타2</th>
+            <th class="th-jet" style="width:36px;">조건</th><th class="th-jet" style="width:36px;">사양</th><th class="th-jet" style="width:36px;">기타3</th>
+            <th class="th-calc" style="width:62px;">부하시간(분모)</th><th class="th-calc" style="width:62px;">계획정지합</th><th class="th-calc" style="width:62px;">가동시간(분)</th><th class="th-calc" style="width:62px;">가동률</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="24" style="padding:30px;text-align:center;color:var(--text-sub);font-size:13px;">기본 설비·기간이 채워져 있습니다. [조회] 버튼을 눌러주세요.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="status-bar">
+      <span class="sdot dot-ok" id="sDot"></span>
+      <span id="sText">대기 중</span>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+var API_URL='https://script.google.com/macros/s/AKfycbw3H6QfMJYTlR24IlZ-IOfk5GKml1RDm_f_CU4iSbhua-bREeVI14NIeaY3oU1sfdWVLA/exec';
+var API_KEY='@qgis2026';
+/* ★ 기본 설비 (요청 반영): 진입 시 이 설비명을 우선 자동 선택 (목록에 있을 때만) */
+var DEFAULT_EQUIP='고주파열처리1호기';
+/* ★ JSONP 응답 대기시간 (요청 반영: 10초 → 30초) */
+var JSONP_TIMEOUT_MS=30000;
+var HOLIDAYS=['2026-01-01','2026-01-28','2026-01-29','2026-01-30','2026-03-01','2026-05-05','2026-05-25','2026-06-06','2026-08-15','2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-09','2026-12-25'];
+var DAYS=['일','월','화','수','목','금','토'];
+var queryRowMap={};var allDates=[];var rowIdx=0;
+function pad2(n){return String(n).padStart(2,'0');}
+function toN(v){var n=Number(v);return isNaN(n)?0:n;}
+function fmtDate(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function isHoliday(ds){return HOLIDAYS.indexOf(ds)>=0;}
+function getDow(ds){return new Date(ds).getDay();}
+function esc(v){return String(v).replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+/* ★ 수정: 기본값만 채우고 자동 조회는 하지 않음 (반드시 [조회] 버튼을 눌러야 조회됨) */
+window.onload=function(){
+  var today=new Date();
+  var monthStart=new Date(today.getFullYear(),today.getMonth(),1);
+  document.getElementById('fFrom').value=fmtDate(monthStart); /* 당월 1일 */
+  document.getElementById('fTo').value=fmtDate(today);        /* 오늘 */
+  document.getElementById('yearBadge').textContent=today.getFullYear()+'년도';
+  loadEquipList(); /* 설비 목록 로드 + 기본 설비 자동 선택까지만 수행, 조회는 실행하지 않음 */
+};
+function setToday(){var t=fmtDate(new Date());document.getElementById('fFrom').value=t;document.getElementById('fTo').value=t;}
+function resetFilter(){document.getElementById('fFrom').value='';document.getElementById('fTo').value='';}
+function loadEquipList(){
+  var cb='cbEq_'+Date.now(),sc=document.createElement('script');
+  sc.src=API_URL+'?key='+encodeURIComponent(API_KEY)+'&callback='+cb;
+  window[cb]=function(data){
+    document.head.removeChild(sc);delete window[cb];
+    var sel=document.getElementById('selEquip');
+    var list=(data&&data.equipment)?data.equipment:[];
+    if(list.length===0){sel.add(new Option('설비 없음',''));}
+    else{
+      list.forEach(function(e){if(e.name)sel.add(new Option(e.name,e.name));});
+      /* ★ 기본 설비 자동 선택 (목록에 존재할 때만) */
+      var hasDefault=list.some(function(e){return e.name===DEFAULT_EQUIP;});
+      if(hasDefault) sel.value=DEFAULT_EQUIP;
+    }
+    setStatus('ok','설비 목록 로드 완료 · [조회] 버튼을 눌러 데이터를 불러오세요.');
+  };
+  sc.onerror=function(){document.head.removeChild(sc);delete window[cb];setStatus('error','설비 목록 로드 실패');};
+  document.head.appendChild(sc);
+}
+function doQuery(){
+  var from=document.getElementById('fFrom').value;
+  var to=document.getElementById('fTo').value;
+  var eq=document.getElementById('selEquip').value;
+  if(!from||!to||!eq){showToast('⚠️ 설비와 기간을 모두 선택하세요.');return;}
+  setStatus('loading','데이터 불러오는 중...');
+  var cb='cbOp_'+Date.now(),sc=document.createElement('script');
+  sc.src=API_URL+'?action=operatingRateV2&from='+from+'&to='+to+'&equipment='+encodeURIComponent(eq)+'&key='+encodeURIComponent(API_KEY)+'&callback='+cb;
+  window[cb]=function(data){
+    document.head.removeChild(sc);delete window[cb];
+    var rows=(data&&data.rows)?data.rows:[];
+    queryRowMap={};
+    rows.forEach(function(r){queryRowMap[r.작업일]=r;});
+    renderTable(from,to,eq);
+    setStatus('ok','조회 완료 · '+rows.length+'건 (DB 데이터)');
+  };
+  sc.onerror=function(){document.head.removeChild(sc);delete window[cb];setStatus('error','API 연결 실패');};
+  document.head.appendChild(sc);
+  /* ★ 수정: 응답 대기시간 10초 → 30초 (JSONP_TIMEOUT_MS) */
+  setTimeout(function(){if(window[cb]){document.head.removeChild(sc);delete window[cb];setStatus('error','응답 시간 초과 (30초)');}},JSONP_TIMEOUT_MS);
+}
+function renderTable(from,to,eq){
+  var isSingle=(from===to);
+  document.getElementById('dashTitle').textContent=eq+' · '+from+(isSingle?'':' ~ '+to);
+  document.getElementById('periodBadge').textContent=isSingle?'당일':'기간 집계';
+  document.getElementById('periodBadge').className='period-badge '+(isSingle?'pb-single':'pb-range');
+  allDates=[];
+  var cur=new Date(from),end=new Date(to);
+  while(cur<=end){allDates.push(fmtDate(new Date(cur)));cur.setDate(cur.getDate()+1);}
+  document.getElementById('tCount').textContent=allDates.length+'건';
+  rowIdx=0;
+  /* ★ 2026-07-24 추가: 오늘 이후(미래) 날짜는 조업시간 0 처리하여 분모에서 제외한다.
+     구버전은 조회기간을 월말까지 늘리면 미래 평일이 480분씩 분모에 잡혀
+     가동률이 실제보다 낮게 표시되는 결함이 있었음 (7월 기준 45.7% → 35.7%, 10.0p 왜곡) */
+  var TODAY_STR=fmtDate(new Date());
+  var html=allDates.map(function(ds){
+    var dow=getDow(ds),isSat=dow===6,isSun=dow===0,isHol=isHoliday(ds);
+    var isFuture=(ds>TODAY_STR);
+    var dateClass=(isHol||isSun)?'td-sun':isSat?'td-sat':'';
+    var r=queryRowMap[ds]||{};
+    var idx=rowIdx++;
+    /* ★ 2026-07-22: operatingRateV2 는 모든 시간값을 '분'으로 반환 */
+    var dbOp=toN(r.가동시간),dbNon=toN(r.비가동시간),dbCnt=toN(r.건수)||0;
+    var locked=(r.잠금===true||r.입력구분==='수동잠금');
+    var 조업=isFuture?0:(toN(r.조업시간)||((isHol||isSat||isSun)?0:480));
+    return '<tr class="'+(locked?'row-locked ':'')+(isFuture?'row-future':'')+'" data-idx="'+idx+'" data-date="'+ds+'" data-eq="'+esc(eq)+'" data-eqno="'+esc(r.설비번호||'')+'" data-dbop="'+dbOp+'" data-dbnon="'+dbNon+'" data-dbcnt="'+dbCnt+'" data-lock="'+(locked?1:0)+'">'
+      +'<td class="'+dateClass+'" style="font-size:12px;white-space:nowrap;">'+(isHol?'★ ':'')+ds+'</td>'
+      +'<td class="'+dateClass+'">'+DAYS[dow]+'</td>'
+      +'<td class="td-db">'+dbCnt+'</td>'
+      +'<td class="td-db td-dbop">'+opCellHtml(idx,dbOp,locked)+'</td>'
+      +'<td class="td-db">'+dbNon+'</td>'
+      +'<td><input class="td-input" type="number" min="0" value="'+조업+'" data-field="조업시간" data-idx="'+idx+'" oninput="markMod(this);recalc('+idx+')"/></td>'
+      +mkI(idx,'교육',r.교육)+mkI(idx,'공사',r.공사)+mkI(idx,'개발',r.개발)+mkI(idx,'방문',r.방문)+mkI(idx,'기타1',r.기타1)
+      +mkI(idx,'전기',r.전기)+mkI(idx,'냉각',r.냉각)+mkI(idx,'코일',r.코일)+mkI(idx,'기타2',r.기타2)
+      +mkI(idx,'조건',r.조건)+mkI(idx,'사양',r.사양)+mkI(idx,'기타3',r.기타3)
+      +'<td class="td-calc" id="c-bha-'+idx+'">—</td>'
+      +'<td class="td-calc" id="c-plan-'+idx+'">0</td>'
+      +'<td class="td-calc td-db" id="c-ga-'+idx+'">'+dbOp+'</td>'
+      +'<td class="td-calc" id="c-rate-'+idx+'">—</td>'
+      +'<td><input type="checkbox" class="lock-cb" id="lock-'+idx+'" '+(locked?'checked':'')+' onchange="toggleLock('+idx+')" title="잠금 시 작업일보 저장의 자동 갱신에서 제외"/></td>'
+      +'<td><button class="save-btn" id="sbtn-'+idx+'" onclick="saveRow('+idx+')">저장</button></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('tbody').innerHTML=html;
+  for(var i=0;i<rowIdx;i++){recalc(i);}
+  updateDash();
+}
+/* ★ 2026-07-22 추가: DB 가동시간 셀 (잠금이면 입력창, 아니면 읽기전용 텍스트) */
+function opCellHtml(idx,val,locked){
+  if(!locked) return String(val);
+  return '<input class="td-input td-lockin" type="number" min="0" value="'+val+'" data-field="가동시간" data-idx="'+idx+'" oninput="markMod(this);recalc('+idx+')"/>';
+}
+/* ★ 2026-07-22 추가: 잠금 on/off — 서버(가동data 입력구분 열)에 즉시 반영 */
+function toggleLock(idx){
+  var tr=document.querySelector('tr[data-idx="'+idx+'"]');
+  var cb=document.getElementById('lock-'+idx);
+  if(!tr||!cb)return;
+  var locked=cb.checked;
+  var payload={action:'toggleOperatingLock',key:API_KEY,작업일:tr.dataset.date,설비명:tr.dataset.eq,lock:locked};
+  fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.result==='ok'){
+      tr.dataset.lock=locked?'1':'0';
+      if(locked)tr.classList.add('row-locked');else tr.classList.remove('row-locked');
+      var td=tr.querySelector('td.td-dbop');
+      if(td){td.innerHTML=opCellHtml(idx,toN(tr.dataset.dbop),locked);}
+      recalc(idx);
+      showToast(locked?'🔒 '+tr.dataset.date+' 잠금 · 작업일보 자동갱신 제외':'🔓 '+tr.dataset.date+' 잠금 해제 · 자동갱신 재개');
+    }else{
+      cb.checked=!locked;
+      showToast('❌ 잠금 변경 실패: '+(data.message||data.error||''));
+    }
+  })
+  .catch(function(){cb.checked=!locked;showToast('❌ 네트워크 오류');});
+}
+function mkI(idx,field,val){
+  var v=(val===undefined||val===null)?0:toN(val);
+  return '<td><input class="td-input" type="number" min="0" placeholder="0" value="'+v+'" data-field="'+field+'" data-idx="'+idx+'" oninput="markMod(this);recalc('+idx+')"/></td>';
+}
+function markMod(el){el.classList.add('modified');}
+/* ★ 2026-07-26 최종 확정 계산식
+     분모(부하시간) = 조업시간 − 계획정지
+     비가동시간은 분모에서 차감하지 않고 손실시간 분석용으로만 표시
+     가동률 = 가동시간(분) ÷ 분모 × 100   (상한 없음, 100% 초과 허용)
+     분모 ≤ 0 → 가동률 "—" (계산 제외) */
+function recalc(idx){
+  var tr=document.querySelector('tr[data-idx="'+idx+'"]');if(!tr)return;
+  function gF(f){var el=tr.querySelector('[data-field="'+f+'"]');return el?toN(el.value):0;}
+  var 조업=gF('조업시간');
+  var 계획=gF('교육')+gF('공사')+gF('개발')+gF('방문')+gF('기타1');
+  var opEl=tr.querySelector('[data-field="가동시간"]');
+  var 가동=opEl?toN(opEl.value):toN(tr.dataset.dbop);
+  var 분모=조업-계획;
+  var rate=(분모>0)?(가동/분모*100).toFixed(1):null;
+  var isOk=rate!==null&&Number(rate)>=80;
+  var bEl=document.getElementById('c-bha-'+idx);
+  var pEl=document.getElementById('c-plan-'+idx);
+  var gEl=document.getElementById('c-ga-'+idx);
+  var rEl=document.getElementById('c-rate-'+idx);
+  if(bEl)bEl.textContent=(분모>0?분모:'—');
+  if(pEl)pEl.textContent=계획;
+  if(gEl)gEl.textContent=가동;
+  if(rEl)rEl.innerHTML=rate!==null?'<span class="'+(isOk?'td-rate-ok':'td-rate-ng')+'">'+rate+'%</span>':'—';
+  updateDash();
+}
+function updateDash(){
+  var rows=document.querySelectorAll('#tbody tr[data-idx]');
+  var totOp=0,totPlan=0,totLoad=0,totDbNon=0,totDbRun=0;
+  rows.forEach(function(tr){
+    var idx=tr.dataset.idx;
+    function gF(f){var el=tr.querySelector('[data-field="'+f+'"]');return el?toN(el.value):0;}
+    var 조업=gF('조업시간');
+    var 계획=gF('교육')+gF('공사')+gF('개발')+gF('방문')+gF('기타1');
+    var 비가동=toN(tr.dataset.dbnon);
+    var opEl=tr.querySelector('[data-field="가동시간"]');
+    var 가동=opEl?toN(opEl.value):toN(tr.dataset.dbop);
+    var 분모=조업-계획;
+    totOp+=조업;totPlan+=계획;totLoad+=(분모>0?분모:0);
+    totDbNon+=비가동;totDbRun+=가동;
+  });
+  var rate=totLoad>0?(totDbRun/totLoad*100).toFixed(1):0;
+  var isOk=Number(rate)>=80;
+  document.getElementById('dOp').innerHTML=totOp.toLocaleString()+'<span class="kpi-unit">분</span>';
+  document.getElementById('dPlan').innerHTML=totPlan.toLocaleString()+'<span class="kpi-unit">분</span>';
+  document.getElementById('dLoad').innerHTML=totLoad.toLocaleString()+'<span class="kpi-unit">분</span>';
+  document.getElementById('dNon').innerHTML=totDbNon.toLocaleString()+'<span class="kpi-unit">분</span>';
+  document.getElementById('dRun').innerHTML=totDbRun.toLocaleString()+'<span class="kpi-unit">분</span>';
+  var rEl=document.getElementById('dRate');
+  rEl.innerHTML=rate+'<span class="kpi-unit">%</span>';
+  rEl.style.color=isOk?'var(--green-dk)':'var(--red)';
+  document.getElementById('dRateCard').style.background=isOk?'var(--green-lt)':'var(--red-lt)';
+}
+function saveRow(idx){
+  var tr=document.querySelector('tr[data-idx="'+idx+'"]');
+  var btn=document.getElementById('sbtn-'+idx);
+  if(!tr||!btn)return;
+  function gF(f){var el=tr.querySelector('[data-field="'+f+'"]');return el?toN(el.value):0;}
+  /* ★ 2026-07-22: saveOperatingDetail 로 전환
+       - 항상 저장: 조업시간 + 비가동 12개 항목 + 입력구분
+       - 잠금(🔒) 상태일 때만: 건수 / 가동시간 / 비가동시간 도 함께 저장
+       - 잠금 해제 상태에서는 건수·가동시간을 보내지 않아 자동 계산값이 보존됨 */
+  var lockEl=document.getElementById('lock-'+idx);
+  var locked=!!(lockEl&&lockEl.checked);
+  var opEl=tr.querySelector('[data-field="가동시간"]');
+  var payload={
+    action:'saveOperatingDetail', key:API_KEY, lock:locked,
+    작업일:tr.dataset.date,설비명:tr.dataset.eq,설비번호:tr.dataset.eqno,
+    조업시간:gF('조업시간'),
+    교육:gF('교육'),공사:gF('공사'),개발:gF('개발'),방문:gF('방문'),기타1:gF('기타1'),
+    전기:gF('전기'),냉각:gF('냉각'),코일:gF('코일'),기타2:gF('기타2'),
+    조건:gF('조건'),사양:gF('사양'),기타3:gF('기타3')
+  };
+  if(locked){
+    payload.건수=toN(tr.dataset.dbcnt);
+    payload.가동시간=opEl?toN(opEl.value):toN(tr.dataset.dbop);
+    payload.비가동시간=toN(tr.dataset.dbnon);
+  }
+  btn.classList.add('saving');btn.textContent='저장중';
+  fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.result==='updated'||data.result==='inserted'){
+      tr.querySelectorAll('.modified').forEach(function(el){el.classList.remove('modified');});
+      btn.classList.remove('saving');btn.classList.add('saved');btn.textContent='완료';
+      showToast('✅ '+tr.dataset.date+' 저장 완료 ('+(data.result==='updated'?'수정':'신규')+')');
+      setTimeout(function(){btn.classList.remove('saved');btn.textContent='저장';},2500);
+    }else{btn.classList.remove('saving');btn.textContent='저장';showToast('❌ 저장 실패: '+(data.error||data.message||''));}
+  })
+  .catch(function(){btn.classList.remove('saving');btn.textContent='저장';showToast('❌ 네트워크 오류');});
+}
+function exportCSV(){
+  var rows=document.querySelectorAll('#tbody tr[data-idx]');
+  if(rows.length===0){showToast('내보낼 데이터가 없습니다.');return;}
+  var hdrs=['작업일','요일','가동시간(분)','비가동시간(분)','조업시간(분)','교육','공사','개발','방문','기타1','전기','냉각','코일','기타2','조건','사양','기타3','부하시간(분모)','계획정지합','가동률(%)','잠금'];
+  var lines=['\uFEFF'+hdrs.join(',')];
+  var fields=['조업시간','교육','공사','개발','방문','기타1','전기','냉각','코일','기타2','조건','사양','기타3'];
+  rows.forEach(function(tr){
+    var idx=tr.dataset.idx;
+    function gF(f){var el=tr.querySelector('[data-field="'+f+'"]');return el?el.value:0;}
+    var cells=[tr.dataset.date,DAYS[getDow(tr.dataset.date)],tr.dataset.dbop,tr.dataset.dbnon];
+    fields.forEach(function(f){cells.push(gF(f));});
+    var bEl=document.getElementById('c-bha-'+idx);
+    var pEl=document.getElementById('c-plan-'+idx);
+    var rEl=document.getElementById('c-rate-'+idx);
+    cells.push(bEl?bEl.textContent:'');
+    cells.push(pEl?pEl.textContent:'');
+    cells.push(rEl?rEl.textContent.replace('%',''):'');
+    cells.push(tr.dataset.lock==='1'?'잠금':'');
+    lines.push(cells.join(','));
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='Operating_Rate_'+fmtDate(new Date())+'.csv';a.click();URL.revokeObjectURL(url);
+  showToast('📥 CSV 완료');
+}
+function setStatus(type,msg){
+  document.getElementById('sDot').className='sdot '+(type==='loading'?'dot-loading':type==='error'?'dot-error':'dot-ok');
+  document.getElementById('sText').textContent=msg;
+}
+function showToast(msg){
+  var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3000);
+}
+</script>
+</body>
+</html>
