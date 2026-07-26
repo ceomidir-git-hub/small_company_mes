@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>작업조건관리대장 | HeatPro MES</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1a3a5c;
+  --navy-light:#dce8f5;
+  --blue:#1565c0;
+  --green:#1a6e2e;
+  --orange:#e65100;
+  --yellow:#f9a825;
+  --gray:#78909c;
+  --border:#c8d0d8;
+  --page:#f0f2f5;
+  --white:#fff;
+  --success-bg:#e8f5e9;
+  --success-text:#1b5e20;
+  --error-bg:#ffebee;
+  --error-text:#b71c1c;
+  --info-bg:#e3f2fd;
+  --info-text:#0d47a1;
+}
+body{
+  font-family:'Malgun Gothic','맑은 고딕',sans-serif;
+  font-size:12px;
+  background:var(--page);
+  min-height:100vh;
+  color:#263238;
+}
+
+/* ── 상단바 ── */
+.topbar{
+  background:var(--navy);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+  height:46px;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:.3px;}
+.topbar-right{display:flex;gap:6px;align-items:center;}
+
+/* ── 툴바 ── */
+.toolbar{
+  background:#fff;
+  border-bottom:2px solid var(--navy);
+  padding:7px 14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.toolbar label{
+  font-size:11px;
+  color:#444;
+  white-space:nowrap;
+  font-weight:600;
+}
+.toolbar select,
+.toolbar input[type=text]{
+  height:28px;
+  border:1px solid #b0b8c1;
+  border-radius:3px;
+  padding:0 7px;
+  font-size:11px;
+  color:#222;
+  background:#fff;
+}
+.toolbar select:focus,
+.toolbar input:focus{
+  border-color:var(--navy);
+  outline:none;
+}
+.sep{width:1px;height:22px;background:#dde2e8;margin:0 2px;}
+
+/* ── 버튼 ── */
+.btn{
+  height:28px;
+  padding:0 13px;
+  border-radius:3px;
+  border:none;
+  font-size:11px;
+  cursor:pointer;
+  font-weight:700;
+  transition:opacity .15s;
+}
+.btn:hover{opacity:.85;}
+.btn:disabled{opacity:.5;cursor:default;}
+.btn-primary{background:var(--navy);color:#fff;}
+.btn-reset{background:#e8ecf0;color:#444;}
+.btn-csv{background:var(--green);color:#fff;}
+.btn-save{background:var(--blue);color:#fff;}
+.btn-cancel{background:var(--gray);color:#fff;}
+.btn-edit{
+  background:var(--orange);
+  color:#fff;
+  padding:2px 9px;
+  height:22px;
+  font-size:10px;
+  border-radius:2px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+}
+.btn-edit:hover{background:#bf360c;}
+.btn-editing{
+  background:var(--yellow);
+  color:#fff;
+  padding:2px 9px;
+  height:22px;
+  font-size:10px;
+  border-radius:2px;
+  border:none;
+  cursor:default;
+  font-weight:700;
+}
+
+/* ── 결과 안내 ── */
+.notice{
+  border-left:3px solid var(--blue);
+  padding:7px 12px;
+  font-size:11px;
+  margin:8px 14px 0;
+  background:var(--info-bg);
+  color:var(--info-text);
+  font-weight:600;
+}
+.notice.success{
+  background:var(--success-bg);
+  color:var(--success-text);
+  border-left-color:#2e7d32;
+}
+.notice.error{
+  background:var(--error-bg);
+  color:var(--error-text);
+  border-left-color:#c62828;
+}
+
+/* ── 본문 ── */
+.content{padding:8px 14px 0;}
+.card-header{
+  background:var(--navy);
+  color:#fff;
+  font-size:12px;
+  font-weight:700;
+  padding:6px 12px;
+  border-radius:3px 3px 0 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.tag{
+  border-radius:2px;
+  padding:2px 8px;
+  font-size:10px;
+  font-weight:700;
+}
+.tag-blue{background:#d0e4f7;color:var(--navy);}
+.tag-orange{
+  background:#fff3e0;
+  color:var(--orange);
+  border:1px solid #ffb74d;
+}
+
+/* ── 테이블 ── */
+.table-wrap{
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-top:none;
+  max-height:390px;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:1540px;
+  font-size:10px;
+  table-layout:fixed;
+}
+thead{position:sticky;top:0;z-index:3;}
+thead tr:first-child th{
+  background:var(--navy);
+  color:#fff;
+  font-size:10px;
+  font-weight:700;
+  padding:5px 3px;
+  border:1px solid #2a5070;
+  text-align:center;
+  white-space:nowrap;
+}
+thead tr:last-child th{
+  background:#e8ecf1;
+  color:var(--navy);
+  font-size:10px;
+  font-weight:700;
+  padding:4px 2px;
+  border:1px solid var(--border);
+  text-align:center;
+  white-space:normal;
+  word-break:keep-all;
+  line-height:1.2;
+}
+thead tr:last-child th.cond{
+  background:var(--navy-light);
+  color:var(--navy);
+}
+th.col-btn{width:38px;}
+th.col-no{width:32px;}
+th.col-date{width:72px;}
+th.col-cs{width:82px;}
+th.col-pnm{width:74px;}
+th.col-pno{width:86px;}
+th.col-eq{width:94px;}
+th.col-qty{width:48px;}
+th.col-time{width:48px;}
+th.cond-wide{width:52px;}
+th.cond-narrow{width:46px;}
+
+td{
+  padding:4px 3px;
+  border:1px solid #dde2e8;
+  text-align:center;
+  color:#333;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-weight:500;
+}
+tr:nth-child(even) td{background:#f7f9fb;}
+tr:hover td{background:#eef3f8;}
+tr.editing td{
+  background:#fff8e1 !important;
+  border-top:2px solid var(--yellow) !important;
+  border-bottom:2px solid var(--yellow) !important;
+}
+.empty-cell{color:#bbb;}
+.has-data{color:var(--blue);font-weight:700;}
+.has-temper{color:#c62828;font-weight:700;}
+
+/* ── 편집 패널 ── */
+.edit-panel{
+  background:#f0f4f8;
+  border:2px solid var(--navy);
+  border-radius:4px;
+  margin:8px 14px;
+  padding:12px 16px;
+  display:none;
+}
+.edit-panel.active{display:block;}
+.edit-panel-title{
+  font-size:12px;
+  font-weight:700;
+  color:var(--navy);
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.edit-section-label{
+  font-size:10px;
+  color:#666;
+  font-weight:700;
+  margin:8px 0 5px;
+  border-bottom:1px solid var(--border);
+  padding-bottom:3px;
+}
+.edit-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px 10px;
+  max-width:100%;
+}
+.edit-grid-4{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px 10px;
+}
+.edit-field{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.edit-field label{
+  font-size:10px;
+  color:#555;
+  font-weight:700;
+}
+.edit-field input{
+  height:28px;
+  border:1px solid #90a4ae;
+  border-radius:3px;
+  padding:0 7px;
+  font-size:11px;
+  background:#fff;
+}
+.edit-field input:focus{
+  border-color:var(--blue);
+  outline:none;
+  box-shadow:0 0 0 2px rgba(21,101,192,.15);
+}
+.edit-field input.empty-input{
+  background:#fff9f9;
+  border-color:#ffcdd2;
+}
+.edit-actions{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+  justify-content:flex-end;
+  align-items:center;
+}
+.edit-info{
+  font-size:10px;
+  color:#666;
+  margin-right:auto;
+  font-weight:600;
+}
+
+/* ── 상태바 ── */
+.statusbar{
+  background:var(--navy);
+  color:#d0e4f7;
+  font-size:10px;
+  padding:6px 16px;
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  font-weight:600;
+}
+
+/* ── 로딩 ── */
+.loading-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.3);
+  z-index:999;
+  align-items:center;
+  justify-content:center;
+}
+.loading-overlay.active{display:flex;}
+.loading-box{
+  background:#fff;
+  border-radius:6px;
+  padding:20px 32px;
+  font-size:13px;
+  color:var(--navy);
+  font-weight:700;
+}
+
+@media(max-width:900px){
+  .topbar{padding:0 10px;}
+  .toolbar{padding:8px 10px;}
+  .content{padding:8px 10px 0;}
+  .notice{margin:8px 10px 0;}
+  .edit-panel{margin:8px 10px;padding:10px;}
+  .edit-grid{grid-template-columns:repeat(2,1fr);}
+  .edit-grid-4{grid-template-columns:repeat(2,1fr);}
+  .edit-actions{flex-wrap:wrap;}
+  .edit-info{width:100%;margin-right:0;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box" id="loadingText">처리 중...</div>
+</div>
+
+<!-- 상단바 -->
+<div class="topbar">
+  <span class="topbar-title">⚙ 작업조건관리대장</span>
+  <div class="topbar-right">
+    <button class="btn btn-csv" id="btnCsv" type="button">⬇ CSV</button>
+  </div>
+</div>
+
+<!-- 툴바 -->
+<div class="toolbar">
+  <label>작업일</label>
+  <input type="text" id="dateFrom" value="" placeholder="2026-01-01"
+         style="width:95px;" maxlength="10" inputmode="numeric">
+  <span style="color:#888;font-size:11px;">~</span>
+  <input type="text" id="dateTo" value="" placeholder="2026-12-31"
+         style="width:95px;" maxlength="10" inputmode="numeric">
+
+  <div class="sep"></div>
+
+  <label>고객사</label>
+  <select id="filterCustomer" style="width:100px;">
+    <option value="">전체</option>
+  </select>
+
+  <label>설비명</label>
+  <select id="filterEquip" style="width:110px;">
+    <option value="">전체</option>
+  </select>
+
+  <label>품명</label>
+  <input type="text" id="filterProduct" placeholder="품명 검색" style="width:90px;">
+
+  <label>품번</label>
+  <input type="text" id="filterPartNo" placeholder="품번 검색" style="width:90px;">
+
+  <div class="sep"></div>
+
+  <button class="btn btn-primary" id="btnSearch" type="button">🔍 조회</button>
+  <button class="btn btn-reset" id="btnReset" type="button">초기화</button>
+</div>
+
+<!-- 안내 및 실행 결과 -->
+<div class="notice" id="noticeBox">
+  조회 버튼을 클릭하여 작업조건을 불러오세요. 수정 버튼을 누르면 하단 편집 패널에서 작업조건을 수정할 수 있습니다.
+</div>
+
+<!-- 본문 -->
+<div class="content">
+  <div class="card-header">
+    <span>작업조건 목록</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <span class="tag tag-orange" id="editingTag" style="display:none;"></span>
+      <span class="tag tag-blue" id="totalTag">총 0건</span>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="mainTable">
+      <thead>
+        <tr>
+          <th rowspan="2" class="col-btn">수정</th>
+          <th rowspan="2" class="col-no">No</th>
+          <th rowspan="2" class="col-date">작업일</th>
+          <th rowspan="2" class="col-cs">고객사</th>
+          <th rowspan="2" class="col-pnm">품명</th>
+          <th rowspan="2" class="col-pno">품번</th>
+          <th rowspan="2" class="col-eq">설비명</th>
+          <th rowspan="2" class="col-qty">투입<br>수량</th>
+          <th rowspan="2" class="col-time">가동<br>시간</th>
+          <th colspan="11">고주파 조건</th>
+          <th colspan="4">템퍼링 / 교정</th>
+        </tr>
+        <tr>
+          <th class="cond cond-wide">전압(V)</th>
+          <th class="cond cond-wide">전류(A)</th>
+          <th class="cond cond-wide">출력(kW)</th>
+          <th class="cond cond-narrow">주파수(kHz)</th>
+          <th class="cond cond-narrow">가열시간(sec)</th>
+          <th class="cond cond-narrow">이동속도(mm/s)</th>
+          <th class="cond cond-narrow">코일-제품간격(mm)</th>
+          <th class="cond cond-narrow">회전수(RPM)</th>
+          <th class="cond cond-narrow">냉각수압력(bar)</th>
+          <th class="cond cond-narrow">냉각수온도(℃)</th>
+          <th class="cond cond-narrow">냉각시간(sec)</th>
+          <th class="cond cond-narrow">템퍼링온도(℃)</th>
+          <th class="cond cond-narrow">템퍼링시간(sec)</th>
+          <th class="cond cond-narrow">템퍼링경도(HRC)</th>
+          <th class="cond cond-narrow">교정값(mm)</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr>
+          <td colspan="24" style="text-align:center;color:#999;padding:30px;">
+            조회 버튼을 클릭하여 데이터를 불러오세요.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 편집 패널 -->
+<div class="edit-panel" id="editPanel">
+  <div class="edit-panel-title">
+    ✏️ 작업조건 편집 &nbsp;—&nbsp;
+    <span id="editTitle" style="color:#555;font-weight:500;"></span>
+    <span class="tag tag-orange" style="margin-left:auto;">저장 전 확인 필요</span>
+  </div>
+
+  <div class="edit-section-label">▶ 고주파 조건</div>
+  <div class="edit-grid">
+    <div class="edit-field"><label>전압(V)</label><input id="e_volt" type="number" step="0.01"></div>
+    <div class="edit-field"><label>전류(A)</label><input id="e_curr" type="number" step="0.01"></div>
+    <div class="edit-field"><label>출력(kW)</label><input id="e_power" type="number" step="0.01"></div>
+    <div class="edit-field"><label>주파수(kHz)</label><input id="e_freq" type="number" step="0.01"></div>
+    <div class="edit-field"><label>가열시간(sec)</label><input id="e_heat" type="number" step="0.01"></div>
+    <div class="edit-field"><label>이동속도(mm/s)</label><input id="e_speed" type="number" step="0.01"></div>
+    <div class="edit-field"><label>코일-제품간격(mm)</label><input id="e_gap" type="number" step="0.01"></div>
+    <div class="edit-field"><label>회전수(RPM)</label><input id="e_rpm" type="number" step="0.01"></div>
+    <div class="edit-field"><label>냉각수압력(bar)</label><input id="e_wpress" type="number" step="0.01"></div>
+    <div class="edit-field"><label>냉각수온도(℃)</label><input id="e_wtemp" type="number" step="0.01"></div>
+    <div class="edit-field"><label>냉각시간(sec)</label><input id="e_wcool" type="number" step="0.01"></div>
+  </div>
+
+  <div class="edit-section-label">▶ 템퍼링 / 교정 조건</div>
+  <div class="edit-grid-4">
+    <div class="edit-field"><label>템퍼링온도(℃)</label><input id="e_ttemp" type="number" step="0.01" class="empty-input"></div>
+    <div class="edit-field"><label>템퍼링시간(sec)</label><input id="e_ttime" type="number" step="0.01" class="empty-input"></div>
+    <div class="edit-field"><label>템퍼링경도(HRC)</label><input id="e_thrc" type="text" class="empty-input"></div>
+    <div class="edit-field"><label>교정값(mm)</label><input id="e_calib" type="number" step="0.001" class="empty-input"></div>
+  </div>
+
+  <div class="edit-actions">
+    <span class="edit-info" id="editInfo"></span>
+    <button class="btn btn-cancel" id="btnCancel" type="button">취소</button>
+    <button class="btn btn-save" id="btnSave" type="button">💾 저장</button>
+  </div>
+</div>
+
+<!-- 상태바 -->
+<div class="statusbar">
+  <span id="sb_total">총 0건</span>
+  <span>|</span>
+  <span id="sb_cond">작업조건 입력: 0건 / 미입력: 0건</span>
+  <span>|</span>
+  <span id="sb_edit">수정 중: 없음</span>
+  <span>|</span>
+  <span>HeatPro MES</span>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════
+   Supabase 연결
+   ══════════════════════════════════════════════ */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME = "Total_Production_DB";
+const LOGIN_PAGE_URL = "../index.html";
+const PAGE_SIZE = 1000;
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let filteredRows = [];
+let editingRowIdx = -1;
+
+/* ══════════════════════════════════════════════
+   작업조건 열 정의
+   ══════════════════════════════════════════════ */
+const CONDITION_FIELDS = [
+  { id:"e_volt",   key:"voltage_v",                       label:"전압(V)",              type:"number" },
+  { id:"e_curr",   key:"current_a",                       label:"전류(A)",              type:"number" },
+  { id:"e_power",  key:"output_kw",                       label:"출력(kW)",             type:"number" },
+  { id:"e_freq",   key:"frequency_khz",                   label:"주파수(kHz)",          type:"number" },
+  { id:"e_heat",   key:"heating_time_sec",                label:"가열시간(sec)",        type:"number" },
+  { id:"e_speed",  key:"moving_speed_mm_sec",             label:"이동속도(mm/s)",       type:"number" },
+  { id:"e_gap",    key:"coil_product_gap_mm",             label:"코일-제품간격(mm)",    type:"number" },
+  { id:"e_rpm",    key:"rotation_rpm",                    label:"회전수(RPM)",          type:"number" },
+  { id:"e_wpress", key:"cooling_water_pressure_bar",      label:"냉각수압력(bar)",      type:"number" },
+  { id:"e_wtemp",  key:"cooling_water_temperature_c",     label:"냉각수온도(℃)",        type:"number" },
+  { id:"e_wcool",  key:"cooling_time_sec",                label:"냉각시간(sec)",        type:"number" },
+  { id:"e_ttemp",  key:"tempering_temperature_c",         label:"템퍼링온도(℃)",        type:"number", temper:true },
+  { id:"e_ttime",  key:"tempering_time_sec",              label:"템퍼링시간(sec)",      type:"number", temper:true },
+  { id:"e_thrc",   key:"tempering_hardness_hrc",          label:"템퍼링경도(HRC)",      type:"text",   temper:true },
+  { id:"e_calib",  key:"straightening_value_mm",          label:"교정값(mm)",           type:"number", temper:true }
+];
+
+const SELECT_COLUMNS = [
+  "production_system_id",
+  "company_id",
+  "work_date",
+  "customer_name",
+  "item_name",
+  "item_number",
+  "equipment_name",
+  "input_quantity",
+  "operation_hours",
+  "voltage_v",
+  "current_a",
+  "output_kw",
+  "frequency_khz",
+  "heating_time_sec",
+  "moving_speed_mm_sec",
+  "coil_product_gap_mm",
+  "rotation_rpm",
+  "cooling_water_pressure_bar",
+  "cooling_water_temperature_c",
+  "cooling_time_sec",
+  "tempering_temperature_c",
+  "tempering_time_sec",
+  "tempering_hardness_hrc",
+  "straightening_value_mm"
+].join(",");
+
+/* ══════════════════════════════════════════════
+   인증 및 회사 권한
+   ══════════════════════════════════════════════ */
+function redirectToLogin(){
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess(){
+  const { data:userData, error:userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if(userError || !user){
+    redirectToLogin();
+    return false;
+  }
+
+  const { data:profile, error:profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if(
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ){
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope:"local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  return true;
+}
+
+sb.auth.onAuthStateChange(function(event){
+  if(event === "SIGNED_OUT"){
+    redirectToLogin();
+  }
+});
+
+/* ══════════════════════════════════════════════
+   공통 기능
+   ══════════════════════════════════════════════ */
+function escapeHtml(value){
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function(char){
+    return {
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;"
+    }[char];
+  });
+}
+
+function toNumber(value){
+  const numberValue = Number(String(value == null ? "" : value).replace(/,/g, ""));
+  return Number.isFinite(numberValue) ? numberValue : 0;
+}
+
+function formatNumber(value){
+  if(value === null || value === undefined || value === "") return "-";
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue.toLocaleString() : String(value);
+}
+
+function dbErrorMessage(error){
+  if(!error) return "알 수 없는 오류";
+  return error.message || error.details || error.hint || String(error);
+}
+
+function formatDateInput(element){
+  let value = element.value.replace(/[^0-9]/g, "");
+  if(value.length >= 5) value = value.slice(0,4) + "-" + value.slice(4);
+  if(value.length >= 8) value = value.slice(0,7) + "-" + value.slice(7,9);
+  element.value = value.slice(0,10);
+}
+
+function isValidDateText(value){
+  if(!value) return true;
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function showLoading(show, message){
+  document.getElementById("loadingText").textContent = message || "처리 중...";
+  document.getElementById("loadingOverlay").classList.toggle("active", show);
+}
+
+function setNotice(type, message){
+  const notice = document.getElementById("noticeBox");
+  notice.className = "notice" + (type ? " " + type : "");
+  notice.textContent = message;
+}
+
+function setActionDisabled(disabled){
+  [
+    "btnSearch",
+    "btnReset",
+    "btnCsv",
+    "btnCancel",
+    "btnSave"
+  ].forEach(function(id){
+    const element = document.getElementById(id);
+    if(element) element.disabled = disabled;
+  });
+}
+
+async function fetchAllRows(columns, applyQuery){
+  let start = 0;
+  const result = [];
+
+  while(true){
+    let query = sb
+      .from(TABLE_NAME)
+      .select(columns)
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true);
+
+    query = applyQuery(query);
+    query = query.range(start, start + PAGE_SIZE - 1);
+
+    const { data, error } = await query;
+    if(error) throw error;
+
+    const pageRows = data || [];
+    result.push.apply(result, pageRows);
+
+    if(pageRows.length < PAGE_SIZE) break;
+    start += PAGE_SIZE;
+  }
+
+  return result;
+}
+
+/* ══════════════════════════════════════════════
+   조회 기준정보
+   ══════════════════════════════════════════════ */
+async function loadMasterData(){
+  const rows = await fetchAllRows(
+    "customer_name,equipment_name",
+    function(query){
+      return query
+        .order("customer_name", { ascending:true })
+        .order("equipment_name", { ascending:true });
+    }
+  );
+
+  const customers = [];
+  const equipment = [];
+
+  rows.forEach(function(row){
+    const customer = String(row.customer_name || "").trim();
+    const equipmentName = String(row.equipment_name || "").trim();
+
+    if(customer) customers.push(customer);
+    if(equipmentName) equipment.push(equipmentName);
+  });
+
+  fillSelect("filterCustomer", customers);
+  fillSelect("filterEquip", equipment);
+}
+
+function fillSelect(id, values){
+  const select = document.getElementById(id);
+  const current = select.value;
+
+  const uniqueValues = Array.from(new Set(values))
+    .filter(Boolean)
+    .sort(function(a,b){
+      return String(a).localeCompare(String(b), "ko");
+    });
+
+  select.innerHTML =
+    '<option value="">전체</option>' +
+    uniqueValues.map(function(value){
+      return '<option value="' + escapeHtml(value) + '">' +
+        escapeHtml(value) +
+      '</option>';
+    }).join("");
+
+  select.value = uniqueValues.includes(current) ? current : "";
+}
+
+/* ══════════════════════════════════════════════
+   데이터 조회
+   ══════════════════════════════════════════════ */
+async function loadData(){
+  if(!currentProfile){
+    setNotice("error", "로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  cancelEdit(false);
+
+  const dateFrom = document.getElementById("dateFrom").value.trim();
+  const dateTo = document.getElementById("dateTo").value.trim();
+  const customer = document.getElementById("filterCustomer").value;
+  const equipment = document.getElementById("filterEquip").value;
+  const product = document.getElementById("filterProduct").value.trim();
+  const partNo = document.getElementById("filterPartNo").value.trim();
+
+  if(!isValidDateText(dateFrom) || !isValidDateText(dateTo)){
+    setNotice("error", "작업일은 YYYY-MM-DD 형식으로 입력해 주세요.");
+    return;
+  }
+
+  if(dateFrom && dateTo && dateFrom > dateTo){
+    setNotice("error", "작업일 시작일이 종료일보다 늦을 수 없습니다.");
+    return;
+  }
+
+  showLoading(true, "작업조건을 조회하는 중입니다...");
+  setActionDisabled(true);
+  setNotice("", "작업조건을 조회하는 중입니다...");
+
+  try{
+    filteredRows = await fetchAllRows(
+      SELECT_COLUMNS,
+      function(query){
+        let filtered = query;
+
+        if(dateFrom) filtered = filtered.gte("work_date", dateFrom);
+        if(dateTo) filtered = filtered.lte("work_date", dateTo);
+        if(customer) filtered = filtered.eq("customer_name", customer);
+        if(equipment) filtered = filtered.eq("equipment_name", equipment);
+        if(product) filtered = filtered.ilike("item_name", "%" + product + "%");
+        if(partNo) filtered = filtered.ilike("item_number", "%" + partNo + "%");
+
+        return filtered
+          .order("work_date", { ascending:true, nullsFirst:false })
+          .order("customer_name", { ascending:true })
+          .order("item_name", { ascending:true })
+          .order("production_system_id", { ascending:true });
+      }
+    );
+
+    renderTable();
+    setNotice("success", "조회 완료: 총 " + filteredRows.length + "건을 불러왔습니다.");
+  }catch(error){
+    console.error(error);
+    filteredRows = [];
+    renderTable();
+    setNotice("error", "조회 실패: " + dbErrorMessage(error));
+  }finally{
+    showLoading(false);
+    setActionDisabled(false);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   표 렌더링
+   ══════════════════════════════════════════════ */
+function hasConditionData(row){
+  return CONDITION_FIELDS.some(function(field){
+    const value = row[field.key];
+    return value !== null && value !== undefined && value !== "";
+  });
+}
+
+function renderTable(){
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+
+  let filledCount = 0;
+  let emptyCount = 0;
+
+  if(filteredRows.length === 0){
+    tbody.innerHTML =
+      '<tr><td colspan="24" style="text-align:center;color:#999;padding:24px;">' +
+      '조회된 데이터가 없습니다.' +
+      '</td></tr>';
+
+    document.getElementById("totalTag").textContent = "총 0건";
+    updateStatus(0, 0, 0);
+    return;
+  }
+
+  filteredRows.forEach(function(row, index){
+    if(hasConditionData(row)) filledCount += 1;
+    else emptyCount += 1;
+
+    const tr = document.createElement("tr");
+    tr.dataset.rowIndex = String(index);
+
+    if(index === editingRowIdx){
+      tr.classList.add("editing");
+    }
+
+    const editTd = document.createElement("td");
+    editTd.innerHTML =
+      index === editingRowIdx
+        ? '<button class="btn-editing" type="button">편집중</button>'
+        : '<button class="btn-edit" type="button" onclick="startEdit(' + index + ')">수정</button>';
+    tr.appendChild(editTd);
+
+    const baseValues = [
+      index + 1,
+      row.work_date,
+      row.customer_name,
+      row.item_name,
+      row.item_number,
+      row.equipment_name,
+      row.input_quantity,
+      row.operation_hours
+    ];
+
+    baseValues.forEach(function(value, baseIndex){
+      const td = document.createElement("td");
+
+      if(baseIndex === 6 || baseIndex === 7){
+        td.textContent = formatNumber(value);
+      }else{
+        td.textContent =
+          value !== undefined && value !== null && value !== ""
+            ? value
+            : "-";
+      }
+
+      tr.appendChild(td);
+    });
+
+    CONDITION_FIELDS.forEach(function(field){
+      const td = document.createElement("td");
+      const value = row[field.key];
+
+      if(value === "" || value === null || value === undefined){
+        td.textContent = "-";
+        td.className = "empty-cell";
+      }else{
+        td.textContent = formatNumber(value);
+        td.className = field.temper ? "has-temper" : "has-data";
+      }
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("totalTag").textContent =
+    "총 " + filteredRows.length + "건";
+
+  updateStatus(filteredRows.length, filledCount, emptyCount);
+}
+
+function updateStatus(total, filled, empty){
+  document.getElementById("sb_total").textContent = "총 " + total + "건";
+  document.getElementById("sb_cond").textContent =
+    "작업조건 입력: " + filled + "건 / 미입력: " + empty + "건";
+}
+
+/* ══════════════════════════════════════════════
+   편집
+   ══════════════════════════════════════════════ */
+function startEdit(index){
+  editingRowIdx = index;
+  const row = filteredRows[index];
+
+  if(!row) return;
+
+  document.getElementById("editTitle").textContent =
+    "No." + (index + 1) +
+    " | " + (row.customer_name || "-") +
+    " / " + (row.item_name || "-") +
+    " / " + (row.item_number || "-");
+
+  document.getElementById("editInfo").textContent =
+    "작업일: " + (row.work_date || "-") +
+    " | 설비: " + (row.equipment_name || "-") +
+    " | 투입수량: " + formatNumber(row.input_quantity);
+
+  CONDITION_FIELDS.forEach(function(field){
+    const input = document.getElementById(field.id);
+    const value = row[field.key];
+
+    input.value =
+      value !== null && value !== undefined && value !== ""
+        ? value
+        : "";
+
+    if(field.temper){
+      input.classList.toggle("empty-input", input.value === "");
+    }
+  });
+
+  document.getElementById("editPanel").classList.add("active");
+  document.getElementById("editingTag").style.display = "";
+  document.getElementById("editingTag").textContent =
+    "수정모드: No." + (index + 1);
+  document.getElementById("sb_edit").textContent =
+    "수정 중: No." + (index + 1);
+
+  renderTable();
+
+  document.getElementById("editPanel").scrollIntoView({
+    behavior:"smooth",
+    block:"nearest"
+  });
+
+  setNotice("", "선택한 작업조건을 편집 중입니다. 수정 후 저장 버튼을 눌러 주세요.");
+}
+
+function cancelEdit(showResult = true){
+  editingRowIdx = -1;
+  document.getElementById("editPanel").classList.remove("active");
+  document.getElementById("editingTag").style.display = "none";
+  document.getElementById("sb_edit").textContent = "수정 중: 없음";
+
+  if(filteredRows.length){
+    renderTable();
+  }
+
+  if(showResult){
+    setNotice("", "수정을 취소했습니다.");
+  }
+}
+
+function normalizeFieldValue(field, value){
+  const trimmedValue = String(value == null ? "" : value).trim();
+
+  if(trimmedValue === ""){
+    return null;
+  }
+
+  if(field.type === "number"){
+    const numberValue = Number(trimmedValue);
+    if(!Number.isFinite(numberValue)){
+      throw new Error(field.label + " 값이 올바르지 않습니다.");
+    }
+    return numberValue;
+  }
+
+  return trimmedValue;
+}
+
+async function saveRow(){
+  if(editingRowIdx < 0) return;
+
+  if(!currentProfile){
+    setNotice("error", "로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const row = filteredRows[editingRowIdx];
+
+  if(!row || !row.production_system_id){
+    setNotice("error", "저장 대상의 내부 식별값을 확인할 수 없습니다.");
+    return;
+  }
+
+  const updateData = {};
+
+  try{
+    CONDITION_FIELDS.forEach(function(field){
+      updateData[field.key] = normalizeFieldValue(
+        field,
+        document.getElementById(field.id).value
+      );
+    });
+  }catch(error){
+    setNotice("error", error.message);
+    return;
+  }
+
+  const confirmed = confirm(
+    "No." + (editingRowIdx + 1) +
+    " (" + (row.item_name || "-") + ") 작업조건을 저장하시겠습니까?"
+  );
+
+  if(!confirmed) return;
+
+  showLoading(true, "작업조건을 저장하는 중입니다...");
+  setActionDisabled(true);
+  setNotice("", "작업조건을 저장하는 중입니다...");
+
+  try{
+    const { data, error } = await sb
+      .from(TABLE_NAME)
+      .update(updateData)
+      .eq("production_system_id", row.production_system_id)
+      .eq("company_id", currentProfile.company_id)
+      .select("production_system_id")
+      .maybeSingle();
+
+    if(error) throw error;
+
+    if(!data){
+      throw new Error(
+        "저장 대상이 없거나 로그인 회사 권한으로 수정할 수 없습니다."
+      );
+    }
+
+    Object.assign(row, updateData);
+
+    const savedNumber = editingRowIdx + 1;
+    cancelEdit(false);
+    renderTable();
+
+    setNotice(
+      "success",
+      "저장 완료: No." + savedNumber + " 작업조건을 저장했습니다."
+    );
+  }catch(error){
+    console.error(error);
+    setNotice("error", "저장 실패: " + dbErrorMessage(error));
+  }finally{
+    showLoading(false);
+    setActionDisabled(false);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   초기화
+   ══════════════════════════════════════════════ */
+function resetFilter(){
+  document.getElementById("dateFrom").value = "";
+  document.getElementById("dateTo").value = "";
+  document.getElementById("filterCustomer").value = "";
+  document.getElementById("filterEquip").value = "";
+  document.getElementById("filterProduct").value = "";
+  document.getElementById("filterPartNo").value = "";
+
+  cancelEdit(false);
+  filteredRows = [];
+  renderTable();
+
+  setNotice("success", "초기화를 완료했습니다.");
+}
+
+/* ══════════════════════════════════════════════
+   CSV 다운로드
+   ══════════════════════════════════════════════ */
+function csvEscape(value){
+  const text = String(value == null ? "" : value);
+
+  if(/[",\n]/.test(text)){
+    return '"' + text.replace(/"/g, '""') + '"';
+  }
+
+  return text;
+}
+
+function exportCSV(){
+  if(filteredRows.length === 0){
+    setNotice("error", "CSV로 저장할 조회 데이터가 없습니다.");
+    return;
+  }
+
+  const headers = [
+    "No",
+    "작업일",
+    "고객사",
+    "품명",
+    "품번",
+    "설비명",
+    "투입수량",
+    "가동시간"
+  ].concat(CONDITION_FIELDS.map(function(field){
+    return field.label;
+  }));
+
+  const lines = [headers.map(csvEscape).join(",")];
+
+  filteredRows.forEach(function(row, index){
+    const values = [
+      index + 1,
+      row.work_date,
+      row.customer_name,
+      row.item_name,
+      row.item_number,
+      row.equipment_name,
+      row.input_quantity,
+      row.operation_hours
+    ];
+
+    CONDITION_FIELDS.forEach(function(field){
+      values.push(row[field.key]);
+    });
+
+    lines.push(values.map(csvEscape).join(","));
+  });
+
+  const csvContent = "\uFEFF" + lines.join("\r\n");
+  const blob = new Blob([csvContent], {
+    type:"text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download =
+    "Work_Condition_Management_" +
+    new Date().toISOString().slice(0,10) +
+    ".csv";
+
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+
+  setNotice(
+    "success",
+    "CSV 다운로드 완료: 총 " + filteredRows.length + "건을 저장했습니다."
+  );
+}
+
+/* ══════════════════════════════════════════════
+   이벤트 및 초기 실행
+   ══════════════════════════════════════════════ */
+document.getElementById("dateFrom").addEventListener("input", function(){
+  formatDateInput(this);
+});
+document.getElementById("dateTo").addEventListener("input", function(){
+  formatDateInput(this);
+});
+document.getElementById("btnSearch").addEventListener("click", loadData);
+document.getElementById("btnReset").addEventListener("click", resetFilter);
+document.getElementById("btnCsv").addEventListener("click", exportCSV);
+document.getElementById("btnCancel").addEventListener("click", function(){
+  cancelEdit(true);
+});
+document.getElementById("btnSave").addEventListener("click", saveRow);
+
+CONDITION_FIELDS.filter(function(field){
+  return field.temper;
+}).forEach(function(field){
+  document.getElementById(field.id).addEventListener("input", function(){
+    this.classList.toggle("empty-input", this.value.trim() === "");
+  });
+});
+
+window.addEventListener("beforeunload", function(event){
+  if(editingRowIdx >= 0){
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+
+(async function init(){
+  showLoading(true, "로그인 및 회사 권한을 확인하는 중입니다...");
+  setActionDisabled(true);
+
+  try{
+    const allowed = await verifyCompanyAccess();
+    if(!allowed) return;
+
+    await loadMasterData();
+
+    setNotice(
+      "success",
+      "기준정보를 불러왔습니다. 조회 조건을 선택한 후 조회 버튼을 눌러 주세요."
+    );
+  }catch(error){
+    console.error(error);
+    setNotice(
+      "error",
+      "초기 데이터 연결 실패: " + dbErrorMessage(error)
+    );
+  }finally{
+    showLoading(false);
+    setActionDisabled(false);
+  }
+})();
+</script>
+
+</body>
+</html>
