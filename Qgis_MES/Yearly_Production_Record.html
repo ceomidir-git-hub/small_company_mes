@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>년생산실적 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#185FA5;--blue-lt:#E6F1FB;--blue-dk:#0C447C;
+  --green:#3B6D11;--green-lt:#EAF3DE;--green-dk:#27500A;
+  --amber:#854F0B;--amber-lt:#FAEEDA;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --gray:#5F5E5A;--gray-lt:#F1EFE8;--gray-bd:#D3D1C7;
+  --bg:#F8F7F4;--white:#FFFFFF;--text:#2C2C2A;--text-sub:#888780;--text-hi:#444441;
+}
+html.auth-pending body{visibility:hidden;}
+body{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+/* ── 상단 헤더 ── */
+.top-header{background:var(--white);border-bottom:1px solid var(--gray-bd);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--blue);text-decoration:none;}
+.logo svg{width:20px;height:20px;}
+nav{display:flex;gap:4px;}
+nav a{font-size:12px;color:var(--text-sub);text-decoration:none;padding:5px 10px;border-radius:6px;border:1px solid transparent;}
+nav a:hover{background:var(--gray-lt);color:var(--text);}
+nav a.active{background:var(--blue-lt);color:var(--blue-dk);border-color:#B5D4F4;font-weight:500;}
+
+/* ── 레이아웃 ── */
+.container{max-width:1280px;margin:0 auto;padding:20px 20px 48px;width:100%;}
+.page-title{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.page-title svg{width:20px;height:20px;color:var(--blue);flex-shrink:0;}
+.page-title h1{font-size:18px;font-weight:700;}
+.page-title .sub{font-size:12px;color:var(--text-sub);}
+.year-badge{margin-left:auto;background:var(--blue-lt);color:var(--blue-dk);font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;}
+
+/* ── 필터 ── */
+.filter-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:13px 16px;margin-bottom:14px;}
+.filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.fg{display:flex;align-items:center;gap:6px;}
+.fg label{font-size:12px;color:var(--text-sub);white-space:nowrap;}
+.fg select{height:32px;border:1px solid var(--gray-bd);border-radius:6px;padding:0 10px;font-size:12px;color:var(--text);background:var(--white);outline:none;}
+.fg select:focus{border-color:var(--blue);}
+.btn-row{display:flex;gap:6px;margin-left:auto;}
+.btn{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 13px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--gray-bd);background:var(--white);color:var(--text-sub);transition:background .1s;}
+.btn:hover{background:var(--gray-lt);}
+.btn svg{width:14px;height:14px;flex-shrink:0;}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-primary:hover{background:var(--blue-dk);}
+.btn:disabled{opacity:.6;cursor:default;}
+
+/* ── 차트 카드 ── */
+.chart-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:18px 18px 14px;margin-bottom:14px;}
+.chart-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.chart-title{font-size:14px;font-weight:600;color:var(--text);}
+.legend{display:flex;gap:16px;font-size:11px;color:var(--text-sub);}
+.legend span{display:flex;align-items:center;gap:5px;}
+.leg-bar{width:12px;height:12px;border-radius:2px;background:#378ADD;flex-shrink:0;}
+.leg-line{width:18px;height:2px;background:#E24B4A;flex-shrink:0;position:relative;}
+.leg-line::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:#fff;border:2px solid #E24B4A;}
+
+/* ── 테이블 카드 ── */
+.table-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;overflow:hidden;}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--gray-bd);}
+.t-title{font-size:13px;font-weight:600;color:var(--text);}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:760px;}
+thead th{padding:8px 8px;text-align:center;font-size:11px;font-weight:600;background:var(--gray-lt);color:var(--text-sub);border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);white-space:nowrap;}
+thead th:last-child{border-right:none;}
+tbody td{padding:7px 8px;text-align:center;border-bottom:1px solid #EEECEA;border-right:1px solid #EEECEA;color:var(--text);font-size:12px;}
+tbody td:last-child{border-right:none;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#FAFAF8;}
+.td-month{font-weight:500;color:var(--text-sub);}
+.td-empty{color:var(--gray-bd);}
+.td-total{background:var(--gray-lt)!important;font-weight:600;color:var(--text);}
+.td-total-label{background:var(--gray-lt)!important;font-weight:600;color:var(--text);text-align:center;}
+
+/* ── 상태 바 ── */
+.status-bar{display:flex;align-items:center;gap:6px;padding:8px 16px;border-top:1px solid var(--gray-bd);font-size:11px;color:var(--text-sub);}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:var(--green);}
+.dot-loading{background:var(--amber);animation:pulse 1s infinite;}
+.dot-error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── 토스트 ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text-hi);color:#fff;font-size:13px;padding:10px 20px;border-radius:8px;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis;}
+.toast.show{opacity:1;}
+
+@media(max-width:768px){
+  .top-header{padding:0 12px;}
+  nav{overflow-x:auto;white-space:nowrap;}
+  nav a{padding:5px 7px;}
+  .container{padding:14px 10px 36px;}
+  .page-title h1{font-size:16px;}
+  .chart-top{flex-direction:column;gap:8px;align-items:flex-start;}
+  .btn-row{width:100%;margin-left:0;}
+  .btn{flex:1;justify-content:center;padding:0 8px;}
+}
+</style>
+</head>
+<body>
+
+<!-- 상단 헤더 -->
+<header class="top-header">
+  <a class="logo" href="./main1.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    HeatPro MES
+  </a>
+  <nav>
+    <a href="./main1.html">대시보드</a>
+    <a href="./Supabase_Worksheet.html">작업일보</a>
+    <a href="./Monthly_Production_Record.html">월생산실적</a>
+    <a class="active" href="./Yearly_Production_Record.html">년생산실적</a>
+  </nav>
+</header>
+
+<main class="container">
+
+  <!-- 페이지 타이틀 -->
+  <div class="page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <h1>년생산실적</h1>
+    <span class="sub">Yearly Production Record</span>
+    <span class="year-badge" id="yearBadge">2026년도</span>
+  </div>
+
+  <!-- 필터 -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="fg">
+        <label for="selYear">연도</label>
+        <select id="selYear">
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnSearch" type="button" onclick="loadData()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          조회
+        </button>
+        <button class="btn" id="btnCsv" type="button" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV 내보내기
+        </button>
+        <button class="btn" id="btnPdf" type="button" onclick="exportPDF()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF 다운로드
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 차트 -->
+  <div class="chart-card">
+    <div class="chart-top">
+      <span class="chart-title" id="chartTitle">월별 투입수량 및 가동시간 (H)</span>
+      <div class="legend">
+        <span><span class="leg-bar"></span>투입수량 (EA)</span>
+        <span><span class="leg-line"></span>가동시간 (H)</span>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:280px;">
+      <canvas id="yearlyChart" role="img" aria-label="월별 투입수량 막대 및 가동시간 꺾은선 혼합 차트">
+        월별 투입수량 및 가동시간 데이터
+      </canvas>
+    </div>
+  </div>
+
+  <!-- 테이블 -->
+  <div class="table-card">
+    <div class="table-toolbar">
+      <span class="t-title" id="tableTitle">생산 실적 월별 통합 요약</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;">연도</th>
+            <th style="width:36px;">월</th>
+            <th style="width:68px;">작업건수</th>
+            <th style="width:76px;">투입수량</th>
+            <th style="width:76px;">양품수량</th>
+            <th style="width:68px;">불량수량</th>
+            <th style="width:74px;">재작업수량</th>
+            <th style="width:80px;">가동시간(H)</th>
+            <th style="width:84px;">비가동시간(H)</th>
+            <th style="width:80px;">불량률(PPM)</th>
+            <th>비고</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="11" style="padding:30px;color:var(--text-sub);font-size:13px;">데이터를 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="status-bar" role="status" aria-live="polite">
+      <span class="status-dot dot-loading" id="sDot"></span>
+      <span id="sText">데이터 로드 중...</span>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<!-- PDF 다운로드용 -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Supabase / 멀티테넌트 설정
+   ========================================================= */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME = "Total_Production_DB";
+const LOGIN_PAGE_URL = "../index.html";
+const PAGE_SIZE = 1000;
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let yearlyChart = null;
+let monthlyData = [];
+let lastLoadedYear = null;
+let toastTimer = null;
+
+const MONTH_LABELS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const { data: userData, error: userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if (userError || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope: "local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  return true;
+}
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") redirectToLogin();
+});
+
+function setButtonsDisabled(disabled) {
+  document.querySelectorAll("#btnSearch,#btnCsv,#btnPdf").forEach((button) => {
+    button.disabled = disabled;
+  });
+}
+
+function yearStart(year) {
+  return year + "-01-01";
+}
+
+function nextYearStart(year) {
+  return (year + 1) + "-01-01";
+}
+
+function toNum(value) {
+  const number = Number(String(value == null ? "" : value).replace(/,/g, ""));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function getMonthFromDate(value) {
+  const parts = String(value || "").split("-");
+  if (parts.length < 2) return null;
+  const month = Number(parts[1]);
+  return month >= 1 && month <= 12 ? month : null;
+}
+
+async function fetchYearlyRows(year) {
+  const rows = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await sb
+      .from(TABLE_NAME)
+      .select("work_date,input_quantity,good_quantity,defect_quantity,rework_quantity,operation_hours,downtime_hours")
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .gte("work_date", yearStart(year))
+      .lt("work_date", nextYearStart(year))
+      .order("work_date", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const page = data || [];
+    rows.push(...page);
+
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return rows;
+}
+
+async function loadData() {
+  if (!currentProfile) return;
+
+  const year = Number(document.getElementById("selYear").value);
+  if (![2026, 2027].includes(year)) {
+    setStatus("error", "조회 실패: 연도를 확인해 주세요.");
+    showToast("조회 실패: 연도를 확인해 주세요.");
+    return;
+  }
+
+  document.getElementById("yearBadge").textContent = year + "년도";
+  document.getElementById("chartTitle").textContent = year + "년 월별 투입수량 및 가동시간 (H)";
+  document.getElementById("tableTitle").textContent = "생산 실적 월별 통합 요약 (" + year + "년)";
+  document.getElementById("tbody").innerHTML = '<tr><td colspan="11" style="padding:30px;color:var(--text-sub);font-size:13px;">데이터를 불러오는 중...</td></tr>';
+
+  setButtonsDisabled(true);
+  setStatus("loading", year + "년 데이터를 불러오는 중...");
+
+  try {
+    const rows = await fetchYearlyRows(year);
+    processData(rows, year);
+    setStatus("ok", "조회 완료: " + year + "년 " + rows.length.toLocaleString() + "건");
+    showToast("조회가 완료되었습니다.");
+  } catch (error) {
+    console.error("년생산실적 조회 실패:", error);
+    monthlyData = [];
+    lastLoadedYear = null;
+    renderTable([], year);
+    renderChart([], [], year);
+    const message = error && error.message ? error.message : "데이터베이스 연결을 확인해 주세요.";
+    setStatus("error", "조회 실패: " + message);
+    showToast("조회에 실패했습니다.");
+  } finally {
+    setButtonsDisabled(false);
+  }
+}
+
+function processData(rows, year) {
+  const agg = Array.from({ length: 12 }, (_, index) => ({
+    month: index + 1,
+    jobCount: 0,
+    input: 0,
+    good: 0,
+    bad: 0,
+    rework: 0,
+    opTime: 0,
+    nonOpTime: 0,
+    ppm: 0,
+    hasData: false
+  }));
+
+  rows.forEach((row) => {
+    const month = getMonthFromDate(row.work_date);
+    if (!month) return;
+
+    const slot = agg[month - 1];
+    slot.hasData = true;
+    slot.jobCount += 1;
+    slot.input += toNum(row.input_quantity);
+    slot.good += toNum(row.good_quantity);
+    slot.bad += toNum(row.defect_quantity);
+    slot.rework += toNum(row.rework_quantity);
+    slot.opTime += toNum(row.operation_hours);
+
+    /*
+     * 작업일보 2. 생산수량현황의 비가동시간만 집계합니다.
+     * DB 열: downtime_hours
+     * 작업일보 5. 비가동 유무의 downtime_hr는 조회·집계하지 않습니다.
+     */
+    slot.nonOpTime += toNum(row.downtime_hours);
+  });
+
+  agg.forEach((slot) => {
+    slot.ppm = slot.input > 0
+      ? Math.round((slot.bad / slot.input) * 1000000)
+      : 0;
+  });
+
+  monthlyData = agg;
+  lastLoadedYear = year;
+
+  renderTable(agg, year);
+
+  const qtyArr = agg.map((slot) => slot.hasData ? slot.input : null);
+  const timeArr = agg.map((slot) => slot.hasData ? roundOne(slot.opTime) : null);
+  renderChart(qtyArr, timeArr, year);
+
+  const hasMonths = agg.filter((slot) => slot.hasData);
+  if (hasMonths.length > 0) {
+    const firstMonth = hasMonths[0].month;
+    const lastMonth = hasMonths[hasMonths.length - 1].month;
+    document.getElementById("tableTitle").textContent =
+      "생산 실적 월별 통합 요약 (" + year + "년 " + firstMonth + "월 ~ " + lastMonth + "월)";
+  }
+}
+
+function roundOne(value) {
+  return Math.round(toNum(value) * 10) / 10;
+}
+
+function renderTable(agg, year) {
+  const tbody = document.getElementById("tbody");
+
+  if (!agg || agg.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:30px;color:var(--text-sub);font-size:13px;">조회된 데이터가 없습니다.</td></tr>';
+    return;
+  }
+
+  let totalJob = 0;
+  let totalInput = 0;
+  let totalGood = 0;
+  let totalBad = 0;
+  let totalRework = 0;
+  let totalOp = 0;
+  let totalNonOp = 0;
+
+  agg.forEach((slot) => {
+    if (!slot.hasData) return;
+    totalJob += slot.jobCount;
+    totalInput += slot.input;
+    totalGood += slot.good;
+    totalBad += slot.bad;
+    totalRework += slot.rework;
+    totalOp += slot.opTime;
+    totalNonOp += slot.nonOpTime;
+  });
+
+  const totalPpm = totalInput > 0
+    ? Math.round((totalBad / totalInput) * 1000000)
+    : 0;
+
+  const rows = agg.map((slot) => {
+    if (!slot.hasData) {
+      return '<tr>'
+        + '<td class="td-empty">' + year + '</td>'
+        + '<td class="td-month">' + slot.month + '</td>'
+        + '<td class="td-empty"></td><td class="td-empty"></td><td class="td-empty"></td>'
+        + '<td class="td-empty"></td><td class="td-empty"></td><td class="td-empty"></td>'
+        + '<td class="td-empty"></td><td class="td-empty"></td><td class="td-empty"></td>'
+        + '</tr>';
+    }
+
+    return '<tr>'
+      + '<td>' + year + '</td>'
+      + '<td class="td-month">' + slot.month + '</td>'
+      + '<td>' + slot.jobCount.toLocaleString() + '</td>'
+      + '<td>' + slot.input.toLocaleString() + '</td>'
+      + '<td>' + slot.good.toLocaleString() + '</td>'
+      + '<td>' + slot.bad.toLocaleString() + '</td>'
+      + '<td>' + slot.rework.toLocaleString() + '</td>'
+      + '<td>' + roundOne(slot.opTime).toFixed(1) + '</td>'
+      + '<td>' + roundOne(slot.nonOpTime).toFixed(1) + '</td>'
+      + '<td>' + slot.ppm.toLocaleString() + '</td>'
+      + '<td></td>'
+      + '</tr>';
+  });
+
+  rows.push(
+    '<tr>'
+    + '<td class="td-total-label" colspan="2">전체 합계</td>'
+    + '<td class="td-total">' + totalJob.toLocaleString() + '</td>'
+    + '<td class="td-total">' + totalInput.toLocaleString() + '</td>'
+    + '<td class="td-total">' + totalGood.toLocaleString() + '</td>'
+    + '<td class="td-total">' + totalBad.toLocaleString() + '</td>'
+    + '<td class="td-total">' + totalRework.toLocaleString() + '</td>'
+    + '<td class="td-total">' + roundOne(totalOp).toFixed(1) + '</td>'
+    + '<td class="td-total">' + roundOne(totalNonOp).toFixed(1) + '</td>'
+    + '<td class="td-total">' + totalPpm.toLocaleString() + '</td>'
+    + '<td class="td-total"></td>'
+    + '</tr>'
+  );
+
+  tbody.innerHTML = rows.join("");
+}
+
+function renderChart(qtyArr, timeArr, year) {
+  if (yearlyChart) {
+    yearlyChart.destroy();
+    yearlyChart = null;
+  }
+
+  const validQty = qtyArr.filter((value) => value !== null && value !== undefined);
+  const validTime = timeArr.filter((value) => value !== null && value !== undefined);
+  const maxQty = Math.max(...validQty, 1000);
+  const maxTime = Math.max(...validTime, 10);
+  const qtyMax = Math.max(1000, Math.ceil((maxQty * 1.25) / 1000) * 1000);
+  const timeMax = Math.max(10, Math.ceil((maxTime * 1.25) / 10) * 10);
+
+  yearlyChart = new Chart(document.getElementById("yearlyChart"), {
+    type: "bar",
+    data: {
+      labels: MONTH_LABELS,
+      datasets: [
+        {
+          label: "가동시간(H)",
+          type: "line",
+          data: timeArr,
+          borderColor: "#E24B4A",
+          backgroundColor: "#E24B4A",
+          borderWidth: 2.5,
+          pointRadius: 5,
+          pointBackgroundColor: "#fff",
+          pointBorderColor: "#E24B4A",
+          pointBorderWidth: 2,
+          tension: 0.3,
+          yAxisID: "y",
+          spanGaps: false,
+          order: 1
+        },
+        {
+          label: "투입수량",
+          type: "bar",
+          data: qtyArr,
+          backgroundColor: "rgba(55,138,221,0.75)",
+          borderColor: "#185FA5",
+          borderWidth: 1,
+          yAxisID: "y2",
+          order: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      clip: false,
+      layout: { padding: { top: 28, left: 4, right: 4 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          callbacks: {
+            label(context) {
+              const value = context.parsed.y;
+              if (context.dataset.label === "투입수량") {
+                return "투입수량: " + Number(value || 0).toLocaleString() + " EA";
+              }
+              return "가동시간: " + Number(value || 0).toFixed(1) + " H";
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          position: "right",
+          title: { display: true, text: "가동시간 (H)", font: { size: 10 }, color: "#E24B4A" },
+          min: 0,
+          max: timeMax,
+          grid: { color: "rgba(128,128,128,0.08)" },
+          ticks: { font: { size: 10 }, color: "#E24B4A" }
+        },
+        y2: {
+          position: "left",
+          title: { display: true, text: "투입수량 (EA)", font: { size: 10 }, color: "#185FA5" },
+          min: 0,
+          max: qtyMax,
+          grid: { display: false },
+          ticks: {
+            font: { size: 10 },
+            color: "#185FA5",
+            callback(value) { return Number(value).toLocaleString(); }
+          }
+        },
+        x: {
+          ticks: { font: { size: 11 }, autoSkip: false, maxRotation: 0 },
+          grid: { display: false }
+        }
+      }
+    },
+    plugins: [{
+      id: "valueLabels",
+      afterDatasetsDraw(chart) {
+        const context = chart.ctx;
+        context.save();
+
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+          const meta = chart.getDatasetMeta(datasetIndex);
+
+          meta.data.forEach((point, index) => {
+            const value = dataset.data[index];
+            if (value === null || value === undefined) return;
+
+            context.font = "bold 9px sans-serif";
+            context.textAlign = "center";
+            context.textBaseline = "bottom";
+
+            if (datasetIndex === 1) {
+              context.fillStyle = "#185FA5";
+              context.fillText(Number(value).toLocaleString(), point.x, point.y - 3);
+            } else {
+              context.fillStyle = "#A32D2D";
+              context.fillText(Number(value).toFixed(1), point.x, point.y - 9);
+            }
+          });
+        });
+
+        context.restore();
+      }
+    }]
+  });
+
+  document.getElementById("chartTitle").textContent = year + "년 월별 투입수량 및 가동시간 (H)";
+}
+
+function exportCSV() {
+  if (!monthlyData || monthlyData.length !== 12 || lastLoadedYear === null) {
+    setStatus("error", "CSV 저장 실패: 먼저 조회를 진행해 주세요.");
+    showToast("먼저 조회를 진행해 주세요.");
+    return;
+  }
+
+  try {
+    const headers = ["연도","월","작업건수","투입수량","양품수량","불량수량","재작업수량","가동시간(H)","비가동시간(H)","불량률(PPM)","비고"];
+    const lines = [headers];
+
+    monthlyData.forEach((slot) => {
+      if (!slot.hasData) {
+        lines.push([lastLoadedYear, slot.month, "", "", "", "", "", "", "", "", ""]);
+      } else {
+        lines.push([
+          lastLoadedYear,
+          slot.month,
+          slot.jobCount,
+          slot.input,
+          slot.good,
+          slot.bad,
+          slot.rework,
+          roundOne(slot.opTime).toFixed(1),
+          roundOne(slot.nonOpTime).toFixed(1),
+          slot.ppm,
+          ""
+        ]);
+      }
+    });
+
+    const totals = monthlyData.reduce((accumulator, slot) => {
+      if (!slot.hasData) return accumulator;
+      accumulator.jobCount += slot.jobCount;
+      accumulator.input += slot.input;
+      accumulator.good += slot.good;
+      accumulator.bad += slot.bad;
+      accumulator.rework += slot.rework;
+      accumulator.opTime += slot.opTime;
+      accumulator.nonOpTime += slot.nonOpTime;
+      return accumulator;
+    }, { jobCount: 0, input: 0, good: 0, bad: 0, rework: 0, opTime: 0, nonOpTime: 0 });
+
+    const totalPpm = totals.input > 0
+      ? Math.round((totals.bad / totals.input) * 1000000)
+      : 0;
+
+    lines.push([
+      lastLoadedYear,
+      "전체 합계",
+      totals.jobCount,
+      totals.input,
+      totals.good,
+      totals.bad,
+      totals.rework,
+      roundOne(totals.opTime).toFixed(1),
+      roundOne(totals.nonOpTime).toFixed(1),
+      totalPpm,
+      ""
+    ]);
+
+    const csv = lines.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "Yearly_Production_Record_" + lastLoadedYear + ".csv";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+
+    setStatus("ok", "CSV 저장 완료: " + lastLoadedYear + "년");
+    showToast("CSV 저장을 완료했습니다.");
+  } catch (error) {
+    console.error("CSV 저장 실패:", error);
+    setStatus("error", "CSV 저장 실패: " + error.message);
+    showToast("CSV 저장에 실패했습니다.");
+  }
+}
+
+function csvEscape(value) {
+  let text = String(value == null ? "" : value);
+  if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+    text = '"' + text.replace(/"/g, '""') + '"';
+  }
+  return text;
+}
+
+async function exportPDF() {
+  if (!monthlyData || monthlyData.length !== 12 || lastLoadedYear === null) {
+    setStatus("error", "PDF 저장 실패: 먼저 조회를 진행해 주세요.");
+    showToast("먼저 조회를 진행해 주세요.");
+    return;
+  }
+
+  const button = document.getElementById("btnPdf");
+  const originalHtml = button.innerHTML;
+  button.textContent = "생성 중...";
+  setButtonsDisabled(true);
+  setStatus("loading", "PDF를 생성하는 중...");
+
+  try {
+    const target = document.querySelector(".container");
+    const canvas = await html2canvas(target, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true
+    });
+
+    const imageData = canvas.toDataURL("image/png");
+    const JsPdf = window.jspdf.jsPDF;
+    const pdf = new JsPdf({ orientation: "landscape", unit: "mm", format: "a4" });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const maxWidth = pageWidth - margin * 2;
+    const maxHeight = pageHeight - margin * 2;
+    const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+    const renderWidth = canvas.width * ratio;
+    const renderHeight = canvas.height * ratio;
+    const x = (pageWidth - renderWidth) / 2;
+
+    pdf.addImage(imageData, "PNG", x, margin, renderWidth, renderHeight);
+    pdf.save("Yearly_Production_Record_" + lastLoadedYear + ".pdf");
+
+    setStatus("ok", "PDF 저장 완료: " + lastLoadedYear + "년");
+    showToast("PDF 저장을 완료했습니다.");
+  } catch (error) {
+    console.error("PDF 저장 실패:", error);
+    setStatus("error", "PDF 저장 실패: " + error.message);
+    showToast("PDF 저장에 실패했습니다.");
+  } finally {
+    button.innerHTML = originalHtml;
+    setButtonsDisabled(false);
+  }
+}
+
+function setStatus(type, message) {
+  const dot = document.getElementById("sDot");
+  const text = document.getElementById("sText");
+  dot.className = "status-dot " + (
+    type === "loading"
+      ? "dot-loading"
+      : type === "error"
+        ? "dot-error"
+        : "dot-ok"
+  );
+  text.textContent = message;
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  clearTimeout(toastTimer);
+  toast.textContent = message;
+  toast.classList.add("show");
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 3000);
+}
+
+async function initializePage() {
+  const now = new Date();
+  const currentYear = [2026, 2027].includes(now.getFullYear()) ? now.getFullYear() : 2026;
+  document.getElementById("selYear").value = String(currentYear);
+
+  const allowed = await verifyCompanyAccess();
+  if (!allowed) return;
+
+  document.documentElement.classList.remove("auth-pending");
+  await loadData();
+}
+
+window.addEventListener("load", initializePage);
+</script>
+</body>
+</html>
