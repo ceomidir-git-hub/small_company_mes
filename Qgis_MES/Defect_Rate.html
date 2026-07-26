@@ -111,6 +111,134 @@ tbody tr:hover td{background:#FAFAF8;}
   nav{display:none;}
   .container{padding:14px 10px 32px;}
 }
+
+/* ── 가독성 개선 ── */
+body{font-size:15px;font-weight:500;color:#1F2937;}
+.logo{font-size:16px;font-weight:800;}
+nav a{font-size:13px;font-weight:600;}
+.page-title h1{font-size:21px;font-weight:800;color:#222;}
+.page-title .sub{font-size:13px;font-weight:600;color:#6B7280;}
+.year-badge,.unit-badge{font-size:12px;font-weight:700;}
+.filter-label{font-size:12px;font-weight:700;color:#5B6472;}
+.fg label{font-size:13px;font-weight:700;color:#555F6E;}
+.fg input[type=date],.fg select{font-size:13px;font-weight:600;color:#222;}
+.btn{font-size:13px;font-weight:700;}
+.dash-title{font-size:14px;font-weight:800;}
+.period-badge{font-size:12px;font-weight:700;}
+.kpi-label{font-size:12px;font-weight:700;color:#626B78;}
+.kpi-val{font-size:20px;font-weight:800;color:#1F2937;}
+.kpi-unit{font-size:11px;font-weight:700;}
+.t-title{font-size:15px;font-weight:800;}
+.cnt-badge{font-size:12px;font-weight:700;}
+table{font-size:12px;min-width:1240px;}
+thead th{font-size:11px;font-weight:800;color:#4B5563;padding:8px 5px;}
+tbody td{font-size:12px;font-weight:600;color:#26313F;padding:7px 5px;}
+.td-input{font-size:12px;font-weight:700;}
+.save-btn{font-size:11px;font-weight:800;}
+.status-bar{font-size:12px;font-weight:600;}
+
+/* ── PDF 전용 출력 영역: 화면에는 노출하지 않음 ── */
+#pdfPrintRoot{
+  position:fixed;
+  left:-99999px;
+  top:0;
+  width:1600px;
+  background:#fff;
+  color:#111827;
+  z-index:-1;
+}
+.pdf-page{
+  width:1600px;
+  background:#fff;
+  padding:22px 24px 18px;
+  font-family:'Malgun Gothic','Noto Sans KR',sans-serif;
+}
+.pdf-main-title{
+  text-align:center;
+  font-size:24px;
+  font-weight:900;
+  color:#1F2937;
+  margin-bottom:5px;
+}
+.pdf-period{
+  text-align:center;
+  font-size:14px;
+  font-weight:700;
+  color:#4B5563;
+  margin-bottom:14px;
+}
+.pdf-kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.pdf-kpi{
+  border:1px solid #CBD5E1;
+  background:#F8FAFC;
+  border-radius:7px;
+  padding:10px 12px;
+}
+.pdf-kpi-label{
+  font-size:12px;
+  font-weight:800;
+  color:#64748B;
+  margin-bottom:4px;
+}
+.pdf-kpi-value{
+  font-size:20px;
+  font-weight:900;
+  color:#111827;
+}
+.pdf-section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:15px;
+  font-weight:900;
+  color:#1F2937;
+  margin:2px 0 7px;
+}
+.pdf-table{
+  width:100%;
+  min-width:0;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+.pdf-table th,
+.pdf-table td{
+  border:1px solid #94A3B8;
+  padding:5px 3px;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#111827;
+}
+.pdf-table thead th{
+  position:static;
+  background:#E5E7EB;
+  font-size:11px;
+  font-weight:900;
+}
+.pdf-table thead th.pdf-db{background:#DBEAFE;color:#1E3A8A;}
+.pdf-table thead th.pdf-type{background:#FEF3C7;color:#78350F;}
+.pdf-table thead th.pdf-calc{background:#FCE7F3;color:#831843;}
+.pdf-table tbody td{
+  font-size:11px;
+  font-weight:700;
+  background:#fff;
+}
+.pdf-table tbody td.pdf-db{background:#EFF6FF;}
+.pdf-table tbody td.pdf-calc{background:#FDF2F8;font-weight:900;}
+.pdf-page-number{
+  text-align:right;
+  margin-top:6px;
+  font-size:10px;
+  font-weight:700;
+  color:#64748B;
+}
+
 </style>
 </head>
 
@@ -256,6 +384,7 @@ tbody tr:hover td{background:#FAFAF8;}
 
 <div class="toast" id="toast"></div>
 <div id="loadingOverlay">처리 중입니다...</div>
+<div id="pdfPrintRoot" aria-hidden="true"></div>
 
 <script>
 "use strict";
@@ -893,8 +1022,89 @@ function exportCSV(){
   showToast("CSV 내보내기를 완료했습니다.");
 }
 
+function getPdfCellText(tr, selector, fallback){
+  const el = tr.querySelector(selector);
+  if(!el) return fallback || "";
+  if(el.matches("input,select")) return el.value || "";
+  const input = el.querySelector("input,select");
+  return input ? (input.value || "") : (el.textContent || "").trim();
+}
+
+function buildPdfTableHeader(){
+  return `
+    <thead>
+      <tr>
+        <th rowspan="2" style="width:78px;">작업일</th>
+        <th rowspan="2" style="width:104px;">고객사</th>
+        <th rowspan="2" style="width:92px;">품명</th>
+        <th rowspan="2" style="width:104px;">품번</th>
+        <th rowspan="2" style="width:112px;">설비명</th>
+        <th colspan="3" class="pdf-db">DB 합산</th>
+        <th colspan="6" class="pdf-type">불량 유형 (ea)</th>
+        <th colspan="2" class="pdf-calc">자동 계산</th>
+      </tr>
+      <tr>
+        <th class="pdf-db">투입</th>
+        <th class="pdf-db">양품</th>
+        <th class="pdf-db">불량</th>
+        <th class="pdf-type">외관</th>
+        <th class="pdf-type">오염</th>
+        <th class="pdf-type">찍힘</th>
+        <th class="pdf-type">탈락</th>
+        <th class="pdf-type">경도</th>
+        <th class="pdf-type">변형</th>
+        <th class="pdf-calc">불량합계</th>
+        <th class="pdf-calc">불량률(PPM)</th>
+      </tr>
+    </thead>`;
+}
+
+function buildPdfTableRow(tr){
+  const idx = tr.dataset.idx;
+  const defectValues = DEFECT_TYPES.map(function(type){
+    return getDefectValue(tr,type).toLocaleString();
+  });
+
+  return `
+    <tr>
+      <td>${esc(tr.dataset.date)}</td>
+      <td>${esc(tr.dataset.cust)}</td>
+      <td>${esc(tr.dataset.prod)}</td>
+      <td>${esc(tr.dataset.partno)}</td>
+      <td>${esc(tr.dataset.eq)}</td>
+      <td class="pdf-db">${toN(tr.dataset.dbinput).toLocaleString()}</td>
+      <td class="pdf-db">${toN(tr.dataset.dbgood).toLocaleString()}</td>
+      <td class="pdf-db">${toN(tr.dataset.dbbad).toLocaleString()}</td>
+      ${defectValues.map(function(value){ return "<td>"+value+"</td>"; }).join("")}
+      <td class="pdf-calc">${esc(document.getElementById("c-sum-"+idx).textContent)}</td>
+      <td class="pdf-calc">${esc(document.getElementById("c-ppm-"+idx).textContent)}</td>
+    </tr>`;
+}
+
+function buildPdfKpiHtml(){
+  return `
+    <div class="pdf-kpi-grid">
+      <div class="pdf-kpi">
+        <div class="pdf-kpi-label">총 투입수량</div>
+        <div class="pdf-kpi-value">${esc(document.getElementById("dInput").textContent)}</div>
+      </div>
+      <div class="pdf-kpi">
+        <div class="pdf-kpi-label">총 양품수량</div>
+        <div class="pdf-kpi-value">${esc(document.getElementById("dGood").textContent)}</div>
+      </div>
+      <div class="pdf-kpi">
+        <div class="pdf-kpi-label">총 불량수량</div>
+        <div class="pdf-kpi-value">${esc(document.getElementById("dBad").textContent)}</div>
+      </div>
+      <div class="pdf-kpi">
+        <div class="pdf-kpi-label">불량률</div>
+        <div class="pdf-kpi-value">${esc(document.getElementById("dPpm").textContent)}</div>
+      </div>
+    </div>`;
+}
+
 async function exportPDF(){
-  const rows = document.querySelectorAll("#tbody tr[data-idx]");
+  const rows = Array.from(document.querySelectorAll("#tbody tr[data-idx]"));
   if(rows.length === 0){
     showToast("PDF로 저장할 데이터가 없습니다.");
     return;
@@ -902,26 +1112,17 @@ async function exportPDF(){
 
   const btn = document.getElementById("btnPdf");
   const originalText = btn.textContent;
-  const tableWrap = document.getElementById("tableWrap");
-  const originalMaxHeight = tableWrap.style.maxHeight;
-  const originalOverflow = tableWrap.style.overflow;
+  const printRoot = document.getElementById("pdfPrintRoot");
+  const from = document.getElementById("fFrom").value || "";
+  const to = document.getElementById("fTo").value || "";
+  const periodText = from && to ? from+" ~ "+to : (from || to || "조회기간 전체");
 
   btn.disabled = true;
   btn.textContent = "PDF 생성 중...";
-  showLoading("PDF를 생성하는 중입니다...");
+  showLoading("A4 가로형 PDF를 생성하는 중입니다...");
   setStatus("loading","PDF 생성 중...");
 
   try{
-    tableWrap.style.maxHeight = "none";
-    tableWrap.style.overflow = "visible";
-
-    const canvas = await html2canvas(document.getElementById("pdfArea"),{
-      scale:2,
-      backgroundColor:"#ffffff",
-      useCORS:true,
-      logging:false
-    });
-
     const pdf = new window.jspdf.jsPDF({
       orientation:"landscape",
       unit:"mm",
@@ -930,36 +1131,85 @@ async function exportPDF(){
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 8;
-    const maxWidth = pageWidth-margin*2;
-    const maxHeight = pageHeight-margin*2;
-    const ratio = Math.min(maxWidth/canvas.width,maxHeight/canvas.height);
-    const renderWidth = canvas.width*ratio;
-    const renderHeight = canvas.height*ratio;
-    const x = (pageWidth-renderWidth)/2;
+    const margin = 6;
+    const maxWidth = pageWidth - margin * 2;
+    const maxHeight = pageHeight - margin * 2;
 
-    pdf.addImage(
-      canvas.toDataURL("image/png"),
-      "PNG",
-      x,
-      margin,
-      renderWidth,
-      renderHeight
-    );
+    /* 첫 페이지는 KPI 포함, 다음 페이지는 표 가독성을 위해 행 수를 조금 늘림 */
+    const firstPageCount = 17;
+    const nextPageCount = 23;
+    const pageChunks = [];
 
-    const from = document.getElementById("fFrom").value || "";
-    const to = document.getElementById("fTo").value || "";
+    if(rows.length <= firstPageCount){
+      pageChunks.push(rows);
+    }else{
+      pageChunks.push(rows.slice(0,firstPageCount));
+      for(let i=firstPageCount;i<rows.length;i+=nextPageCount){
+        pageChunks.push(rows.slice(i,i+nextPageCount));
+      }
+    }
+
+    const totalPages = pageChunks.length;
+
+    for(let pageIndex=0;pageIndex<totalPages;pageIndex++){
+      const pageRows = pageChunks[pageIndex];
+      const pageDiv = document.createElement("div");
+      pageDiv.className = "pdf-page";
+
+      pageDiv.innerHTML = `
+        <div class="pdf-main-title">불량률 현황</div>
+        <div class="pdf-period">조회기간: ${esc(periodText)}</div>
+        ${pageIndex === 0 ? buildPdfKpiHtml() : ""}
+        <div class="pdf-section-title">
+          <span>불량 내역</span>
+          <span>${rows.length.toLocaleString()}건</span>
+        </div>
+        <table class="pdf-table">
+          ${buildPdfTableHeader()}
+          <tbody>
+            ${pageRows.map(buildPdfTableRow).join("")}
+          </tbody>
+        </table>
+        <div class="pdf-page-number">${pageIndex+1} / ${totalPages} 페이지</div>`;
+
+      printRoot.appendChild(pageDiv);
+
+      const canvas = await html2canvas(pageDiv,{
+        scale:2,
+        backgroundColor:"#ffffff",
+        useCORS:true,
+        logging:false
+      });
+
+      const ratio = Math.min(maxWidth/canvas.width,maxHeight/canvas.height);
+      const renderWidth = canvas.width * ratio;
+      const renderHeight = canvas.height * ratio;
+      const x = (pageWidth-renderWidth)/2;
+      const y = margin;
+
+      if(pageIndex > 0) pdf.addPage();
+
+      pdf.addImage(
+        canvas.toDataURL("image/png"),
+        "PNG",
+        x,
+        y,
+        renderWidth,
+        renderHeight
+      );
+
+      printRoot.removeChild(pageDiv);
+    }
+
     pdf.save("Defect_Rate_"+from+"_"+to+".pdf");
-
     setStatus("ok","PDF 다운로드 완료");
-    showToast("PDF 다운로드를 완료했습니다.");
+    showToast("KPI와 불량내역 PDF 다운로드를 완료했습니다.");
   }catch(error){
     console.error(error);
+    printRoot.innerHTML = "";
     setStatus("error","PDF 생성 실패: "+dbErrorMessage(error));
     showToast("PDF 생성 실패: "+dbErrorMessage(error));
   }finally{
-    tableWrap.style.maxHeight = originalMaxHeight;
-    tableWrap.style.overflow = originalOverflow;
     btn.disabled = false;
     btn.textContent = originalText;
     hideLoading();
