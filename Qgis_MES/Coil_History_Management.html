@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>코일이력관리대장 | HeatPro MES</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --line: #cfd6e1;
+      --line-soft: #e5e9f0;
+      --text: #1f2937;
+      --muted: #64748b;
+      --blue: #1f5edb;
+      --blue-dark: #1647ad;
+      --green: #079660;
+      --red: #dc2f45;
+      --shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+      --radius: 9px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    html.auth-pending body {
+      visibility: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .title-frame {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .title-area h1 {
+      margin: 0;
+      color: #0e3f9d;
+      font-size: 25px;
+      line-height: 1.25;
+      letter-spacing: -0.5px;
+    }
+
+    .file-name {
+      margin-left: 6px;
+      color: #667085;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      color: #5f6b7a;
+      font-size: 13px;
+    }
+
+    .main-button {
+      min-width: 112px;
+      height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: #1f2937;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+      white-space: nowrap;
+    }
+
+    .main-button:hover {
+      background: #f8fafc;
+    }
+
+    .search-frame {
+      display: grid;
+      grid-template-columns:
+        minmax(260px, 1.35fr)
+        minmax(120px, 0.62fr)
+        minmax(145px, 0.72fr)
+        minmax(150px, 0.8fr)
+        minmax(160px, 0.9fr)
+        minmax(160px, 0.9fr)
+        auto;
+      align-items: end;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: #445267;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 42px;
+      padding: 8px 10px;
+      border: 1px solid #c7d0dc;
+      border-radius: 7px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(31, 94, 219, 0.12);
+    }
+
+    .date-range {
+      display: grid;
+      grid-template-columns: 1fr 18px 1fr;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .date-separator {
+      color: var(--muted);
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .search-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      min-height: 42px;
+      padding: 8px 15px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: #1f2937;
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      filter: brightness(0.97);
+    }
+
+    .btn-blue {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .btn-blue:hover {
+      background: var(--blue-dark);
+    }
+
+    .action-frame {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0;
+    }
+
+    .guide-text {
+      color: #617087;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .notice {
+      display: none;
+      margin-bottom: 12px;
+      padding: 11px 13px;
+      border-radius: 7px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    .notice.info {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .notice.success {
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    .notice.error {
+      background: #fff1f2;
+      color: #be123c;
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .kpi {
+      min-width: 0;
+      padding: 13px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .kpi-value {
+      margin-top: 5px;
+      color: #0e3f9d;
+      font-size: 25px;
+      font-weight: 900;
+      line-height: 1.2;
+      word-break: break-all;
+    }
+
+    .coil-info-frame {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .coil-info-frame.show {
+      display: flex;
+    }
+
+    .coil-avatar {
+      display: flex;
+      width: 52px;
+      height: 52px;
+      flex: 0 0 52px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #93b4ef;
+      border-radius: 9px;
+      background: #eaf1ff;
+      color: #1647ad;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .coil-info-main {
+      min-width: 0;
+    }
+
+    .coil-info-title {
+      color: #0e3f9d;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .coil-info-meta {
+      margin-top: 4px;
+      color: #5f6b7a;
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .list-frame {
+      padding: 14px 16px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 11px;
+    }
+
+    .list-title {
+      margin: 0;
+      color: #0e3f9d;
+      font-size: 18px;
+    }
+
+    .list-count {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .table-wrap {
+      width: 100%;
+      max-height: 590px;
+      overflow: auto;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1190px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 13px;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      padding: 10px 7px;
+      border-right: 1px solid #1248a9;
+      border-bottom: 1px solid #1248a9;
+      background: #1e5bd7;
+      color: #fff;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    tbody td,
+    tfoot td {
+      padding: 9px 7px;
+      border-right: 1px solid #d8dee8;
+      border-bottom: 1px solid #d8dee8;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fafcff;
+    }
+
+    tbody tr:hover {
+      background: #eef4ff;
+    }
+
+    td.left {
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    td.number {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .badge {
+      display: inline-block;
+      min-width: 30px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #e8f0ff;
+      color: #1647ad;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    tfoot td {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      background: #edf2ff;
+      color: #0e3f9d;
+      font-weight: 900;
+    }
+
+    .empty {
+      height: 150px;
+      color: #64748b;
+      text-align: center !important;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.42);
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .loading-box {
+      padding: 18px 23px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    #printRoot {
+      position: fixed;
+      left: -99999px;
+      top: 0;
+      width: 1500px;
+      background: #fff;
+      color: #000;
+    }
+
+    #printRoot .print-sheet {
+      width: 1500px;
+      padding: 24px;
+      background: #fff;
+    }
+
+    #printRoot .print-title {
+      margin-bottom: 10px;
+      color: #000;
+      font-size: 24px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    #printRoot .print-condition {
+      margin-bottom: 8px;
+      color: #000;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    #printRoot table {
+      width: 100%;
+      min-width: 0;
+      border-collapse: collapse;
+      table-layout: fixed;
+      color: #000;
+      font-size: 12px;
+    }
+
+    #printRoot th,
+    #printRoot td {
+      position: static;
+      padding: 6px 4px;
+      border: 1px solid #555;
+      background: #fff;
+      color: #000;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    #printRoot th {
+      font-weight: 900;
+    }
+
+    #printRoot td.print-left {
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+    }
+
+    #printRoot .print-summary {
+      margin-top: 9px;
+      color: #000;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    #printRoot .print-page {
+      margin-top: 8px;
+      color: #000;
+      font-size: 11px;
+      text-align: right;
+    }
+
+    @media (max-width: 1180px) {
+      .search-frame {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .search-buttons {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        padding: 8px;
+      }
+
+      .title-area h1 {
+        font-size: 20px;
+      }
+
+      .file-name {
+        display: block;
+        margin: 4px 0 0;
+      }
+
+      .subtitle {
+        font-size: 12px;
+      }
+
+      .main-button {
+        min-width: 94px;
+        height: 40px;
+        padding: 0 10px;
+        font-size: 13px;
+      }
+
+      .search-frame {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .search-buttons {
+        grid-column: auto;
+      }
+
+      .search-buttons .btn {
+        flex: 1;
+      }
+
+      .action-frame {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .action-buttons .btn {
+        width: 100%;
+      }
+
+      .kpi-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .kpi {
+        padding: 11px 12px;
+      }
+
+      .kpi-value {
+        font-size: 21px;
+      }
+
+      .coil-info-frame {
+        align-items: flex-start;
+      }
+
+      .list-frame {
+        padding: 10px;
+      }
+
+      table {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .title-frame {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .main-button {
+        width: 100%;
+      }
+
+      .kpi-row {
+        grid-template-columns: 1fr;
+      }
+
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<main class="page">
+  <section class="title-frame">
+    <div class="title-area">
+      <h1>
+        코일이력관리대장
+        <span class="file-name">_Coil_History_Management.html</span>
+      </h1>
+      <div class="subtitle">
+        HeatPro MES · 로그인 회사의 생산실적을 기준으로 코일 사용이력을 조회합니다.
+      </div>
+    </div>
+    <button class="main-button" id="btnMain" type="button">⌂ 메인메뉴</button>
+  </section>
+
+  <section class="search-frame" aria-label="코일이력 조회 조건">
+    <div class="field">
+      <label for="searchStart">작업기간</label>
+      <div class="date-range">
+        <input id="searchStart" type="date">
+        <span class="date-separator">~</span>
+        <input id="searchEnd" type="date">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="searchCode">분류코드</label>
+      <select id="searchCode">
+        <option value="">전체</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="searchCoil">코일식별번호</label>
+      <select id="searchCoil">
+        <option value="">전체</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="searchCustomer">고객사</label>
+      <select id="searchCustomer">
+        <option value="">전체</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="searchItem">품명</label>
+      <select id="searchItem">
+        <option value="">전체</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="searchItemNumber">품번</label>
+      <select id="searchItemNumber">
+        <option value="">전체</option>
+      </select>
+    </div>
+
+    <div class="search-buttons">
+      <button class="btn" id="btnReset" type="button">초기화</button>
+      <button class="btn btn-blue" id="btnSearch" type="button">🔍 조회</button>
+    </div>
+  </section>
+
+  <section class="action-frame">
+    <div id="guideText" class="guide-text">
+      조회 조건을 선택한 후 조회 버튼을 눌러주세요.
+    </div>
+    <div class="action-buttons">
+      <button class="btn" id="btnCsv" type="button">⬇ CSV 다운로드</button>
+      <button class="btn" id="btnPdf" type="button">🖨 PDF 다운로드</button>
+    </div>
+  </section>
+
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+  <section class="kpi-row" aria-label="코일이력 합계">
+    <article class="kpi">
+      <div class="kpi-label">현재고량</div>
+      <div class="kpi-value" id="kpiStock">-</div>
+    </article>
+    <article class="kpi">
+      <div class="kpi-label">총 사용건수</div>
+      <div class="kpi-value" id="kpiCount">0건</div>
+    </article>
+    <article class="kpi">
+      <div class="kpi-label">총 사용수량</div>
+      <div class="kpi-value" id="kpiQuantity">0 EA</div>
+    </article>
+    <article class="kpi">
+      <div class="kpi-label">총 사용시간</div>
+      <div class="kpi-value" id="kpiHours">0.0 hr</div>
+    </article>
+  </section>
+
+  <section class="coil-info-frame" id="coilInfoFrame">
+    <div class="coil-avatar" id="coilAvatar">-</div>
+    <div class="coil-info-main">
+      <div class="coil-info-title" id="coilInfoTitle">-</div>
+      <div class="coil-info-meta" id="coilInfoMeta">-</div>
+    </div>
+  </section>
+
+  <section class="list-frame">
+    <div class="list-head">
+      <h2 class="list-title">코일 사용이력 목록</h2>
+      <div class="list-count" id="listCount">총 0건</div>
+    </div>
+
+    <div class="table-wrap">
+      <table id="historyTable">
+        <colgroup>
+          <col style="width:52px">
+          <col style="width:62px">
+          <col style="width:90px">
+          <col style="width:100px">
+          <col style="width:130px">
+          <col style="width:160px">
+          <col style="width:135px">
+          <col style="width:155px">
+          <col style="width:105px">
+          <col style="width:110px">
+          <col style="width:210px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>NO</th>
+            <th>분류</th>
+            <th>식별번호</th>
+            <th>작업일</th>
+            <th>고객사</th>
+            <th>품명</th>
+            <th>품번</th>
+            <th>설비명</th>
+            <th>사용수량</th>
+            <th>사용시간(hr)</th>
+            <th>특이사항</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr>
+            <td class="empty" colspan="11">
+              조회 버튼을 눌러 데이터를 불러오세요.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="8">합&nbsp;&nbsp;계</td>
+            <td class="number" id="sumQuantity">0</td>
+            <td class="number" id="sumHours">0.0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div class="loading" id="loading">
+  <div class="loading-box" id="loadingText">처리 중입니다.</div>
+</div>
+
+<div id="printRoot"></div>
+
+<script>
+"use strict";
+
+/* ══════════════════════════════════════════════
+   Supabase 연결 및 기본 설정
+   ══════════════════════════════════════════════ */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+
+const PRODUCTION_TABLE = "Total_Production_DB";
+const COIL_TABLE = "coils";
+const LOGIN_PAGE_URL = "../index.html";
+const MAIN_PAGE_URL = "./main1.html";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let coilMasterRows = [];
+let coilMasterMap = new Map();
+let filterSourceRows = [];
+let visibleHistoryRows = [];
+let masterItems = {};
+
+/* ══════════════════════════════════════════════
+   인증 및 회사 권한 확인
+   ══════════════════════════════════════════════ */
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const { data: userData, error: userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if (userError || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope: "local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+sb.auth.onAuthStateChange(function (event) {
+  if (event === "SIGNED_OUT") {
+    redirectToLogin();
+  }
+});
+
+/* ══════════════════════════════════════════════
+   공통 함수
+   ══════════════════════════════════════════════ */
+function showLoading(message) {
+  document.getElementById("loadingText").textContent =
+    message || "처리 중입니다.";
+  document.getElementById("loading").classList.add("show");
+}
+
+function hideLoading() {
+  document.getElementById("loading").classList.remove("show");
+}
+
+function showNotice(message, type) {
+  const notice = document.getElementById("notice");
+  notice.textContent = message;
+  notice.className = "notice show " + (type || "info");
+}
+
+function clearNotice() {
+  const notice = document.getElementById("notice");
+  notice.textContent = "";
+  notice.className = "notice";
+}
+
+function updateGuide(message) {
+  document.getElementById("guideText").textContent = message;
+}
+
+function formatDbError(error) {
+  if (!error) return "알 수 없는 오류";
+  return error.message || error.details || error.hint || String(error);
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(
+    /[&<>"']/g,
+    function (char) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char];
+    }
+  );
+}
+
+function toNumber(value) {
+  const numberValue = Number(
+    String(value == null ? "" : value).replace(/,/g, "")
+  );
+  return Number.isFinite(numberValue) ? numberValue : 0;
+}
+
+function formatNumber(value) {
+  return toNumber(value).toLocaleString("ko-KR");
+}
+
+function formatHours(value) {
+  return toNumber(value).toLocaleString("ko-KR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2
+  });
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+}
+
+function localDateText(date) {
+  return (
+    date.getFullYear() +
+    "-" +
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(date.getDate()).padStart(2, "0")
+  );
+}
+
+function currentMonthRange() {
+  const today = new Date();
+  return {
+    start: localDateText(new Date(today.getFullYear(), today.getMonth(), 1)),
+    end: localDateText(new Date(today.getFullYear(), today.getMonth() + 1, 0))
+  };
+}
+
+function naturalCompare(left, right) {
+  return String(left || "").localeCompare(String(right || ""), "ko-KR", {
+    numeric: true,
+    sensitivity: "base"
+  });
+}
+
+function parseCoilNumbers(value) {
+  const seen = new Set();
+
+  return String(value == null ? "" : value)
+    .split(/[,，;；]/)
+    .map(function (item) {
+      return item.trim().toUpperCase();
+    })
+    .filter(function (item) {
+      if (!item || seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    });
+}
+
+function fillSelect(selectId, values, keepValue) {
+  const select = document.getElementById(selectId);
+  const previous = keepValue ? select.value : "";
+  const sorted = Array.from(new Set(values.filter(Boolean))).sort(naturalCompare);
+
+  select.innerHTML = '<option value="">전체</option>';
+
+  sorted.forEach(function (value) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+
+  if (previous && sorted.includes(previous)) {
+    select.value = previous;
+  }
+}
+
+async function fetchAllRows(tableName, selectColumns, buildQuery) {
+  const pageSize = 1000;
+  let start = 0;
+  let resultRows = [];
+
+  while (true) {
+    let query = sb
+      .from(tableName)
+      .select(selectColumns)
+      .eq("company_id", currentProfile.company_id);
+
+    query = buildQuery ? buildQuery(query) : query;
+    query = query.range(start, start + pageSize - 1);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const pageRows = data || [];
+    resultRows = resultRows.concat(pageRows);
+
+    if (pageRows.length < pageSize) break;
+    start += pageSize;
+  }
+
+  return resultRows;
+}
+
+/* ══════════════════════════════════════════════
+   초기 기준정보
+   ══════════════════════════════════════════════ */
+async function loadCoilMaster() {
+  coilMasterRows = await fetchAllRows(
+    COIL_TABLE,
+    [
+      "coil_system_id",
+      "company_id",
+      "identification_code",
+      "coil_identifier",
+      "coil_spec",
+      "classification_name",
+      "applied_process",
+      "manufactured_date",
+      "service_life",
+      "stock_quantity",
+      "is_active"
+    ].join(","),
+    function (query) {
+      return query
+        .eq("is_active", true)
+        .order("identification_code", { ascending: true })
+        .order("coil_identifier", { ascending: true });
+    }
+  );
+
+  coilMasterMap = new Map();
+
+  coilMasterRows.forEach(function (row) {
+    const key = String(row.coil_identifier || "").trim().toUpperCase();
+    if (key) coilMasterMap.set(key, row);
+  });
+
+  fillSelect(
+    "searchCode",
+    coilMasterRows.map(function (row) {
+      return String(row.identification_code || "").trim();
+    }),
+    false
+  );
+
+  updateCoilOptions(false);
+}
+
+async function loadFilterSource() {
+  filterSourceRows = await fetchAllRows(
+    PRODUCTION_TABLE,
+    "customer_name,item_name,item_number,is_active",
+    function (query) {
+      return query
+        .eq("is_active", true)
+        .order("customer_name", { ascending: true })
+        .order("item_name", { ascending: true })
+        .order("item_number", { ascending: true });
+    }
+  );
+
+  const customers = new Set();
+  masterItems = {};
+
+  filterSourceRows.forEach(function (row) {
+    const customer = String(row.customer_name || "").trim();
+    const item = String(row.item_name || "").trim();
+    const itemNumber = String(row.item_number || "").trim();
+
+    if (customer) customers.add(customer);
+
+    if (customer && item) {
+      if (!masterItems[customer]) masterItems[customer] = {};
+      if (!masterItems[customer][item]) {
+        masterItems[customer][item] = new Set();
+      }
+      if (itemNumber) masterItems[customer][item].add(itemNumber);
+    }
+  });
+
+  fillSelect("searchCustomer", Array.from(customers), false);
+  refreshItemOptions(false);
+  refreshItemNumberOptions(false);
+}
+
+function updateCoilOptions(keepValue) {
+  const code = document.getElementById("searchCode").value;
+  const rows = coilMasterRows.filter(function (row) {
+    return !code || String(row.identification_code || "") === code;
+  });
+
+  fillSelect(
+    "searchCoil",
+    rows.map(function (row) {
+      return String(row.coil_identifier || "").trim();
+    }),
+    keepValue
+  );
+}
+
+function refreshItemOptions(keepValue) {
+  const customer = document.getElementById("searchCustomer").value;
+  const items = new Set();
+
+  if (customer && masterItems[customer]) {
+    Object.keys(masterItems[customer]).forEach(function (item) {
+      items.add(item);
+    });
+  } else {
+    Object.keys(masterItems).forEach(function (customerName) {
+      Object.keys(masterItems[customerName] || {}).forEach(function (item) {
+        items.add(item);
+      });
+    });
+  }
+
+  fillSelect("searchItem", Array.from(items), keepValue);
+}
+
+function refreshItemNumberOptions(keepValue) {
+  const customer = document.getElementById("searchCustomer").value;
+  const item = document.getElementById("searchItem").value;
+  const itemNumbers = new Set();
+
+  function addCustomerItemNumbers(customerName) {
+    const customerItems = masterItems[customerName] || {};
+
+    Object.keys(customerItems).forEach(function (itemName) {
+      if (!item || itemName === item) {
+        customerItems[itemName].forEach(function (itemNumber) {
+          itemNumbers.add(itemNumber);
+        });
+      }
+    });
+  }
+
+  if (customer && masterItems[customer]) {
+    addCustomerItemNumbers(customer);
+  } else {
+    Object.keys(masterItems).forEach(addCustomerItemNumbers);
+  }
+
+  fillSelect("searchItemNumber", Array.from(itemNumbers), keepValue);
+}
+
+/* ══════════════════════════════════════════════
+   조회 및 코일이력 변환
+   ══════════════════════════════════════════════ */
+function selectedCoilSet() {
+  const selectedCode = document.getElementById("searchCode").value;
+  const selectedCoil = document.getElementById("searchCoil").value;
+
+  if (selectedCoil) {
+    return new Set([selectedCoil.toUpperCase()]);
+  }
+
+  if (selectedCode) {
+    return new Set(
+      coilMasterRows
+        .filter(function (row) {
+          return String(row.identification_code || "") === selectedCode;
+        })
+        .map(function (row) {
+          return String(row.coil_identifier || "").trim().toUpperCase();
+        })
+        .filter(Boolean)
+    );
+  }
+
+  return null;
+}
+
+function expandProductionRows(rows) {
+  const allowedCoils = selectedCoilSet();
+  const expanded = [];
+
+  rows.forEach(function (row) {
+    const coilNumbers = parseCoilNumbers(row.coil_number);
+
+    coilNumbers.forEach(function (coilNumber) {
+      if (allowedCoils && !allowedCoils.has(coilNumber)) return;
+
+      const master = coilMasterMap.get(coilNumber);
+      const classificationCode =
+        master && master.identification_code
+          ? master.identification_code
+          : coilNumber.split("-")[0] || "-";
+
+      expanded.push({
+        production_system_id: row.production_system_id,
+        coil_identifier: coilNumber,
+        identification_code: classificationCode,
+        work_date: formatDate(row.work_date),
+        customer_name: row.customer_name || "",
+        item_name: row.item_name || "",
+        item_number: row.item_number || "",
+        equipment_name: row.equipment_name || "",
+        input_quantity: toNumber(row.input_quantity),
+        operation_hours: toNumber(row.operation_hours),
+        special_notes: row.special_notes || ""
+      });
+    });
+  });
+
+  expanded.sort(function (left, right) {
+    const dateCompare = String(left.work_date).localeCompare(
+      String(right.work_date)
+    );
+    if (dateCompare !== 0) return dateCompare;
+
+    const coilCompare = naturalCompare(
+      left.coil_identifier,
+      right.coil_identifier
+    );
+    if (coilCompare !== 0) return coilCompare;
+
+    return naturalCompare(left.customer_name, right.customer_name);
+  });
+
+  return expanded;
+}
+
+async function searchHistory() {
+  clearNotice();
+
+  if (!currentProfile) {
+    showNotice("로그인 회사 정보를 확인할 수 없습니다.", "error");
+    return;
+  }
+
+  const startDate = document.getElementById("searchStart").value;
+  const endDate = document.getElementById("searchEnd").value;
+  const customer = document.getElementById("searchCustomer").value;
+  const item = document.getElementById("searchItem").value;
+  const itemNumber = document.getElementById("searchItemNumber").value;
+  const selectedCoil = document.getElementById("searchCoil").value;
+
+  if (startDate && endDate && startDate > endDate) {
+    showNotice("작업기간의 시작일이 종료일보다 늦습니다.", "error");
+    return;
+  }
+
+  showLoading("코일 사용이력을 조회하는 중입니다.");
+
+  try {
+    const rows = await fetchAllRows(
+      PRODUCTION_TABLE,
+      [
+        "production_system_id",
+        "company_id",
+        "work_date",
+        "customer_name",
+        "item_name",
+        "item_number",
+        "equipment_name",
+        "input_quantity",
+        "operation_hours",
+        "coil_number",
+        "special_notes",
+        "is_active"
+      ].join(","),
+      function (query) {
+        let filtered = query.eq("is_active", true);
+
+        if (startDate) filtered = filtered.gte("work_date", startDate);
+        if (endDate) filtered = filtered.lte("work_date", endDate);
+        if (customer) filtered = filtered.eq("customer_name", customer);
+        if (item) filtered = filtered.eq("item_name", item);
+        if (itemNumber) filtered = filtered.eq("item_number", itemNumber);
+
+        /*
+         * 선택 코일을 포함하는 행만 먼저 DB에서 축소합니다.
+         * A-1과 A-10 같은 부분 일치 문제는 expandProductionRows에서
+         * 쉼표 분리 후 다시 정확히 검사합니다.
+         */
+        if (selectedCoil) {
+          filtered = filtered.ilike("coil_number", "%" + selectedCoil + "%");
+        } else {
+          filtered = filtered.not("coil_number", "is", null);
+        }
+
+        return filtered
+          .order("work_date", { ascending: true, nullsFirst: false })
+          .order("customer_name", { ascending: true })
+          .order("item_name", { ascending: true })
+          .order("production_system_id", { ascending: true });
+      }
+    );
+
+    visibleHistoryRows = expandProductionRows(rows);
+    renderHistory();
+    updateKpis();
+    updateCoilInformation();
+
+    const message =
+      "조회 완료: 코일 사용이력 " +
+      visibleHistoryRows.length.toLocaleString("ko-KR") +
+      "건을 표시합니다.";
+
+    updateGuide(message);
+    showNotice(message, "success");
+  } catch (error) {
+    console.error(error);
+    visibleHistoryRows = [];
+    renderHistory();
+    updateKpis();
+    updateCoilInformation();
+    const message = "조회 실패: " + formatDbError(error);
+    updateGuide(message);
+    showNotice(message, "error");
+  } finally {
+    hideLoading();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   표 및 합계 표시
+   ══════════════════════════════════════════════ */
+function renderHistory() {
+  const body = document.getElementById("historyBody");
+
+  if (!visibleHistoryRows.length) {
+    body.innerHTML =
+      '<tr><td class="empty" colspan="11">해당 조건의 코일 사용이력이 없습니다.</td></tr>';
+  } else {
+    body.innerHTML = visibleHistoryRows
+      .map(function (row, index) {
+        return (
+          "<tr>" +
+          "<td>" + (index + 1) + "</td>" +
+          '<td><span class="badge">' +
+            escapeHtml(row.identification_code) +
+          "</span></td>" +
+          "<td><strong>" + escapeHtml(row.coil_identifier) + "</strong></td>" +
+          "<td>" + escapeHtml(row.work_date) + "</td>" +
+          '<td class="left" title="' + escapeHtml(row.customer_name) + '">' +
+            escapeHtml(row.customer_name) +
+          "</td>" +
+          '<td class="left" title="' + escapeHtml(row.item_name) + '">' +
+            escapeHtml(row.item_name) +
+          "</td>" +
+          "<td>" + escapeHtml(row.item_number) + "</td>" +
+          '<td class="left" title="' + escapeHtml(row.equipment_name) + '">' +
+            escapeHtml(row.equipment_name) +
+          "</td>" +
+          '<td class="number">' + formatNumber(row.input_quantity) + "</td>" +
+          '<td class="number">' + formatHours(row.operation_hours) + "</td>" +
+          '<td class="left" title="' + escapeHtml(row.special_notes) + '">' +
+            escapeHtml(row.special_notes) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+  }
+
+  const totalQuantity = visibleHistoryRows.reduce(function (sum, row) {
+    return sum + toNumber(row.input_quantity);
+  }, 0);
+
+  const totalHours = visibleHistoryRows.reduce(function (sum, row) {
+    return sum + toNumber(row.operation_hours);
+  }, 0);
+
+  document.getElementById("sumQuantity").textContent =
+    formatNumber(totalQuantity);
+  document.getElementById("sumHours").textContent =
+    formatHours(totalHours);
+  document.getElementById("listCount").textContent =
+    "총 " + visibleHistoryRows.length.toLocaleString("ko-KR") + "건";
+}
+
+function updateKpis() {
+  const selectedCoil = document.getElementById("searchCoil").value;
+  const master = selectedCoil
+    ? coilMasterMap.get(selectedCoil.toUpperCase())
+    : null;
+
+  const totalQuantity = visibleHistoryRows.reduce(function (sum, row) {
+    return sum + toNumber(row.input_quantity);
+  }, 0);
+
+  const totalHours = visibleHistoryRows.reduce(function (sum, row) {
+    return sum + toNumber(row.operation_hours);
+  }, 0);
+
+  document.getElementById("kpiStock").textContent = master
+    ? formatNumber(master.stock_quantity) + " EA"
+    : "-";
+
+  document.getElementById("kpiCount").textContent =
+    visibleHistoryRows.length.toLocaleString("ko-KR") + "건";
+
+  document.getElementById("kpiQuantity").textContent =
+    formatNumber(totalQuantity) + " EA";
+
+  document.getElementById("kpiHours").textContent =
+    formatHours(totalHours) + " hr";
+}
+
+function updateCoilInformation() {
+  const selectedCoil = document.getElementById("searchCoil").value;
+  const frame = document.getElementById("coilInfoFrame");
+
+  if (!selectedCoil) {
+    frame.classList.remove("show");
+    return;
+  }
+
+  const master = coilMasterMap.get(selectedCoil.toUpperCase());
+
+  document.getElementById("coilAvatar").textContent = selectedCoil;
+
+  if (!master) {
+    document.getElementById("coilInfoTitle").textContent =
+      selectedCoil + " · 코일 마스터 미등록";
+    document.getElementById("coilInfoMeta").textContent =
+      "생산실적에는 존재하지만 로그인 회사의 코일관리대장에서 확인되지 않습니다.";
+    frame.classList.add("show");
+    return;
+  }
+
+  const titleParts = [
+    master.coil_identifier || "",
+    master.coil_spec || ""
+  ].filter(Boolean);
+
+  document.getElementById("coilInfoTitle").textContent =
+    titleParts.join(" · ");
+
+  document.getElementById("coilInfoMeta").textContent = [
+    "분류명: " + (master.classification_name || "-"),
+    "적용공정: " + (master.applied_process || "-"),
+    "제작일자: " + (formatDate(master.manufactured_date) || "-"),
+    "기준수명: " + formatNumber(master.service_life) + " EA",
+    "현재고량: " + formatNumber(master.stock_quantity) + " EA"
+  ].join(" ｜ ");
+
+  frame.classList.add("show");
+}
+
+/* ══════════════════════════════════════════════
+   초기화
+   ══════════════════════════════════════════════ */
+function resetSearch() {
+  const range = currentMonthRange();
+
+  document.getElementById("searchStart").value = range.start;
+  document.getElementById("searchEnd").value = range.end;
+  document.getElementById("searchCode").value = "";
+  updateCoilOptions(false);
+  document.getElementById("searchCustomer").value = "";
+  refreshItemOptions(false);
+  refreshItemNumberOptions(false);
+
+  visibleHistoryRows = [];
+  document.getElementById("historyBody").innerHTML =
+    '<tr><td class="empty" colspan="11">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>';
+
+  document.getElementById("sumQuantity").textContent = "0";
+  document.getElementById("sumHours").textContent = "0.0";
+  document.getElementById("listCount").textContent = "총 0건";
+  document.getElementById("kpiStock").textContent = "-";
+  document.getElementById("kpiCount").textContent = "0건";
+  document.getElementById("kpiQuantity").textContent = "0 EA";
+  document.getElementById("kpiHours").textContent = "0.0 hr";
+  document.getElementById("coilInfoFrame").classList.remove("show");
+
+  updateGuide("조회조건을 초기화했습니다. 조회 버튼을 눌러주세요.");
+  showNotice("조회조건이 초기화되었습니다.", "success");
+}
+
+/* ══════════════════════════════════════════════
+   CSV 저장
+   ══════════════════════════════════════════════ */
+function csvCell(value) {
+  return '"' + String(value == null ? "" : value).replace(/"/g, '""') + '"';
+}
+
+function exportCsv() {
+  clearNotice();
+
+  if (!visibleHistoryRows.length) {
+    showNotice("CSV로 저장할 조회 결과가 없습니다.", "error");
+    return;
+  }
+
+  const headers = [
+    "NO",
+    "분류",
+    "식별번호",
+    "작업일",
+    "고객사",
+    "품명",
+    "품번",
+    "설비명",
+    "사용수량",
+    "사용시간(hr)",
+    "특이사항"
+  ];
+
+  const csvRows = [headers.map(csvCell).join(",")];
+
+  visibleHistoryRows.forEach(function (row, index) {
+    csvRows.push(
+      [
+        index + 1,
+        row.identification_code,
+        row.coil_identifier,
+        row.work_date,
+        row.customer_name,
+        row.item_name,
+        row.item_number,
+        row.equipment_name,
+        row.input_quantity,
+        row.operation_hours,
+        row.special_notes
+      ]
+        .map(csvCell)
+        .join(",")
+    );
+  });
+
+  const totalQuantity = visibleHistoryRows.reduce(function (sum, row) {
+    return sum + toNumber(row.input_quantity);
+  }, 0);
+
+  const totalHours = visibleHistoryRows.reduce(function (sum, row) {
+    return sum + toNumber(row.operation_hours);
+  }, 0);
+
+  csvRows.push(
+    [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "합계",
+      totalQuantity,
+      totalHours,
+      ""
+    ]
+      .map(csvCell)
+      .join(",")
+  );
+
+  const blob = new Blob(
+    ["\uFEFF" + csvRows.join("\r\n")],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "coil_history_" + localDateText(new Date()) + ".csv";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+
+  showNotice(
+    "CSV 다운로드가 완료되었습니다. " +
+      visibleHistoryRows.length.toLocaleString("ko-KR") +
+      "건",
+    "success"
+  );
+}
+
+/* ══════════════════════════════════════════════
+   PDF 저장 - A4 가로, 흰색 바탕, 검정 글자, 다중 페이지
+   ══════════════════════════════════════════════ */
+function buildConditionText() {
+  const start = document.getElementById("searchStart").value || "-";
+  const end = document.getElementById("searchEnd").value || "-";
+  const code = document.getElementById("searchCode").value || "전체";
+  const coil = document.getElementById("searchCoil").value || "전체";
+  const customer = document.getElementById("searchCustomer").value || "전체";
+  const item = document.getElementById("searchItem").value || "전체";
+  const itemNumber =
+    document.getElementById("searchItemNumber").value || "전체";
+
+  return [
+    "작업기간 " + start + " ~ " + end,
+    "분류코드 " + code,
+    "코일 " + coil,
+    "고객사 " + customer,
+    "품명 " + item,
+    "품번 " + itemNumber
+  ].join(" ｜ ");
+}
+
+function buildPrintTable(rows, startIndex) {
+  const bodyHtml = rows
+    .map(function (row, index) {
+      return (
+        "<tr>" +
+        "<td>" + (startIndex + index + 1) + "</td>" +
+        "<td>" + escapeHtml(row.identification_code) + "</td>" +
+        "<td>" + escapeHtml(row.coil_identifier) + "</td>" +
+        "<td>" + escapeHtml(row.work_date) + "</td>" +
+        '<td class="print-left">' + escapeHtml(row.customer_name) + "</td>" +
+        '<td class="print-left">' + escapeHtml(row.item_name) + "</td>" +
+        "<td>" + escapeHtml(row.item_number) + "</td>" +
+        '<td class="print-left">' + escapeHtml(row.equipment_name) + "</td>" +
+        "<td>" + formatNumber(row.input_quantity) + "</td>" +
+        "<td>" + formatHours(row.operation_hours) + "</td>" +
+        '<td class="print-left">' + escapeHtml(row.special_notes) + "</td>" +
+        "</tr>"
+      );
+    })
+    .join("");
+
+  return (
+    '<table>' +
+    '<colgroup>' +
+      '<col style="width:4%">' +
+      '<col style="width:5%">' +
+      '<col style="width:7%">' +
+      '<col style="width:8%">' +
+      '<col style="width:11%">' +
+      '<col style="width:13%">' +
+      '<col style="width:11%">' +
+      '<col style="width:12%">' +
+      '<col style="width:8%">' +
+      '<col style="width:8%">' +
+      '<col style="width:13%">' +
+    '</colgroup>' +
+    '<thead><tr>' +
+      '<th>NO</th><th>분류</th><th>식별번호</th><th>작업일</th>' +
+      '<th>고객사</th><th>품명</th><th>품번</th><th>설비명</th>' +
+      '<th>사용수량</th><th>사용시간</th><th>특이사항</th>' +
+    '</tr></thead>' +
+    '<tbody>' + bodyHtml + '</tbody>' +
+    '</table>'
+  );
+}
+
+async function exportPdf() {
+  clearNotice();
+
+  if (!visibleHistoryRows.length) {
+    showNotice("PDF로 저장할 조회 결과가 없습니다.", "error");
+    return;
+  }
+
+  showLoading("PDF 파일을 생성하는 중입니다.");
+
+  const button = document.getElementById("btnPdf");
+  button.disabled = true;
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+      compress: true
+    });
+
+    const rowsPerPage = 18;
+    const totalPages = Math.ceil(visibleHistoryRows.length / rowsPerPage);
+    const totalQuantity = visibleHistoryRows.reduce(function (sum, row) {
+      return sum + toNumber(row.input_quantity);
+    }, 0);
+    const totalHours = visibleHistoryRows.reduce(function (sum, row) {
+      return sum + toNumber(row.operation_hours);
+    }, 0);
+
+    const printRoot = document.getElementById("printRoot");
+    printRoot.innerHTML = "";
+
+    for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
+      const startIndex = pageIndex * rowsPerPage;
+      const pageRows = visibleHistoryRows.slice(
+        startIndex,
+        startIndex + rowsPerPage
+      );
+
+      const sheet = document.createElement("section");
+      sheet.className = "print-sheet";
+      sheet.innerHTML =
+        '<div class="print-title">코일이력관리대장</div>' +
+        '<div class="print-condition">' +
+          escapeHtml(buildConditionText()) +
+        "</div>" +
+        buildPrintTable(pageRows, startIndex) +
+        (pageIndex === totalPages - 1
+          ? '<div class="print-summary">총 사용건수 ' +
+              visibleHistoryRows.length.toLocaleString("ko-KR") +
+              "건 ｜ 총 사용수량 " +
+              formatNumber(totalQuantity) +
+              " EA ｜ 총 사용시간 " +
+              formatHours(totalHours) +
+              " hr</div>"
+          : "") +
+        '<div class="print-page">' +
+          (pageIndex + 1) +
+          " / " +
+          totalPages +
+        "</div>";
+
+      printRoot.appendChild(sheet);
+
+      const canvas = await html2canvas(sheet, {
+        scale: 1.7,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 7;
+      const usableWidth = pageWidth - margin * 2;
+      const usableHeight = pageHeight - margin * 2;
+      const ratio = Math.min(
+        usableWidth / canvas.width,
+        usableHeight / canvas.height
+      );
+      const imageWidth = canvas.width * ratio;
+      const imageHeight = canvas.height * ratio;
+
+      if (pageIndex > 0) pdf.addPage("a4", "landscape");
+
+      pdf.addImage(
+        canvas.toDataURL("image/jpeg", 0.94),
+        "JPEG",
+        (pageWidth - imageWidth) / 2,
+        margin,
+        imageWidth,
+        imageHeight,
+        undefined,
+        "FAST"
+      );
+
+      printRoot.removeChild(sheet);
+    }
+
+    pdf.save("coil_history_" + localDateText(new Date()) + ".pdf");
+    showNotice(
+      "PDF 다운로드가 완료되었습니다. 총 " +
+        totalPages +
+        "페이지",
+      "success"
+    );
+  } catch (error) {
+    console.error(error);
+    showNotice("PDF 다운로드 실패: " + formatDbError(error), "error");
+  } finally {
+    document.getElementById("printRoot").innerHTML = "";
+    button.disabled = false;
+    hideLoading();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   이벤트 및 초기 실행
+   ══════════════════════════════════════════════ */
+document.getElementById("searchCode").addEventListener(
+  "change",
+  function () {
+    updateCoilOptions(false);
+  }
+);
+
+document.getElementById("searchCustomer").addEventListener(
+  "change",
+  function () {
+    refreshItemOptions(false);
+    refreshItemNumberOptions(false);
+  }
+);
+
+document.getElementById("searchItem").addEventListener(
+  "change",
+  function () {
+    refreshItemNumberOptions(false);
+  }
+);
+
+document.getElementById("btnSearch").addEventListener(
+  "click",
+  searchHistory
+);
+
+document.getElementById("btnReset").addEventListener(
+  "click",
+  resetSearch
+);
+
+document.getElementById("btnCsv").addEventListener(
+  "click",
+  exportCsv
+);
+
+document.getElementById("btnPdf").addEventListener(
+  "click",
+  exportPdf
+);
+
+document.getElementById("btnMain").addEventListener(
+  "click",
+  function () {
+    window.location.href = MAIN_PAGE_URL;
+  }
+);
+
+async function initializePage() {
+  const range = currentMonthRange();
+  document.getElementById("searchStart").value = range.start;
+  document.getElementById("searchEnd").value = range.end;
+
+  showLoading("로그인 및 회사 권한을 확인하는 중입니다.");
+
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    showLoading("코일 및 조회 기준정보를 불러오는 중입니다.");
+    await Promise.all([
+      loadCoilMaster(),
+      loadFilterSource()
+    ]);
+
+    updateGuide(
+      "기준정보를 불러왔습니다. 조회 조건을 선택한 후 조회 버튼을 눌러주세요."
+    );
+    showNotice(
+      "조회 준비가 완료되었습니다. 코일이력은 조회 버튼을 누를 때 불러옵니다.",
+      "info"
+    );
+  } catch (error) {
+    console.error(error);
+    document.documentElement.classList.remove("auth-pending");
+    const message = "화면 초기화 실패: " + formatDbError(error);
+    updateGuide(message);
+    showNotice(message, "error");
+  } finally {
+    hideLoading();
+  }
+}
+
+window.addEventListener("load", initializePage);
+</script>
+</body>
+</html>
