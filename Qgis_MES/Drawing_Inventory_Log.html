@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도면관리대장 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #1a3a5c;
+  --navy-light: #e8f0fb;
+  --navy-border: #b0c4de;
+  --green: #2e7d32;
+  --green-light: #e8f5e9;
+  --orange: #e65100;
+  --orange-light: #fff3e0;
+  --red: #b3261e;
+  --red-light: #fcebea;
+  --gray-border: #cfd5df;
+  --gray-text: #667085;
+  --background: #f0f2f5;
+  --white: #ffffff;
+}
+html.auth-pending body { visibility: hidden; }
+body {
+  font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+  background: var(--background);
+  color: #222;
+  min-height: 100vh;
+  font-size: 14px;
+}
+button, input, select { font-family: inherit; }
+
+.top-bar { background: var(--navy); color: #fff; }
+.top-bar-inner {
+  max-width: 1380px;
+  margin: 0 auto;
+  min-height: 56px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.brand-wrap { display: flex; align-items: center; gap: 12px; }
+.home-link { color: #fff; text-decoration: none; }
+.top-bar h1 { font-size: clamp(17px, 2vw, 21px); font-weight: 700; letter-spacing: .5px; }
+.top-bar .sub { font-size: 12px; opacity: .78; margin-top: 2px; }
+.user-area { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.user-email { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .88; }
+.logout-btn {
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,.55);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+.logout-btn:hover { background: rgba(255,255,255,.12); }
+
+.container { max-width: 1380px; margin: 0 auto; padding: 16px 16px 38px; }
+.filter-card, .table-card {
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+}
+.filter-card { padding: 13px 14px; margin-bottom: 12px; }
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(230px, 1.6fr) repeat(5, minmax(120px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+.field { min-width: 0; }
+.field label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.date-range { display: grid; grid-template-columns: 1fr 16px 1fr; gap: 4px; align-items: center; }
+.date-range span { text-align: center; color: #777; font-size: 12px; }
+.field input, .field select {
+  width: 100%;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid #aeb7c5;
+  border-radius: 5px;
+  background: #fff;
+  color: #222;
+  font-size: 13px;
+  outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(26,58,92,.10); }
+.button-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.btn {
+  min-height: 36px;
+  padding: 0 15px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid #aeb7c5;
+  background: #fff;
+  color: #444;
+}
+.btn:hover { background: #f6f7f9; }
+.btn-primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+.btn-primary:hover { background: #254f7a; }
+.btn-pdf { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-pdf:hover { background: #cf352d; }
+.btn:disabled { opacity: .55; cursor: default; }
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.kpi {
+  background: #fff;
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  padding: 11px 15px;
+}
+.kpi-label { color: var(--gray-text); font-size: 12px; margin-bottom: 5px; }
+.kpi-value { color: var(--navy); font-size: 24px; font-weight: 700; }
+.kpi.drawing-yes .kpi-value { color: var(--green); }
+.kpi.drawing-no .kpi-value { color: var(--red); }
+.kpi.wait .kpi-value { color: var(--orange); }
+
+.table-card { overflow: hidden; }
+.table-head {
+  background: var(--navy);
+  color: #fff;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.table-head-title { font-size: 14px; font-weight: 700; }
+.table-head-sub { font-size: 11px; opacity: .76; margin-top: 2px; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; min-width: 1130px; font-size: 13px; }
+th, td {
+  border-right: 1px solid #d7dce4;
+  border-bottom: 1px solid #d7dce4;
+  padding: 7px 7px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+th:last-child, td:last-child { border-right: none; }
+thead th { background: #2a4f7c; color: #fff; font-size: 12px; font-weight: 700; }
+tbody tr:hover td { background: #f3f7fc; }
+.td-left { text-align: left; }
+.status-box { padding: 42px 12px !important; color: #777; font-size: 14px; }
+.status-box.error { color: #b42318; }
+
+.auto-stamp {
+  display: inline-flex;
+  width: 54px;
+  height: 54px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #1565c0;
+  border-radius: 50%;
+  color: #1565c0;
+  line-height: 1.15;
+  background: #fff;
+}
+.auto-stamp .stamp-name { font-size: 12px; font-weight: 700; max-width: 46px; overflow: hidden; text-overflow: ellipsis; }
+.auto-stamp .stamp-date { margin-top: 3px; font-size: 9px; }
+.waiting-label, .missing-label, .drawing-label {
+  display: inline-block;
+  border-radius: 99px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.waiting-label { color: var(--orange); background: var(--orange-light); border: 1px solid #f3c99b; }
+.missing-label { color: var(--red); background: var(--red-light); border: 1px solid #e9b9b6; }
+.drawing-label { color: var(--green); background: var(--green-light); border: 1px solid #b8ddb8; }
+.note-main { font-weight: 700; color: var(--red); white-space: normal; line-height: 1.4; }
+.note-sub { color: #6b7280; font-size: 11px; white-space: normal; line-height: 1.4; margin-top: 3px; }
+
+.status-bar {
+  min-height: 35px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #fafafa;
+  color: #667085;
+  border-top: 1px solid #e3e6eb;
+  font-size: 12px;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #b4bac4; flex: 0 0 auto; }
+.spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #ddd;
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin-bottom: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(10px);
+  z-index: 9999;
+  max-width: calc(100vw - 32px);
+  padding: 11px 20px;
+  border-radius: 99px;
+  background: #27364a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: #b42318; }
+
+.print-header, .print-footer { display: none; }
+
+@media (max-width: 1050px) {
+  .filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  body { font-size: 15px; }
+  .top-bar-inner { padding: 9px 10px; }
+  .container { padding: 11px 8px 30px; }
+  .user-email { display: none; }
+  .filter-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .date-field { grid-column: 1 / -1; }
+  .button-row { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .btn { padding: 0 7px; font-size: 12px; }
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .kpi { padding: 9px 11px; }
+  .kpi-value { font-size: 21px; }
+  table { font-size: 13px; }
+}
+@media (max-width: 430px) {
+  .filter-grid { grid-template-columns: 1fr; }
+  .date-field { grid-column: auto; }
+  .button-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; }
+  .top-bar, .filter-card, .kpi-row, .table-head, .status-bar, .toast { display: none !important; }
+  .container { max-width: none; padding: 0; }
+  .table-card { border: none; border-radius: 0; overflow: visible; }
+  .table-wrap { overflow: visible; }
+  .print-header { display: block; margin-bottom: 8px; }
+  .print-title-row { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #aaa; padding-bottom: 7px; }
+  .print-title { font-size: 19px; font-weight: 700; letter-spacing: 4px; }
+  .print-meta { text-align: right; font-size: 9px; color: #555; line-height: 1.7; }
+  .print-summary { display: flex; gap: 18px; margin: 7px 0; font-size: 10px; }
+  table { min-width: 0; width: 100%; font-size: 9px; }
+  th, td { padding: 3px 3px; }
+  thead th { background: var(--navy) !important; }
+  .auto-stamp { width: 35px; height: 35px; border-width: 1.5px; }
+  .auto-stamp .stamp-name { font-size: 8px; }
+  .auto-stamp .stamp-date { font-size: 6px; margin-top: 1px; }
+  .waiting-label, .missing-label, .drawing-label { padding: 2px 5px; font-size: 7px; }
+  .note-main, .note-sub { font-size: 7px; }
+  .print-footer { display: flex; justify-content: space-between; border-top: 1px solid #bbb; margin-top: 8px; padding-top: 5px; color: #777; font-size: 8px; }
+}
+</style>
+</head>
+<body>
+<header class="top-bar">
+  <div class="top-bar-inner">
+    <div class="brand-wrap">
+      <a class="home-link" href="./main1.html" aria-label="메인화면으로 이동">
+        <h1>📋 도면관리대장</h1>
+        <div class="sub">Drawing Inventory Log · HeatPro MES · 자동 생성 문서</div>
+      </a>
+    </div>
+    <div class="user-area">
+      <span class="user-email" id="currentUserName">로그인 확인 중</span>
+      <button class="logout-btn" type="button" id="logoutButton">로그아웃</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <section class="filter-card" aria-label="도면관리대장 조회 조건">
+    <div class="filter-grid">
+      <div class="field date-field">
+        <label>입고기간</label>
+        <div class="date-range">
+          <input type="date" id="fFrom" aria-label="입고기간 시작일">
+          <span>~</span>
+          <input type="date" id="fTo" aria-label="입고기간 종료일">
+        </div>
+      </div>
+      <div class="field">
+        <label for="fCustomer">고객사</label>
+        <select id="fCustomer"><option value="">전체</option></select>
+      </div>
+      <div class="field">
+        <label for="fItemName">품명</label>
+        <select id="fItemName"><option value="">전체</option></select>
+      </div>
+      <div class="field">
+        <label for="fItemNumber">품번</label>
+        <select id="fItemNumber"><option value="">전체</option></select>
+      </div>
+      <div class="field">
+        <label for="fDrawingStatus">도면상태</label>
+        <select id="fDrawingStatus">
+          <option value="">전체</option>
+          <option value="yes">도면 있음</option>
+          <option value="no">도면 없음</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fShippingStatus">반출상태</label>
+        <select id="fShippingStatus">
+          <option value="">전체</option>
+          <option value="done">반출완료</option>
+          <option value="wait">반출대기</option>
+        </select>
+      </div>
+    </div>
+    <div class="button-row">
+      <button class="btn btn-primary" type="button" id="searchButton">조회</button>
+      <button class="btn" type="button" id="resetButton">초기화</button>
+      <button class="btn" type="button" id="printButton">인쇄</button>
+      <button class="btn btn-pdf" type="button" id="pdfButton">PDF 저장</button>
+      <button class="btn" type="button" id="csvButton">CSV 저장</button>
+    </div>
+  </section>
+
+  <section class="kpi-row" aria-label="도면관리대장 요약">
+    <div class="kpi"><div class="kpi-label">전체 건수</div><div class="kpi-value" id="kTotal">-</div></div>
+    <div class="kpi drawing-yes"><div class="kpi-label">도면 있음</div><div class="kpi-value" id="kDrawingYes">-</div></div>
+    <div class="kpi drawing-no"><div class="kpi-label">도면 없음</div><div class="kpi-value" id="kDrawingNo">-</div></div>
+    <div class="kpi wait"><div class="kpi-label">반출대기</div><div class="kpi-value" id="kWaiting">-</div></div>
+  </section>
+
+  <div class="print-header" id="printHeader">
+    <div class="print-title-row">
+      <div>
+        <div class="print-title">도 면 관 리 대 장</div>
+        <div style="font-size:9px;color:#555;margin-top:2px;">Drawing Inventory Log · HeatPro MES</div>
+      </div>
+      <div class="print-meta" id="printMeta"></div>
+    </div>
+    <div class="print-summary" id="printSummary"></div>
+  </div>
+
+  <section class="table-card">
+    <div class="table-head">
+      <div>
+        <div class="table-head-title" id="tableTitle">도면 접수 / 반출 현황</div>
+        <div class="table-head-sub">입고일·출고일·작업자를 기준으로 접수 및 반출 도장을 자동 생성합니다.</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="drawingTable">
+        <thead>
+          <tr>
+            <th style="width:46px;">NO</th>
+            <th style="width:92px;">입고일</th>
+            <th style="width:92px;">작업일</th>
+            <th style="width:105px;">고객사</th>
+            <th style="width:150px;">품명</th>
+            <th style="width:145px;">품번</th>
+            <th style="width:130px;">도면번호</th>
+            <th style="width:100px;">접수현황</th>
+            <th style="width:100px;">반출현황</th>
+            <th>비고</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="10" class="status-box"><div class="spinner"></div><br>로그인 및 데이터를 확인하고 있습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="status-bar" role="status" aria-live="polite">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">로그인 확인 중</span>
+    </div>
+  </section>
+
+  <div class="print-footer">
+    <span>※ 이 문서는 HeatPro MES 생산실적 데이터에서 자동 생성되었습니다.</span>
+    <span>도면이 없는 제품은 “도면 없음 / 구두 협의”로 표시합니다.</span>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Supabase / 멀티테넌트 설정
+   ========================================================= */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME = "Total_Production_DB";
+const LOGIN_PAGE_URL = "../index.html";
+const PAGE_SIZE = 1000;
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let masterRows = [];
+let filteredRows = [];
+let toastTimer = null;
+
+const SELECT_FIELDS = [
+  "production_system_id",
+  "company_id",
+  "work_date",
+  "receiving_date",
+  "customer_name",
+  "item_name",
+  "item_number",
+  "worker_name",
+  "drawing_status",
+  "receiving_drawing",
+  "shipping_date",
+  "special_notes",
+  "is_active"
+].join(",");
+
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const { data: userData, error: userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if (userError || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope: "local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  document.getElementById("currentUserName").textContent = user.email || "로그인 사용자";
+  return true;
+}
+
+sb.auth.onAuthStateChange(function(event) {
+  if (event === "SIGNED_OUT") redirectToLogin();
+});
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function toYmd(date) {
+  return date.getFullYear() + "-" + pad2(date.getMonth() + 1) + "-" + pad2(date.getDate());
+}
+
+function monthFirst(date) {
+  return date.getFullYear() + "-" + pad2(date.getMonth() + 1) + "-01";
+}
+
+function monthLast(date) {
+  return toYmd(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function normalizeText(value) {
+  return String(value == null ? "" : value).trim();
+}
+
+function isMissingItemNumber(value) {
+  const text = normalizeText(value);
+  return !text || text === "미접수" || text === "품번확인";
+}
+
+function hasDrawing(row) {
+  return normalizeText(row.drawing_status) === "유" && !isMissingItemNumber(row.item_number);
+}
+
+function formatStampDate(dateValue) {
+  const value = normalizeText(dateValue);
+  if (!value) return "";
+  const parts = value.slice(0, 10).split("-");
+  if (parts.length !== 3) return value;
+  return parts[0].slice(2) + "." + parts[1] + "." + parts[2];
+}
+
+function makeStamp(worker, dateValue) {
+  const name = normalizeText(worker);
+  const date = normalizeText(dateValue);
+  if (!name || !date) return '<span class="waiting-label">정보 미입력</span>';
+  return '<div class="auto-stamp">' +
+    '<span class="stamp-name">' + escapeHtml(name) + '</span>' +
+    '<span class="stamp-date">' + escapeHtml(formatStampDate(date)) + '</span>' +
+    '</div>';
+}
+
+function setStatus(type, text) {
+  const dot = document.getElementById("statusDot");
+  const label = document.getElementById("statusText");
+  const colors = {
+    idle: "#b4bac4",
+    loading: "#1a3a5c",
+    success: "#2e7d32",
+    warning: "#e65100",
+    error: "#b3261e"
+  };
+  dot.style.background = colors[type] || colors.idle;
+  label.textContent = text;
+}
+
+function showToast(message, type) {
+  const toast = document.getElementById("toast");
+  clearTimeout(toastTimer);
+  toast.textContent = message;
+  toast.className = "toast" + (type === "error" ? " error" : "") + " show";
+  toastTimer = setTimeout(function() {
+    toast.className = "toast";
+  }, 2400);
+}
+
+function setLoading(message) {
+  document.getElementById("tbody").innerHTML =
+    '<tr><td colspan="10" class="status-box"><div class="spinner"></div><br>' + escapeHtml(message) + '</td></tr>';
+  setStatus("loading", message);
+  setButtonsDisabled(true);
+}
+
+function setButtonsDisabled(disabled) {
+  document.querySelectorAll("#searchButton,#resetButton,#printButton,#pdfButton,#csvButton").forEach(function(button) {
+    button.disabled = disabled;
+  });
+}
+
+function fillSelect(selectId, values, selectedValue) {
+  const select = document.getElementById(selectId);
+  const selected = selectedValue == null ? select.value : selectedValue;
+  select.innerHTML = '<option value="">전체</option>';
+  values.forEach(function(value) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+  if (values.indexOf(selected) >= 0) select.value = selected;
+}
+
+function uniqueSorted(values) {
+  return Array.from(new Set(values.map(normalizeText).filter(Boolean))).sort(function(a, b) {
+    return a.localeCompare(b, "ko");
+  });
+}
+
+function updateCustomerOptions() {
+  fillSelect("fCustomer", uniqueSorted(masterRows.map(function(row) { return row.customer_name; })), "");
+  updateItemNameOptions();
+}
+
+function updateItemNameOptions() {
+  const customer = document.getElementById("fCustomer").value;
+  const rows = masterRows.filter(function(row) {
+    return !customer || normalizeText(row.customer_name) === customer;
+  });
+  fillSelect("fItemName", uniqueSorted(rows.map(function(row) { return row.item_name; })), "");
+  updateItemNumberOptions();
+}
+
+function updateItemNumberOptions() {
+  const customer = document.getElementById("fCustomer").value;
+  const itemName = document.getElementById("fItemName").value;
+  const rows = masterRows.filter(function(row) {
+    if (customer && normalizeText(row.customer_name) !== customer) return false;
+    if (itemName && normalizeText(row.item_name) !== itemName) return false;
+    return true;
+  });
+  fillSelect("fItemNumber", uniqueSorted(rows.map(function(row) { return row.item_number; })), "");
+}
+
+async function loadMasterRows() {
+  const result = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await sb
+      .from(TABLE_NAME)
+      .select("customer_name,item_name,item_number")
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .order("customer_name", { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    const page = data || [];
+    result.push.apply(result, page);
+    if (page.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  masterRows = result;
+  updateCustomerOptions();
+}
+
+function buildQuery(offset) {
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+  const customer = document.getElementById("fCustomer").value;
+  const itemName = document.getElementById("fItemName").value;
+  const itemNumber = document.getElementById("fItemNumber").value;
+  const drawingStatus = document.getElementById("fDrawingStatus").value;
+  const shippingStatus = document.getElementById("fShippingStatus").value;
+
+  let query = sb
+    .from(TABLE_NAME)
+    .select(SELECT_FIELDS)
+    .eq("company_id", currentProfile.company_id)
+    .eq("is_active", true);
+
+  if (from) query = query.gte("receiving_date", from);
+  if (to) query = query.lte("receiving_date", to);
+  if (customer) query = query.eq("customer_name", customer);
+  if (itemName) query = query.eq("item_name", itemName);
+  if (itemNumber) query = query.eq("item_number", itemNumber);
+
+  if (drawingStatus === "yes") {
+    query = query.eq("drawing_status", "유").not("item_number", "in", '("미접수","품번확인")');
+  } else if (drawingStatus === "no") {
+    query = query.or('drawing_status.neq.유,drawing_status.is.null,item_number.eq.미접수,item_number.eq.품번확인');
+  }
+
+  if (shippingStatus === "done") {
+    query = query.not("shipping_date", "is", null);
+  } else if (shippingStatus === "wait") {
+    query = query.is("shipping_date", null);
+  }
+
+  return query
+    .order("receiving_date", { ascending: true })
+    .order("work_date", { ascending: true })
+    .order("customer_name", { ascending: true })
+    .range(offset, offset + PAGE_SIZE - 1);
+}
+
+async function fetchRows() {
+  const rows = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await buildQuery(offset);
+    if (error) throw error;
+    const page = data || [];
+    rows.push.apply(rows, page);
+    if (page.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  return rows;
+}
+
+function getNoteHtml(row) {
+  if (hasDrawing(row)) {
+    const note = normalizeText(row.special_notes);
+    return note ? '<div class="note-sub">' + escapeHtml(note) + '</div>' : "-";
+  }
+
+  const detail = normalizeText(row.special_notes);
+  return '<div class="note-main">도면 없음 / 구두 협의</div>' +
+    (detail ? '<div class="note-sub">' + escapeHtml(detail) + '</div>' : "");
+}
+
+function getDrawingNumberHtml(row) {
+  if (!hasDrawing(row)) return '<span class="missing-label">도면 없음</span>';
+  return '<span class="drawing-label">' + escapeHtml(normalizeText(row.item_number)) + '</span>';
+}
+
+function renderRows(rows) {
+  filteredRows = rows;
+
+  const drawingYes = rows.filter(hasDrawing).length;
+  const drawingNo = rows.length - drawingYes;
+  const waiting = rows.filter(function(row) { return !normalizeText(row.shipping_date); }).length;
+
+  document.getElementById("kTotal").textContent = rows.length;
+  document.getElementById("kDrawingYes").textContent = drawingYes;
+  document.getElementById("kDrawingNo").textContent = drawingNo;
+  document.getElementById("kWaiting").textContent = waiting;
+
+  const from = document.getElementById("fFrom").value || "전체";
+  const to = document.getElementById("fTo").value || "전체";
+  const customer = document.getElementById("fCustomer").value || "전체";
+  document.getElementById("tableTitle").textContent = "도면 접수 / 반출 현황 [ " + from + " ~ " + to + " · " + customer + " ]";
+  document.getElementById("printMeta").innerHTML =
+    "조회기간 : " + escapeHtml(from) + " ~ " + escapeHtml(to) + "<br>" +
+    "고객사 : " + escapeHtml(customer) + "<br>" +
+    "출력일시 : " + escapeHtml(new Date().toLocaleString("ko-KR"));
+  document.getElementById("printSummary").innerHTML =
+    "<span><b>전체 :</b> " + rows.length + "건</span>" +
+    "<span><b>도면 있음 :</b> " + drawingYes + "건</span>" +
+    "<span><b>도면 없음 :</b> " + drawingNo + "건</span>" +
+    "<span><b>반출대기 :</b> " + waiting + "건</span>";
+
+  if (!rows.length) {
+    document.getElementById("tbody").innerHTML = '<tr><td colspan="10" class="status-box">조회된 데이터가 없습니다.</td></tr>';
+    setStatus("warning", "조회 완료 · 0건");
+    setButtonsDisabled(false);
+    showToast("조회 완료: 해당 조건의 데이터가 없습니다.");
+    return;
+  }
+
+  document.getElementById("tbody").innerHTML = rows.map(function(row, index) {
+    const shippingHtml = normalizeText(row.shipping_date)
+      ? makeStamp(row.worker_name, row.shipping_date)
+      : '<span class="waiting-label">반출대기</span>';
+
+    return "<tr>" +
+      "<td>" + (index + 1) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.receiving_date)) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.work_date)) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.customer_name)) + "</td>" +
+      '<td class="td-left">' + escapeHtml(normalizeText(row.item_name)) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.item_number) || "미입력") + "</td>" +
+      "<td>" + getDrawingNumberHtml(row) + "</td>" +
+      "<td>" + makeStamp(row.worker_name, row.receiving_date) + "</td>" +
+      "<td>" + shippingHtml + "</td>" +
+      "<td>" + getNoteHtml(row) + "</td>" +
+      "</tr>";
+  }).join("");
+
+  setStatus("success", "조회 완료 · " + rows.length + "건 (도면 있음 " + drawingYes + "건 / 도면 없음 " + drawingNo + "건 / 반출대기 " + waiting + "건)");
+  setButtonsDisabled(false);
+  showToast("조회가 완료되었습니다. " + rows.length + "건");
+}
+
+async function applyFilter() {
+  if (!currentProfile) return;
+  setLoading("도면관리대장 데이터를 불러오는 중입니다.");
+
+  try {
+    const rows = await fetchRows();
+    renderRows(rows);
+  } catch (error) {
+    console.error("도면관리대장 조회 실패:", error);
+    document.getElementById("tbody").innerHTML = '<tr><td colspan="10" class="status-box error">조회 실패: ' + escapeHtml(error.message || String(error)) + '</td></tr>';
+    setStatus("error", "조회 실패: " + (error.message || "알 수 없는 오류"));
+    setButtonsDisabled(false);
+    showToast("조회에 실패했습니다.", "error");
+  }
+}
+
+function resetFilter() {
+  const now = new Date();
+  document.getElementById("fFrom").value = monthFirst(now);
+  document.getElementById("fTo").value = monthLast(now);
+  document.getElementById("fCustomer").value = "";
+  updateItemNameOptions();
+  document.getElementById("fDrawingStatus").value = "";
+  document.getElementById("fShippingStatus").value = "";
+  applyFilter();
+  showToast("조회 조건을 초기화했습니다.");
+}
+
+function printDocument() {
+  if (!filteredRows.length) {
+    showToast("인쇄할 조회 데이터가 없습니다.", "error");
+    return;
+  }
+  setStatus("success", "인쇄 화면을 열었습니다.");
+  window.print();
+}
+
+function csvCell(value) {
+  return '"' + String(value == null ? "" : value).replace(/"/g, '""') + '"';
+}
+
+function downloadCSV() {
+  if (!filteredRows.length) {
+    showToast("CSV로 저장할 조회 데이터가 없습니다.", "error");
+    return;
+  }
+
+  const rows = [["NO","입고일","작업일","고객사","품명","품번","도면번호/상태","접수자","접수일자","반출자","반출일자","반출상태","비고"]];
+  filteredRows.forEach(function(row, index) {
+    const drawingNumber = hasDrawing(row) ? normalizeText(row.item_number) : "도면 없음";
+    const shippingDone = normalizeText(row.shipping_date) ? "반출완료" : "반출대기";
+    const note = hasDrawing(row)
+      ? normalizeText(row.special_notes)
+      : "도면 없음 / 구두 협의" + (normalizeText(row.special_notes) ? " | " + normalizeText(row.special_notes) : "");
+
+    rows.push([
+      index + 1,
+      normalizeText(row.receiving_date),
+      normalizeText(row.work_date),
+      normalizeText(row.customer_name),
+      normalizeText(row.item_name),
+      normalizeText(row.item_number),
+      drawingNumber,
+      normalizeText(row.worker_name),
+      normalizeText(row.receiving_date),
+      normalizeText(row.shipping_date) ? normalizeText(row.worker_name) : "",
+      normalizeText(row.shipping_date),
+      shippingDone,
+      note
+    ]);
+  });
+
+  const csv = rows.map(function(row) { return row.map(csvCell).join(","); }).join("\r\n");
+  const from = document.getElementById("fFrom").value.replace(/-/g, "");
+  const to = document.getElementById("fTo").value.replace(/-/g, "");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "Drawing_Inventory_Log_" + from + "_" + to + ".csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(function() { URL.revokeObjectURL(link.href); }, 1000);
+  setStatus("success", "CSV 저장 완료 · " + filteredRows.length + "건");
+  showToast("CSV 파일을 저장했습니다.");
+}
+
+function buildPdfRows(rows, startIndex) {
+  return rows.map(function(row, localIndex) {
+    const shippingHtml = normalizeText(row.shipping_date)
+      ? makeStamp(row.worker_name, row.shipping_date)
+      : '<span class="waiting-label">반출대기</span>';
+
+    return "<tr>" +
+      "<td>" + (startIndex + localIndex + 1) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.receiving_date)) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.work_date)) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.customer_name)) + "</td>" +
+      '<td style="text-align:left">' + escapeHtml(normalizeText(row.item_name)) + "</td>" +
+      "<td>" + escapeHtml(normalizeText(row.item_number) || "미입력") + "</td>" +
+      "<td>" + getDrawingNumberHtml(row) + "</td>" +
+      "<td>" + makeStamp(row.worker_name, row.receiving_date) + "</td>" +
+      "<td>" + shippingHtml + "</td>" +
+      "<td>" + getNoteHtml(row) + "</td>" +
+      "</tr>";
+  }).join("");
+}
+
+async function exportPDF() {
+  if (!filteredRows.length) {
+    showToast("PDF로 저장할 조회 데이터가 없습니다.", "error");
+    return;
+  }
+
+  const button = document.getElementById("pdfButton");
+  const originalText = button.textContent;
+  button.textContent = "PDF 생성 중";
+  setButtonsDisabled(true);
+  setStatus("loading", "PDF 파일을 생성하는 중입니다.");
+
+  const rowsPerPage = 18;
+  const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+  const drawingYes = filteredRows.filter(hasDrawing).length;
+  const drawingNo = filteredRows.length - drawingYes;
+  const waiting = filteredRows.filter(function(row) { return !normalizeText(row.shipping_date); }).length;
+  const from = document.getElementById("fFrom").value || "전체";
+  const to = document.getElementById("fTo").value || "전체";
+  const customer = document.getElementById("fCustomer").value || "전체";
+
+  const capture = document.createElement("div");
+  capture.style.position = "fixed";
+  capture.style.left = "-10000px";
+  capture.style.top = "0";
+  document.body.appendChild(capture);
+
+  const jsPDFCtor = window.jspdf.jsPDF;
+  const pdf = new jsPDFCtor({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 7;
+  const maxW = pageW - margin * 2;
+  const maxH = pageH - margin * 2;
+
+  try {
+    for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
+      const start = pageIndex * rowsPerPage;
+      const pageRows = filteredRows.slice(start, start + rowsPerPage);
+      capture.innerHTML =
+        '<div style="width:1440px;background:#fff;padding:22px;font-family:Malgun Gothic,Arial,sans-serif;color:#222;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #aaa;padding-bottom:8px;margin-bottom:8px;">' +
+            '<div><div style="font-size:22px;font-weight:700;letter-spacing:5px;">도 면 관 리 대 장</div>' +
+            '<div style="font-size:11px;color:#555;margin-top:3px;">Drawing Inventory Log · HeatPro MES · 자동 생성 문서</div></div>' +
+            '<div style="font-size:11px;color:#555;text-align:right;line-height:1.7;">조회기간 : ' + escapeHtml(from) + ' ~ ' + escapeHtml(to) + '<br>고객사 : ' + escapeHtml(customer) + '<br>출력일시 : ' + escapeHtml(new Date().toLocaleString("ko-KR")) + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:22px;font-size:12px;margin:7px 0 9px;">' +
+            '<span><b>전체 :</b> ' + filteredRows.length + '건</span>' +
+            '<span><b>도면 있음 :</b> ' + drawingYes + '건</span>' +
+            '<span><b>도면 없음 :</b> ' + drawingNo + '건</span>' +
+            '<span><b>반출대기 :</b> ' + waiting + '건</span>' +
+          '</div>' +
+          '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+            '<thead><tr>' +
+              '<th style="width:42px;">NO</th><th style="width:90px;">입고일</th><th style="width:90px;">작업일</th>' +
+              '<th style="width:105px;">고객사</th><th style="width:150px;">품명</th><th style="width:140px;">품번</th>' +
+              '<th style="width:125px;">도면번호</th><th style="width:90px;">접수현황</th><th style="width:90px;">반출현황</th><th>비고</th>' +
+            '</tr></thead><tbody>' + buildPdfRows(pageRows, start) + '</tbody>' +
+          '</table>' +
+          '<div style="display:flex;justify-content:space-between;border-top:1px solid #aaa;margin-top:10px;padding-top:5px;color:#777;font-size:9px;">' +
+            '<span>※ 도면이 없는 제품은 “도면 없음 / 구두 협의”로 자동 표시됩니다.</span>' +
+            '<span>' + (pageIndex + 1) + ' / ' + totalPages + ' page</span>' +
+          '</div>' +
+        '</div>';
+
+      capture.querySelectorAll("th,td").forEach(function(cell) {
+        cell.style.border = "1px solid #c7ccd4";
+        cell.style.padding = "4px 5px";
+        cell.style.textAlign = cell.style.textAlign || "center";
+        cell.style.verticalAlign = "middle";
+      });
+      capture.querySelectorAll("th").forEach(function(cell) {
+        cell.style.background = "#1a3a5c";
+        cell.style.color = "#fff";
+        cell.style.fontWeight = "700";
+      });
+
+      const canvas = await html2canvas(capture, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true
+      });
+      const image = canvas.toDataURL("image/png");
+      const ratio = Math.min(maxW / canvas.width, maxH / canvas.height);
+      const renderW = canvas.width * ratio;
+      const renderH = canvas.height * ratio;
+      const x = (pageW - renderW) / 2;
+      const y = margin;
+
+      if (pageIndex > 0) pdf.addPage();
+      pdf.addImage(image, "PNG", x, y, renderW, renderH);
+    }
+
+    const fileDate = toYmd(new Date()).replace(/-/g, "");
+    pdf.save("Drawing_Inventory_Log_" + fileDate + ".pdf");
+    setStatus("success", "PDF 저장 완료 · " + filteredRows.length + "건");
+    showToast("PDF 파일을 저장했습니다.");
+  } catch (error) {
+    console.error("PDF 생성 실패:", error);
+    setStatus("error", "PDF 생성 실패: " + (error.message || "알 수 없는 오류"));
+    showToast("PDF 생성에 실패했습니다.", "error");
+  } finally {
+    capture.remove();
+    button.textContent = originalText;
+    setButtonsDisabled(false);
+  }
+}
+
+async function logout() {
+  document.getElementById("logoutButton").disabled = true;
+  await sb.auth.signOut({ scope: "local" });
+  redirectToLogin();
+}
+
+async function initializePage() {
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    document.documentElement.classList.remove("auth-pending");
+    const now = new Date();
+    document.getElementById("fFrom").value = monthFirst(now);
+    document.getElementById("fTo").value = monthLast(now);
+
+    setLoading("고객사와 품목 정보를 불러오는 중입니다.");
+    await loadMasterRows();
+    await applyFilter();
+  } catch (error) {
+    console.error("초기화 실패:", error);
+    document.documentElement.classList.remove("auth-pending");
+    document.getElementById("tbody").innerHTML = '<tr><td colspan="10" class="status-box error">화면 초기화 실패: ' + escapeHtml(error.message || String(error)) + '</td></tr>';
+    setStatus("error", "화면 초기화에 실패했습니다.");
+    setButtonsDisabled(false);
+    showToast("화면 초기화에 실패했습니다.", "error");
+  }
+}
+
+document.getElementById("fCustomer").addEventListener("change", updateItemNameOptions);
+document.getElementById("fItemName").addEventListener("change", updateItemNumberOptions);
+document.getElementById("searchButton").addEventListener("click", applyFilter);
+document.getElementById("resetButton").addEventListener("click", resetFilter);
+document.getElementById("printButton").addEventListener("click", printDocument);
+document.getElementById("pdfButton").addEventListener("click", exportPDF);
+document.getElementById("csvButton").addEventListener("click", downloadCSV);
+document.getElementById("logoutButton").addEventListener("click", logout);
+
+window.addEventListener("load", initializePage);
+</script>
+</body>
+</html>
