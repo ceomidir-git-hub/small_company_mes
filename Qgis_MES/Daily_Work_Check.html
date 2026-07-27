@@ -689,6 +689,20 @@ function renderDisplayCell(td, col, value) {
 }
 
 
+function getSelectedRows() {
+  return Array.from(document.querySelectorAll("#tbody tr[data-row-index]"))
+    .filter((tr) => tr.querySelector(".row-selector")?.checked);
+}
+
+function syncSelectAll() {
+  const all = Array.from(document.querySelectorAll(".row-selector"));
+  const checked = all.filter((checkbox) => checkbox.checked);
+  const selectAll = document.getElementById("selectAllRows");
+
+  selectAll.checked = all.length > 0 && checked.length === all.length;
+  selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+}
+
 function getFieldValue(tr, field) {
   const td = tr.querySelector(`td[data-field="${field}"]`);
   if (!td) return "";
