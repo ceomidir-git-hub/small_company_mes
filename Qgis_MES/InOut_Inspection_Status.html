@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>입출고검사현황 | HeatPro MES</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#185FA5;--blue-lt:#E6F1FB;--blue-dk:#0C447C;
+  --green:#3B6D11;--green-lt:#EAF3DE;--green-dk:#27500A;
+  --amber:#854F0B;--amber-lt:#FAEEDA;--amber-dk:#633806;
+  --pink:#993556;--pink-lt:#FBEAF0;--pink-dk:#72243E;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --gray:#5F5E5A;--gray-lt:#F1EFE8;--gray-bd:#D3D1C7;
+  --bg:#F8F7F4;--white:#FFFFFF;--text:#2C2C2A;--text-sub:#74736D;
+}
+html.auth-pending body{visibility:hidden;}
+body{
+  font-family:'Malgun Gothic','Noto Sans KR',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;
+}
+button,input,select{font:inherit;}
+button{cursor:pointer;}
+button:disabled{cursor:not-allowed;opacity:.55;}
+
+.top-header{
+  background:var(--white);border-bottom:1px solid var(--gray-bd);
+  padding:0 20px;min-height:58px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px;
+}
+.logo{
+  display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;
+  color:var(--blue);text-decoration:none;white-space:nowrap;
+}
+.logo svg{width:22px;height:22px;}
+.header-actions{display:flex;align-items:center;gap:8px;}
+.header-link{
+  display:inline-flex;align-items:center;justify-content:center;min-height:38px;
+  padding:0 13px;border-radius:7px;border:1px solid var(--gray-bd);
+  background:#fff;color:var(--text);text-decoration:none;font-size:13px;font-weight:700;
+}
+.header-link:hover{background:var(--gray-lt);}
+
+.container{max-width:1440px;margin:0 auto;padding:18px 16px 48px;width:100%;}
+.page-title{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.page-title svg{width:22px;height:22px;color:var(--blue);flex-shrink:0;}
+.page-title h1{font-size:23px;font-weight:800;color:#163F70;}
+.page-title .sub{font-size:13px;color:var(--text-sub);}
+.file-name{font-size:12px;font-weight:400;color:#818078;margin-left:4px;}
+.year-badge{
+  margin-left:auto;background:var(--blue-lt);color:var(--blue-dk);
+  font-size:12px;font-weight:700;padding:4px 11px;border-radius:99px;
+}
+
+.filter-card{
+  background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;
+  padding:14px 16px;margin-bottom:12px;
+}
+.filter-label{
+  font-size:12px;font-weight:700;color:var(--text-sub);
+  letter-spacing:.04em;margin-bottom:10px;
+}
+.filter-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:13px;color:#50504C;font-weight:700;white-space:nowrap;}
+.date-box{display:flex;align-items:center;gap:5px;}
+.fg input[type="date"],.fg select{
+  height:40px;border:1px solid var(--gray-bd);border-radius:7px;
+  padding:0 9px;font-size:13px;color:var(--text);background:var(--white);outline:none;
+}
+.fg input[type="date"]{width:142px;}
+.fg select{width:150px;}
+.fg input:focus,.fg select:focus{
+  border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.12);
+}
+.sep{color:var(--text-sub);font-size:13px;}
+.btn-row{display:flex;gap:7px;margin-left:auto;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  min-height:40px;padding:0 15px;border-radius:7px;font-size:13px;font-weight:700;
+  cursor:pointer;border:1px solid var(--gray-bd);background:var(--white);
+  color:#54534F;transition:background .1s;
+}
+.btn:hover{background:var(--gray-lt);}
+.btn svg{width:15px;height:15px;}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-primary:hover{background:var(--blue-dk);}
+
+.notice{
+  display:none;margin-bottom:12px;padding:11px 13px;border-radius:7px;
+  font-size:13px;line-height:1.45;
+}
+.notice.show{display:block;}
+.notice.info{background:#EFF6FF;color:#1D4ED8;}
+.notice.success{background:#ECFDF5;color:#047857;}
+.notice.error{background:#FFF1F2;color:#BE123C;}
+
+.stats-row{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:9px;margin-bottom:12px;
+}
+.stat-card{
+  background:var(--white);border:1px solid var(--gray-bd);
+  border-radius:10px;padding:12px 13px;
+}
+.s-label{
+  font-size:12px;color:var(--text-sub);display:flex;align-items:center;
+  gap:5px;margin-bottom:5px;white-space:nowrap;font-weight:700;
+}
+.s-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.s-val{font-size:19px;font-weight:800;color:var(--text);white-space:nowrap;}
+.s-unit{font-size:12px;font-weight:500;color:var(--text-sub);margin-left:2px;}
+
+.table-card{
+  background:var(--white);border:1px solid var(--gray-bd);
+  border-radius:10px;overflow:hidden;
+}
+.table-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;border-bottom:1px solid var(--gray-bd);gap:10px;
+}
+.t-title{
+  font-size:14px;font-weight:800;color:var(--text);
+  display:flex;align-items:center;gap:7px;
+}
+.cnt-badge{
+  background:var(--blue-lt);color:var(--blue-dk);font-size:12px;
+  font-weight:700;padding:3px 9px;border-radius:99px;
+}
+.table-wrap{overflow:auto;-webkit-overflow-scrolling:touch;max-height:650px;}
+table{
+  width:100%;border-collapse:collapse;font-size:13px;
+  table-layout:fixed;min-width:1260px;
+}
+thead th{position:sticky;z-index:4;}
+thead tr.gr th{
+  top:0;padding:8px 5px;text-align:center;font-size:12px;font-weight:800;
+  border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);
+}
+thead tr.sr th{
+  top:35px;padding:7px 5px;text-align:center;font-size:12px;font-weight:700;
+  border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);
+}
+thead tr.gr th:last-child,thead tr.sr th:last-child{border-right:none;}
+.th-no{background:var(--gray-lt);color:var(--gray);width:42px;}
+.th-in{background:var(--green-lt);color:var(--green-dk);}
+.th-out{background:var(--amber-lt);color:var(--amber-dk);}
+.th-chk{background:var(--pink-lt);color:var(--pink-dk);}
+.th-act{background:var(--gray-lt);color:var(--gray);width:66px;}
+.sr-in{background:#F4FAEE;color:var(--green);}
+.sr-out{background:#FDF6EC;color:var(--amber);}
+.sr-chk{background:#FEF3F7;color:var(--pink);}
+
+tbody td{
+  padding:7px 5px;text-align:center;border-bottom:1px solid #EEECEA;
+  border-right:1px solid #EEECEA;color:var(--text);overflow:hidden;
+}
+tbody td:last-child{border-right:none;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#FAFAF8;}
+.td-no{color:var(--text-sub);font-size:12px;}
+
+.td-input{
+  border:1px solid transparent;border-radius:5px;padding:5px 5px;
+  font-size:12px;width:100%;min-height:31px;background:transparent;
+  color:var(--text);text-align:center;outline:none;font-family:inherit;
+}
+.td-input:hover{border-color:var(--gray-bd);background:var(--gray-lt);}
+.td-input:focus{border-color:var(--blue);background:var(--white);}
+.td-input.modified{border-color:#EF9F27;background:#FAEEDA;}
+
+.save-btn{
+  display:inline-flex;align-items:center;justify-content:center;height:29px;
+  min-width:48px;padding:0 8px;border-radius:5px;font-size:11px;
+  font-weight:800;cursor:pointer;border:1px solid var(--blue);
+  background:var(--blue-lt);color:var(--blue-dk);
+}
+.save-btn:hover{background:#B5D4F4;}
+.save-btn.saved{border-color:var(--green);background:var(--green-lt);color:var(--green-dk);}
+.save-btn:disabled{cursor:wait;}
+
+.empty-row td{padding:46px;color:var(--text-sub);font-size:13px;border:none!important;}
+.status-bar{
+  display:flex;align-items:center;gap:7px;padding:9px 14px;
+  border-top:1px solid var(--gray-bd);font-size:12px;color:var(--text-sub);
+  min-height:36px;
+}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:var(--green);}
+.dot-loading{background:var(--amber);animation:pulse 1s infinite;}
+.dot-error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:#2C2C2A;color:#fff;font-size:13px;padding:11px 20px;
+  border-radius:8px;z-index:9999;opacity:0;pointer-events:none;
+  transition:opacity .2s;white-space:nowrap;max-width:calc(100vw - 24px);
+  overflow:hidden;text-overflow:ellipsis;
+}
+.toast.show{opacity:1;}
+
+.loading{
+  display:none;position:fixed;inset:0;z-index:9998;align-items:center;
+  justify-content:center;background:rgba(15,23,42,.36);
+}
+.loading.show{display:flex;}
+.loading-box{
+  background:#fff;border-radius:11px;padding:17px 22px;
+  box-shadow:0 10px 30px rgba(15,23,42,.2);font-size:14px;font-weight:800;
+}
+
+@media(max-width:980px){
+  .stats-row{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .btn-row{margin-left:0;width:100%;}
+}
+@media(max-width:680px){
+  .top-header{padding:8px 10px;align-items:stretch;flex-direction:column;}
+  .header-actions{display:grid;grid-template-columns:1fr 1fr;}
+  .header-link{width:100%;}
+  .container{padding:12px 8px 36px;}
+  .page-title h1{font-size:19px;}
+  .file-name{display:block;width:100%;margin-left:32px;}
+  .year-badge{margin-left:0;}
+  .filter-row{align-items:stretch;flex-direction:column;}
+  .fg,.fg select{width:100%;}
+  .date-box{display:grid;grid-template-columns:1fr 18px 1fr;}
+  .fg input[type="date"]{width:100%;}
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;}
+  .stats-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .table-toolbar{align-items:stretch;flex-direction:column;}
+  .table-toolbar .btn{width:100%;}
+}
+@media(max-width:390px){
+  .stats-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+
+<body>
+<header class="top-header">
+  <a class="logo" href="main1.html" aria-label="메인메뉴로 이동">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    HeatPro MES
+  </a>
+  <div class="header-actions">
+    <a class="header-link" href="InOut_Management_Log.html">입출고관리대장</a>
+    <a class="header-link" href="main1.html">⌂ 메인메뉴</a>
+  </div>
+</header>
+
+<main class="container">
+  <div class="page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+      <rect x="9" y="3" width="6" height="4" rx="1"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
+    <h1>입출고검사현황 <span class="file-name">_InOut_Inspection_Status.html</span></h1>
+    <span class="sub">Inbound &amp; Outbound Inspection Status</span>
+    <span class="year-badge" id="yearBadge">-</span>
+  </div>
+
+  <section class="filter-card" aria-label="조회 조건">
+    <div class="filter-label">조회 조건</div>
+    <div class="filter-row">
+      <div class="fg">
+        <label for="fFrom">조회 기간</label>
+        <div class="date-box">
+          <input type="date" id="fFrom">
+          <span class="sep">~</span>
+          <input type="date" id="fTo">
+        </div>
+      </div>
+
+      <div class="fg">
+        <label for="fInDate">입고일</label>
+        <input type="date" id="fInDate">
+      </div>
+
+      <div class="fg">
+        <label for="fOutDate">출고일</label>
+        <input type="date" id="fOutDate">
+      </div>
+
+      <div class="fg">
+        <label for="fCompany">고객사</label>
+        <select id="fCompany">
+          <option value="">전체</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn" id="btnReset" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          초기화
+        </button>
+        <button class="btn btn-primary" id="btnSearch" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          조회
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="notice" id="notice" role="status" aria-live="polite"></div>
+
+  <section class="stats-row" aria-label="입출고검사 합계">
+    <div class="stat-card">
+      <div class="s-label"><span class="s-dot" style="background:var(--blue)"></span>총 입고건수</div>
+      <div class="s-val" id="kInCnt">0<span class="s-unit">건</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label"><span class="s-dot" style="background:var(--blue)"></span>총 입고수량</div>
+      <div class="s-val" id="kInQty">0<span class="s-unit">EA</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label"><span class="s-dot" style="background:var(--amber)"></span>총 출고건수</div>
+      <div class="s-val" id="kOutCnt">0<span class="s-unit">건</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label"><span class="s-dot" style="background:var(--amber)"></span>총 출고수량</div>
+      <div class="s-val" id="kOutQty">0<span class="s-unit">EA</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="s-label"><span class="s-dot" style="background:var(--green)"></span>검사 합격률</div>
+      <div class="s-val" id="kRate">—<span class="s-unit">%</span></div>
+    </div>
+  </section>
+
+  <section class="table-card">
+    <div class="table-toolbar">
+      <span class="t-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="3" y1="15" x2="21" y2="15"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+        검사 내역
+        <span class="cnt-badge" id="tCount">0건</span>
+      </span>
+
+      <button class="btn" id="btnCsv" type="button" style="min-height:34px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        CSV 내보내기
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col style="width:42px">
+          <col style="width:105px">
+          <col style="width:125px">
+          <col style="width:145px">
+          <col style="width:125px">
+          <col style="width:95px">
+          <col style="width:95px">
+          <col style="width:95px">
+          <col style="width:115px">
+          <col style="width:105px">
+          <col style="width:95px">
+          <col style="width:110px">
+          <col style="width:100px">
+          <col style="width:66px">
+        </colgroup>
+        <thead>
+          <tr class="gr">
+            <th rowspan="2" class="th-no">NO</th>
+            <th colspan="8" class="th-in">입고 검사</th>
+            <th colspan="2" class="th-out">출고</th>
+            <th colspan="2" class="th-chk">검사 결과</th>
+            <th rowspan="2" class="th-act">저장</th>
+          </tr>
+          <tr class="sr">
+            <th class="sr-in">입고일</th>
+            <th class="sr-in">고객사</th>
+            <th class="sr-in">품명</th>
+            <th class="sr-in">품번</th>
+            <th class="sr-in">재질</th>
+            <th class="sr-in">입고수량</th>
+            <th class="sr-in">외관</th>
+            <th class="sr-in">도면(사양)</th>
+            <th class="sr-out">출고일</th>
+            <th class="sr-out">출고수량</th>
+            <th class="sr-chk">열처리(QT)</th>
+            <th class="sr-chk">검사결과</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr class="empty-row">
+            <td colspan="14">조회 조건을 선택한 후 조회 버튼을 눌러주세요.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="status-bar">
+      <span class="status-dot dot-ok" id="sDot"></span>
+      <span id="sText">로그인 및 기준정보를 확인하는 중입니다.</span>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading">
+  <div class="loading-box" id="loadingText">처리 중입니다.</div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Supabase 연결
+   ========================================================= */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME = "Total_Production_DB";
+const CUSTOMER_TABLE = "customers";
+const LOGIN_PAGE_URL = "../index.html";
+const MAIN_PAGE_URL = "main1.html";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+const SELECT_COLUMNS = [
+  "production_system_id",
+  "company_id",
+  "receiving_date",
+  "customer_name",
+  "item_name",
+  "item_number",
+  "material_name",
+  "receiving_quantity",
+  "receiving_appearance",
+  "receiving_drawing",
+  "shipping_date",
+  "shipping_quantity",
+  "receiving_heat_treatment_qt",
+  "inspection_result",
+  "is_active"
+].join(",");
+
+const QT_OPTIONS = ["양호", "미실시", "불량"];
+const RESULT_OPTIONS = ["양호", "불량", "대기"];
+
+let currentUser = null;
+let currentProfile = null;
+let currentRows = [];
+
+/* =========================================================
+   인증 및 회사 확인
+   ========================================================= */
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const { data: userData, error: userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+
+  if (userError || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const { data: profile, error: profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope: "local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+sb.auth.onAuthStateChange(function(event) {
+  if (event === "SIGNED_OUT") {
+    redirectToLogin();
+  }
+});
+
+/* =========================================================
+   공통 함수
+   ========================================================= */
+function showLoading(message) {
+  document.getElementById("loadingText").textContent =
+    message || "처리 중입니다.";
+  document.getElementById("loading").classList.add("show");
+}
+
+function hideLoading() {
+  document.getElementById("loading").classList.remove("show");
+}
+
+function setStatus(type, message) {
+  const dot = document.getElementById("sDot");
+  dot.className =
+    "status-dot " +
+    (type === "loading"
+      ? "dot-loading"
+      : type === "error"
+      ? "dot-error"
+      : "dot-ok");
+
+  document.getElementById("sText").textContent = message;
+}
+
+function showNotice(message, type) {
+  const notice = document.getElementById("notice");
+  notice.textContent = message;
+  notice.className = "notice show " + (type || "info");
+}
+
+function clearNotice() {
+  const notice = document.getElementById("notice");
+  notice.textContent = "";
+  notice.className = "notice";
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+  window.clearTimeout(showToast.timer);
+  showToast.timer = window.setTimeout(function() {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
+function formatDbError(error) {
+  if (!error) return "알 수 없는 오류";
+  return error.message || error.details || error.hint || String(error);
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(
+    /[&<>"']/g,
+    function(char) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char];
+    }
+  );
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
+
+function toNumber(value) {
+  const numberValue = Number(
+    String(value == null ? "" : value).replace(/,/g, "")
+  );
+  return Number.isFinite(numberValue) ? numberValue : 0;
+}
+
+function localDateText(date) {
+  return (
+    date.getFullYear() +
+    "-" +
+    String(date.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(date.getDate()).padStart(2, "0")
+  );
+}
+
+function currentMonthRange() {
+  const today = new Date();
+  return {
+    start: localDateText(new Date(today.getFullYear(), today.getMonth(), 1)),
+    end: localDateText(new Date(today.getFullYear(), today.getMonth() + 1, 0))
+  };
+}
+
+function setDefaultDates() {
+  const range = currentMonthRange();
+  document.getElementById("fFrom").value = range.start;
+  document.getElementById("fTo").value = range.end;
+  document.getElementById("yearBadge").textContent =
+    String(new Date().getFullYear()).slice(2) + "년도";
+}
+
+async function fetchAllRows(tableName, selectColumns, buildQuery) {
+  const pageSize = 1000;
+  let start = 0;
+  let resultRows = [];
+
+  while (true) {
+    let query = sb
+      .from(tableName)
+      .select(selectColumns)
+      .eq("company_id", currentProfile.company_id);
+
+    query = buildQuery ? buildQuery(query) : query;
+    query = query.range(start, start + pageSize - 1);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const pageRows = data || [];
+    resultRows = resultRows.concat(pageRows);
+
+    if (pageRows.length < pageSize) break;
+    start += pageSize;
+  }
+
+  return resultRows;
+}
+
+/* =========================================================
+   고객사 기준정보
+   ========================================================= */
+async function loadCustomers() {
+  const select = document.getElementById("fCompany");
+  select.innerHTML = '<option value="">전체</option>';
+
+  try {
+    const rows = await fetchAllRows(
+      CUSTOMER_TABLE,
+      "customer_name,is_active",
+      function(query) {
+        return query
+          .eq("is_active", true)
+          .order("customer_name", { ascending: true });
+      }
+    );
+
+    const names = Array.from(
+      new Set(
+        rows
+          .map(function(row) {
+            return String(row.customer_name || "").trim();
+          })
+          .filter(Boolean)
+      )
+    );
+
+    names.forEach(function(name) {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.warn("고객사 마스터 조회 실패:", error);
+    /*
+     * 고객사 마스터 조회 실패는 화면 전체를 중단하지 않습니다.
+     * 조회 결과에서 고객사 목록을 보완할 수 있도록 빈 전체 항목을 유지합니다.
+     */
+  }
+}
+
+function supplementCustomerOptions(rows) {
+  const select = document.getElementById("fCompany");
+  const existing = new Set(
+    Array.from(select.options).map(function(option) {
+      return option.value;
+    })
+  );
+
+  const names = Array.from(
+    new Set(
+      rows
+        .map(function(row) {
+          return String(row.customer_name || "").trim();
+        })
+        .filter(Boolean)
+    )
+  ).sort(function(a, b) {
+    return a.localeCompare(b, "ko-KR", { numeric: true });
+  });
+
+  names.forEach(function(name) {
+    if (existing.has(name)) return;
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+}
+
+/* =========================================================
+   조회
+   ========================================================= */
+async function searchData() {
+  clearNotice();
+
+  if (!currentProfile) {
+    showNotice("로그인 회사 정보를 확인할 수 없습니다.", "error");
+    return;
+  }
+
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+  const inDate = document.getElementById("fInDate").value;
+  const outDate = document.getElementById("fOutDate").value;
+  const company = document.getElementById("fCompany").value;
+
+  if (from && to && from > to) {
+    showNotice("조회 기간의 시작일이 종료일보다 늦습니다.", "error");
+    return;
+  }
+
+  showLoading("입출고검사 데이터를 조회하는 중입니다.");
+  setStatus("loading", "조회 중입니다.");
+
+  try {
+    currentRows = await fetchAllRows(
+      TABLE_NAME,
+      SELECT_COLUMNS,
+      function(query) {
+        let filtered = query.eq("is_active", true);
+
+        if (from) filtered = filtered.gte("receiving_date", from);
+        if (to) filtered = filtered.lte("receiving_date", to);
+        if (inDate) filtered = filtered.eq("receiving_date", inDate);
+        if (outDate) filtered = filtered.eq("shipping_date", outDate);
+        if (company) filtered = filtered.eq("customer_name", company);
+
+        return filtered
+          .order("receiving_date", { ascending: true, nullsFirst: false })
+          .order("customer_name", { ascending: true })
+          .order("item_name", { ascending: true })
+          .order("production_system_id", { ascending: true });
+      }
+    );
+
+    supplementCustomerOptions(currentRows);
+    renderTable(currentRows);
+    updateKpi(currentRows);
+
+    const message =
+      "조회 완료: " +
+      currentRows.length.toLocaleString("ko-KR") +
+      "건을 표시합니다.";
+
+    setStatus("ok", message);
+    showNotice(message, "success");
+  } catch (error) {
+    console.error(error);
+    currentRows = [];
+    renderTable([]);
+    updateKpi([]);
+
+    const message = "조회 실패: " + formatDbError(error);
+    setStatus("error", message);
+    showNotice(message, "error");
+  } finally {
+    hideLoading();
+  }
+}
+
+function resetFilter() {
+  setDefaultDates();
+  document.getElementById("fInDate").value = "";
+  document.getElementById("fOutDate").value = "";
+  document.getElementById("fCompany").value = "";
+
+  currentRows = [];
+  renderInitialTable();
+  updateKpi([]);
+
+  const message =
+    "조회 조건을 초기화했습니다. 조회 버튼을 눌러주세요.";
+  setStatus("ok", message);
+  showNotice("조회 조건이 초기화되었습니다.", "success");
+}
+
+function renderInitialTable() {
+  document.getElementById("tbody").innerHTML =
+    '<tr class="empty-row"><td colspan="14">' +
+    "조회 조건을 선택한 후 조회 버튼을 눌러주세요." +
+    "</td></tr>";
+  document.getElementById("tCount").textContent = "0건";
+}
+
+/* =========================================================
+   표 표시 및 저장
+   ========================================================= */
+function inputCell(field, value, type, index) {
+  const safeValue = value == null ? "" : value;
+  return (
+    '<td><input class="td-input" type="' +
+    type +
+    '" value="' +
+    escapeAttr(safeValue) +
+    '" data-field="' +
+    field +
+    '" data-idx="' +
+    index +
+    '" oninput="markModified(this)"' +
+    (type === "number" ? ' min="0" step="1"' : "") +
+    "></td>"
+  );
+}
+
+function selectCell(field, value, options, index) {
+  const normalized = value || options[0];
+  const optionHtml = options
+    .map(function(option) {
+      return (
+        "<option" +
+        (option === normalized ? " selected" : "") +
+        ">" +
+        escapeHtml(option) +
+        "</option>"
+      );
+    })
+    .join("");
+
+  return (
+    '<td><select class="td-input" data-field="' +
+    field +
+    '" data-idx="' +
+    index +
+    '" onchange="markModified(this)">' +
+    optionHtml +
+    "</select></td>"
+  );
+}
+
+function renderTable(rows) {
+  document.getElementById("tCount").textContent =
+    rows.length.toLocaleString("ko-KR") + "건";
+
+  const tbody = document.getElementById("tbody");
+
+  if (!rows.length) {
+    tbody.innerHTML =
+      '<tr class="empty-row"><td colspan="14">' +
+      "조회된 데이터가 없습니다." +
+      "</td></tr>";
+    return;
+  }
+
+  tbody.innerHTML = rows
+    .map(function(row, index) {
+      return (
+        '<tr data-idx="' +
+        index +
+        '">' +
+        '<td class="td-no">' +
+        (index + 1) +
+        "</td>" +
+        inputCell("receiving_date", row.receiving_date, "date", index) +
+        inputCell("customer_name", row.customer_name, "text", index) +
+        inputCell("item_name", row.item_name, "text", index) +
+        inputCell("item_number", row.item_number, "text", index) +
+        inputCell("material_name", row.material_name, "text", index) +
+        inputCell(
+          "receiving_quantity",
+          row.receiving_quantity,
+          "number",
+          index
+        ) +
+        selectCell(
+          "receiving_appearance",
+          row.receiving_appearance || "미실시",
+          QT_OPTIONS,
+          index
+        ) +
+        inputCell(
+          "receiving_drawing",
+          row.receiving_drawing,
+          "text",
+          index
+        ) +
+        inputCell("shipping_date", row.shipping_date, "date", index) +
+        inputCell(
+          "shipping_quantity",
+          row.shipping_quantity,
+          "number",
+          index
+        ) +
+        selectCell(
+          "receiving_heat_treatment_qt",
+          row.receiving_heat_treatment_qt || "미실시",
+          QT_OPTIONS,
+          index
+        ) +
+        selectCell(
+          "inspection_result",
+          row.inspection_result || "대기",
+          RESULT_OPTIONS,
+          index
+        ) +
+        '<td><button class="save-btn" id="saveBtn-' +
+        index +
+        '" type="button" onclick="saveRow(' +
+        index +
+        ')">저장</button></td>' +
+        "</tr>"
+      );
+    })
+    .join("");
+}
+
+function markModified(element) {
+  element.classList.add("modified");
+  const rowIndex = Number(element.dataset.idx);
+  const button = document.getElementById("saveBtn-" + rowIndex);
+  if (button) {
+    button.classList.remove("saved");
+    button.textContent = "저장";
+  }
+}
+
+async function saveRow(index) {
+  const row = currentRows[index];
+  const tableRow = document.querySelector(
+    'tr[data-idx="' + index + '"]'
+  );
+  const button = document.getElementById("saveBtn-" + index);
+
+  if (
+    !row ||
+    !row.production_system_id ||
+    !tableRow ||
+    !button ||
+    !currentProfile
+  ) {
+    showToast("저장 대상을 확인할 수 없습니다.");
+    return;
+  }
+
+  const changedElements = Array.from(
+    tableRow.querySelectorAll("[data-field].modified")
+  );
+
+  if (!changedElements.length) {
+    showToast("변경된 항목이 없습니다.");
+    return;
+  }
+
+  const updateData = {};
+
+  changedElements.forEach(function(element) {
+    const field = element.dataset.field;
+    let value = element.value;
+
+    if (
+      field === "receiving_quantity" ||
+      field === "shipping_quantity"
+    ) {
+      value = value === "" ? null : Number(value);
+    } else if (
+      field === "receiving_date" ||
+      field === "shipping_date"
+    ) {
+      value = value || null;
+    } else {
+      value = value.trim();
+    }
+
+    updateData[field] = value;
+  });
+
+  updateData.updated_at = new Date().toISOString();
+
+  button.disabled = true;
+  button.textContent = "저장중";
+  setStatus("loading", "NO " + (index + 1) + " 저장 중입니다.");
+
+  try {
+    const { data, error } = await sb
+      .from(TABLE_NAME)
+      .update(updateData)
+      .eq("production_system_id", row.production_system_id)
+      .eq("company_id", currentProfile.company_id)
+      .select(SELECT_COLUMNS)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error("저장된 행을 확인할 수 없습니다.");
+
+    currentRows[index] = data;
+
+    changedElements.forEach(function(element) {
+      element.classList.remove("modified");
+    });
+
+    button.classList.add("saved");
+    button.textContent = "완료";
+
+    updateKpi(currentRows);
+
+    const message = "저장 완료: NO " + (index + 1);
+    setStatus("ok", message);
+    showNotice(message, "success");
+    showToast("✅ 저장 완료");
+
+    window.setTimeout(function() {
+      button.classList.remove("saved");
+      button.textContent = "저장";
+    }, 2200);
+  } catch (error) {
+    console.error(error);
+    const message =
+      "저장 실패: NO " +
+      (index + 1) +
+      " · " +
+      formatDbError(error);
+
+    setStatus("error", message);
+    showNotice(message, "error");
+    showToast("❌ 저장 실패");
+    button.textContent = "저장";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* =========================================================
+   KPI
+   ========================================================= */
+function updateKpi(rows) {
+  const inRows = rows.filter(function(row) {
+    return Boolean(row.receiving_date);
+  });
+
+  const inQuantity = rows.reduce(function(sum, row) {
+    return sum + toNumber(row.receiving_quantity);
+  }, 0);
+
+  const outRows = rows.filter(function(row) {
+    return Boolean(row.shipping_date);
+  });
+
+  const outQuantity = outRows.reduce(function(sum, row) {
+    return sum + toNumber(row.shipping_quantity);
+  }, 0);
+
+  const checkedRows = rows.filter(function(row) {
+    return (
+      row.inspection_result === "양호" ||
+      row.inspection_result === "불량"
+    );
+  });
+
+  const passedRows = checkedRows.filter(function(row) {
+    return row.inspection_result === "양호";
+  });
+
+  const rate =
+    checkedRows.length > 0
+      ? ((passedRows.length / checkedRows.length) * 100).toFixed(1)
+      : "—";
+
+  document.getElementById("kInCnt").innerHTML =
+    inRows.length.toLocaleString("ko-KR") +
+    '<span class="s-unit">건</span>';
+
+  document.getElementById("kInQty").innerHTML =
+    inQuantity.toLocaleString("ko-KR") +
+    '<span class="s-unit">EA</span>';
+
+  document.getElementById("kOutCnt").innerHTML =
+    outRows.length.toLocaleString("ko-KR") +
+    '<span class="s-unit">건</span>';
+
+  document.getElementById("kOutQty").innerHTML =
+    outQuantity.toLocaleString("ko-KR") +
+    '<span class="s-unit">EA</span>';
+
+  document.getElementById("kRate").innerHTML =
+    rate + '<span class="s-unit">%</span>';
+}
+
+/* =========================================================
+   CSV 내보내기
+   ========================================================= */
+function csvCell(value) {
+  return (
+    '"' +
+    String(value == null ? "" : value).replace(/"/g, '""') +
+    '"'
+  );
+}
+
+function exportCsv() {
+  clearNotice();
+
+  if (!currentRows.length) {
+    showNotice("CSV로 내보낼 조회 결과가 없습니다.", "error");
+    return;
+  }
+
+  const headers = [
+    "NO",
+    "입고일",
+    "고객사",
+    "품명",
+    "품번",
+    "재질",
+    "입고수량",
+    "외관",
+    "도면(사양)",
+    "출고일",
+    "출고수량",
+    "열처리(QT)",
+    "검사결과"
+  ];
+
+  const fields = [
+    "receiving_date",
+    "customer_name",
+    "item_name",
+    "item_number",
+    "material_name",
+    "receiving_quantity",
+    "receiving_appearance",
+    "receiving_drawing",
+    "shipping_date",
+    "shipping_quantity",
+    "receiving_heat_treatment_qt",
+    "inspection_result"
+  ];
+
+  const lines = [headers.map(csvCell).join(",")];
+
+  document
+    .getElementById("tbody")
+    .querySelectorAll("tr[data-idx]")
+    .forEach(function(tableRow, index) {
+      const cells = [index + 1];
+
+      fields.forEach(function(field) {
+        const element = tableRow.querySelector(
+          '[data-field="' + field + '"]'
+        );
+        cells.push(element ? element.value : "");
+      });
+
+      lines.push(cells.map(csvCell).join(","));
+    });
+
+  const blob = new Blob(
+    ["\uFEFF" + lines.join("\r\n")],
+    { type: "text/csv;charset=utf-8;" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download =
+    "inout_inspection_" + localDateText(new Date()) + ".csv";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+
+  const message =
+    "CSV 다운로드 완료: " +
+    currentRows.length.toLocaleString("ko-KR") +
+    "건";
+
+  setStatus("ok", message);
+  showNotice(message, "success");
+  showToast("📥 CSV 다운로드 완료");
+}
+
+/* =========================================================
+   이벤트 및 초기화
+   ========================================================= */
+document.getElementById("btnSearch").addEventListener(
+  "click",
+  searchData
+);
+
+document.getElementById("btnReset").addEventListener(
+  "click",
+  resetFilter
+);
+
+document.getElementById("btnCsv").addEventListener(
+  "click",
+  exportCsv
+);
+
+async function initializePage() {
+  setDefaultDates();
+  showLoading("로그인 및 회사 권한을 확인하는 중입니다.");
+
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    showLoading("고객사 기준정보를 불러오는 중입니다.");
+    await loadCustomers();
+
+    const message =
+      "조회 준비가 완료되었습니다. 조회 버튼을 눌러주세요.";
+
+    setStatus("ok", message);
+    showNotice(
+      "입출고검사 데이터는 조회 버튼을 누를 때 불러옵니다.",
+      "info"
+    );
+  } catch (error) {
+    console.error(error);
+    document.documentElement.classList.remove("auth-pending");
+
+    const message =
+      "화면 초기화 실패: " + formatDbError(error);
+
+    setStatus("error", message);
+    showNotice(message, "error");
+  } finally {
+    hideLoading();
+  }
+}
+
+window.addEventListener("load", initializePage);
+</script>
+</body>
+</html>
