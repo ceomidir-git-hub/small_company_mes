@@ -210,6 +210,8 @@
 <script>
 "use strict";
 
+/* Daily_Work_Check read-delete-only fix version: 2026-07-27-v3 */
+
 /* ══════════════════════════════════════════════
    Supabase 연결 및 테이블 설정
    ══════════════════════════════════════════════ */
@@ -650,7 +652,22 @@ function renderTable() {
     const selector = tdSelect.querySelector("input");
     selector.addEventListener("change", () => {
       tr.classList.toggle("selected", selector.checked);
-      syncSelectAll();
+
+      const allSelectors = Array.from(
+        document.querySelectorAll(".row-selector")
+      );
+      const checkedSelectors = allSelectors.filter(
+        (checkbox) => checkbox.checked
+      );
+      const selectAllRows = document.getElementById("selectAllRows");
+
+      selectAllRows.checked =
+        allSelectors.length > 0 &&
+        checkedSelectors.length === allSelectors.length;
+      selectAllRows.indeterminate =
+        checkedSelectors.length > 0 &&
+        checkedSelectors.length < allSelectors.length;
+
       updateSummary();
     });
     tr.appendChild(tdSelect);
@@ -689,19 +706,6 @@ function renderDisplayCell(td, col, value) {
 }
 
 
-function getSelectedRows() {
-  return Array.from(document.querySelectorAll("#tbody tr[data-row-index]"))
-    .filter((tr) => tr.querySelector(".row-selector")?.checked);
-}
-
-function syncSelectAll() {
-  const all = Array.from(document.querySelectorAll(".row-selector"));
-  const checked = all.filter((checkbox) => checkbox.checked);
-  const selectAll = document.getElementById("selectAllRows");
-
-  selectAll.checked = all.length > 0 && checked.length === all.length;
-  selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
-}
 
 function getFieldValue(tr, field) {
   const td = tr.querySelector(`td[data-field="${field}"]`);
@@ -736,7 +740,9 @@ function updateSummary() {
   document.getElementById("sumNonOp").textContent = sumDowntime.toFixed(1);
 
   const count = document.querySelectorAll("#tbody tr[data-row-index]").length;
-  const selectedCount = getSelectedRows().length;
+  const selectedCount = document.querySelectorAll(
+    "#tbody tr[data-row-index] .row-selector:checked"
+  ).length;
   document.getElementById("summaryText").innerHTML =
     `총 <b>${count}</b>건 조회됨` +
     (selectedCount ? ` · 선택 <b>${selectedCount}</b>건` : "");
@@ -754,7 +760,9 @@ async function deleteSelectedRows() {
     return;
   }
 
-  const selectedRows = getSelectedRows();
+  const selectedRows = Array.from(
+    document.querySelectorAll("#tbody tr[data-row-index]")
+  ).filter((tr) => tr.querySelector(".row-selector")?.checked);
   if (!selectedRows.length) {
     setActionMessage("삭제할 항목을 먼저 선택해 주세요.", "error");
     alert("삭제할 항목을 먼저 선택해 주세요.");
