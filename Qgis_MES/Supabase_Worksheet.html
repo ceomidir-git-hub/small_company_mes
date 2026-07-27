@@ -1144,6 +1144,8 @@ let queryResults = [];
 let queryIndex = 0;
 let openDdId = null;
 let openQfId = null;
+let masterRefreshInProgress = false;
+let lastMasterRefreshAt = 0;
 
 
 const DEFECT_TYPES = ["외관", "오염", "찍힘", "탈락", "경도", "변형"];
@@ -1559,6 +1561,7 @@ function bindExclusiveCheckboxes() {
 async function loadMasterData() {
   if (!currentProfile) return;
 
+  const preservedSelections = captureMasterSelections();
   const companyId = currentProfile.company_id;
 
   const [
@@ -1655,6 +1658,8 @@ async function loadMasterData() {
 
   applyDataToForm();
   initQueryFilters();
+  restoreMasterSelections(preservedSelections);
+  lastMasterRefreshAt = Date.now();
 
   document.getElementById("source-label").textContent =
     "🗄️ Supabase · " + (currentCompanyName || "로그인 회사") +
@@ -1665,14 +1670,40 @@ async function loadMasterData() {
 }
 
 async function reloadMasterData() {
+  if (masterRefreshInProgress) return;
+
+  masterRefreshInProgress = true;
   setLoading(true, "⏳ 기준정보를 새로 불러오는 중입니다...");
+
   try {
     await loadMasterData();
-    showToast("✅ 기준정보를 새로 불러왔습니다.");
+    showToast("✅ 최신 고객사·품명·품번을 새로 불러왔습니다.");
   } catch (error) {
     alert("기준정보 조회 오류: " + dbErrorMessage(error));
   } finally {
+    masterRefreshInProgress = false;
     setLoading(false);
+  }
+}
+
+async function refreshMasterDataSilently() {
+  if (
+    !currentProfile ||
+    masterRefreshInProgress ||
+    document.hidden ||
+    Date.now() - lastMasterRefreshAt < 1500
+  ) {
+    return;
+  }
+
+  masterRefreshInProgress = true;
+
+  try {
+    await loadMasterData();
+  } catch (error) {
+    console.error("기준정보 자동 갱신 실패:", error);
+  } finally {
+    masterRefreshInProgress = false;
   }
 }
 
@@ -1717,6 +1748,157 @@ function buildList(ddId, items, onSelect) {
   });
 }
 
+function captureMasterSelections() {
+  return {
+    customer: val("customer"),
+    itemName: val("product-name"),
+    itemNumber: val("product-no"),
+    queryCustomer: val("q-customer"),
+    queryItemName: val("q-product"),
+    queryItemNumber: val("q-partno")
+  };
+}
+
+function buildItemNumberDropdown(customerName, itemName, selectedItemNumber = "") {
+  const itemNumberInput = document.getElementById("product-no");
+  const itemNumbers = [
+    ...new Set(((PRODUCT_DATA[customerName] || {})[itemName] || []))
+  ].sort((a, b) => a.localeCompare(b, "ko"));
+
+  itemNumberInput.value = "";
+  itemNumberInput.placeholder = itemNumbers.length ? "선택▾" : "등록된 품번 없음";
+  itemNumberInput.classList.toggle("disabled", itemNumbers.length === 0);
+
+  buildList("dd-product-no", itemNumbers, (itemNumber) => {
+    itemNumberInput.value = itemNumber;
+    setChecked("draw-yes", true);
+    setChecked("draw-no", false);
+  });
+
+  if (selectedItemNumber && itemNumbers.includes(selectedItemNumber)) {
+    itemNumberInput.value = selectedItemNumber;
+  }
+}
+
+function refreshInputItemDropdowns(
+  customerName,
+  selectedItemName = "",
+  selectedItemNumber = ""
+) {
+  const itemNameInput = document.getElementById("product-name");
+  const itemNumberInput = document.getElementById("product-no");
+  const customerItems = PRODUCT_DATA[customerName] || {};
+  const itemNames = Object.keys(customerItems)
+    .sort((a, b) => a.localeCompare(b, "ko"));
+
+  itemNameInput.value = "";
+  itemNumberInput.value = "";
+
+  if (!customerName) {
+    itemNameInput.placeholder = "고객사 먼저 선택";
+    itemNameInput.classList.add("disabled");
+    itemNumberInput.placeholder = "품명 먼저 선택";
+    itemNumberInput.classList.add("disabled");
+    buildList("dd-product-name", [], () => {});
+    buildList("dd-product-no", [], () => {});
+    return;
+  }
+
+  itemNameInput.placeholder = itemNames.length ? "선택▾" : "등록된 품명 없음";
+  itemNameInput.classList.toggle("disabled", itemNames.length === 0);
+
+  itemNumberInput.placeholder = "품명 먼저 선택";
+  itemNumberInput.classList.add("disabled");
+
+  buildList("dd-product-name", itemNames, (itemName) => {
+    itemNameInput.value = itemName;
+    buildItemNumberDropdown(customerName, itemName);
+  });
+
+  if (selectedItemName && itemNames.includes(selectedItemName)) {
+    itemNameInput.value = selectedItemName;
+    buildItemNumberDropdown(
+      customerName,
+      selectedItemName,
+      selectedItemNumber
+    );
+  } else {
+    buildList("dd-product-no", [], () => {});
+  }
+}
+
+function restoreMasterSelections(selections) {
+  const customerInput = document.getElementById("customer");
+  const customerName =
+    selections.customer && CUSTOMERS.includes(selections.customer)
+      ? selections.customer
+      : "";
+
+  customerInput.value = customerName;
+  refreshInputItemDropdowns(
+    customerName,
+    selections.itemName,
+    selections.itemNumber
+  );
+
+  const queryCustomer =
+    selections.queryCustomer && CUSTOMERS.includes(selections.queryCustomer)
+      ? selections.queryCustomer
+      : "";
+
+  document.getElementById("q-customer").value = queryCustomer;
+  document.getElementById("q-product").value = "";
+  document.getElementById("q-partno").value = "";
+
+  refreshQProductList(queryCustomer);
+
+  const availableItemNames = new Set();
+  if (queryCustomer && PRODUCT_DATA[queryCustomer]) {
+    Object.keys(PRODUCT_DATA[queryCustomer]).forEach((name) => {
+      availableItemNames.add(name);
+    });
+  } else {
+    Object.values(PRODUCT_DATA).forEach((items) => {
+      Object.keys(items || {}).forEach((name) => {
+        availableItemNames.add(name);
+      });
+    });
+  }
+
+  const queryItemName = availableItemNames.has(selections.queryItemName)
+    ? selections.queryItemName
+    : "";
+
+  document.getElementById("q-product").value = queryItemName;
+  refreshQPartNoList(queryCustomer, queryItemName);
+
+  const availableItemNumbers = new Set();
+  if (queryCustomer && PRODUCT_DATA[queryCustomer]) {
+    if (queryItemName) {
+      (PRODUCT_DATA[queryCustomer][queryItemName] || []).forEach((number) => {
+        availableItemNumbers.add(number);
+      });
+    } else {
+      Object.values(PRODUCT_DATA[queryCustomer]).forEach((numbers) => {
+        numbers.forEach((number) => availableItemNumbers.add(number));
+      });
+    }
+  } else {
+    Object.values(PRODUCT_DATA).forEach((items) => {
+      Object.entries(items || {}).forEach(([name, numbers]) => {
+        if (!queryItemName || name === queryItemName) {
+          numbers.forEach((number) => availableItemNumbers.add(number));
+        }
+      });
+    });
+  }
+
+  document.getElementById("q-partno").value =
+    availableItemNumbers.has(selections.queryItemNumber)
+      ? selections.queryItemNumber
+      : "";
+}
+
 function applyDataToForm() {
   buildList("dd-worker", EMPLOYEES, (value) => {
     document.getElementById("worker").value = value;
@@ -1734,37 +1916,10 @@ function applyDataToForm() {
 
   buildList("dd-customer", CUSTOMERS, (customerName) => {
     document.getElementById("customer").value = customerName;
-
-    const itemNameInput = document.getElementById("product-name");
-    const itemNumberInput = document.getElementById("product-no");
-
-    itemNameInput.value = "";
-    itemNameInput.placeholder = "선택▾";
-    itemNameInput.classList.remove("disabled");
-
-    itemNumberInput.value = "";
-    itemNumberInput.placeholder = "품명 먼저 선택";
-    itemNumberInput.classList.add("disabled");
-
-    const itemNames = Object.keys(PRODUCT_DATA[customerName] || {});
-    buildList("dd-product-name", itemNames, (itemName) => {
-      itemNameInput.value = itemName;
-
-      itemNumberInput.value = "";
-      itemNumberInput.placeholder = "선택▾";
-      itemNumberInput.classList.remove("disabled");
-
-      const itemNumbers =
-        (PRODUCT_DATA[customerName] || {})[itemName] || [];
-
-      buildList("dd-product-no", itemNumbers, (itemNumber) => {
-        itemNumberInput.value = itemNumber;
-        setChecked("draw-yes", true);
-        setChecked("draw-no", false);
-      });
-    });
+    refreshInputItemDropdowns(customerName);
   });
 }
+
 
 /* =========================================================
    조회조건 드롭다운
@@ -3238,6 +3393,16 @@ window.addEventListener("beforeunload", (event) => {
   if (formDirty) {
     event.preventDefault();
     event.returnValue = "";
+  }
+});
+
+window.addEventListener("focus", () => {
+  refreshMasterDataSilently();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    refreshMasterDataSilently();
   }
 });
 
