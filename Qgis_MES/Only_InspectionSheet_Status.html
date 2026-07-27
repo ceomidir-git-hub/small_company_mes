@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>검사성적서관리현황 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--blue:#185FA5;--blue-lt:#E6F1FB;--blue-dk:#0C447C;--green:#3B6D11;--green-lt:#EAF3DE;--green-dk:#27500A;--amber:#854F0B;--amber-lt:#FAEEDA;--red:#A32D2D;--red-lt:#FCEBEB;--pink:#993556;--pink-lt:#FBEAF0;--pink-dk:#72243E;--gray:#5F5E5A;--gray-lt:#F1EFE8;--gray-bd:#D3D1C7;--bg:#F8F7F4;--white:#FFFFFF;--text:#2C2C2A;--text-sub:#6B6A63;}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:15px;min-height:100vh;}
+.top-header{background:var(--white);border-bottom:1px solid var(--gray-bd);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:var(--blue);text-decoration:none;}
+.logo svg{width:20px;height:20px;}
+nav{display:flex;gap:4px;}
+nav a{font-size:13px;color:var(--text-sub);text-decoration:none;padding:5px 10px;border-radius:6px;border:1px solid transparent;font-weight:500;}
+nav a:hover{background:var(--gray-lt);color:var(--text);}
+nav a.active{background:var(--blue-lt);color:var(--blue-dk);border-color:#B5D4F4;font-weight:600;}
+.container{max-width:1280px;margin:0 auto;padding:20px 20px 48px;width:100%;}
+.page-title{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.page-title svg{width:20px;height:20px;color:var(--blue);flex-shrink:0;}
+.page-title h1{font-size:19px;font-weight:700;}
+.page-title .sub{font-size:13px;color:var(--text-sub);font-weight:500;}
+.year-badge{margin-left:auto;background:var(--blue-lt);color:var(--blue-dk);font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;}
+.filter-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:13px 16px;margin-bottom:12px;}
+.filter-label{font-size:12px;font-weight:700;color:var(--text-sub);letter-spacing:.05em;margin-bottom:9px;}
+.filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.filter-row:last-child{margin-bottom:0;}
+.fg{display:flex;align-items:center;gap:5px;}
+.fg label{font-size:13px;color:var(--text-sub);white-space:nowrap;min-width:44px;font-weight:500;}
+.fg input[type="date"],.fg select{height:32px;border:1px solid var(--gray-bd);border-radius:6px;padding:0 8px;font-size:13px;color:var(--text);background:var(--white);outline:none;font-weight:500;}
+.fg input[type="date"]{width:130px;}
+.fg select{width:140px;}
+.sep{color:var(--text-sub);font-size:13px;}
+.btn-row{display:flex;gap:6px;margin-left:auto;}
+.btn{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 13px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--gray-bd);background:var(--white);color:var(--text-sub);transition:background .1s;}
+.btn:hover{background:var(--gray-lt);}
+.btn svg{width:14px;height:14px;}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-primary:hover{background:var(--blue-dk);}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.stat-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;padding:10px 12px;}
+.s-label{font-size:12px;color:var(--text-sub);display:flex;align-items:center;gap:4px;margin-bottom:3px;white-space:nowrap;font-weight:600;}
+.s-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.s-val{font-size:17px;font-weight:700;color:var(--text);white-space:nowrap;}
+.s-unit{font-size:12px;font-weight:500;color:var(--text-sub);margin-left:1px;}
+.table-card{background:var(--white);border:1px solid var(--gray-bd);border-radius:10px;overflow:hidden;}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--gray-bd);}
+.t-title{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;}
+.cnt-badge{background:var(--blue-lt);color:var(--blue-dk);font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:960px;}
+thead tr.gr th{padding:7px 5px;text-align:center;font-size:12px;font-weight:700;border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);}
+thead tr.gr th:last-child{border-right:none;}
+thead tr.sr th{padding:5px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);color:var(--text-sub);}
+thead tr.sr th:last-child{border-right:none;}
+.th-no{background:var(--gray-lt);color:var(--gray);width:32px;}
+.th-main{background:var(--pink-lt);color:var(--pink-dk);}
+.th-act{background:var(--gray-lt);color:var(--gray);width:50px;}
+.sr-main{background:#FEF3F7;color:var(--pink);}
+tbody td{padding:6px 4px;text-align:center;border-bottom:1px solid #EEECEA;border-right:1px solid #EEECEA;color:var(--text);overflow:hidden;font-weight:500;}
+tbody td:last-child{border-right:none;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#FAFAF8;}
+.td-no{color:var(--text-sub);font-size:12px;font-weight:600;}
+.td-ro{font-size:13px;color:var(--text);padding:2px 4px;font-weight:500;}
+/* 수정 가능 셀 스타일 */
+.td-input{border:1px solid transparent;border-radius:4px;padding:2px 4px;font-size:12px;width:100%;background:transparent;color:var(--text);text-align:center;outline:none;font-family:inherit;font-weight:500;}
+.td-input:hover{border-color:var(--gray-bd);background:var(--gray-lt);}
+.td-input:focus{border-color:var(--blue);background:var(--white);}
+.td-input.modified{border-color:#EF9F27;background:#FAEEDA;}
+.save-btn{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 7px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--blue);background:var(--blue-lt);color:var(--blue-dk);}
+.save-btn:hover{background:#B5D4F4;}
+.save-btn.saved{border-color:var(--green);background:var(--green-lt);color:var(--green-dk);}
+.badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:700;}
+.b-pass{background:var(--green-lt);color:var(--green-dk);}
+.b-fail{background:var(--red-lt);color:var(--red);}
+.b-wait{background:var(--gray-lt);color:var(--gray);}
+.empty-row td{padding:40px;color:var(--text-sub);font-size:14px;border:none!important;}
+.status-bar{display:flex;align-items:center;gap:6px;padding:8px 14px;border-top:1px solid var(--gray-bd);font-size:12px;color:var(--text-sub);}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:var(--green);}
+.dot-loading{background:var(--amber);animation:pulse 1s infinite;}
+.dot-error{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2C2C2A;color:#fff;font-size:14px;padding:10px 20px;border-radius:8px;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap;}
+.toast.show{opacity:1;}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+
+html.auth-pending body{visibility:hidden;}
+button:disabled{opacity:.55;cursor:not-allowed;}
+.notice{display:none;margin-bottom:12px;padding:10px 13px;border-radius:7px;font-size:13px;line-height:1.45;font-weight:600;}
+.notice.show{display:block;}
+.notice.info{background:#EFF6FF;color:#1D4ED8;}
+.notice.success{background:#ECFDF5;color:#047857;}
+.notice.error{background:#FFF1F2;color:#BE123C;}
+.loading{display:none;position:fixed;inset:0;z-index:9998;align-items:center;justify-content:center;background:rgba(15,23,42,.36);}
+.loading.show{display:flex;}
+.loading-box{background:#fff;border-radius:11px;padding:17px 22px;box-shadow:0 10px 30px rgba(15,23,42,.2);font-size:14px;font-weight:800;color:var(--text);}
+@media(max-width:768px){
+  .top-header{height:auto;min-height:52px;padding:8px 10px;gap:8px;align-items:flex-start;flex-direction:column;}
+  nav{width:100%;overflow-x:auto;padding-bottom:2px;}
+  nav a{white-space:nowrap;flex:0 0 auto;}
+  .container{padding:14px 8px 40px;}
+  .page-title{flex-wrap:wrap;}
+  .page-title .sub{width:100%;margin-left:30px;}
+  .year-badge{margin-left:0;}
+  .filter-row{align-items:stretch;flex-direction:column;}
+  .fg{width:100%;align-items:stretch;flex-direction:column;margin-left:0!important;}
+  .fg label{min-width:0;}
+  .fg input[type="date"],.fg select{width:100%;}
+  .fg:first-child{display:grid;grid-template-columns:1fr 18px 1fr;}
+  .fg:first-child label{grid-column:1/-1;}
+  .btn-row{width:100%;display:grid;grid-template-columns:1fr 1fr;margin-left:0;}
+  .btn{justify-content:center;height:40px;}
+}
+
+</style>
+</head>
+<body>
+<header class="top-header">
+  <a class="logo" href="main1.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    HeatPro MES
+  </a>
+  <nav>
+    <a href="main1.html">메인메뉴</a>
+    <a href="Supabase_Worksheet.html">작업일보</a>
+    <a href="InOut_Management_Log.html">입출고관리대장</a>
+    <a class="active" href="#">검사성적서관리현황</a>
+  </nav>
+</header>
+<main class="container">
+  <div class="page-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <h1>검사성적서관리현황</h1>
+    <span class="sub">Only_InspectionSheet_Status</span>
+    <span class="year-badge">26년도</span>
+  </div>
+
+  <!-- 조회 조건 -->
+  <div class="filter-card">
+    <div class="filter-label">조회 조건</div>
+    <div class="filter-row">
+      <div class="fg">
+        <label>조회 기간</label>
+        <input type="date" id="fFrom"/>
+        <span class="sep">~</span>
+        <input type="date" id="fTo"/>
+      </div>
+      <div class="fg" style="margin-left:10px;">
+        <label>고객사</label>
+        <select id="fCompany"><option value="">전체</option></select>
+      </div>
+      <div class="fg" style="margin-left:6px;">
+        <label>LOT NO</label>
+        <select id="fLotNo"><option value="">전체</option></select>
+      </div>
+      <div class="fg" style="margin-left:6px;">
+        <label>검사결과</label>
+        <select id="fResult">
+          <option value="">전체</option>
+          <option>양호</option>
+          <option>불량</option>
+          <option>대기</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-row">
+      <div class="btn-row">
+        <button class="btn" onclick="resetFilter()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          초기화
+        </button>
+        <button class="btn btn-primary" onclick="applyFilter()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          조회
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notice" id="notice" role="status" aria-live="polite"></div>
+
+  <!-- KPI -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="s-label"><span class="s-dot" style="background:var(--blue)"></span>총 건수</div><div class="s-val" id="kTotal">—<span class="s-unit">건</span></div></div>
+    <div class="stat-card"><div class="s-label"><span class="s-dot" style="background:var(--green)"></span>합격(양호)</div><div class="s-val" id="kPass">—<span class="s-unit">건</span></div></div>
+    <div class="stat-card"><div class="s-label"><span class="s-dot" style="background:var(--red)"></span>불합격(불량)</div><div class="s-val" id="kFail">—<span class="s-unit">건</span></div></div>
+    <div class="stat-card"><div class="s-label"><span class="s-dot" style="background:var(--green)"></span>합격률</div><div class="s-val" id="kRate">—<span class="s-unit">%</span></div></div>
+  </div>
+
+  <!-- 테이블 -->
+  <div class="table-card">
+    <div class="table-toolbar">
+      <span class="t-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        성적서 내역
+        <span class="cnt-badge" id="tCount">0건</span>
+      </span>
+      <button class="btn" onclick="doExport()" style="height:28px;font-size:13px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        CSV 내보내기
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col style="width:32px"/>  <!-- No -->
+          <col style="width:80px"/>  <!-- LOT NO -->
+          <col style="width:86px"/>  <!-- 작업일 -->
+          <col style="width:72px"/>  <!-- 고객사 -->
+          <col style="width:70px"/>  <!-- 품명 -->
+          <col style="width:66px"/>  <!-- 품번 -->
+          <col style="width:54px"/>  <!-- 재질 -->
+          <col style="width:56px"/>  <!-- 입고수량 -->
+          <col style="width:62px"/>  <!-- 성적서 -->
+          <col style="width:80px"/>  <!-- 검사결과 (수정가능) -->
+          <col style="width:180px"/> <!-- 특이사항 (수정가능) -->
+          <col style="width:50px"/>  <!-- 저장 -->
+        </colgroup>
+        <thead>
+          <tr class="gr">
+            <th rowspan="2" class="th-no">No</th>
+            <th colspan="10" class="th-main">검사성적서 정보</th>
+            <th rowspan="2" class="th-act">저장</th>
+          </tr>
+          <tr class="sr">
+            <th class="sr-main">LOT NO</th>
+            <th class="sr-main">작업일</th>
+            <th class="sr-main">고객사</th>
+            <th class="sr-main">품명</th>
+            <th class="sr-main">품번</th>
+            <th class="sr-main">재질</th>
+            <th class="sr-main">입고수량</th>
+            <th class="sr-main">성적서</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">검사결과 ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">특이사항 ✎</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr class="empty-row"><td colspan="12">조회 조건을 선택한 후 조회 버튼을 눌러주세요.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="status-bar">
+      <span class="status-dot dot-ok" id="sDot"></span>
+      <span id="sText">로그인 및 기준정보를 확인하는 중입니다.</span>
+      <span style="margin-left:12px;font-size:11px;color:var(--blue);">✎ 표시 열만 수정 가능합니다</span>
+    </div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading"><div class="loading-box" id="loadingText">처리 중입니다.</div></div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME = "Total_Production_DB";
+const CUSTOMER_TABLE = "customers";
+const LOGIN_PAGE_URL = "../index.html";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+});
+
+const SELECT_COLUMNS = [
+  "production_system_id","company_id","work_date","customer_name",
+  "item_name","item_number","material_name","receiving_quantity",
+  "lot_no","inspection_result","special_notes","is_active"
+].join(",");
+
+const RES_OPTS = ["양호","불량","대기"];
+let currentUser = null;
+let currentProfile = null;
+let filteredRows = [];
+
+function redirectToLogin(){ window.location.replace(LOGIN_PAGE_URL); }
+
+async function verifyCompanyAccess(){
+  const {data:userData,error:userError} = await sb.auth.getUser();
+  const user = userData && userData.user;
+  if(userError || !user){ redirectToLogin(); return false; }
+
+  const {data:profile,error:profileError} = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id",user.id)
+    .single();
+
+  if(profileError || !profile || profile.is_active !== true || !profile.company_id){
+    console.error("회사 권한 확인 실패:",profileError);
+    await sb.auth.signOut({scope:"local"});
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+sb.auth.onAuthStateChange(function(event){
+  if(event === "SIGNED_OUT") redirectToLogin();
+});
+
+function showLoading(message){
+  document.getElementById("loadingText").textContent = message || "처리 중입니다.";
+  document.getElementById("loading").classList.add("show");
+}
+function hideLoading(){ document.getElementById("loading").classList.remove("show"); }
+
+function setStatus(type,message){
+  document.getElementById("sDot").className =
+    "status-dot " + (type==="loading" ? "dot-loading" : type==="error" ? "dot-error" : "dot-ok");
+  document.getElementById("sText").textContent = message;
+}
+
+function showNotice(message,type){
+  const notice = document.getElementById("notice");
+  notice.textContent = message;
+  notice.className = "notice show " + (type || "info");
+}
+function clearNotice(){
+  const notice = document.getElementById("notice");
+  notice.textContent = "";
+  notice.className = "notice";
+}
+function showToast(message){
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(function(){ toast.classList.remove("show"); },3000);
+}
+function formatDbError(error){
+  if(!error) return "알 수 없는 오류";
+  return error.message || error.details || error.hint || String(error);
+}
+function escapeHtml(value){
+  return String(value == null ? "" : value).replace(/[&<>"']/g,function(ch){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];
+  });
+}
+function escapeAttr(value){ return escapeHtml(value); }
+
+function localDateText(date){
+  return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
+}
+function currentMonthRange(){
+  const today = new Date();
+  return {
+    start:localDateText(new Date(today.getFullYear(),today.getMonth(),1)),
+    end:localDateText(new Date(today.getFullYear(),today.getMonth()+1,0))
+  };
+}
+function setDefaultDates(){
+  const range = currentMonthRange();
+  document.getElementById("fFrom").value = range.start;
+  document.getElementById("fTo").value = range.end;
+  const badge = document.querySelector(".year-badge");
+  if(badge) badge.textContent = String(new Date().getFullYear()).slice(2)+"년도";
+}
+
+async function fetchAllRows(tableName,selectColumns,buildQuery){
+  const pageSize = 1000;
+  let start = 0;
+  let rows = [];
+  while(true){
+    let query = sb.from(tableName).select(selectColumns).eq("company_id",currentProfile.company_id);
+    query = buildQuery ? buildQuery(query) : query;
+    query = query.range(start,start+pageSize-1);
+    const {data,error} = await query;
+    if(error) throw error;
+    const page = data || [];
+    rows = rows.concat(page);
+    if(page.length < pageSize) break;
+    start += pageSize;
+  }
+  return rows;
+}
+
+async function loadFilterOptions(){
+  const companySelect = document.getElementById("fCompany");
+  const lotSelect = document.getElementById("fLotNo");
+  companySelect.innerHTML = '<option value="">전체</option>';
+  lotSelect.innerHTML = '<option value="">전체</option>';
+
+  const results = await Promise.allSettled([
+    fetchAllRows(CUSTOMER_TABLE,"customer_name,is_active",function(query){
+      return query.eq("is_active",true).order("customer_name",{ascending:true});
+    }),
+    fetchAllRows(TABLE_NAME,"lot_no,is_active",function(query){
+      return query.eq("is_active",true).not("lot_no","is",null).order("lot_no",{ascending:true});
+    })
+  ]);
+
+  if(results[0].status === "fulfilled"){
+    Array.from(new Set(results[0].value.map(function(r){return String(r.customer_name||"").trim();}).filter(Boolean)))
+      .forEach(function(name){ companySelect.add(new Option(name,name)); });
+  }
+
+  if(results[1].status === "fulfilled"){
+    Array.from(new Set(results[1].value.map(function(r){return String(r.lot_no||"").trim();}).filter(Boolean)))
+      .sort(function(a,b){return a.localeCompare(b,"ko-KR",{numeric:true});})
+      .forEach(function(lot){ lotSelect.add(new Option(lot,lot)); });
+  }
+}
+
+function supplementOptions(rows){
+  const companySelect = document.getElementById("fCompany");
+  const lotSelect = document.getElementById("fLotNo");
+  const companyValues = new Set(Array.from(companySelect.options).map(function(o){return o.value;}));
+  const lotValues = new Set(Array.from(lotSelect.options).map(function(o){return o.value;}));
+
+  rows.forEach(function(row){
+    const company = String(row.customer_name||"").trim();
+    const lot = String(row.lot_no||"").trim();
+    if(company && !companyValues.has(company)){
+      companySelect.add(new Option(company,company));
+      companyValues.add(company);
+    }
+    if(lot && !lotValues.has(lot)){
+      lotSelect.add(new Option(lot,lot));
+      lotValues.add(lot);
+    }
+  });
+}
+
+async function applyFilter(){
+  clearNotice();
+  if(!currentProfile){
+    showNotice("로그인 회사 정보를 확인할 수 없습니다.","error");
+    return;
+  }
+
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+  const company = document.getElementById("fCompany").value;
+  const lotNo = document.getElementById("fLotNo").value;
+  const result = document.getElementById("fResult").value;
+
+  if(from && to && from > to){
+    showNotice("조회 기간의 시작일이 종료일보다 늦습니다.","error");
+    return;
+  }
+
+  showLoading("검사성적서 데이터를 조회하는 중입니다.");
+  setStatus("loading","조회 중입니다.");
+
+  try{
+    filteredRows = await fetchAllRows(TABLE_NAME,SELECT_COLUMNS,function(query){
+      let q = query.eq("is_active",true);
+      if(from) q = q.gte("work_date",from);
+      if(to) q = q.lte("work_date",to);
+      if(company) q = q.eq("customer_name",company);
+      if(lotNo) q = q.eq("lot_no",lotNo);
+      if(result) q = q.eq("inspection_result",result);
+      return q.order("work_date",{ascending:true,nullsFirst:false})
+              .order("customer_name",{ascending:true})
+              .order("item_name",{ascending:true})
+              .order("production_system_id",{ascending:true});
+    });
+
+    supplementOptions(filteredRows);
+    renderTable(filteredRows);
+    updateKPI(filteredRows);
+    const message = "조회 완료: "+filteredRows.length.toLocaleString("ko-KR")+"건을 표시합니다.";
+    setStatus("ok",message);
+    showNotice(message,"success");
+  }catch(error){
+    console.error(error);
+    filteredRows = [];
+    renderTable([]);
+    updateKPI([]);
+    const message = "조회 실패: "+formatDbError(error);
+    setStatus("error",message);
+    showNotice(message,"error");
+  }finally{
+    hideLoading();
+  }
+}
+
+function resetFilter(){
+  setDefaultDates();
+  document.getElementById("fCompany").value = "";
+  document.getElementById("fLotNo").value = "";
+  document.getElementById("fResult").value = "";
+  filteredRows = [];
+  renderInitialTable();
+  updateKPI([]);
+  setStatus("ok","조회 조건을 초기화했습니다. 조회 버튼을 눌러주세요.");
+  showNotice("조회 조건이 초기화되었습니다.","success");
+}
+
+function renderInitialTable(){
+  document.getElementById("tbody").innerHTML =
+    '<tr class="empty-row"><td colspan="12">조회 조건을 선택한 후 조회 버튼을 눌러주세요.</td></tr>';
+  document.getElementById("tCount").textContent = "0건";
+}
+
+function certVal(result){
+  if(result==="양호") return "합격";
+  if(result==="불량") return "불합격";
+  return "대기";
+}
+function certClass(result){
+  if(result==="양호") return "b-pass";
+  if(result==="불량") return "b-fail";
+  return "b-wait";
+}
+
+function tdInput(field,value,index){
+  return '<input class="td-input" type="text" value="'+escapeAttr(value==null?"":value)+
+    '" data-field="'+field+'" data-idx="'+index+'" oninput="markModified(this)">';
+}
+function tdSelect(field,value,options,index){
+  const normalized = value || "대기";
+  const optionHtml = options.map(function(option){
+    return "<option"+(option===normalized?" selected":"")+">"+escapeHtml(option)+"</option>";
+  }).join("");
+  return '<select class="td-input" data-field="'+field+'" data-idx="'+index+
+    '" onchange="markModified(this);updateCertBadge(this)">'+optionHtml+"</select>";
+}
+
+function renderTable(rows){
+  document.getElementById("tCount").textContent = rows.length.toLocaleString("ko-KR")+"건";
+  const tbody = document.getElementById("tbody");
+  if(!rows.length){
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="12">조회된 데이터가 없습니다.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(function(row,index){
+    const result = row.inspection_result || "대기";
+    return '<tr data-idx="'+index+'">'+
+      '<td class="td-no">'+(index+1)+'</td>'+
+      '<td><span class="td-ro">'+escapeHtml(row.lot_no||"")+'</span></td>'+
+      '<td><span class="td-ro">'+escapeHtml(row.work_date||"")+'</span></td>'+
+      '<td><span class="td-ro">'+escapeHtml(row.customer_name||"")+'</span></td>'+
+      '<td><span class="td-ro">'+escapeHtml(row.item_name||"")+'</span></td>'+
+      '<td><span class="td-ro">'+escapeHtml(row.item_number||"")+'</span></td>'+
+      '<td><span class="td-ro">'+escapeHtml(row.material_name||"")+'</span></td>'+
+      '<td><span class="td-ro">'+escapeHtml(row.receiving_quantity==null?"":String(row.receiving_quantity))+'</span></td>'+
+      '<td class="cert-badge-cell"><span class="badge '+certClass(result)+'">'+certVal(result)+'</span></td>'+
+      '<td>'+tdSelect("inspection_result",result,RES_OPTS,index)+'</td>'+
+      '<td>'+tdInput("special_notes",row.special_notes,index)+'</td>'+
+      '<td><button class="save-btn" id="sbtn-'+index+'" type="button" onclick="saveRow('+index+')">저장</button></td>'+
+      '</tr>';
+  }).join("");
+}
+
+function markModified(element){
+  element.classList.add("modified");
+  const index = Number(element.dataset.idx);
+  const button = document.getElementById("sbtn-"+index);
+  if(button){
+    button.classList.remove("saved");
+    button.textContent = "저장";
+  }
+}
+
+function updateCertBadge(element){
+  const index = Number(element.dataset.idx);
+  const tableRow = document.querySelector('tr[data-idx="'+index+'"]');
+  if(!tableRow) return;
+  const cell = tableRow.querySelector(".cert-badge-cell");
+  if(cell) cell.innerHTML = '<span class="badge '+certClass(element.value)+'">'+certVal(element.value)+'</span>';
+}
+
+async function saveRow(index){
+  const row = filteredRows[index];
+  const tableRow = document.querySelector('tr[data-idx="'+index+'"]');
+  const button = document.getElementById("sbtn-"+index);
+
+  if(!row || !row.production_system_id || !tableRow || !button || !currentProfile){
+    showToast("저장 대상을 확인할 수 없습니다.");
+    return;
+  }
+
+  const changed = Array.from(tableRow.querySelectorAll(".td-input.modified"));
+  if(!changed.length){
+    showToast("변경된 항목이 없습니다.");
+    return;
+  }
+
+  const resultEl = tableRow.querySelector('[data-field="inspection_result"]');
+  const noteEl = tableRow.querySelector('[data-field="special_notes"]');
+  const updateData = {
+    inspection_result:resultEl ? resultEl.value : row.inspection_result,
+    special_notes:noteEl ? noteEl.value.trim() : row.special_notes
+  };
+
+  button.disabled = true;
+  button.textContent = "저장중";
+  setStatus("loading","NO "+(index+1)+" 저장 중입니다.");
+
+  try{
+    const {data,error} = await sb.from(TABLE_NAME).update(updateData)
+      .eq("production_system_id",row.production_system_id)
+      .eq("company_id",currentProfile.company_id)
+      .select(SELECT_COLUMNS)
+      .single();
+
+    if(error) throw error;
+    if(!data) throw new Error("저장된 행을 확인할 수 없습니다.");
+
+    filteredRows[index] = data;
+    changed.forEach(function(el){el.classList.remove("modified");});
+    button.classList.add("saved");
+    button.textContent = "완료";
+    updateKPI(filteredRows);
+
+    const message = "저장 완료: NO "+(index+1);
+    setStatus("ok",message);
+    showNotice(message,"success");
+    showToast("✅ 저장 완료");
+
+    setTimeout(function(){
+      button.classList.remove("saved");
+      button.textContent = "저장";
+    },2200);
+  }catch(error){
+    console.error(error);
+    const message = "저장 실패: NO "+(index+1)+" · "+formatDbError(error);
+    setStatus("error",message);
+    showNotice(message,"error");
+    showToast("❌ 저장 실패");
+    button.textContent = "저장";
+  }finally{
+    button.disabled = false;
+  }
+}
+
+function updateKPI(rows){
+  const pass = rows.filter(function(r){return r.inspection_result==="양호";}).length;
+  const fail = rows.filter(function(r){return r.inspection_result==="불량";}).length;
+  const inspected = pass+fail;
+  const rate = inspected>0 ? ((pass/inspected)*100).toFixed(1) : "—";
+  document.getElementById("kTotal").innerHTML = rows.length.toLocaleString("ko-KR")+'<span class="s-unit">건</span>';
+  document.getElementById("kPass").innerHTML = pass.toLocaleString("ko-KR")+'<span class="s-unit">건</span>';
+  document.getElementById("kFail").innerHTML = fail.toLocaleString("ko-KR")+'<span class="s-unit">건</span>';
+  document.getElementById("kRate").innerHTML = rate+'<span class="s-unit">%</span>';
+}
+
+function csvCell(value){
+  return '"'+String(value==null?"":value).replace(/"/g,'""')+'"';
+}
+
+function doExport(){
+  clearNotice();
+  if(!filteredRows.length){
+    showNotice("CSV로 내보낼 조회 결과가 없습니다.","error");
+    return;
+  }
+
+  const headers = ["NO","LOT NO","작업일","고객사","품명","품번","재질","입고수량","성적서","검사결과","특이사항"];
+  const lines = [headers.map(csvCell).join(",")];
+
+  document.getElementById("tbody").querySelectorAll("tr[data-idx]").forEach(function(tableRow,index){
+    const row = filteredRows[index];
+    const resultEl = tableRow.querySelector('[data-field="inspection_result"]');
+    const noteEl = tableRow.querySelector('[data-field="special_notes"]');
+    const result = resultEl ? resultEl.value : row.inspection_result || "";
+    const note = noteEl ? noteEl.value : row.special_notes || "";
+    lines.push([
+      index+1,row.lot_no,row.work_date,row.customer_name,row.item_name,row.item_number,
+      row.material_name,row.receiving_quantity,certVal(result),result,note
+    ].map(csvCell).join(","));
+  });
+
+  const blob = new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "inspection_sheet_status_"+localDateText(new Date())+".csv";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+
+  const message = "CSV 다운로드 완료: "+filteredRows.length.toLocaleString("ko-KR")+"건";
+  setStatus("ok",message);
+  showNotice(message,"success");
+  showToast("📥 CSV 다운로드 완료");
+}
+
+async function initializePage(){
+  setDefaultDates();
+  showLoading("로그인 및 회사 권한을 확인하는 중입니다.");
+
+  try{
+    const allowed = await verifyCompanyAccess();
+    if(!allowed) return;
+    showLoading("조회 조건 기준정보를 불러오는 중입니다.");
+    await loadFilterOptions();
+    setStatus("ok","조회 준비가 완료되었습니다. 조회 버튼을 눌러주세요.");
+    showNotice("검사성적서 데이터는 조회 버튼을 누를 때 불러옵니다.","info");
+  }catch(error){
+    console.error(error);
+    document.documentElement.classList.remove("auth-pending");
+    const message = "화면 초기화 실패: "+formatDbError(error);
+    setStatus("error",message);
+    showNotice(message,"error");
+  }finally{
+    hideLoading();
+  }
+}
+
+window.addEventListener("load",initializePage);
+</script>
+</body>
+</html>
