@@ -49,7 +49,7 @@ nav a.active{background:var(--blue-lt);color:var(--blue-dk);border-color:#B5D4F4
 .t-title{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;}
 .cnt-badge{background:var(--blue-lt);color:var(--blue-dk);font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:1450px;}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:1480px;}
 thead tr.gr th{padding:7px 5px;text-align:center;font-size:12px;font-weight:700;border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);}
 thead tr.gr th:last-child{border-right:none;}
 thead tr.sr th{padding:5px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);color:var(--text-sub);}
@@ -64,6 +64,7 @@ tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover td{background:#FAFAF8;}
 .td-no{color:var(--text-sub);font-size:12px;font-weight:600;}
 .td-ro{font-size:13px;color:var(--text);padding:2px 4px;font-weight:500;}
+.td-lot{white-space:nowrap;}
 /* 수정 가능 셀 스타일 */
 .td-input{border:1px solid transparent;border-radius:4px;padding:2px 4px;font-size:12px;width:100%;background:transparent;color:var(--text);text-align:center;outline:none;font-family:inherit;font-weight:500;}
 .td-input:hover{border-color:var(--gray-bd);background:var(--gray-lt);}
@@ -125,9 +126,6 @@ button:disabled{opacity:.55;cursor:not-allowed;}
   </a>
   <nav>
     <a href="main1.html">메인메뉴</a>
-    <a href="Supabase_Worksheet.html">작업일보</a>
-    <a href="InOut_Management_Log.html">입출고관리대장</a>
-    <a class="active" href="#">검사성적서관리현황</a>
   </nav>
 </header>
 <main class="container">
@@ -207,7 +205,7 @@ button:disabled{opacity:.55;cursor:not-allowed;}
       <table>
         <colgroup>
           <col style="width:32px"/>  <!-- No -->
-          <col style="width:80px"/>  <!-- LOT NO -->
+          <col style="width:110px"/> <!-- LOT NO -->
           <col style="width:86px"/>  <!-- 작업일 -->
           <col style="width:72px"/>  <!-- 고객사 -->
           <col style="width:70px"/>  <!-- 품명 -->
@@ -480,10 +478,26 @@ async function applyFilter(){
       if(company) q = q.eq("customer_name",company);
       if(lotNo) q = q.eq("lot_no",lotNo);
       if(result) q = q.eq("inspection_result",result);
-      return q.order("work_date",{ascending:true,nullsFirst:false})
+      return q.order("lot_no",{ascending:true,nullsFirst:false})
+              .order("work_date",{ascending:true,nullsFirst:false})
               .order("customer_name",{ascending:true})
               .order("item_name",{ascending:true})
               .order("production_system_id",{ascending:true});
+    });
+
+    filteredRows.sort(function(a,b){
+      const lotA = String(a.lot_no || "").trim();
+      const lotB = String(b.lot_no || "").trim();
+      if(!lotA && !lotB) return String(a.work_date || "").localeCompare(String(b.work_date || ""));
+      if(!lotA) return 1;
+      if(!lotB) return -1;
+
+      const lotCompare = lotA.localeCompare(lotB,"ko-KR",{numeric:true,sensitivity:"base"});
+      if(lotCompare !== 0) return lotCompare;
+
+      const dateCompare = String(a.work_date || "").localeCompare(String(b.work_date || ""));
+      if(dateCompare !== 0) return dateCompare;
+      return String(a.production_system_id || "").localeCompare(String(b.production_system_id || ""));
     });
 
     supplementOptions(filteredRows);
@@ -559,7 +573,7 @@ function renderTable(rows){
     const result = row.inspection_result || "대기";
     return '<tr data-idx="'+index+'">'+
       '<td class="td-no">'+(index+1)+'</td>'+
-      '<td><span class="td-ro">'+escapeHtml(row.lot_no||"")+'</span></td>'+
+      '<td class="td-lot"><span class="td-ro">'+escapeHtml(row.lot_no||"")+'</span></td>'+
       '<td><span class="td-ro">'+escapeHtml(row.work_date||"")+'</span></td>'+
       '<td><span class="td-ro">'+escapeHtml(row.customer_name||"")+'</span></td>'+
       '<td><span class="td-ro">'+escapeHtml(row.item_name||"")+'</span></td>'+
