@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>불량률 현황 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f0f2f5; color: #222; min-height: 100vh; }
+
+.top-bar { background: #1a3a5c; color: #fff; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.top-bar h1 { font-size: clamp(13px,1.8vw,18px); font-weight: 700; letter-spacing: 1px; }
+.top-bar .sub { font-size: clamp(10px,1.1vw,12px); opacity: 0.75; }
+
+.search-panel { background: #fff; border-bottom: 2px solid #1a3a5c; padding: 9px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+.search-panel label { font-size: 13px; font-weight: 600; color: #1a3a5c; white-space: nowrap; }
+.search-panel select { padding: 5px 10px; border: 1px solid #aaa; border-radius: 4px; font-size: 13px; font-family: inherit; }
+.sep { color: #ccc; font-size: 18px; }
+.btn-search { background: #1a3a5c; color: #fff; border: none; padding: 6px 18px; border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.btn-search:hover { background: #2a5a8c; }
+.btn-pdf { background: #fff; color: #1a3a5c; border: 1.5px solid #1a3a5c; padding: 6px 14px; border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.btn-pdf:hover { background: #e8ecf5; }
+.btn-pdf:disabled { background: #eee; color: #999; border-color: #ccc; cursor: default; }
+.btn-csv { background: #1d7a3c; color: #fff; border: none; padding: 6px 16px; border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 600; white-space: nowrap; margin-left: auto; }
+.btn-csv:hover { background: #259a4c; }
+.btn-csv:disabled { background: #999; cursor: default; }
+
+.container { padding: 16px; max-width: 1400px; margin: 0 auto; }
+.card { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+.card-title { background: #1a3a5c; color: #fff; padding: 8px 16px; font-size: clamp(12px,1.4vw,14px); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.card-title .target { font-size: 12px; font-weight: 400; opacity: 0.85; }
+.card-body { padding: 12px; }
+.chart-wrap { position: relative; width: 100%; height: clamp(200px,28vw,300px); }
+
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: clamp(9px,1vw,11px); min-width: 1170px; table-layout: fixed; }
+th, td { border: 1px solid #ccc; text-align: center; padding: 4px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+thead th { background: #1a3a5c; color: #fff; font-weight: 600; }
+.th-holiday { color: #ff2222 !important; font-weight: 700 !important; }
+.th-none    { background: #cccccc !important; color: #999 !important; }
+.td-holiday { background: #fff5f5 !important; }
+.td-none    { background: #eeeeee !important; color: #bbb !important; }
+td.col-label { background: #f5f7fa; font-weight: 600; color: #1a3a5c; text-align: left; padding-left: 5px; }
+td.col-group { background: #e8ecf5; font-weight: 700; color: #1a3a5c; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); font-size: 10px; }
+td.col-sub   { background: #f5f7fa; color: #1a3a5c; text-align: left; padding-left: 12px; }
+td.total-col { background: #fff8e1 !important; font-weight: 700; }
+tr.row-ppm td { color: #cc0000; font-weight: 700; }
+td.td-bad { background: #fff5f5 !important; color: #cc0000 !important; font-weight: 700 !important; }
+
+.legend { display: flex; gap: 16px; font-size: 11px; margin-bottom: 8px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.legend-dot.holiday { background: #ff2222; }
+.legend-dot.none    { background: #cccccc; }
+
+.status-box { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+.status-box.error { color: #c00; }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #ddd; border-top-color: #1a3a5c; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.auth-pending body { visibility: hidden; }
+.action-status { min-height: 18px; font-size: 12px; font-weight: 600; color: #555; white-space: nowrap; }
+.action-status.success { color: #1d7a3c; }
+.action-status.error { color: #b3261e; }
+.action-status.loading { color: #1a3a5c; }
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>📉 불량률 현황 (Defect Rate Graph)</h1>
+  <span class="sub">HeatPro MES · AUTO-GENERATED DOCUMENTS · ISO 9001</span>
+</div>
+
+<div class="search-panel">
+  <label>조회 월 :</label>
+  <select id="selMonth" aria-label="조회 월">
+    <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+    <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+    <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+    <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+  </select>
+  <span class="sep">|</span>
+  <label>설비명 :</label>
+  <select id="selEquip" aria-label="설비명"><option value="">전체</option></select>
+  <button class="btn-search" id="btnSearch" type="button" onclick="loadData()">조 회</button>
+  <button class="btn-csv" id="btnCsv" type="button" onclick="exportCSV()" disabled>⬇ CSV</button>
+  <button class="btn-pdf" id="btnPdf" type="button" onclick="exportPDF()" disabled>⬇ PDF 다운로드</button>
+  <span id="actionStatus" class="action-status" role="status" aria-live="polite"></span>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title">
+      <span id="chartTitle">불량률 현황</span>
+      <span class="target">[목표 : 0 PPM]</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap">
+        <canvas id="myChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">일별 불량 현황 상세</div>
+    <div class="card-body">
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot holiday"></span><span>토요일 · 일요일 · 공휴일</span></div>
+        <div class="legend-item"><span class="legend-dot none"></span><span>해당 월 없는 날짜</span></div>
+      </div>
+      <div id="tableArea" class="tbl-wrap">
+        <div class="status-box">조회 월과 설비명을 선택 후 조회하세요.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Supabase / 멀티테넌트 연결
+   ========================================================= */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const PRODUCTION_TABLE = "Total_Production_DB";
+const DEFECT_TABLE = "production_defect_details";
+const EQUIPMENT_TABLE = "equipment";
+const LOGIN_PAGE_URL = "./index.html";
+
+const YEAR = 2026;
+const MAX_DAYS = 31;
+const PAGE_SIZE = 1000;
+const DEFECT_TYPES = ["외관", "오염", "찍힘", "탈락", "경도", "변형"];
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let myChart = null;
+let hasData = false;
+let lastMonth = null;
+let lastDayData = null;
+let lastActualDays = 0;
+let lastEquipLabel = "전체";
+
+const HOLIDAYS = [
+  "2026-01-01",
+  "2026-02-16", "2026-02-17", "2026-02-18",
+  "2026-03-01", "2026-03-02",
+  "2026-05-01", "2026-05-05", "2026-05-25",
+  "2026-06-03", "2026-06-06",
+  "2026-07-17",
+  "2026-08-15", "2026-08-17",
+  "2026-09-24", "2026-09-25", "2026-09-26",
+  "2026-10-03", "2026-10-05", "2026-10-09",
+  "2026-12-25"
+];
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function getDow(year, month, day) {
+  return new Date(year, month - 1, day).getDay();
+}
+
+function isHoliday(year, month, day) {
+  const dow = getDow(year, month, day);
+  if (dow === 0 || dow === 6) return true;
+  const key = year + "-" + pad2(month) + "-" + pad2(day);
+  return HOLIDAYS.indexOf(key) >= 0;
+}
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function toNumber(value) {
+  const number = Number(String(value == null ? "" : value).replace(/,/g, ""));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char];
+  });
+}
+
+function dbErrorMessage(error) {
+  if (!error) return "알 수 없는 오류입니다.";
+  if (error.code === "42501") return "조회 권한이 없습니다. RLS 정책을 확인해 주세요.";
+  return error.message || error.details || error.hint || String(error);
+}
+
+function setActionStatus(message, type) {
+  const element = document.getElementById("actionStatus");
+  element.textContent = message || "";
+  element.className = "action-status" + (type ? " " + type : "");
+}
+
+function setButtonsDisabled(disabled) {
+  document.getElementById("btnSearch").disabled = disabled;
+  document.getElementById("btnCsv").disabled = disabled || !hasData;
+  document.getElementById("btnPdf").disabled = disabled || !hasData;
+}
+
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const userResult = await sb.auth.getUser();
+  const user = userResult.data && userResult.data.user;
+
+  if (userResult.error || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const profileResult = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  const profile = profileResult.data;
+
+  if (
+    profileResult.error ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileResult.error);
+    await sb.auth.signOut({ scope: "local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+sb.auth.onAuthStateChange(function (event) {
+  if (event === "SIGNED_OUT") {
+    redirectToLogin();
+  }
+});
+
+async function fetchAllRows(tableName, selectColumns, configureQuery) {
+  const result = [];
+  let from = 0;
+
+  while (true) {
+    let query = sb
+      .from(tableName)
+      .select(selectColumns)
+      .eq("company_id", currentProfile.company_id);
+
+    if (typeof configureQuery === "function") {
+      query = configureQuery(query);
+    }
+
+    const pageResult = await query.range(from, from + PAGE_SIZE - 1);
+    if (pageResult.error) throw pageResult.error;
+
+    const pageRows = pageResult.data || [];
+    result.push.apply(result, pageRows);
+
+    if (pageRows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return result;
+}
+
+async function loadMeta() {
+  const equipmentRows = await fetchAllRows(
+    EQUIPMENT_TABLE,
+    "equipment_number,equipment_name,is_active",
+    function (query) {
+      return query
+        .eq("is_active", true)
+        .order("equipment_number", { ascending: true });
+    }
+  );
+
+  const names = [];
+  equipmentRows.forEach(function (row) {
+    const name = String(row.equipment_name || "").trim();
+    if (name && names.indexOf(name) < 0) names.push(name);
+  });
+
+  const select = document.getElementById("selEquip");
+  select.innerHTML = '<option value="">전체</option>';
+  names.forEach(function (name) {
+    select.add(new Option(name, name));
+  });
+}
+
+async function fetchProductionRows(month, equipmentName) {
+  const fromDate = YEAR + "-" + pad2(month) + "-01";
+  const nextMonth = month === 12
+    ? (YEAR + 1) + "-01-01"
+    : YEAR + "-" + pad2(month + 1) + "-01";
+
+  return fetchAllRows(
+    PRODUCTION_TABLE,
+    [
+      "production_system_id",
+      "work_date",
+      "equipment_name",
+      "input_quantity",
+      "good_quantity",
+      "defect_quantity",
+      "is_active"
+    ].join(","),
+    function (query) {
+      let filtered = query
+        .eq("is_active", true)
+        .gte("work_date", fromDate)
+        .lt("work_date", nextMonth)
+        .order("work_date", { ascending: true })
+        .order("production_system_id", { ascending: true });
+
+      if (equipmentName) {
+        filtered = filtered.eq("equipment_name", equipmentName);
+      }
+
+      return filtered;
+    }
+  );
+}
+
+async function fetchDefectDetails(productionIds) {
+  if (!productionIds.length) return [];
+
+  const result = [];
+  const chunkSize = 200;
+
+  for (let index = 0; index < productionIds.length; index += chunkSize) {
+    const chunk = productionIds.slice(index, index + chunkSize);
+
+    const detailResult = await sb
+      .from(DEFECT_TABLE)
+      .select("production_system_id,defect_type,defect_quantity,is_active")
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .in("production_system_id", chunk);
+
+    if (detailResult.error) throw detailResult.error;
+    result.push.apply(result, detailResult.data || []);
+  }
+
+  return result;
+}
+
+/* =========================================================
+   CSV 다운로드
+   ========================================================= */
+function exportCSV() {
+  if (!hasData || !lastDayData) {
+    setActionStatus("CSV 실패: 먼저 조회를 진행해 주세요.", "error");
+    return;
+  }
+
+  const rowsDefinition = [
+    { key: "input", label: "생산수량" },
+    { key: "good", label: "양품수량" },
+    { key: "bad", label: "불량수량" },
+    { key: "ppm", label: "불량률(PPM)" },
+    { key: "out", label: "외관" },
+    { key: "cont", label: "오염" },
+    { key: "scratch", label: "찍힘" },
+    { key: "drop", label: "탈락" },
+    { key: "hard", label: "경도" },
+    { key: "deform", label: "변형" },
+    { key: "badsum", label: "불량합계" },
+    { key: "ppm2", label: "불량률(PPM)" }
+  ];
+
+  const header = ["구분", "합계"];
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    header.push(day + "일");
+  }
+
+  const csvRows = [header];
+
+  rowsDefinition.forEach(function (definition) {
+    let total = 0;
+
+    for (let day = 1; day <= lastActualDays; day++) {
+      total += getVal(lastDayData[day - 1], definition.key);
+    }
+
+    const row = [definition.label, total];
+
+    for (let day = 1; day <= MAX_DAYS; day++) {
+      if (day > lastActualDays) {
+        row.push("");
+        continue;
+      }
+
+      const dayRow = lastDayData[day - 1];
+      row.push(dayRow.hasData ? getVal(dayRow, definition.key) : "");
+    }
+
+    csvRows.push(row);
+  });
+
+  const csv = csvRows.map(function (row) {
+    return row.map(function (cell) {
+      let text = String(cell);
+      if (text.indexOf(",") >= 0 || text.indexOf('"') >= 0) {
+        text = '"' + text.replace(/"/g, '""') + '"';
+      }
+      return text;
+    }).join(",");
+  }).join("\r\n");
+
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  const safeEquipment = lastEquipLabel.replace(/[\\/:*?"<>|]/g, "_");
+
+  anchor.href = url;
+  anchor.download =
+    "Defect_Rate_Graph_" + YEAR + "_" + pad2(lastMonth) + "_" + safeEquipment + ".csv";
+
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+
+  setActionStatus("CSV 다운로드 완료", "success");
+}
+
+/* =========================================================
+   PDF 다운로드
+   ========================================================= */
+async function exportPDF() {
+  if (!hasData) {
+    setActionStatus("PDF 실패: 먼저 조회를 진행해 주세요.", "error");
+    return;
+  }
+
+  const button = document.getElementById("btnPdf");
+  const originalText = button.textContent;
+  button.textContent = "생성 중...";
+  setButtonsDisabled(true);
+  setActionStatus("PDF를 생성하는 중입니다.", "loading");
+
+  try {
+    const target = document.querySelector(".container");
+    const canvas = await html2canvas(target, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true
+    });
+
+    const imageData = canvas.toDataURL("image/png");
+    const jsPDFCtor = window.jspdf.jsPDF;
+    const pdf = new jsPDFCtor({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 8;
+    const maxWidth = pageWidth - margin * 2;
+    const maxHeight = pageHeight - margin * 2;
+    const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+    const renderWidth = canvas.width * ratio;
+    const renderHeight = canvas.height * ratio;
+    const x = (pageWidth - renderWidth) / 2;
+
+    pdf.addImage(imageData, "PNG", x, margin, renderWidth, renderHeight);
+    pdf.save("Defect_Rate_Graph_" + YEAR + "_" + pad2(lastMonth) + ".pdf");
+
+    setActionStatus("PDF 다운로드 완료", "success");
+  } catch (error) {
+    console.error("PDF 생성 실패:", error);
+    setActionStatus("PDF 생성 실패: " + dbErrorMessage(error), "error");
+  } finally {
+    button.textContent = originalText;
+    setButtonsDisabled(false);
+  }
+}
+
+async function loadData() {
+  if (!currentProfile) {
+    setActionStatus("조회 실패: 로그인 회사 정보를 확인할 수 없습니다.", "error");
+    return;
+  }
+
+  const month = Number(document.getElementById("selMonth").value);
+  const equipment = document.getElementById("selEquip").value;
+  const equipmentLabel = equipment || "전체";
+
+  if (month < 1 || month > 12) {
+    setActionStatus("조회 실패: 조회 월을 확인해 주세요.", "error");
+    return;
+  }
+
+  document.getElementById("chartTitle").textContent =
+    "불량률 현황 ( " + YEAR + "년 " + month + "월 ) — " + equipmentLabel;
+  document.getElementById("tableArea").innerHTML =
+    '<div class="status-box"><div class="spinner"></div><br>데이터를 불러오는 중입니다...</div>';
+
+  hasData = false;
+  lastDayData = null;
+  setButtonsDisabled(true);
+  setActionStatus("조회 중입니다.", "loading");
+
+  try {
+    const productionRows = await fetchProductionRows(month, equipment);
+    const productionIds = productionRows
+      .map(function (row) { return row.production_system_id; })
+      .filter(Boolean);
+
+    const detailRows = await fetchDefectDetails(productionIds);
+    processData(productionRows, detailRows, month, equipment);
+
+    if (productionRows.length) {
+      setActionStatus(
+        "조회 완료: " + YEAR + "년 " + month + "월 " +
+        productionRows.length.toLocaleString() + "건",
+        "success"
+      );
+    } else {
+      setActionStatus(
+        "조회 완료: 조건에 해당하는 생산실적이 없습니다.",
+        "success"
+      );
+    }
+  } catch (error) {
+    console.error("불량률 조회 실패:", error);
+    showError(dbErrorMessage(error));
+    setActionStatus("조회 실패: " + dbErrorMessage(error), "error");
+  } finally {
+    setButtonsDisabled(false);
+  }
+}
+
+function showError(message) {
+  document.getElementById("tableArea").innerHTML =
+    '<div class="status-box error">⚠️ ' + escapeHtml(message) + "</div>";
+}
+
+function processData(productionRows, detailRows, month, equipment) {
+  lastMonth = month;
+  lastEquipLabel = equipment || "전체";
+  lastActualDays = getDaysInMonth(YEAR, month);
+
+  const dayData = [];
+  for (let index = 0; index < MAX_DAYS; index++) {
+    dayData.push({
+      input: 0,
+      good: 0,
+      bad: 0,
+      out: 0,
+      cont: 0,
+      scratch: 0,
+      drop: 0,
+      hard: 0,
+      deform: 0,
+      hasData: false
+    });
+  }
+
+  const detailMap = {};
+
+  detailRows.forEach(function (row) {
+    const productionId = row.production_system_id;
+    const defectType = String(row.defect_type || "").trim();
+
+    if (!productionId || DEFECT_TYPES.indexOf(defectType) < 0) return;
+
+    if (!detailMap[productionId]) {
+      detailMap[productionId] = {
+        "외관": 0,
+        "오염": 0,
+        "찍힘": 0,
+        "탈락": 0,
+        "경도": 0,
+        "변형": 0
+      };
+    }
+
+    detailMap[productionId][defectType] += toNumber(row.defect_quantity);
+  });
+
+  productionRows.forEach(function (row) {
+    const workDate = String(row.work_date || "");
+    const parts = workDate.split("-");
+    if (parts.length < 3) return;
+
+    const day = Number(parts[2]);
+    if (day < 1 || day > MAX_DAYS) return;
+
+    const target = dayData[day - 1];
+    const detail = detailMap[row.production_system_id] || {};
+
+    target.input += toNumber(row.input_quantity);
+    target.good += toNumber(row.good_quantity);
+    target.bad += toNumber(row.defect_quantity);
+    target.out += toNumber(detail["외관"]);
+    target.cont += toNumber(detail["오염"]);
+    target.scratch += toNumber(detail["찍힘"]);
+    target.drop += toNumber(detail["탈락"]);
+    target.hard += toNumber(detail["경도"]);
+    target.deform += toNumber(detail["변형"]);
+    target.hasData = true;
+  });
+
+  lastDayData = dayData;
+  hasData = productionRows.length > 0;
+
+  buildChart(dayData, month, lastActualDays);
+  buildTable(dayData, month, lastActualDays);
+}
+
+async function initializePage() {
+  const monthSelect = document.getElementById("selMonth");
+  monthSelect.value = String(new Date().getMonth() + 1);
+
+  setButtonsDisabled(true);
+  setActionStatus("로그인 및 회사 권한 확인 중입니다.", "loading");
+
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    await loadMeta();
+    setActionStatus("기준정보 연결 완료: 조회 버튼을 눌러 주세요.", "success");
+  } catch (error) {
+    console.error("초기 연결 실패:", error);
+    document.documentElement.classList.remove("auth-pending");
+    setActionStatus("초기 연결 실패: " + dbErrorMessage(error), "error");
+  } finally {
+    setButtonsDisabled(false);
+  }
+}
+
+window.addEventListener("load", initializePage);
+
+function buildChart(dayData, month, actualDays) {
+  var labels = [], ppmArr = [];
+  for (var d = 1; d <= MAX_DAYS; d++) {
+    labels.push(d <= actualDays ? String(d) : '');
+    if (d <= actualDays) {
+      var dd = dayData[d - 1];
+      // 해당 일자에 실제 데이터가 없으면 null (선이 끊기고 빈 칸으로 표시됨)
+      ppmArr.push(dd.hasData ? (dd.input > 0 ? Math.round(dd.bad / dd.input * 1000000) : 0) : null);
+    } else {
+      ppmArr.push(null);
+    }
+  }
+
+  if (myChart) { myChart.destroy(); myChart = null; }
+  var ctx = document.getElementById('myChart').getContext('2d');
+
+  var maxPpm = Math.max.apply(null, ppmArr.filter(function(v){ return v !== null; }).concat([0]));
+  var yMax   = Math.max(30000, Math.ceil(maxPpm * 1.3 / 5000) * 5000);
+  var yMin   = -Math.round(yMax * 0.08);
+
+  myChart = new Chart(ctx, {
+    type: 'line',
+    devicePixelRatio: 2,
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: '불량률(PPM)',
+          data: ppmArr,
+          borderColor: '#cc0000',
+          backgroundColor: 'rgba(204,0,0,0.07)',
+          borderWidth: 2,
+          pointRadius: function(ctx) {
+            return ctx.parsed && ctx.parsed.y !== null ? 4 : 0;
+          },
+          pointBackgroundColor: '#cc0000',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 1.5,
+          tension: 0,
+          spanGaps: true,
+          segment: {
+            borderDash: function(ctx) {
+              // 양쪽 끝 중 하나라도 null이었던 구간(보간 구간)은 점선으로 표시
+              var p0 = ctx.p0.parsed, p1 = ctx.p1.parsed;
+              var raw0 = ppmArr[ctx.p0DataIndex];
+              var raw1 = ppmArr[ctx.p1DataIndex];
+              return (raw0 === null || raw1 === null) ? [4, 4] : undefined;
+            },
+            borderColor: function(ctx) {
+              var raw0 = ppmArr[ctx.p0DataIndex];
+              var raw1 = ppmArr[ctx.p1DataIndex];
+              return (raw0 === null || raw1 === null) ? '#bbb' : '#cc0000';
+            }
+          }
+        },
+        {
+          label: '목표(0PPM)',
+          data: Array(MAX_DAYS).fill(0),
+          borderColor: '#1a3a5c',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          tension: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      resizeDelay: 0,
+      clip: false,
+      layout: { padding: { top: 24 } },
+      scales: {
+        x: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 10 } } },
+        y: {
+          min: yMin,
+          max: yMax,
+          grid: { color: '#f0f0f0' },
+          ticks: {
+            font: { size: 10 },
+            callback: function (v) {
+              if (v < 0) return '';
+              return v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v;
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 14 } },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              return ctx.dataset.label + ': ' +
+                (ctx.parsed.y !== null ? ctx.parsed.y.toLocaleString() + ' PPM' : '—');
+            }
+          }
+        }
+      }
+    },
+    plugins: [{
+      id: 'ppmLabel',
+      afterDatasetsDraw: function (chart) {
+        var ds   = chart.data.datasets[0];
+        var meta = chart.getDatasetMeta(0);
+        var c2   = chart.ctx;
+        c2.save();
+        c2.font      = 'bold 9px Malgun Gothic, sans-serif';
+        c2.fillStyle = '#cc0000';
+        c2.textAlign = 'center';
+        meta.data.forEach(function (pt, i) {
+          var v = ds.data[i];
+          if (v === null || v === undefined || v === 0) return;
+          c2.fillText(v.toLocaleString(), pt.x, pt.y - 10);
+        });
+        c2.restore();
+      }
+    }]
+  });
+}
+
+function buildTable(dayData, month, actualDays) {
+  // 열 너비 고정: 구분(2칸 분량), 합계, 날짜 31개
+  var colgroup = '<colgroup>'
+    + '<col style="width:3.76%">'   // 구분(불량 그룹)
+    + '<col style="width:6.84%">'   // 구분(소항목/라벨)
+    + '<col style="width:4.62%">';  // 합계
+  for (var ci = 1; ci <= MAX_DAYS; ci++) {
+    colgroup += '<col style="width:2.735%">';  // 날짜 31개 (합계 약 84.8%)
+  }
+  colgroup += '</colgroup>';
+
+  // 헤더 행 — "구분"을 colspan=2로 병합 (바디 일반행과 동일 구조)
+  var thRow = '<tr><th colspan="2">구분</th><th>합계</th>';
+  for (var d = 1; d <= MAX_DAYS; d++) {
+    if (d > actualDays) {
+      thRow += '<th class="th-none">' + d + '</th>';
+    } else if (isHoliday(YEAR, month, d)) {
+      thRow += '<th class="th-holiday">' + d + '</th>';
+    } else {
+      thRow += '<th>' + d + '</th>';
+    }
+  }
+  thRow += '</tr>';
+
+  var ROWS = [
+    { key: 'input',   label: '생산수량',    sub: false, ppm: false },
+    { key: 'good',    label: '양품수량',    sub: false, ppm: false },
+    { key: 'bad',     label: '불량수량',    sub: false, ppm: false },
+    { key: 'ppm',     label: '불량률(PPM)', sub: false, ppm: true  },
+    { key: 'out',     label: '외관',        sub: true,  ppm: false },
+    { key: 'cont',    label: '오염',        sub: true,  ppm: false },
+    { key: 'scratch', label: '찍힘',        sub: true,  ppm: false },
+    { key: 'drop',    label: '탈락',        sub: true,  ppm: false },
+    { key: 'hard',    label: '경도',        sub: true,  ppm: false },
+    { key: 'deform',  label: '변형',        sub: true,  ppm: false },
+    { key: 'badsum',  label: '불량합계',    sub: false, ppm: false },
+    { key: 'ppm2',    label: '불량률(PPM)', sub: false, ppm: true  }
+  ];
+
+  var SUB_COUNT = 6;
+  var html = '<table>' + colgroup + '<thead>' + thRow + '</thead><tbody>';
+
+  ROWS.forEach(function (f, fi) {
+    var isFirstSub = f.sub && (fi === 0 || !ROWS[fi - 1].sub);
+
+    // 합계
+    var total = 0;
+    for (var d2 = 1; d2 <= actualDays; d2++) {
+      total += getVal(dayData[d2 - 1], f.key);
+    }
+
+    html += '<tr' + (f.ppm ? ' class="row-ppm"' : '') + '>';
+
+    // 구분열 — 일반 행은 colspan=2로 병합(라벨 잘림 방지), 불량 소항목 행만 분리 유지
+    if (isFirstSub) {
+      html += '<td class="col-group" rowspan="' + SUB_COUNT + '">불&nbsp;량</td>';
+      html += '<td class="col-sub">' + f.label + '</td>';
+    } else if (f.sub) {
+      html += '<td class="col-sub">' + f.label + '</td>';
+    } else {
+      var labelStyle = f.ppm ? ' style="color:#cc0000;"' : '';
+      html += '<td colspan="2" class="col-label"' + labelStyle + '>' + f.label + '</td>';
+    }
+
+    // 합계열
+    var totBad = f.ppm ? total > 0 : (f.key === 'bad' || f.key === 'badsum') && total > 0;
+    html += '<td class="total-col' + (totBad ? ' td-bad' : '') + '">' + total.toLocaleString() + '</td>';
+
+    // 일별 셀
+    for (var d3 = 1; d3 <= MAX_DAYS; d3++) {
+      if (d3 > actualDays) {
+        html += '<td class="td-none">—</td>';
+        continue;
+      }
+      var dd3     = dayData[d3 - 1];
+      var v       = getVal(dd3, f.key);
+      var holiday = isHoliday(YEAR, month, d3);
+      var hasData = dd3.hasData;
+      var isBad   = hasData && ((f.ppm && v > 0) || ((f.key === 'bad' || f.key === 'badsum') && v > 0));
+      var cls = [];
+      if (holiday) cls.push('td-holiday');
+      if (isBad)   cls.push('td-bad');
+      html += '<td' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '>';
+      html += hasData ? v.toLocaleString() : '—';
+      html += '</td>';
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('tableArea').innerHTML = html;
+}
+
+function getVal(dd, key) {
+  switch (key) {
+    case 'input':   return dd.input;
+    case 'good':    return dd.good;
+    case 'bad':     return dd.bad;
+    case 'ppm':
+    case 'ppm2':    return dd.input > 0 ? Math.round(dd.bad / dd.input * 1000000) : 0;
+    case 'out':     return dd.out;
+    case 'cont':    return dd.cont;
+    case 'scratch': return dd.scratch;
+    case 'drop':    return dd.drop;
+    case 'hard':    return dd.hard;
+    case 'deform':  return dd.deform;
+    case 'badsum':  return dd.out + dd.cont + dd.scratch + dd.drop + dd.hard + dd.deform;
+    default:        return 0;
+  }
+}
+</script>
+</body>
+</html>
