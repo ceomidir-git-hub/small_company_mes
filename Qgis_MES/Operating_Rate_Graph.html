@@ -519,8 +519,18 @@ function processData(productionRows, detailRows, year, month, equipment) {
   for (let day = 1; day <= lastActualDays; day++) {
     const dateText = year + "-" + pad2(month) + "-" + pad2(day);
     const target = dayData[day - 1];
+    const holiday = isHoliday(year, month, day);
 
-    if (dateText > today || isHoliday(year, month, day)) {
+    /* 미래 날짜만 계산에서 제외한다.
+       토요일·일요일·공휴일은 표시 구분일 뿐이며,
+       해당 날짜에 생산실적이 있으면 정상 조업일로 계산한다. */
+    if (dateText > today) {
+      target.opMin = 0;
+      target.hasData = false;
+      continue;
+    }
+
+    if (holiday && !target.hasProduction) {
       target.opMin = 0;
       target.hasData = false;
       continue;
