@@ -888,47 +888,6 @@
     outline:2px solid var(--accent);
     outline-offset:3px;
   }
-
-  /* 기본 화면: 기존 0.92rem / 0.82rem / 0.68rem × 1.5 */
-  .sidebar .nav-item {
-    font-size:1.38rem;
-    line-height:1.35;
-  }
-
-  .sidebar .sub-item {
-    font-size:1.23rem;
-    line-height:1.35;
-  }
-
-  .sidebar .nav-group-label {
-    font-size:1.02rem;
-  }
-
-  /* 노트북·PC: 기존 최적화값 0.78rem / 0.69rem / 0.59rem × 1.5 */
-  @media (min-width:1181px) {
-    .app {
-      grid-template-columns:230px minmax(0,1fr);
-    }
-
-    .sidebar .nav-item {
-      font-size:1.17rem;
-    }
-
-    .sidebar .sub-item {
-      font-size:1.035rem;
-    }
-
-    .sidebar .nav-group-label {
-      font-size:0.885rem;
-    }
-  }
-
-  @media (min-width:1181px) and (max-width:1320px) {
-    .app {
-      grid-template-columns:220px minmax(0,1fr);
-    }
-  }
-
 </style>
 </head>
 <body>
@@ -1315,15 +1274,37 @@ supabaseClient
   );
 
 
-/*
-  Google Sheets / Google Apps Script 연결 제거 완료.
+/* =========================================================
+   대시보드 Supabase 데이터 연결
+   - 로그인 프로필의 company_id와 동일한 데이터만 조회
+   - RLS와 코드의 company_id 조건을 함께 적용
+   ========================================================= */
+const DASHBOARD_PRODUCTION_TABLE = "Total_Production_DB";
+const DASHBOARD_DOWNTIME_TABLE = "production_downtime_details";
+const DASHBOARD_PAGE_SIZE = 1000;
+const DASHBOARD_TARGET_RATE = 80;
+const DASHBOARD_STD_WORK_MIN = 480;
 
-  현재 단계에서는 외부 데이터 요청을 하지 않습니다.
-  다음 단계에서 Supabase 테이블과 RLS를 확인한 뒤
-  회사별 데이터 조회 기능을 연결합니다.
-*/
+const DASHBOARD_PLAN_STOP_TYPES = new Set([
+  "교육", "공사", "개발", "방문", "기타1"
+]);
+
+const DASHBOARD_HOLIDAYS = new Set([
+  "2026-01-01",
+  "2026-02-16", "2026-02-17", "2026-02-18",
+  "2026-03-01", "2026-03-02",
+  "2026-05-01", "2026-05-05", "2026-05-25",
+  "2026-06-03", "2026-06-06",
+  "2026-07-17",
+  "2026-08-15", "2026-08-17",
+  "2026-09-24", "2026-09-25", "2026-09-26",
+  "2026-10-03", "2026-10-05", "2026-10-09",
+  "2026-12-25"
+]);
 
 let selectedDate = new Date();
+let currentProfile = null;
+let dashboardRequestSerial = 0;
 const openMenus = {};
 
 function pad2(value) {
@@ -1412,7 +1393,7 @@ function changeDate(offsetDays) {
 
   selectedDate = candidate;
   updateDateDisplay();
-  initializeEmptyDashboard();
+  loadDashboardData();
 }
 
 function clearElement(elementId) {
@@ -1499,6 +1480,530 @@ function initializeEmptyDashboard() {
     "line-defect",
     "axis-cumdefect"
   ].forEach(clearElement);
+}
+
+
+function dashboardToNumber(value) {
+  const number = Number(String(value == null ? "" : value).replace(/,/g, ""));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function dashboardHoursToMinutes(value) {
+  return Math.round(dashboardToNumber(value) * 60);
+}
+
+function dashboardDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function dashboardIsHoliday(year, month, day) {
+  const date = new Date(year, month - 1, day);
+  const weekday = date.getDay();
+  const dateText = year + "-" + pad2(month) + "-" + pad2(day);
+  return weekday === 0 || weekday === 6 || DASHBOARD_HOLIDAYS.has(dateText);
+}
+
+function dashboardProductionQuantity(row) {
+  const good = dashboardToNumber(row.good_quantity);
+  const defect = dashboardToNumber(row.defect_quantity);
+  const input = dashboardToNumber(row.input_quantity);
+  return good + defect > 0 ? good + defect : input;
+}
+
+function dashboardInputQuantity(row) {
+  const input = dashboardToNumber(row.input_quantity);
+  return input > 0 ? input : dashboardProductionQuantity(row);
+}
+
+function dashboardFormatNumber(value) {
+  return Math.round(dashboardToNumber(value)).toLocaleString("ko-KR");
+}
+
+function dashboardErrorMessage(error) {
+  if (!error) return "알 수 없는 오류입니다.";
+  if (error.code === "42501") return "조회 권한이 없습니다. RLS 정책을 확인해 주세요.";
+  return error.message || error.details || error.hint || String(error);
+}
+
+async function dashboardFetchAllRows(tableName, selectColumns, configureQuery) {
+  const rows = [];
+  let from = 0;
+
+  while (true) {
+    let query = supabaseClient
+      .from(tableName)
+      .select(selectColumns)
+      .eq("company_id", currentProfile.company_id);
+
+    if (typeof configureQuery === "function") {
+      query = configureQuery(query);
+    }
+
+    const result = await query.range(from, from + DASHBOARD_PAGE_SIZE - 1);
+    if (result.error) throw result.error;
+
+    const pageRows = result.data || [];
+    rows.push.apply(rows, pageRows);
+
+    if (pageRows.length < DASHBOARD_PAGE_SIZE) break;
+    from += DASHBOARD_PAGE_SIZE;
+  }
+
+  return rows;
+}
+
+async function dashboardFetchProductionRows(year) {
+  const fromDate = year + "-01-01";
+  const toDate = (year + 1) + "-01-01";
+
+  return dashboardFetchAllRows(
+    DASHBOARD_PRODUCTION_TABLE,
+    [
+      "production_system_id",
+      "work_date",
+      "equipment_name",
+      "equipment_number",
+      "input_quantity",
+      "good_quantity",
+      "defect_quantity",
+      "operation_hours",
+      "downtime_hours",
+      "shipping_date",
+      "shipping_quantity",
+      "is_active"
+    ].join(","),
+    function (query) {
+      return query
+        .eq("is_active", true)
+        .gte("work_date", fromDate)
+        .lt("work_date", toDate)
+        .order("work_date", { ascending:true })
+        .order("production_system_id", { ascending:true });
+    }
+  );
+}
+
+async function dashboardFetchDowntimeDetails(productionIds) {
+  if (!productionIds.length) return [];
+
+  const rows = [];
+  const chunkSize = 200;
+
+  for (let index = 0; index < productionIds.length; index += chunkSize) {
+    const chunk = productionIds.slice(index, index + chunkSize);
+    const result = await supabaseClient
+      .from(DASHBOARD_DOWNTIME_TABLE)
+      .select("production_system_id,downtime_type,downtime_minutes,is_active")
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .in("production_system_id", chunk);
+
+    if (result.error) throw result.error;
+    rows.push.apply(rows, result.data || []);
+  }
+
+  return rows;
+}
+
+function dashboardRenderAxis(elementId, labels) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  element.innerHTML = labels.map(function (label) {
+    return "<span>" + label + "</span>";
+  }).join("");
+}
+
+function dashboardRenderBars(containerId, axisId, values, labels, formatter) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const numericValues = values.map(dashboardToNumber);
+  const maximum = Math.max.apply(null, numericValues.concat([1]));
+
+  container.innerHTML = numericValues.map(function (value, index) {
+    const height = value > 0 ? Math.max(5, Math.min(84, value / maximum * 84)) : 4;
+    const label = value > 0 ? formatter(value) : "";
+    return '<div class="bar" style="height:' + height.toFixed(1) + '%" title="' +
+      labels[index] + ': ' + formatter(value) + '">' +
+      (label ? '<span class="bar-label">' + label + '</span>' : '') +
+      '</div>';
+  }).join("");
+
+  dashboardRenderAxis(axisId, labels);
+}
+
+function dashboardRenderLine(groupId, axisId, values, labels, options) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+
+  const width = 240;
+  const height = 140;
+  const left = 10;
+  const right = 230;
+  const top = 14;
+  const bottom = 120;
+  const available = [];
+
+  values.forEach(function (value, index) {
+    if (value == null || !Number.isFinite(Number(value))) return;
+    available.push({ index:index, value:Number(value) });
+  });
+
+  const suggestedMax = dashboardToNumber(options && options.suggestedMax);
+  const valueMax = available.length
+    ? Math.max.apply(null, available.map(function (point) { return point.value; }))
+    : 0;
+  const yMax = Math.max(suggestedMax, valueMax * 1.15, 1);
+  const denominator = Math.max(values.length - 1, 1);
+
+  function pointX(index) {
+    return left + (right - left) * index / denominator;
+  }
+
+  function pointY(value) {
+    return bottom - (bottom - top) * Math.max(0, value) / yMax;
+  }
+
+  const svg = [];
+
+  [0, 0.5, 1].forEach(function (ratio) {
+    const y = top + (bottom - top) * ratio;
+    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--line);stroke-width:0.8" vector-effect="non-scaling-stroke"/>');
+  });
+
+  if (options && Number.isFinite(Number(options.target))) {
+    const target = Number(options.target);
+    const y = pointY(target);
+    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:5 4" vector-effect="non-scaling-stroke"/>');
+  }
+
+  if (available.length) {
+    const points = available.map(function (point) {
+      return pointX(point.index).toFixed(1) + "," + pointY(point.value).toFixed(1);
+    }).join(" ");
+
+    svg.push('<polyline points="' + points + '" fill="none" style="stroke:' +
+      (options && options.color ? options.color : 'var(--info)') +
+      ';stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round" vector-effect="non-scaling-stroke"/>');
+
+    available.forEach(function (point) {
+      svg.push('<circle cx="' + pointX(point.index).toFixed(1) + '" cy="' + pointY(point.value).toFixed(1) + '" r="2.4" style="fill:' +
+        (options && options.color ? options.color : 'var(--info)') +
+        ';stroke:var(--panel);stroke-width:1" vector-effect="non-scaling-stroke"><title>' +
+        labels[point.index] + ': ' +
+        (options && typeof options.formatter === "function" ? options.formatter(point.value) : point.value) +
+        '</title></circle>');
+    });
+  } else {
+    svg.push('<text x="120" y="72" text-anchor="middle" style="fill:var(--muted);font-size:10px">데이터 없음</text>');
+  }
+
+  group.innerHTML = svg.join("");
+
+  const axisIndexes = [];
+  if (labels.length <= 12) {
+    for (let index = 0; index < labels.length; index++) axisIndexes.push(index);
+  } else {
+    [0, 4, 9, 14, 19, 24, labels.length - 1].forEach(function (index) {
+      if (index >= 0 && index < labels.length && axisIndexes.indexOf(index) < 0) axisIndexes.push(index);
+    });
+  }
+
+  dashboardRenderAxis(axisId, axisIndexes.map(function (index) { return labels[index]; }));
+}
+
+function dashboardBuildPlanStopMap(detailRows) {
+  const map = {};
+
+  detailRows.forEach(function (row) {
+    const productionId = row.production_system_id;
+    const type = String(row.downtime_type || "").trim();
+    if (!productionId || !DASHBOARD_PLAN_STOP_TYPES.has(type)) return;
+    map[productionId] = dashboardToNumber(map[productionId]) + dashboardToNumber(row.downtime_minutes);
+  });
+
+  return map;
+}
+
+function dashboardCalculateOperatingData(rows, planStopMap, year, cutoffText) {
+  const monthlyOperation = Array(12).fill(0);
+  const monthlyLoad = Array(12).fill(0);
+  const dailyByMonth = Array.from({ length:12 }, function () { return {}; });
+
+  rows.forEach(function (row) {
+    const workDate = String(row.work_date || "");
+    if (!workDate || workDate > cutoffText) return;
+
+    const parts = workDate.split("-");
+    if (parts.length !== 3) return;
+
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return;
+
+    if (!dailyByMonth[month - 1][day]) {
+      dailyByMonth[month - 1][day] = { operation:0, planStop:0 };
+    }
+
+    const target = dailyByMonth[month - 1][day];
+    target.operation += dashboardHoursToMinutes(row.operation_hours);
+    target.planStop += dashboardToNumber(planStopMap[row.production_system_id]);
+  });
+
+  for (let month = 1; month <= 12; month++) {
+    const days = dashboardDaysInMonth(year, month);
+
+    for (let day = 1; day <= days; day++) {
+      const dateText = year + "-" + pad2(month) + "-" + pad2(day);
+      if (dateText > cutoffText || dashboardIsHoliday(year, month, day)) continue;
+
+      const daily = dailyByMonth[month - 1][day] || { operation:0, planStop:0 };
+      const load = Math.max(0, DASHBOARD_STD_WORK_MIN - daily.planStop);
+      monthlyOperation[month - 1] += daily.operation;
+      monthlyLoad[month - 1] += load;
+    }
+  }
+
+  const monthlyRates = monthlyOperation.map(function (operation, index) {
+    const load = monthlyLoad[index];
+    return load > 0 ? Math.round(operation / load * 1000) / 10 : 0;
+  });
+
+  return {
+    dailyByMonth:dailyByMonth,
+    monthlyOperation:monthlyOperation,
+    monthlyLoad:monthlyLoad,
+    monthlyRates:monthlyRates
+  };
+}
+
+function dashboardRenderAll(rows, detailRows) {
+  const year = selectedDate.getFullYear();
+  const selectedMonth = selectedDate.getMonth() + 1;
+  const selectedDay = selectedDate.getDate();
+  const selectedText = formatDateYMD(selectedDate);
+  const visibleRows = rows.filter(function (row) {
+    const workDate = String(row.work_date || "");
+    return workDate && workDate <= selectedText;
+  });
+
+  const todayRows = visibleRows.filter(function (row) {
+    return String(row.work_date || "") === selectedText;
+  });
+
+  const productionTotal = todayRows.reduce(function (sum, row) {
+    return sum + dashboardProductionQuantity(row);
+  }, 0);
+
+  const equipmentLabels = [];
+  todayRows.forEach(function (row) {
+    if (dashboardHoursToMinutes(row.operation_hours) <= 0) return;
+    const label = String(row.equipment_number || row.equipment_name || "").trim();
+    if (label && equipmentLabels.indexOf(label) < 0) equipmentLabels.push(label);
+  });
+
+  const shipmentRows = rows.filter(function (row) {
+    return String(row.shipping_date || "") === selectedText &&
+      dashboardToNumber(row.shipping_quantity) > 0;
+  });
+
+  document.getElementById("kpi-job-count").textContent = dashboardFormatNumber(todayRows.length);
+  document.getElementById("kpi-production").textContent = dashboardFormatNumber(productionTotal);
+  document.getElementById("kpi-shipment").textContent = dashboardFormatNumber(shipmentRows.length);
+
+  const equipmentElement = document.getElementById("kpi-equipment");
+  const equipmentStatus = document.getElementById("kpi-equipment-status");
+
+  if (equipmentLabels.length) {
+    equipmentElement.textContent = equipmentLabels.length <= 2
+      ? equipmentLabels.join(", ")
+      : equipmentLabels[0] + " 외 " + (equipmentLabels.length - 1) + "대";
+    equipmentStatus.className = "status-pill run";
+    equipmentStatus.innerHTML = '<span class="dot"></span> RUN';
+  } else {
+    equipmentElement.textContent = "가동 설비 없음";
+    equipmentStatus.className = "status-pill";
+    equipmentStatus.innerHTML = '<span class="dot"></span> IDLE';
+  }
+
+  const monthlyProduction = Array(12).fill(0);
+  const monthlyInput = Array(12).fill(0);
+  const monthlyDefect = Array(12).fill(0);
+  const selectedMonthDailyInput = Array(dashboardDaysInMonth(year, selectedMonth)).fill(0);
+  const selectedMonthDailyDefect = Array(dashboardDaysInMonth(year, selectedMonth)).fill(0);
+
+  visibleRows.forEach(function (row) {
+    const workDate = String(row.work_date || "");
+    const parts = workDate.split("-");
+    if (parts.length !== 3) return;
+
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    if (month < 1 || month > 12) return;
+
+    const production = dashboardProductionQuantity(row);
+    const input = dashboardInputQuantity(row);
+    const defect = dashboardToNumber(row.defect_quantity);
+
+    monthlyProduction[month - 1] += production;
+    monthlyInput[month - 1] += input;
+    monthlyDefect[month - 1] += defect;
+
+    if (month === selectedMonth && day >= 1 && day <= selectedMonthDailyInput.length) {
+      selectedMonthDailyInput[day - 1] += input;
+      selectedMonthDailyDefect[day - 1] += defect;
+    }
+  });
+
+  const cumulativeProduction = [];
+  let productionRunning = 0;
+  monthlyProduction.forEach(function (value) {
+    productionRunning += value;
+    cumulativeProduction.push(productionRunning);
+  });
+
+  const monthLabels = Array.from({ length:12 }, function (_, index) {
+    return (index + 1) + "월";
+  });
+
+  dashboardRenderBars(
+    "bar-prod",
+    "axis-prod",
+    monthlyProduction,
+    monthLabels,
+    dashboardFormatNumber
+  );
+
+  dashboardRenderBars(
+    "bar-cumprod",
+    "axis-cumprod",
+    cumulativeProduction,
+    monthLabels,
+    dashboardFormatNumber
+  );
+
+  document.getElementById("foot-cumprod").textContent =
+    dashboardFormatNumber(cumulativeProduction[selectedMonth - 1] || 0);
+
+  const planStopMap = dashboardBuildPlanStopMap(detailRows);
+  const operating = dashboardCalculateOperatingData(visibleRows, planStopMap, year, selectedText);
+
+  dashboardRenderBars(
+    "bar-cumrate",
+    "axis-cumrate",
+    operating.monthlyRates,
+    monthLabels,
+    function (value) { return value.toFixed(1) + "%"; }
+  );
+
+  let totalOperation = 0;
+  let totalLoad = 0;
+  for (let monthIndex = 0; monthIndex < selectedMonth; monthIndex++) {
+    totalOperation += operating.monthlyOperation[monthIndex];
+    totalLoad += operating.monthlyLoad[monthIndex];
+  }
+
+  const aggregateRate = totalLoad > 0 ? totalOperation / totalLoad * 100 : 0;
+  document.getElementById("foot-cumrate").textContent = aggregateRate.toFixed(1) + "%";
+
+  const currentMonthDaily = operating.dailyByMonth[selectedMonth - 1];
+  const dailyRateValues = [];
+  const dailyLabels = [];
+  const monthDays = dashboardDaysInMonth(year, selectedMonth);
+
+  for (let day = 1; day <= monthDays; day++) {
+    const dateText = year + "-" + pad2(selectedMonth) + "-" + pad2(day);
+    dailyLabels.push(day + "일");
+
+    if (dateText > selectedText || dashboardIsHoliday(year, selectedMonth, day)) {
+      dailyRateValues.push(null);
+      continue;
+    }
+
+    const daily = currentMonthDaily[day] || { operation:0, planStop:0 };
+    const load = Math.max(0, DASHBOARD_STD_WORK_MIN - daily.planStop);
+    dailyRateValues.push(load > 0 ? Math.round(daily.operation / load * 1000) / 10 : 0);
+  }
+
+  document.getElementById("rate-panel-title").textContent = selectedMonth + "월 설비가동률";
+  document.getElementById("rate-target-tag").textContent = "목표 " + DASHBOARD_TARGET_RATE + "%";
+
+  dashboardRenderLine(
+    "line-rate",
+    "axis-rate",
+    dailyRateValues,
+    dailyLabels,
+    {
+      suggestedMax:120,
+      target:DASHBOARD_TARGET_RATE,
+      color:"var(--info)",
+      formatter:function (value) { return value.toFixed(1) + "%"; }
+    }
+  );
+
+  const cumulativeDefectRate = [];
+  let inputRunning = 0;
+  let defectRunning = 0;
+
+  for (let day = 1; day <= monthDays; day++) {
+    inputRunning += selectedMonthDailyInput[day - 1] || 0;
+    defectRunning += selectedMonthDailyDefect[day - 1] || 0;
+
+    if (day > selectedDay) {
+      cumulativeDefectRate.push(null);
+    } else {
+      cumulativeDefectRate.push(inputRunning > 0 ? defectRunning / inputRunning * 100 : 0);
+    }
+  }
+
+  const currentDefectRate = inputRunning > 0 ? defectRunning / inputRunning * 100 : 0;
+  document.getElementById("foot-cumdefect").textContent = currentDefectRate.toFixed(2) + "%";
+
+  dashboardRenderLine(
+    "line-defect",
+    "axis-cumdefect",
+    cumulativeDefectRate,
+    dailyLabels,
+    {
+      suggestedMax:Math.max(1, currentDefectRate * 1.2),
+      color:"var(--bad)",
+      formatter:function (value) { return value.toFixed(2) + "%"; }
+    }
+  );
+}
+
+async function loadDashboardData() {
+  if (!currentProfile || !currentProfile.company_id) {
+    initializeEmptyDashboard();
+    return;
+  }
+
+  const requestSerial = ++dashboardRequestSerial;
+  initializeEmptyDashboard();
+
+  try {
+    const year = selectedDate.getFullYear();
+    const productionRows = await dashboardFetchProductionRows(year);
+    if (requestSerial !== dashboardRequestSerial) return;
+
+    const productionIds = productionRows
+      .map(function (row) { return row.production_system_id; })
+      .filter(Boolean);
+
+    let detailRows = [];
+    try {
+      detailRows = await dashboardFetchDowntimeDetails(productionIds);
+    } catch (detailError) {
+      console.warn("비가동 상세 조회 실패. 계획정지시간을 0분으로 계산합니다.", detailError);
+    }
+
+    if (requestSerial !== dashboardRequestSerial) return;
+    dashboardRenderAll(productionRows, detailRows);
+  } catch (error) {
+    console.error("대시보드 데이터 조회 실패:", error);
+    initializeEmptyDashboard();
+    alert("대시보드 조회 실패: " + dashboardErrorMessage(error));
+  }
 }
 
 function toggleTheme() {
@@ -1588,11 +2093,11 @@ function confirmSendReportNow() {
   );
 }
 
-function initializeDashboard() {
+async function initializeDashboard() {
   restoreTheme();
   updateSystemDate();
   updateDateDisplay();
-  initializeEmptyDashboard();
+  await loadDashboardData();
 }
 
 async function initializeProtectedPage() {
@@ -1604,6 +2109,8 @@ async function initializeProtectedPage() {
       return;
     }
 
+    currentProfile = access.profile;
+
     document
       .documentElement
       .classList
@@ -1611,7 +2118,7 @@ async function initializeProtectedPage() {
         "auth-pending"
       );
 
-    initializeDashboard();
+    await initializeDashboard();
   } catch (error) {
     console.error(
       "QGIS 접근 권한 확인 실패:",
