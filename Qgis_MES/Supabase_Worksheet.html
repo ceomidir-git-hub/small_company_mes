@@ -770,24 +770,29 @@
   <!-- 3. 주요공정 파라미터 -->
   <div class="section-title">3. 주요공정 파라미터</div>
   <table>
-    <!-- 설정값 헤더 → 6열: 표면경도 (경도값→표면경도) -->
+    <!-- 설정값 헤더 → 경화깊이와 표면경도 모두 P1·P2·P3 입력 -->
     <tr>
       <th style="width:70px">항목</th>
       <th><span class="th-with-btn">전압(V)<button class="std-btn" onclick="setStd('volt-set','12.5')">표준</button></span></th>
       <th><span class="th-with-btn">전류(A)<button class="std-btn" onclick="setStd('amp-set','8.25')">표준</button></span></th>
       <th><span class="th-with-btn">출력(kW)<button class="std-btn" onclick="setStd('kw-set','1.25')">표준</button></span></th>
       <th><span class="th-with-btn">주파수(kHz)<button class="std-btn" onclick="setStd('khz-set','120')">표준</button></span></th>
-      <th><span class="th-with-btn" style="font-size:8.4px;">NO2<button class="std-btn" onclick="setStd('no2-set','')">표준</button></span></th>
+      <th>경화깊이</th>
       <th>표면경도</th>
     </tr>
-    <!-- 설정값 입력 → 6열: P1 / 입력 -->
+    <!-- 설정값 입력 → 경화깊이 P1 / 표면경도 P1 -->
     <tr>
       <td class="label">설정값</td>
       <td><div class="preset"><span>st 12.5/</span><input type="text" id="volt-set"></div></td>
       <td><div class="preset"><span>st 8.25/</span><input type="text" id="amp-set"></div></td>
       <td><div class="preset"><span>st 1.25/</span><input type="text" id="kw-set"></div></td>
       <td><div class="preset"><span>st 120/</span><input type="text" id="khz-set"></div></td>
-      <td style="text-align:center;"><input type="text" id="no2-set" placeholder="NO3" style="text-align:center;font-size:8.4px;"></td>
+      <td style="padding:3px 5px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P1 /</span>
+          <input type="text" id="hardening-depth-p1" style="flex:1;text-align:center;">
+        </div>
+      </td>
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P1 /</span>
@@ -795,11 +800,16 @@
         </div>
       </td>
     </tr>
-    <!-- 가열조건 헤더 → 6열: P2 / 입력 -->
+    <!-- 가열조건 헤더 → 경화깊이 P2 / 표면경도 P2 -->
     <tr>
       <th>항목</th><th>가열시간(sec)</th><th>이동속도(mm/s)</th>
       <th>코일-제품간격(mm)</th><th>회전수(RPM)</th>
-      <th style="font-size:8.4px;">NO4</th>
+      <td style="padding:3px 5px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P2 /</span>
+          <input type="text" id="hardening-depth-p2" style="flex:1;text-align:center;">
+        </div>
+      </td>
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P2 /</span>
@@ -807,14 +817,19 @@
         </div>
       </td>
     </tr>
-    <!-- 가열조건 입력 → 6열: P3 / 입력 -->
+    <!-- 가열조건 입력 → 경화깊이 P3 / 표면경도 P3 -->
     <tr>
       <td class="label">가열조건</td>
       <td><input type="text" id="heat-time" style="text-align:center;"></td>
       <td><input type="text" id="move-speed" style="text-align:center;"></td>
       <td><input type="text" id="coil-gap" style="text-align:center;"></td>
       <td><input type="text" id="rpm" style="text-align:center;"></td>
-      <td style="text-align:center;"><input type="text" id="no3-set" placeholder="NO5" style="text-align:center;font-size:8.4px;"></td>
+      <td style="padding:3px 5px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P3 /</span>
+          <input type="text" id="hardening-depth-p3" style="flex:1;text-align:center;">
+        </div>
+      </td>
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P3 /</span>
@@ -822,14 +837,14 @@
         </div>
       </td>
     </tr>
-    <!-- 냉각조건 헤더 → 6열: 경화깊이 (표면경도→경화깊이) -->
+    <!-- 냉각조건 헤더 → 기존 경화깊이 위치에 심부경도 배치 -->
     <tr>
       <th>항목</th><th>냉각수압력(bar)</th><th>냉각수온도(℃)</th>
       <th>냉각시간(sec)</th><th>LOT NO</th>
       <th style="font-size:8.4px;">NO6</th>
-      <th>경화깊이</th>
+      <th>심부경도</th>
     </tr>
-    <!-- 냉각조건 입력 → 6열: 입력칸 -->
+    <!-- 냉각조건 입력 → 심부경도 입력칸 -->
     <tr>
       <td class="label">냉각조건</td>
       <td><input type="text" id="cool-bar" style="text-align:center;"></td>
@@ -838,26 +853,26 @@
       <td><input type="text" id="lot-no" readonly style="text-align:center;background:#f3f6fa;color:#1a3a5c;font-weight:700;" title="신규입력 시 회사별 다음 LOT NO가 자동 표시됩니다."></td>
       <td style="text-align:center;"><input type="text" id="no5-set" placeholder="NO7" style="text-align:center;font-size:8.4px;"></td>
       <td style="padding:3px 5px;">
-        <input type="text" id="surface-hard" style="width:100%;text-align:center;">
+        <input type="text" id="depth-hard" style="width:100%;text-align:center;">
       </td>
     </tr>
-    <!-- 조건값 헤더 → 6열: 심부경도 / 템퍼링경도→표준경도(HRC,HS,HV) -->
+    <!-- 조건값 헤더 → 도면경도, 도면경화깊이, 교정값 배치 -->
     <tr>
       <th>항목</th><th>템퍼링온도(℃)</th><th>템퍼링시간(sec)</th>
-      <th>표준경도(HRC,HS,HV)</th><th>교정값(mm)</th>
+      <th>도면경도</th><th>도면경화깊이</th>
       <th style="font-size:8.4px;">NO8</th>
-      <th>심부경도</th>
+      <th>교정값(mm)</th>
     </tr>
-    <!-- 조건값 입력 → 6열: 입력칸 -->
+    <!-- 조건값 입력 → 도면경화깊이 / 교정값 입력칸 -->
     <tr>
       <td class="label">조건값</td>
       <td><input type="text" id="temper-temp" style="text-align:center;"></td>
       <td><input type="text" id="temper-time" style="text-align:center;"></td>
       <td><input type="text" id="temper-hard" style="text-align:center;"></td>
-      <td><input type="text" id="correct-val" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hard" style="text-align:center;"></td>
       <td style="text-align:center;"><input type="text" id="no7-set" placeholder="NO9" style="text-align:center;font-size:8.4px;"></td>
       <td style="padding:3px 5px;">
-        <input type="text" id="depth-hard" style="width:100%;text-align:center;">
+        <input type="text" id="correct-val" style="width:100%;text-align:center;">
       </td>
     </tr>
   </table>
@@ -1181,7 +1196,7 @@ const SELECT_COLUMNS = [
   "receiving_quantity","receiving_appearance","receiving_drawing",
   "receiving_heat_treatment_qt","shipping_date","shipping_quantity",
   "rust_prevention_work","inspection_result","working_hours","p1","p2","p3",
-  "hardening_depth","core_hardness","special_notes","is_active"
+  "hardening_depth","hardening_depth_p1","hardening_depth_p2","hardening_depth_p3","core_hardness","special_notes","is_active"
 ].join(",");
 
 /* =========================================================
@@ -2203,6 +2218,9 @@ async function loadRecordToForm(record) {
   setValue("p1-val", record.p1);
   setValue("p2-val", record.p2);
   setValue("p3-val", record.p3);
+  setValue("hardening-depth-p1", record.hardening_depth_p1);
+  setValue("hardening-depth-p2", record.hardening_depth_p2);
+  setValue("hardening-depth-p3", record.hardening_depth_p3);
   setValue("surface-hard", record.hardening_depth);
   setValue("depth-hard", record.core_hardness);
 
@@ -3006,9 +3024,12 @@ const TEXT_NUMERIC_FIELDS = [
   ["correct-val","교정값"],
   ["cool-conc","냉각수농도"],
   ["non-hr1","비가동 상세시간"],
-  ["p1-val","P1"],
-  ["p2-val","P2"],
-  ["p3-val","P3"]
+  ["p1-val","표면경도 P1"],
+  ["p2-val","표면경도 P2"],
+  ["p3-val","표면경도 P3"],
+  ["hardening-depth-p1","경화깊이 P1"],
+  ["hardening-depth-p2","경화깊이 P2"],
+  ["hardening-depth-p3","경화깊이 P3"]
 ];
 
 function validateRecord() {
@@ -3190,6 +3211,9 @@ function buildPayload() {
     p1: textOrNull("p1-val"),
     p2: textOrNull("p2-val"),
     p3: textOrNull("p3-val"),
+    hardening_depth_p1: textOrNull("hardening-depth-p1"),
+    hardening_depth_p2: textOrNull("hardening-depth-p2"),
+    hardening_depth_p3: textOrNull("hardening-depth-p3"),
     hardening_depth: textOrNull("surface-hard"),
     core_hardness: textOrNull("depth-hard"),
 
