@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>설비가동률 현황 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f0f2f5; color: #222; min-height: 100vh; }
+
+.top-bar { background: #1a3a5c; color: #fff; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.top-bar h1 { font-size: clamp(13px,1.8vw,18px); font-weight: 700; letter-spacing: 1px; }
+.top-bar .sub { font-size: clamp(10px,1.1vw,12px); opacity: 0.75; }
+
+.search-panel { background: #fff; border-bottom: 2px solid #1a3a5c; padding: 9px 20px; display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+.search-panel label { font-size: 13px; font-weight: 600; color: #1a3a5c; white-space: nowrap; }
+.search-panel select { padding: 5px 10px; border: 1px solid #aaa; border-radius: 4px; font-size: 13px; font-family: inherit; }
+.sep { color: #ccc; font-size: 18px; }
+.btn-search { background: #1a3a5c; color: #fff; border: none; padding: 6px 18px; border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.btn-search:hover { background: #2a5a8c; }
+.btn-pdf { background: #fff; color: #1a3a5c; border: 1.5px solid #1a3a5c; padding: 6px 14px; border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.btn-pdf:hover { background: #e8ecf5; }
+.btn-pdf:disabled { background: #eee; color: #999; border-color: #ccc; cursor: default; }
+.btn-csv { background: #1d7a3c; color: #fff; border: none; padding: 6px 16px; border-radius: 4px; font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 600; white-space: nowrap; margin-left: auto; }
+.btn-csv:hover { background: #259a4c; }
+.btn-csv:disabled { background: #999; cursor: default; }
+
+.container { padding: 16px; max-width: 1400px; margin: 0 auto; }
+.card { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+.card-title { background: #1a3a5c; color: #fff; padding: 8px 16px; font-size: clamp(12px,1.4vw,14px); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.card-title .target { font-size: 12px; font-weight: 400; opacity: 0.85; }
+.card-body { padding: 12px; }
+.chart-wrap { position: relative; width: 100%; height: clamp(200px,28vw,300px); }
+
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: clamp(9px,1vw,11px); min-width: 1170px; table-layout: fixed; }
+th, td { border: 1px solid #ccc; text-align: center; padding: 4px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+thead th { background: #1a3a5c; color: #fff; font-weight: 600; }
+.th-holiday { color: #ff2222 !important; font-weight: 700 !important; }
+.th-none    { background: #cccccc !important; color: #999 !important; }
+.td-holiday { background: #fff5f5 !important; }
+.td-none    { background: #eeeeee !important; color: #bbb !important; }
+td.col-label { background: #f5f7fa; font-weight: 600; color: #1a3a5c; text-align: left; padding-left: 5px; }
+td.col-group { background: #e8ecf5; font-weight: 700; color: #1a3a5c; text-align: center; font-size: 10px; white-space: normal; line-height: 1.3; padding: 2px; }
+td.col-sub   { background: #f5f7fa; color: #1a3a5c; text-align: left; padding-left: 12px; }
+td.total-col { background: #fff8e1 !important; font-weight: 700; }
+tr.row-rate td { color: #185fa5; font-weight: 700; }
+td.td-low { background: #fff5f5 !important; color: #cc0000 !important; font-weight: 700 !important; }
+
+.legend { display: flex; gap: 16px; font-size: 11px; margin-bottom: 8px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.legend-dot.holiday { background: #ff2222; }
+.legend-dot.none    { background: #cccccc; }
+
+.status-box { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+.status-box.error { color: #c00; }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #ddd; border-top-color: #1a3a5c; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.auth-pending body { visibility: hidden; }
+.action-status { min-height: 18px; font-size: 12px; font-weight: 600; color: #555; white-space: nowrap; }
+.action-status.success { color: #1d7a3c; }
+.action-status.error { color: #b3261e; }
+.action-status.loading { color: #1a3a5c; }
+.btn-search:disabled { background: #999; cursor: default; }
+
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>📈 설비가동률 현황 (Operating Rate Graph)</h1>
+  <span class="sub">HeatPro MES · AUTO-GENERATED DOCUMENTS · ISO 9001</span>
+</div>
+
+<div class="search-panel">
+  <label>조회 연도 :</label>
+  <select id="selYear" aria-label="조회 연도"></select>
+  <span class="sep">|</span>
+  <label>조회 월 :</label>
+  <select id="selMonth" aria-label="조회 월">
+    <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+    <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+    <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+    <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+  </select>
+  <span class="sep">|</span>
+  <label>설비명 :</label>
+  <select id="selEquip" aria-label="설비명"><option value="">전체</option></select>
+  <button class="btn-search" id="btnSearch" type="button" onclick="loadData()">조 회</button>
+  <button class="btn-csv" id="btnCsv" type="button" onclick="exportCSV()" disabled>⬇ CSV</button>
+  <button class="btn-pdf" id="btnPdf" type="button" onclick="exportPDF()" disabled>⬇ PDF 다운로드</button>
+  <span id="actionStatus" class="action-status" role="status" aria-live="polite"></span>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title">
+      <span id="chartTitle">설비가동률 현황</span>
+      <span class="target" id="targetLabel">[목표 : 80%]</span>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap">
+        <canvas id="myChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">일별 설비가동률 현황 상세</div>
+    <div class="card-body">
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot holiday"></span><span>토요일 · 일요일 · 공휴일</span></div>
+        <div class="legend-item"><span class="legend-dot none"></span><span>해당 월 없는 날짜</span></div>
+      </div>
+      <div id="tableArea" class="tbl-wrap">
+        <div class="status-box">조회 월과 설비명을 선택 후 조회하세요.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Supabase / 멀티테넌트 연결
+   ========================================================= */
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const PRODUCTION_TABLE = "Total_Production_DB";
+const DOWNTIME_TABLE = "production_downtime_details";
+const EQUIPMENT_TABLE = "equipment";
+const LOGIN_PAGE_URL = "../index.html";
+
+const YEAR_MIN = 2026;
+const MAX_DAYS = 31;
+const PAGE_SIZE = 1000;
+const TARGET_RATE = 80;
+const STD_OP_MIN = 480;
+
+let YEAR = new Date().getFullYear();
+let currentUser = null;
+let currentProfile = null;
+let myChart = null;
+let hasData = false;
+let lastMonth = null;
+let lastDayData = null;
+let lastActualDays = 0;
+let lastEquipLabel = "전체";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+const HOLIDAYS = [
+  "2026-01-01",
+  "2026-02-16", "2026-02-17", "2026-02-18",
+  "2026-03-01", "2026-03-02",
+  "2026-05-01", "2026-05-05", "2026-05-25",
+  "2026-06-03", "2026-06-06",
+  "2026-07-17",
+  "2026-08-15", "2026-08-17",
+  "2026-09-24", "2026-09-25", "2026-09-26",
+  "2026-10-03", "2026-10-05", "2026-10-09",
+  "2026-12-25"
+];
+
+const TYPE_TO_KEY = {
+  "교육": "edu",
+  "공사": "const",
+  "개발": "dev",
+  "방문": "visit",
+  "기타1": "etc1",
+  "전기": "elec",
+  "냉각": "cool",
+  "코일": "coil",
+  "기타2": "etc2",
+  "조건": "cond",
+  "사양": "spec",
+  "기타3": "etc3"
+};
+
+const SUB_GROUPS = [
+  { groupLabel: "계획정지", rows: [
+      { key: "edu", label: "교육" },
+      { key: "const", label: "공사" },
+      { key: "dev", label: "개발" },
+      { key: "visit", label: "방문" },
+      { key: "etc1", label: "기타1" }
+  ]},
+  { groupLabel: "설비정지", rows: [
+      { key: "elec", label: "전기" },
+      { key: "cool", label: "냉각" },
+      { key: "coil", label: "코일" },
+      { key: "etc2", label: "기타2" }
+  ]},
+  { groupLabel: "제품", rows: [
+      { key: "cond", label: "조건" },
+      { key: "spec", label: "사양" },
+      { key: "etc3", label: "기타3" }
+  ]}
+];
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function getDow(year, month, day) {
+  return new Date(year, month - 1, day).getDay();
+}
+
+function isHoliday(year, month, day) {
+  const dow = getDow(year, month, day);
+  if (dow === 0 || dow === 6) return true;
+  return HOLIDAYS.indexOf(year + "-" + pad2(month) + "-" + pad2(day)) >= 0;
+}
+
+function todayYMD() {
+  const today = new Date();
+  return today.getFullYear() + "-" + pad2(today.getMonth() + 1) + "-" + pad2(today.getDate());
+}
+
+function toNumber(value) {
+  const number = Number(String(value == null ? "" : value).replace(/,/g, ""));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function hoursToMinutes(value) {
+  return Math.round(toNumber(value) * 60);
+}
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char];
+  });
+}
+
+function dbErrorMessage(error) {
+  if (!error) return "알 수 없는 오류입니다.";
+  if (error.code === "42501") return "조회 권한이 없습니다. RLS 정책을 확인해 주세요.";
+  return error.message || error.details || error.hint || String(error);
+}
+
+function setActionStatus(message, type) {
+  const element = document.getElementById("actionStatus");
+  element.textContent = message || "";
+  element.className = "action-status" + (type ? " " + type : "");
+}
+
+function setButtonsDisabled(disabled) {
+  document.getElementById("btnSearch").disabled = disabled;
+  document.getElementById("btnCsv").disabled = disabled || !hasData;
+  document.getElementById("btnPdf").disabled = disabled || !hasData;
+}
+
+function redirectToLogin() {
+  window.location.replace(LOGIN_PAGE_URL);
+}
+
+async function verifyCompanyAccess() {
+  const userResult = await sb.auth.getUser();
+  const user = userResult.data && userResult.data.user;
+
+  if (userResult.error || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const profileResult = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  const profile = profileResult.data;
+
+  if (
+    profileResult.error ||
+    !profile ||
+    profile.is_active !== true ||
+    !profile.company_id
+  ) {
+    console.error("회사 권한 확인 실패:", profileResult.error);
+    await sb.auth.signOut({ scope: "local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+sb.auth.onAuthStateChange(function (event) {
+  if (event === "SIGNED_OUT") redirectToLogin();
+});
+
+async function fetchAllRows(tableName, selectColumns, configureQuery) {
+  const result = [];
+  let from = 0;
+
+  while (true) {
+    let query = sb
+      .from(tableName)
+      .select(selectColumns)
+      .eq("company_id", currentProfile.company_id);
+
+    if (typeof configureQuery === "function") query = configureQuery(query);
+
+    const pageResult = await query.range(from, from + PAGE_SIZE - 1);
+    if (pageResult.error) throw pageResult.error;
+
+    const pageRows = pageResult.data || [];
+    result.push.apply(result, pageRows);
+
+    if (pageRows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return result;
+}
+
+async function loadMeta() {
+  const equipmentRows = await fetchAllRows(
+    EQUIPMENT_TABLE,
+    "equipment_number,equipment_name,is_active",
+    function (query) {
+      return query
+        .eq("is_active", true)
+        .order("equipment_number", { ascending: true });
+    }
+  );
+
+  const names = [];
+  equipmentRows.forEach(function (row) {
+    const name = String(row.equipment_name || "").trim();
+    if (name && names.indexOf(name) < 0) names.push(name);
+  });
+
+  const select = document.getElementById("selEquip");
+  select.innerHTML = '<option value="">전체</option>';
+  names.forEach(function (name) {
+    select.add(new Option(name, name));
+  });
+}
+
+async function fetchProductionRows(year, month, equipmentName) {
+  const fromDate = year + "-" + pad2(month) + "-01";
+  const nextMonth = month === 12
+    ? (year + 1) + "-01-01"
+    : year + "-" + pad2(month + 1) + "-01";
+
+  return fetchAllRows(
+    PRODUCTION_TABLE,
+    [
+      "production_system_id",
+      "work_date",
+      "equipment_name",
+      "operation_hours",
+      "downtime_hours",
+      "is_active"
+    ].join(","),
+    function (query) {
+      let filtered = query
+        .eq("is_active", true)
+        .gte("work_date", fromDate)
+        .lt("work_date", nextMonth)
+        .order("work_date", { ascending: true })
+        .order("production_system_id", { ascending: true });
+
+      if (equipmentName) filtered = filtered.eq("equipment_name", equipmentName);
+      return filtered;
+    }
+  );
+}
+
+async function fetchDowntimeDetails(productionIds) {
+  if (!productionIds.length) return [];
+
+  const result = [];
+  const chunkSize = 200;
+
+  for (let index = 0; index < productionIds.length; index += chunkSize) {
+    const chunk = productionIds.slice(index, index + chunkSize);
+    const detailResult = await sb
+      .from(DOWNTIME_TABLE)
+      .select("production_system_id,downtime_type,downtime_minutes,is_active")
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .in("production_system_id", chunk);
+
+    if (detailResult.error) throw detailResult.error;
+    result.push.apply(result, detailResult.data || []);
+  }
+
+  return result;
+}
+
+function makeDayRow() {
+  return {
+    opMin: 0,
+    opTimeMin: 0,
+    nonOpMin: 0,
+    edu: 0,
+    const: 0,
+    dev: 0,
+    visit: 0,
+    etc1: 0,
+    elec: 0,
+    cool: 0,
+    coil: 0,
+    etc2: 0,
+    cond: 0,
+    spec: 0,
+    etc3: 0,
+    hasData: false,
+    hasProduction: false
+  };
+}
+
+function getVal(dayRow, key) {
+  const planStop = dayRow.edu + dayRow.const + dayRow.dev + dayRow.visit + dayRow.etc1;
+
+  /* 승인된 최종 계산 기준
+     부하시간 = 조업시간 - 계획정지시간
+     가동률   = 가동시간 / 부하시간 × 100
+     비가동시간은 현황으로 표시하되 분모에서 다시 차감하지 않는다. */
+  const loadMin = dayRow.opMin - planStop;
+
+  switch (key) {
+    case "opMin": return dayRow.opMin;
+    case "planStop": return planStop;
+    case "loadMin": return loadMin > 0 ? loadMin : 0;
+    case "opTimeMin": return dayRow.opTimeMin;
+    case "nonOpMin": return dayRow.nonOpMin;
+    case "rate": return loadMin > 0
+      ? Math.round(dayRow.opTimeMin / loadMin * 1000) / 10
+      : 0;
+    case "edu": case "const": case "dev": case "visit": case "etc1":
+    case "elec": case "cool": case "coil": case "etc2":
+    case "cond": case "spec": case "etc3":
+      return dayRow[key];
+    default: return 0;
+  }
+}
+
+function processData(productionRows, detailRows, year, month, equipment) {
+  lastMonth = month;
+  lastEquipLabel = equipment || "전체";
+  lastActualDays = getDaysInMonth(year, month);
+
+  const dayData = [];
+  for (let index = 0; index < MAX_DAYS; index++) dayData.push(makeDayRow());
+
+  const detailMap = {};
+  const detailTotalMap = {};
+
+  detailRows.forEach(function (row) {
+    const productionId = row.production_system_id;
+    const downtimeType = String(row.downtime_type || "").trim();
+    const targetKey = TYPE_TO_KEY[downtimeType];
+    const minutes = toNumber(row.downtime_minutes);
+
+    if (!productionId || !targetKey) return;
+    if (!detailMap[productionId]) detailMap[productionId] = {};
+
+    detailMap[productionId][targetKey] =
+      toNumber(detailMap[productionId][targetKey]) + minutes;
+    detailTotalMap[productionId] = toNumber(detailTotalMap[productionId]) + minutes;
+  });
+
+  productionRows.forEach(function (row) {
+    const workDate = String(row.work_date || "");
+    const parts = workDate.split("-");
+    if (parts.length < 3) return;
+
+    const day = Number(parts[2]);
+    if (day < 1 || day > MAX_DAYS) return;
+
+    const target = dayData[day - 1];
+    const productionId = row.production_system_id;
+    const details = detailMap[productionId] || {};
+
+    target.opTimeMin += hoursToMinutes(row.operation_hours);
+
+    const storedDowntime = hoursToMinutes(row.downtime_hours);
+    const detailDowntime = toNumber(detailTotalMap[productionId]);
+    target.nonOpMin += storedDowntime > 0 ? storedDowntime : detailDowntime;
+
+    Object.keys(TYPE_TO_KEY).forEach(function (typeName) {
+      const key = TYPE_TO_KEY[typeName];
+      target[key] += toNumber(details[key]);
+    });
+
+    target.hasProduction = true;
+  });
+
+  const today = todayYMD();
+
+  for (let day = 1; day <= lastActualDays; day++) {
+    const dateText = year + "-" + pad2(month) + "-" + pad2(day);
+    const target = dayData[day - 1];
+
+    if (dateText > today || isHoliday(year, month, day)) {
+      target.opMin = 0;
+      target.hasData = false;
+      continue;
+    }
+
+    target.opMin = STD_OP_MIN;
+    target.hasData = true;
+  }
+
+  lastDayData = dayData;
+  hasData = dayData.some(function (row) { return row.hasData; });
+
+  buildChart(dayData, month, lastActualDays);
+  buildTable(dayData, month, lastActualDays);
+}
+
+function aggregateRate(dayData, actualDays) {
+  let totalOperation = 0;
+  let totalLoad = 0;
+
+  for (let day = 1; day <= actualDays; day++) {
+    const row = dayData[day - 1];
+    if (!row.hasData) continue;
+    totalOperation += getVal(row, "opTimeMin");
+    totalLoad += getVal(row, "loadMin");
+  }
+
+  return totalLoad > 0
+    ? Math.round(totalOperation / totalLoad * 1000) / 10
+    : 0;
+}
+
+function exportCSV() {
+  if (!hasData || !lastDayData) {
+    setActionStatus("CSV 실패: 먼저 조회를 진행해 주세요.", "error");
+    return;
+  }
+
+  const header = ["구분", "합계"];
+  for (let day = 1; day <= MAX_DAYS; day++) header.push(day + "일");
+  const csvRows = [header];
+
+  const mainRows = [
+    { key: "opMin", label: "조업시간(분)" },
+    { key: "planStop", label: "계획정지(분)" },
+    { key: "loadMin", label: "부하시간(분)" },
+    { key: "opTimeMin", label: "가동시간(분)" },
+    { key: "nonOpMin", label: "비가동시간(분)" },
+    { key: "rate", label: "가동률(%)", isRate: true }
+  ];
+
+  function pushRow(definition, isHour) {
+    let total = 0;
+
+    if (definition.isRate) {
+      total = aggregateRate(lastDayData, lastActualDays);
+    } else {
+      for (let day = 1; day <= lastActualDays; day++) {
+        total += getVal(lastDayData[day - 1], definition.key);
+      }
+    }
+
+    const row = [
+      definition.label,
+      isHour ? (total / 60).toFixed(1) : total
+    ];
+
+    for (let day = 1; day <= MAX_DAYS; day++) {
+      if (day > lastActualDays) {
+        row.push("");
+        continue;
+      }
+
+      const dayRow = lastDayData[day - 1];
+      if (!dayRow.hasData) {
+        row.push("");
+        continue;
+      }
+
+      const value = getVal(dayRow, definition.key);
+      row.push(isHour ? (value / 60).toFixed(1) : value);
+    }
+
+    csvRows.push(row);
+  }
+
+  mainRows.forEach(function (definition) { pushRow(definition, false); });
+  SUB_GROUPS.forEach(function (group) {
+    group.rows.forEach(function (definition) { pushRow(definition, false); });
+  });
+  pushRow({ key: "opMin", label: "근무시간(hr)" }, true);
+  pushRow({ key: "opTimeMin", label: "가동시간(hr)" }, true);
+
+  const csv = csvRows.map(function (row) {
+    return row.map(function (cell) {
+      let text = String(cell);
+      if (text.indexOf(",") >= 0 || text.indexOf('"') >= 0) {
+        text = '"' + text.replace(/"/g, '""') + '"';
+      }
+      return text;
+    }).join(",");
+  }).join("\r\n");
+
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  const safeEquipment = lastEquipLabel.replace(/[\\/:*?"<>|]/g, "_");
+
+  anchor.href = url;
+  anchor.download =
+    "Operating_Rate_Graph_" + YEAR + "_" + pad2(lastMonth) + "_" + safeEquipment + ".csv";
+
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+
+  setActionStatus("CSV 다운로드 완료", "success");
+}
+
+/* =========================================================
+   A4 가로 1장 벡터 PDF 출력
+   - 브라우저 인쇄 엔진: 한글 문자와 표 선을 벡터로 출력
+   - Chart.js canvas 대신 인쇄 전용 SVG 그래프 생성
+   - 그래프와 1일~31일 전체 상세표를 A4 가로 1장에 고정 배치
+   - A4 297×210mm, 인쇄 여백 5mm, 실사용 영역 287×200mm 기준
+   ========================================================= */
+function escapePrintHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function makeOperatingPrintSvg() {
+  const width = 1400;
+  const height = 280;
+  const margin = { left: 64, right: 24, top: 30, bottom: 34 };
+  const plotW = width - margin.left - margin.right;
+  const plotH = height - margin.top - margin.bottom;
+  const points = [];
+  let maxValue = TARGET_RATE;
+
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    const row = lastDayData[day - 1];
+    const value = day <= lastActualDays && row && row.hasData ? getVal(row, "rate") : null;
+    if (value !== null) maxValue = Math.max(maxValue, value);
+    points.push({ day: day, value: value });
+  }
+
+  const yMax = Math.max(120, Math.ceil((maxValue * 1.18 || 120) / 20) * 20);
+  const x = function (day) {
+    return margin.left + ((day - 1) / (MAX_DAYS - 1)) * plotW;
+  };
+  const y = function (value) {
+    return margin.top + plotH - (value / yMax) * plotH;
+  };
+
+  let svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none" role="img" aria-label="설비가동률 그래프">';
+  svg += '<rect width="100%" height="100%" fill="#ffffff"/>';
+
+  for (let index = 0; index <= 5; index++) {
+    const value = Math.round(yMax * index / 5);
+    const yy = y(value);
+    svg += '<line x1="' + margin.left + '" y1="' + yy + '" x2="' + (width - margin.right) + '" y2="' + yy + '" stroke="#d9dfe7" stroke-width="1"/>';
+    svg += '<text x="' + (margin.left - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="#425466">' + value + '%</text>';
+  }
+
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    const xx = x(day);
+    const invalid = day > lastActualDays;
+    svg += '<line x1="' + xx + '" y1="' + margin.top + '" x2="' + xx + '" y2="' + (margin.top + plotH) + '" stroke="' + (invalid ? '#e3e3e3' : '#f0f2f5') + '" stroke-width="0.8"/>';
+    svg += '<text x="' + xx + '" y="' + (height - 12) + '" text-anchor="middle" font-size="8.5" fill="' + (invalid ? '#a8a8a8' : '#425466') + '">' + day + '</text>';
+  }
+
+  svg += '<line x1="' + margin.left + '" y1="' + y(TARGET_RATE) + '" x2="' + (width - margin.right) + '" y2="' + y(TARGET_RATE) + '" stroke="#cc0000" stroke-width="1.8" stroke-dasharray="7 5"/>';
+
+  const valid = points.filter(function (point) { return point.value !== null; });
+  if (valid.length > 1) {
+    svg += '<polyline fill="none" stroke="#185fa5" stroke-width="2.4" points="' + valid.map(function (point) {
+      return x(point.day) + ',' + y(point.value);
+    }).join(' ') + '"/>';
+  }
+
+  valid.forEach(function (point) {
+    const xx = x(point.day);
+    const yy = y(point.value);
+    const labelY = Math.max(11, yy - (point.day % 2 === 0 ? 8 : 14));
+    svg += '<circle cx="' + xx + '" cy="' + yy + '" r="3.3" fill="#185fa5" stroke="#ffffff" stroke-width="1.2"/>';
+    svg += '<text x="' + xx + '" y="' + labelY + '" text-anchor="middle" font-size="7.6" font-weight="700" fill="#185fa5">' + point.value.toLocaleString() + '%</text>';
+  });
+
+  svg += '<text x="15" y="' + (margin.top + plotH / 2) + '" transform="rotate(-90 15 ' + (margin.top + plotH / 2) + ')" text-anchor="middle" font-size="10" fill="#1a3a5c">가동률(%)</text>';
+  svg += '<g transform="translate(' + (width - 235) + ',15)"><line x1="0" y1="0" x2="28" y2="0" stroke="#185fa5" stroke-width="2.4"/><text x="34" y="4" font-size="10" fill="#222">가동률</text><line x1="105" y1="0" x2="133" y2="0" stroke="#cc0000" stroke-width="1.8" stroke-dasharray="7 5"/><text x="140" y="4" font-size="10" fill="#222">목표 ' + TARGET_RATE + '%</text></g>';
+  svg += '</svg>';
+  return svg;
+}
+
+function makeOperatingPrintTable() {
+  const rows = [
+    { key: "opMin", label: "조업시간", group: "" },
+    { key: "planStop", label: "계획정지", group: "" },
+    { key: "loadMin", label: "부하시간", group: "" },
+    { key: "opTimeMin", label: "가동시간(분)", group: "" },
+    { key: "nonOpMin", label: "비가동시간", group: "" },
+    { key: "rate", label: "가동률(%)", group: "", isRate: true },
+    { key: "edu", label: "교육", group: "계획정지" },
+    { key: "const", label: "공사", group: "계획정지" },
+    { key: "dev", label: "개발", group: "계획정지" },
+    { key: "visit", label: "방문", group: "계획정지" },
+    { key: "etc1", label: "기타1", group: "계획정지" },
+    { key: "elec", label: "전기", group: "설비정지" },
+    { key: "cool", label: "냉각", group: "설비정지" },
+    { key: "coil", label: "코일", group: "설비정지" },
+    { key: "etc2", label: "기타2", group: "설비정지" },
+    { key: "cond", label: "조건", group: "제품" },
+    { key: "spec", label: "사양", group: "제품" },
+    { key: "etc3", label: "기타3", group: "제품" },
+    { key: "opMin", label: "근무시간(hr)", group: "", isHour: true },
+    { key: "opTimeMin", label: "가동시간(hr)", group: "", isHour: true }
+  ];
+
+  let html = '<table class="report-table"><colgroup><col class="col-group"><col class="col-label"><col class="col-total">';
+  for (let day = 1; day <= MAX_DAYS; day++) html += '<col class="col-day">';
+  html += '</colgroup><thead><tr><th>구분</th><th>항목</th><th>합계</th>';
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    const invalid = day > lastActualDays;
+    html += '<th class="' + (invalid ? 'none' : (isHoliday(YEAR, lastMonth, day) ? 'holiday' : '')) + '">' + day + '</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(function (definition) {
+    let total = 0;
+    if (definition.isRate) {
+      total = aggregateRate(lastDayData, lastActualDays);
+    } else {
+      for (let day = 1; day <= lastActualDays; day++) total += getVal(lastDayData[day - 1], definition.key);
+    }
+
+    const totalDisplay = definition.isHour
+      ? (total / 60).toFixed(1)
+      : (definition.isRate ? total + '%' : total.toLocaleString());
+
+    html += '<tr class="' + (definition.isRate ? 'emphasis' : '') + '">';
+    html += '<td class="group-cell">' + escapePrintHtml(definition.group) + '</td>';
+    html += '<td class="label-cell">' + escapePrintHtml(definition.label) + '</td>';
+    html += '<td class="total-cell">' + totalDisplay + '</td>';
+
+    for (let day = 1; day <= MAX_DAYS; day++) {
+      const invalid = day > lastActualDays;
+      const row = lastDayData[day - 1];
+      const holiday = !invalid && isHoliday(YEAR, lastMonth, day);
+      let display = '-';
+      let low = false;
+      if (!invalid && row && row.hasData) {
+        const value = getVal(row, definition.key);
+        display = definition.isHour
+          ? (value / 60).toFixed(1)
+          : (definition.isRate ? value + '%' : value.toLocaleString());
+        low = definition.isRate && value < TARGET_RATE;
+      }
+      html += '<td class="' + (invalid ? 'none ' : '') + (holiday ? 'holiday ' : '') + (low ? 'low-cell' : '') + '">' + display + '</td>';
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  return html;
+}
+
+function buildOperatingPrintDocument() {
+  const companyName = currentProfile && currentProfile.company_name ? currentProfile.company_name : "";
+  const page = '<section class="page"><div class="report-head"><div><h1>설비가동률 현황</h1><p>Operating Rate Graph</p></div><div class="meta">' +
+    escapePrintHtml(companyName) + '<br>' + YEAR + '년 ' + lastMonth + '월 · 설비: ' + escapePrintHtml(lastEquipLabel) + '</div></div>' +
+    '<div class="section-title">일별 설비가동률 추이 <span>[목표: ' + TARGET_RATE + '%]</span></div>' +
+    '<div class="chart-box">' + makeOperatingPrintSvg() + '</div>' +
+    '<div class="section-title table-title">일별 설비가동률 현황 상세 <span>1일 - 31일</span></div>' +
+    makeOperatingPrintTable() +
+    '<div class="report-foot"><span>부하시간 = 조업시간 - 계획정지시간 · 가동률 = 가동시간 ÷ 부하시간 × 100 · 상한 없음</span><span><i class="holiday-box"></i>휴일 <i class="low-box"></i>목표 미달 <i class="none-box"></i>없는 날짜</span></div></section>';
+
+  return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>Operating Rate Graph PDF</title><style>' +
+    '@page{size:A4 landscape;margin:5mm;}*{box-sizing:border-box;}html,body{width:287mm;height:200mm;margin:0;padding:0;background:#fff;color:#111;font-family:"Malgun Gothic","맑은 고딕","Noto Sans KR",sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;overflow:hidden;}' +
+    '.page{width:287mm;height:198mm;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;page-break-inside:avoid;page-break-after:avoid;break-after:avoid;}' +
+    '.report-head{height:10mm;flex:0 0 10mm;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:0.6mm solid #1a3a5c;padding:0 0 1.2mm;margin-bottom:1mm;}.report-head h1{font-size:13pt;line-height:1;margin:0;color:#1a3a5c;}.report-head p{font-size:6pt;line-height:1;margin:0.8mm 0 0;color:#66788a;}.meta{text-align:right;font-size:6.2pt;line-height:1.35;color:#33475b;}' +
+    '.section-title{height:5mm;flex:0 0 5mm;font-size:7.2pt;line-height:5mm;font-weight:700;background:#1a3a5c;color:#fff;padding:0 2.2mm;}.section-title span{float:right;font-size:5.8pt;font-weight:400;}.table-title{margin-top:1.2mm;}' +
+    '.chart-box{height:65mm;flex:0 0 65mm;border:0.2mm solid #cfd6df;border-top:0;overflow:hidden;}.chart-box svg{display:block;width:100%;height:100%;}' +
+    '.report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:4.75pt;line-height:1;break-inside:avoid;page-break-inside:avoid;}.report-table thead tr{height:4.4mm;}.report-table tbody tr{height:4.6mm;}.report-table th,.report-table td{border:0.18mm solid #66717f;text-align:center;padding:0.15mm 0.08mm;white-space:nowrap;overflow:hidden;text-overflow:clip;vertical-align:middle;}.report-table th{background:#1a3a5c;color:#fff;font-weight:700;font-size:4.85pt;}.report-table .col-group{width:10mm;}.report-table .col-label{width:19mm;}.report-table .col-total{width:14mm;}.report-table .col-day{width:auto;}.report-table .group-cell{font-size:4.35pt;background:#e8ecf5;color:#1a3a5c;font-weight:700;}.report-table .label-cell{text-align:left;padding-left:0.7mm;background:#f4f7fa;font-weight:700;font-size:5.05pt;}.report-table .total-cell{background:#fff4cc;font-weight:700;font-size:4.9pt;}.report-table .holiday{background:#fff0f0;color:#a00000;}.report-table .none{background:#ededed;color:#999;}.report-table .low-cell{background:#ffe3e3;color:#b00000;font-weight:700;}.report-table tr.emphasis td{color:#185fa5;font-weight:700;}' +
+    '.report-foot{height:5.5mm;flex:0 0 5.5mm;display:flex;align-items:center;justify-content:space-between;font-size:5.3pt;color:#33475b;border-top:0.2mm solid #9fb4c8;background:#eef4fa;padding:0 1.5mm;margin-top:1mm;white-space:nowrap;}.holiday-box,.low-box,.none-box{display:inline-block;width:2.6mm;height:2.2mm;vertical-align:middle;margin:0 0.5mm 0 1.2mm;border:0.15mm solid #999;}.holiday-box{background:#fff0f0;}.low-box{background:#ffe3e3;}.none-box{background:#ededed;}' +
+    '@media print{html,body{width:287mm;height:200mm;}.page{width:287mm;height:198mm;}}@media screen{body{width:auto;height:auto;background:#dfe4ea;padding:8mm;overflow:auto;}.page{margin:0 auto;background:#fff;box-shadow:0 2mm 8mm rgba(0,0,0,.18);}}' +
+    '</style></head><body>' + page + '</body></html>';
+}
+
+async function exportPDF() {
+  if (!hasData || !lastDayData) {
+    setActionStatus("PDF 실패: 먼저 조회를 진행해 주세요.", "error");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank", "width=1400,height=950");
+  if (!printWindow) {
+    setActionStatus("PDF 실패: 브라우저의 팝업 차단을 해제해 주세요.", "error");
+    return;
+  }
+
+  const button = document.getElementById("btnPdf");
+  const originalText = button.textContent;
+  button.textContent = "1장 인쇄 준비 중...";
+  setButtonsDisabled(true);
+  setActionStatus("A4 가로 1장 벡터 PDF를 준비하는 중입니다.", "loading");
+
+  try {
+    printWindow.document.open();
+    printWindow.document.write(buildOperatingPrintDocument());
+    printWindow.document.close();
+
+    const openPrintDialog = function () {
+      window.setTimeout(function () {
+        printWindow.focus();
+        printWindow.print();
+      }, 350);
+    };
+
+    if (printWindow.document.fonts && printWindow.document.fonts.ready) {
+      printWindow.document.fonts.ready.then(openPrintDialog).catch(openPrintDialog);
+    } else {
+      openPrintDialog();
+    }
+
+    setActionStatus("A4 가로 1장 인쇄창을 열었습니다. 1일~31일 전체가 한 장에 출력됩니다.", "success");
+  } catch (error) {
+    console.error("A4 1장 벡터 PDF 출력 실패:", error);
+    if (!printWindow.closed) printWindow.close();
+    setActionStatus("PDF 출력 실패: " + dbErrorMessage(error), "error");
+  } finally {
+    button.textContent = originalText;
+    setButtonsDisabled(false);
+  }
+}
+
+async function loadData() {
+  if (!currentProfile) {
+    setActionStatus("조회 실패: 로그인 회사 정보를 확인할 수 없습니다.", "error");
+    return;
+  }
+
+  const selectedYear = Number(document.getElementById("selYear").value);
+  const month = Number(document.getElementById("selMonth").value);
+  const equipment = document.getElementById("selEquip").value;
+  const equipmentLabel = equipment || "전체";
+
+  if (!Number.isInteger(selectedYear) || selectedYear < YEAR_MIN) {
+    setActionStatus("조회 실패: 조회 연도를 확인해 주세요.", "error");
+    return;
+  }
+  if (month < 1 || month > 12) {
+    setActionStatus("조회 실패: 조회 월을 확인해 주세요.", "error");
+    return;
+  }
+
+  YEAR = selectedYear;
+  document.getElementById("chartTitle").textContent =
+    "설비가동률 현황 ( " + YEAR + "년 " + month + "월 ) — " + equipmentLabel;
+  document.getElementById("tableArea").innerHTML =
+    '<div class="status-box"><div class="spinner"></div><br>데이터를 불러오는 중입니다...</div>';
+
+  hasData = false;
+  lastDayData = null;
+  setButtonsDisabled(true);
+  setActionStatus("조회 중입니다.", "loading");
+
+  try {
+    const productionRows = await fetchProductionRows(YEAR, month, equipment);
+    const productionIds = productionRows
+      .map(function (row) { return row.production_system_id; })
+      .filter(Boolean);
+    const detailRows = await fetchDowntimeDetails(productionIds);
+
+    processData(productionRows, detailRows, YEAR, month, equipment);
+
+    setActionStatus(
+      productionRows.length
+        ? "조회 완료: " + YEAR + "년 " + month + "월 생산실적 " +
+          productionRows.length.toLocaleString() + "건"
+        : "조회 완료: 생산실적은 없으며 조업일 기준 0%로 표시했습니다.",
+      "success"
+    );
+  } catch (error) {
+    console.error("설비가동률 조회 실패:", error);
+    showError(dbErrorMessage(error));
+    setActionStatus("조회 실패: " + dbErrorMessage(error), "error");
+  } finally {
+    setButtonsDisabled(false);
+  }
+}
+
+function showError(message) {
+  document.getElementById("tableArea").innerHTML =
+    '<div class="status-box error">⚠️ ' + escapeHtml(message) + "</div>";
+}
+
+async function initializePage() {
+  const yearSelect = document.getElementById("selYear");
+  const currentYear = new Date().getFullYear();
+  const endYear = Math.max(currentYear, YEAR_MIN);
+
+  for (let year = YEAR_MIN; year <= endYear; year++) {
+    yearSelect.add(new Option(year + "년", year));
+  }
+
+  yearSelect.value = String(endYear);
+  document.getElementById("selMonth").value = String(new Date().getMonth() + 1);
+  document.getElementById("targetLabel").textContent = "[목표 : " + TARGET_RATE + "%]";
+
+  setButtonsDisabled(true);
+  setActionStatus("로그인 및 회사 권한 확인 중입니다.", "loading");
+
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+
+    await loadMeta();
+    setActionStatus("기준정보 연결 완료: 조회 버튼을 눌러 주세요.", "success");
+  } catch (error) {
+    console.error("초기 연결 실패:", error);
+    document.documentElement.classList.remove("auth-pending");
+    setActionStatus("초기 연결 실패: " + dbErrorMessage(error), "error");
+  } finally {
+    setButtonsDisabled(false);
+  }
+}
+
+window.addEventListener("load", initializePage);
+
+function buildChart(dayData, month, actualDays) {
+  const labels = [];
+  const rateArray = [];
+
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    labels.push(day <= actualDays ? String(day) : "");
+    if (day <= actualDays) {
+      const row = dayData[day - 1];
+      rateArray.push(row.hasData ? getVal(row, "rate") : null);
+    } else {
+      rateArray.push(null);
+    }
+  }
+
+  if (myChart) {
+    myChart.destroy();
+    myChart = null;
+  }
+
+  const context = document.getElementById("myChart").getContext("2d");
+
+  myChart = new Chart(context, {
+    type: "line",
+    devicePixelRatio: 2,
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "가동률(%)",
+          data: rateArray,
+          borderColor: "#185fa5",
+          backgroundColor: "rgba(24,95,165,0.07)",
+          borderWidth: 2,
+          pointRadius: function (chartContext) {
+            return chartContext.parsed && chartContext.parsed.y !== null ? 4 : 0;
+          },
+          pointBackgroundColor: "#185fa5",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 1.5,
+          tension: 0,
+          spanGaps: true,
+          segment: {
+            borderDash: function (chartContext) {
+              const raw0 = rateArray[chartContext.p0DataIndex];
+              const raw1 = rateArray[chartContext.p1DataIndex];
+              return raw0 === null || raw1 === null ? [4, 4] : undefined;
+            },
+            borderColor: function (chartContext) {
+              const raw0 = rateArray[chartContext.p0DataIndex];
+              const raw1 = rateArray[chartContext.p1DataIndex];
+              return raw0 === null || raw1 === null ? "#bbb" : "#185fa5";
+            }
+          }
+        },
+        {
+          label: "목표(" + TARGET_RATE + "%)",
+          data: Array(MAX_DAYS).fill(TARGET_RATE),
+          borderColor: "#cc0000",
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          tension: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      resizeDelay: 0,
+      clip: false,
+      layout: { padding: { top: 24 } },
+      scales: {
+        x: { grid: { color: "#f0f0f0" }, ticks: { font: { size: 10 } } },
+        y: {
+          min: 0,
+          suggestedMax: 120,
+          grid: { color: "#f0f0f0" },
+          ticks: {
+            font: { size: 10 },
+            callback: function (value) { return value + "%"; }
+          }
+        }
+      },
+      plugins: {
+        legend: { position: "top", labels: { font: { size: 11 }, boxWidth: 14 } },
+        tooltip: {
+          callbacks: {
+            label: function (chartContext) {
+              return chartContext.dataset.label + ": " +
+                (chartContext.parsed.y !== null
+                  ? chartContext.parsed.y.toLocaleString() + "%"
+                  : "—");
+            }
+          }
+        }
+      }
+    },
+    plugins: [{
+      id: "rateLabel",
+      afterDatasetsDraw: function (chart) {
+        const dataset = chart.data.datasets[0];
+        const meta = chart.getDatasetMeta(0);
+        const context2d = chart.ctx;
+        context2d.save();
+        context2d.font = "bold 9px Malgun Gothic, sans-serif";
+        context2d.fillStyle = "#185fa5";
+        context2d.textAlign = "center";
+        meta.data.forEach(function (point, index) {
+          const value = dataset.data[index];
+          if (value === null || value === undefined) return;
+          context2d.fillText(value.toLocaleString() + "%", point.x, point.y - 10);
+        });
+        context2d.restore();
+      }
+    }]
+  });
+}
+
+function buildTable(dayData, month, actualDays) {
+  let colgroup = '<colgroup><col style="width:3.76%"><col style="width:6.84%"><col style="width:4.62%">';
+  for (let index = 1; index <= MAX_DAYS; index++) {
+    colgroup += '<col style="width:2.735%">';
+  }
+  colgroup += "</colgroup>";
+
+  let headerRow = '<tr><th colspan="2">구분</th><th>합계</th>';
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    if (day > actualDays) {
+      headerRow += '<th class="th-none">' + day + "</th>";
+    } else if (isHoliday(YEAR, month, day)) {
+      headerRow += '<th class="th-holiday">' + day + "</th>";
+    } else {
+      headerRow += "<th>" + day + "</th>";
+    }
+  }
+  headerRow += "</tr>";
+
+  let html = "<table>" + colgroup + "<thead>" + headerRow + "</thead><tbody>";
+
+  function mainRow(label, key, options) {
+    options = options || {};
+    let total = 0;
+
+    if (options.isRate) {
+      total = aggregateRate(dayData, actualDays);
+    } else {
+      for (let day = 1; day <= actualDays; day++) {
+        total += getVal(dayData[day - 1], key);
+      }
+    }
+
+    const totalDisplay = options.isHour
+      ? (total / 60).toFixed(1)
+      : (options.isRate ? total + "%" : total.toLocaleString());
+
+    html += "<tr" + (options.isRate ? ' class="row-rate"' : "") + ">";
+    html += '<td colspan="2" class="col-label"' +
+      (options.isRate ? ' style="color:#185fa5;"' : "") + ">" + label + "</td>";
+    html += '<td class="total-col">' + totalDisplay + "</td>";
+
+    for (let day = 1; day <= MAX_DAYS; day++) {
+      if (day > actualDays) {
+        html += '<td class="td-none">—</td>';
+        continue;
+      }
+
+      const dayRow = dayData[day - 1];
+      const classes = [];
+      if (isHoliday(YEAR, month, day)) classes.push("td-holiday");
+
+      if (!dayRow.hasData) {
+        html += "<td" + (classes.length ? ' class="' + classes.join(" ") + '"' : "") + ">—</td>";
+        continue;
+      }
+
+      const value = getVal(dayRow, key);
+      if (options.isRate && value < TARGET_RATE) classes.push("td-low");
+
+      const display = options.isHour
+        ? (value / 60).toFixed(1)
+        : (options.isRate ? value + "%" : value.toLocaleString());
+
+      html += "<td" + (classes.length ? ' class="' + classes.join(" ") + '"' : "") + ">" + display + "</td>";
+    }
+
+    html += "</tr>";
+  }
+
+  function subRow(label, key, isFirst, groupLabel, groupSize) {
+    let total = 0;
+    for (let day = 1; day <= actualDays; day++) {
+      total += getVal(dayData[day - 1], key);
+    }
+
+    html += "<tr>";
+    if (isFirst) {
+      html += '<td class="col-group" rowspan="' + groupSize + '">' + groupLabel + "</td>";
+    }
+    html += '<td class="col-sub">' + label + "</td>";
+    html += '<td class="total-col">' + total.toLocaleString() + "</td>";
+
+    for (let day = 1; day <= MAX_DAYS; day++) {
+      if (day > actualDays) {
+        html += '<td class="td-none">—</td>';
+        continue;
+      }
+
+      const dayRow = dayData[day - 1];
+      const holidayClass = isHoliday(YEAR, month, day) ? ' class="td-holiday"' : "";
+      html += "<td" + holidayClass + ">" +
+        (dayRow.hasData ? getVal(dayRow, key).toLocaleString() : "—") +
+        "</td>";
+    }
+
+    html += "</tr>";
+  }
+
+  mainRow("조업시간", "opMin");
+  mainRow("계획정지", "planStop");
+  mainRow("부하시간", "loadMin");
+  mainRow("가동시간(분)", "opTimeMin");
+  mainRow("비가동시간", "nonOpMin");
+  mainRow("가동률(%)", "rate", { isRate: true });
+
+  SUB_GROUPS.forEach(function (group) {
+    group.rows.forEach(function (definition, index) {
+      subRow(definition.label, definition.key, index === 0, group.groupLabel, group.rows.length);
+    });
+  });
+
+  mainRow("근무시간(hr)", "opMin", { isHour: true });
+  mainRow("가동시간(hr)", "opTimeMin", { isHour: true });
+
+  html += "</tbody></table>";
+  document.getElementById("tableArea").innerHTML = html;
+}
+</script>
+</body>
+</html>
