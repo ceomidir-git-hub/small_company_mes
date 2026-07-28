@@ -67,11 +67,11 @@
   .panel h3 .tag{font-family:var(--font-mono);font-size:0.7rem;color:var(--muted);font-weight:500;background:var(--panel-2);border:1px solid var(--line);padding:3px 9px;border-radius:999px;}
   .chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
-  .bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding:28px 8px 4px;position:relative;overflow:visible;}
-  .bars .bar{flex:1;background:linear-gradient(180deg,#FFBEA3 0%,#FF8358 42%,#5B86FF 100%);border-radius:12px 12px 4px 4px;min-height:6px;position:relative;transition:height 0.45s ease, transform 0.18s ease;box-shadow:0 10px 16px rgba(22,36,62,0.20);}
-  .bars .bar .bar-label{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);text-align:center;font-family:var(--font-mono);font-size:0.62rem;font-weight:700;color:var(--text);white-space:nowrap;line-height:1.2;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,0.28);}
-  .bars.muted .bar{background:linear-gradient(180deg,#A4C7FF 0%,#5B86FF 45%,#2F63D8 100%);}
-  .bars.acc .bar{background:linear-gradient(180deg,#B7F7CF 0%,#5CE28F 45%,#25B96B 100%);}
+  .bars{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:24px;position:relative;overflow:visible;}
+  .bars .bar{flex:1;background:linear-gradient(180deg,#FF8A5C 0%,var(--accent) 100%);border-radius:3px 3px 0 0;min-height:4px;position:relative;transition:height 0.4s ease;}
+  .bars .bar .bar-label{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 3px);text-align:center;font-family:var(--font-mono);font-size:0.62rem;font-weight:600;color:var(--text);white-space:nowrap;line-height:1.2;pointer-events:none;}
+  .bars.muted .bar{background:linear-gradient(180deg,#5B86C9 0%,#3D6BB0 100%);}
+  .bars.acc .bar{background:linear-gradient(180deg,#61E39B 0%,var(--good) 100%);}
   .chart-axis{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.62rem;color:#5C6878;margin-top:6px;}
   .chart-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);}
   .chart-foot .big{font-size:1.1rem;color:var(--text);font-weight:600;}
@@ -80,6 +80,11 @@
   .chart-link .panel-hint{font-family:var(--font-mono);font-size:0.62rem;color:#6E7E93;text-align:right;margin-top:4px;}
 
   .linechart{width:100%;height:156px;display:block;}
+  .rate-bar-shell{display:grid;grid-template-columns:31px minmax(0,1fr);gap:4px;align-items:stretch;}
+  .rate-y-axis{height:140px;padding-top:24px;display:flex;flex-direction:column;justify-content:flex-start;font-family:var(--font-mono);font-size:0.62rem;color:#5C6878;text-align:right;}
+  .rate-y-axis .y100{height:42px;line-height:1;}
+  .rate-y-axis .y50{line-height:1;}
+  .rate-bar-shell .bars{min-width:0;}
   .status-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:0.72rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);}
   .status-pill.run{color:var(--good);border-color:rgba(67,209,122,0.3);}
   .status-pill.run .dot{background:var(--good);box-shadow:0 0 6px var(--good);}
@@ -892,6 +897,200 @@
     outline:2px solid var(--accent);
     outline-offset:3px;
   }
+
+
+  /* =========================================================
+     노트북 화면 비율 재조정
+     적용 범위: CSS viewport 1181px ~ 1536px
+
+     1366px 기준 계산:
+     전체 폭 1366
+     - 사이드바 190
+     - 메인 좌우 여백 28
+     - 열 간격 12
+     - 우측 업무 프레임 360
+     = 좌측 대시보드 약 776px
+
+     기존 우측 최소 500px 고정으로 인한
+     좌측 KPI/그래프 압축 현상을 해소한다.
+     ========================================================= */
+  @media (min-width:1181px) and (max-width:1536px) {
+    .app {
+      grid-template-columns:190px minmax(0,1fr);
+    }
+
+    .main {
+      width:100%;
+      min-width:0;
+      padding:13px 14px 24px;
+      gap:12px;
+    }
+
+    .main > .page-head,
+    .main > .grid {
+      width:100%;
+      max-width:none;
+      min-width:0;
+    }
+
+    .grid {
+      grid-template-columns:minmax(0,1fr) minmax(340px,360px);
+      gap:12px;
+      justify-content:stretch;
+      align-items:start;
+    }
+
+    .grid > div,
+    .grid > div:first-child,
+    .grid > div:last-child {
+      width:100%;
+      min-width:0;
+    }
+
+    .kpi-row {
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .kpi {
+      min-height:108px;
+      padding:12px 12px 10px;
+    }
+
+    .kpi .kpi-label {
+      font-size:0.72rem;
+    }
+
+    .kpi .kpi-value {
+      font-size:2.05rem;
+    }
+
+    #kpi-equipment {
+      font-size:1.02rem !important;
+      line-height:1.25;
+    }
+
+    .chart-grid-2 {
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .chart-grid-3 {
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .panel {
+      padding:12px 12px 10px;
+    }
+
+    .panel h3 {
+      font-size:0.84rem;
+    }
+
+    .bars,
+    .linechart {
+      height:112px;
+    }
+
+    .rate-bar-shell {
+      grid-template-columns:30px minmax(0,1fr);
+    }
+
+    .chart-axis {
+      font-size:0.56rem;
+    }
+
+    .chart-foot {
+      font-size:0.64rem;
+    }
+
+    .doc-grid {
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:7px;
+    }
+
+    .doc-card {
+      min-width:0;
+      padding:8px 8px 7px;
+    }
+
+    .doc-card .doc-title {
+      font-size:0.64rem;
+      line-height:1.3;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+    }
+
+    .doc-card .doc-meta {
+      font-size:0.50rem;
+      line-height:1.2;
+    }
+
+    .doc-card .doc-preview {
+      height:20px;
+    }
+
+    .flow-card {
+      min-height:120px;
+      padding:12px 10px;
+    }
+
+    .flow-track {
+      grid-template-columns:
+        repeat(7,minmax(0,1fr) minmax(5px,0.25fr))
+        minmax(0,1fr);
+    }
+
+    .flow-step .node {
+      width:30px;
+      height:30px;
+      font-size:0.8rem;
+    }
+
+    .flow-step .label {
+      font-size:0.50rem;
+    }
+
+    .modules {
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .module-card {
+      padding:11px;
+    }
+
+    .page-head .crumb {
+      display:none;
+    }
+  }
+
+  /* 1280px 이하 노트북은 우측을 한 단계 더 축소 */
+  @media (min-width:1181px) and (max-width:1320px) {
+    .app {
+      grid-template-columns:180px minmax(0,1fr);
+    }
+
+    .grid {
+      grid-template-columns:minmax(0,1fr) 330px;
+      gap:10px;
+    }
+
+    .main {
+      padding-left:12px;
+      padding-right:12px;
+    }
+
+    .doc-grid {
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .topbar-right .date-chip {
+      display:none;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -1046,7 +1245,7 @@
         <div class="chart-grid-2">
           <a class="panel chart-link" href="./Monthly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="월별생산실적 상세 화면 열기" title="월별생산실적 상세 화면 열기"><h3>월별생산실적 <span class="tag">개</span></h3><div class="bars" id="bar-prod"></div><div class="chart-axis" id="axis-prod"></div></a>
           <!-- ── 2026-07-17 변경: 월 가동률 → 이번달 일별 가동률(전체 설비 합산) SVG 꺾은선, 목표% 헤더 표기 ── -->
-          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="설비가동률 그래프 상세 화면 열기" title="설비가동률 그래프 상세 화면 열기"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-rate"></g></svg><div class="chart-axis" id="axis-rate"></div></a>
+          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="설비가동률 그래프 상세 화면 열기" title="설비가동률 그래프 상세 화면 열기"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><div class="rate-bar-shell"><div class="rate-y-axis" aria-hidden="true"><span class="y100">100%</span><span class="y50">50%</span></div><div class="bars" id="bar-rate"></div></div><div class="chart-axis" id="axis-rate"></div></a>
         </div>
         <div class="chart-grid-3">
           <a class="panel chart-link" href="./Yearly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="누적 생산실적 상세 화면 열기" title="누적 생산실적 상세 화면 열기"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></a>
@@ -1475,7 +1674,7 @@ function initializeEmptyDashboard() {
   [
     "bar-prod",
     "axis-prod",
-    "line-rate",
+    "bar-rate",
     "axis-rate",
     "bar-cumprod",
     "axis-cumprod",
@@ -1632,10 +1831,14 @@ function dashboardRenderBars(containerId, axisId, values, labels, formatter, opt
   const minHeight = options && Number.isFinite(Number(options.minHeight)) ? Number(options.minHeight) : 6;
   const maxHeight = options && Number.isFinite(Number(options.maxHeight)) ? Number(options.maxHeight) : 88;
   const showZeroLabel = Boolean(options && options.showZeroLabel);
+  const labelMin = options && Number.isFinite(Number(options.labelMin))
+    ? Number(options.labelMin)
+    : null;
 
   container.innerHTML = numericValues.map(function (value, index) {
     const height = value > 0 ? Math.max(minHeight, Math.min(maxHeight, value / maximum * maxHeight)) : minHeight;
-    const label = value > 0 || showZeroLabel ? formatter(value) : "";
+    const canShowLabel = labelMin === null ? (value > 0 || showZeroLabel) : value >= labelMin;
+    const label = canShowLabel ? formatter(value) : "";
     return '<div class="bar" style="height:' + height.toFixed(1) + '%" title="' +
       labels[index] + ': ' + formatter(value) + '">' +
       (label ? '<span class="bar-label">' + label + '</span>' : '') +
@@ -1671,9 +1874,11 @@ function dashboardRenderLine(groupId, axisId, values, labels, options) {
     ? Math.max.apply(null, available.map(function (point) { return point.value; }))
     : 0;
   const tickMax = ticks.length ? Math.max.apply(null, ticks) : 0;
-  const yMax = Math.max(suggestedMax, valueMax * 1.15, tickMax, 1);
+  const yMin = Number.isFinite(Number(options && options.yMin))
+    ? Number(options.yMin)
+    : 0;
+  const yMax = Math.max(suggestedMax, valueMax * 1.15, tickMax, yMin + 0.01);
   const denominator = Math.max(values.length - 1, 1);
-  const zeroLift = Number.isFinite(Number(options && options.zeroLift)) ? Number(options.zeroLift) : 0;
   const strokeColor = options && options.color ? options.color : 'var(--info)';
   const fillId = groupId + '-fill';
 
@@ -1682,12 +1887,9 @@ function dashboardRenderLine(groupId, axisId, values, labels, options) {
   }
 
   function pointY(value) {
-    const numeric = Math.max(0, Number(value) || 0);
-    let y = bottom - (bottom - top) * numeric / yMax;
-    if (numeric === 0 && zeroLift > 0) {
-      y = Math.min(bottom - zeroLift, bottom - 1);
-    }
-    return y;
+    const numeric = Number(value) || 0;
+    const clamped = Math.min(yMax, Math.max(yMin, numeric));
+    return bottom - (bottom - top) * (clamped - yMin) / (yMax - yMin);
   }
 
   function formatY(value) {
@@ -1721,11 +1923,12 @@ function dashboardRenderLine(groupId, axisId, values, labels, options) {
       return pointX(point.index).toFixed(1) + ',' + pointY(point.value).toFixed(1);
     }).join(' ');
 
-    const areaPoints = [left + ',' + bottom]
+    const areaBaseY = pointY(Math.max(yMin, Math.min(yMax, 0)));
+    const areaPoints = [left + ',' + areaBaseY.toFixed(1)]
       .concat(available.map(function (point) {
         return pointX(point.index).toFixed(1) + ',' + pointY(point.value).toFixed(1);
       }))
-      .concat([pointX(available[available.length - 1].index).toFixed(1) + ',' + bottom])
+      .concat([pointX(available[available.length - 1].index).toFixed(1) + ',' + areaBaseY.toFixed(1)])
       .join(' ');
 
     svg.push('<polygon points="' + areaPoints + '" fill="url(#' + fillId + ')"/>');
@@ -1944,7 +2147,7 @@ function dashboardRenderAll(rows, detailRows) {
     operating.monthlyRates.slice(0, selectedMonth),
     visibleMonthLabels,
     function (value) { return value.toFixed(1) + "%"; },
-    { variant:"acc", showZeroLabel:true }
+    { variant:"default", labelMin:50 }
   );
 
   let totalOperation = 0;
@@ -1979,20 +2182,13 @@ function dashboardRenderAll(rows, detailRows) {
   document.getElementById("rate-panel-title").textContent = selectedMonth + "월 설비가동률";
   document.getElementById("rate-target-tag").textContent = "목표 " + DASHBOARD_TARGET_RATE + "%";
 
-  dashboardRenderLine(
-    "line-rate",
+  dashboardRenderBars(
+    "bar-rate",
     "axis-rate",
-    dailyRateValues,
+    dailyRateValues.map(function (value) { return value == null ? 0 : value; }),
     dailyLabels,
-    {
-      suggestedMax:100,
-      yTicks:[50, 100],
-      target:DASHBOARD_TARGET_RATE,
-      color:"var(--info)",
-      showPointLabels:true,
-      formatter:function (value) { return value.toFixed(1) + "%"; },
-      yAxisFormatter:function (value) { return value.toFixed(0) + "%"; }
-    }
+    function (value) { return value.toFixed(1) + "%"; },
+    { variant:"default", labelMin:50, minHeight:4, maxHeight:84 }
   );
 
   const cumulativeDefectRate = [];
@@ -2013,7 +2209,15 @@ function dashboardRenderAll(rows, detailRows) {
   const currentDefectRate = inputRunning > 0 ? defectRunning / inputRunning * 100 : 0;
   document.getElementById("foot-cumdefect").textContent = currentDefectRate.toFixed(2) + "%";
 
-  const defectSuggestedMax = Math.max(0.5, currentDefectRate * 1.2);
+  const defectStep = 0.2;
+  const defectSuggestedMax = Math.max(
+    0.6,
+    Math.ceil(Math.max(currentDefectRate, 0.01) / defectStep) * defectStep
+  );
+  const defectTicks = [];
+  for (let tick = -0.2; tick <= defectSuggestedMax + 0.0001; tick += defectStep) {
+    defectTicks.push(Math.round(tick * 10) / 10);
+  }
 
   dashboardRenderLine(
     "line-defect",
@@ -2021,13 +2225,13 @@ function dashboardRenderAll(rows, detailRows) {
     cumulativeDefectRate,
     dailyLabels,
     {
+      yMin:-0.2,
       suggestedMax:defectSuggestedMax,
-      yTicks:[0, defectSuggestedMax / 2, defectSuggestedMax],
+      yTicks:defectTicks,
       color:"var(--bad)",
-      zeroLift:8,
       showPointLabels:false,
       formatter:function (value) { return value.toFixed(2) + "%"; },
-      yAxisFormatter:function (value) { return value.toFixed(2) + "%"; }
+      yAxisFormatter:function (value) { return value.toFixed(1) + "%"; }
     }
   );
 }
