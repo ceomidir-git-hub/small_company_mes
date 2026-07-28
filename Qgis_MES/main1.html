@@ -864,6 +864,71 @@
     }
   }
 
+
+  /* =========================================================
+     2026-07-28 요청 반영
+     1) 좌측 메뉴 및 풀다운 문자를 기존 적용 크기보다 50% 확대
+     2) 대시보드 그래프 영역 전체를 상세 화면 링크로 사용
+     ========================================================= */
+  .chart-link {
+    display:block;
+    color:inherit;
+    text-decoration:none;
+    cursor:pointer;
+    transition:border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .chart-link:hover {
+    border-color:var(--accent);
+    transform:translateY(-2px);
+    box-shadow:0 0 0 1px var(--accent-glow);
+  }
+
+  .chart-link:focus-visible {
+    outline:2px solid var(--accent);
+    outline-offset:3px;
+  }
+
+  /* 기본 화면: 기존 0.92rem / 0.82rem / 0.68rem × 1.5 */
+  .sidebar .nav-item {
+    font-size:1.38rem;
+    line-height:1.35;
+  }
+
+  .sidebar .sub-item {
+    font-size:1.23rem;
+    line-height:1.35;
+  }
+
+  .sidebar .nav-group-label {
+    font-size:1.02rem;
+  }
+
+  /* 노트북·PC: 기존 최적화값 0.78rem / 0.69rem / 0.59rem × 1.5 */
+  @media (min-width:1181px) {
+    .app {
+      grid-template-columns:230px minmax(0,1fr);
+    }
+
+    .sidebar .nav-item {
+      font-size:1.17rem;
+    }
+
+    .sidebar .sub-item {
+      font-size:1.035rem;
+    }
+
+    .sidebar .nav-group-label {
+      font-size:0.885rem;
+    }
+  }
+
+  @media (min-width:1181px) and (max-width:1320px) {
+    .app {
+      grid-template-columns:220px minmax(0,1fr);
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -1016,14 +1081,14 @@
           </div>
         </section>
         <div class="chart-grid-2">
-          <div class="panel"><h3>월별생산실적 <span class="tag">개</span></h3><div class="bars" id="bar-prod"></div><div class="chart-axis" id="axis-prod"></div></div>
+          <a class="panel chart-link" href="./Monthly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="월별생산실적 상세 화면 열기" title="월별생산실적 상세 화면 열기"><h3>월별생산실적 <span class="tag">개</span></h3><div class="bars" id="bar-prod"></div><div class="chart-axis" id="axis-prod"></div></a>
           <!-- ── 2026-07-17 변경: 월 가동률 → 이번달 일별 가동률(전체 설비 합산) SVG 꺾은선, 목표% 헤더 표기 ── -->
-          <div class="panel"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-rate"></g></svg><div class="chart-axis" id="axis-rate"></div></div>
+          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="설비가동률 그래프 상세 화면 열기" title="설비가동률 그래프 상세 화면 열기"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-rate"></g></svg><div class="chart-axis" id="axis-rate"></div></a>
         </div>
         <div class="chart-grid-3">
-          <div class="panel"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></div>
-          <div class="panel"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--good)">-</span></div></div>
-          <div class="panel"><h3>월누적 불량률 <span class="tag">%</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></div>
+          <a class="panel chart-link" href="./Yearly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="누적 생산실적 상세 화면 열기" title="누적 생산실적 상세 화면 열기"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></a>
+          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월별 설비가동률 그래프 상세 화면 열기" title="월별 설비가동률 그래프 상세 화면 열기"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--good)">-</span></div></a>
+          <a class="panel chart-link" href="Defect_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월누적 불량률 그래프 상세 화면 열기" title="월누적 불량률 그래프 상세 화면 열기"><h3>월누적 불량률 <span class="tag">%</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></a>
         </div>
         <section>
           <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:14px;">주요 모듈 구성(개발예정)</h3>
@@ -1419,7 +1484,7 @@ function initializeEmptyDashboard() {
   }
 
   if (mailStatusDot) {
-    mailStatusDot.className = "mdot";
+    mailStatusDot.className = "mdot fail";
   }
 
   [
@@ -1496,8 +1561,10 @@ function openMailStatusModal() {
   if (content) {
     content.innerHTML =
       '<div class="mail-empty">' +
-      "Google Sheets 연결이 제거되었습니다.<br>" +
-      "Supabase 메일 이력 연결 후 표시됩니다." +
+      "현재 메일링 기능은 연결되지 않았습니다.<br>" +
+      "이 HTML은 메일 발송 API 또는 Supabase Edge Function을 호출하지 않습니다.<br>" +
+      "실제 발송과 이력 확인을 위해서는 회사별 권한을 검사하는 Edge Function과 " +
+      "company_id가 포함된 메일 발송 이력 테이블이 필요합니다." +
       "</div>";
   }
 
@@ -1516,8 +1583,8 @@ function closeMailStatusModal() {
 
 function confirmSendReportNow() {
   alert(
-    "Google Sheets 메일 발송 연결이 제거되었습니다.\n" +
-    "Supabase 메일 발송 기능은 다음 단계에서 연결합니다."
+    "현재 메일링 기능은 연결되지 않아 실제 메일이 발송되지 않습니다.\n" +
+    "Supabase Edge Function과 회사별 메일 발송 이력 테이블 연결이 필요합니다."
   );
 }
 
