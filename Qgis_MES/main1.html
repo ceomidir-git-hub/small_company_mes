@@ -292,6 +292,43 @@
   }
 
 </style>
+<style id="laptop-fix">
+/* ============================================================
+   노트북(1281~1680px) 대응 패치 — 2026-07-28
+   근거: 개발 기준폭 약 2870px 대비 노트북 1440px = 50.2%
+   아래 값은 1440px 뷰포트 기준 실측 계산으로 산출
+   ============================================================ */
+@media (min-width:1281px) and (max-width:1680px){
+
+  /* [1] 글자 기준 축소: rem 사용 101곳 전체가 비례 축소됨 (16px→14px, -12.5%) */
+  html{font-size:14px;}
+
+  /* [2] 사이드바 220px → 190px (좌측 콘텐츠 +30px 확보) */
+  .app{grid-template-columns:190px minmax(0,1fr);}
+
+  /* [3] 우측 패널: 최소 360px 강제 → 300px~340px로 완화
+         (1440px에서 좌측 차트영역 788px → 858px, +8.9%) */
+  .grid{grid-template-columns:minmax(0,1fr) clamp(300px,22vw,340px);gap:14px;}
+
+  /* [4] 여백 압축: 패딩 합계 약 -20px */
+  .main{padding:16px 18px 32px;gap:14px;}
+  .panel{padding:14px 14px 11px;}
+
+  /* [5] 생산 흐름도: 아이콘 8개 최소폭 8×54=432px > 패널 내부폭
+         → min-width 해제하고 균등 분배로 변경 (넘침 제거) */
+  .flow-step{min-width:0;flex:1 1 0;}
+  .flow-step .node{transform:scale(.9);}
+
+  /* [6] 31일 일별 차트: 막대폭 약 7px vs 라벨폭 약 35px → 겹침
+         → 일별 차트 막대 라벨 숨김(축·목표선으로 판독), 월별 라벨은 유지 */
+  #bar-rate .bar-label{display:none;}
+  #axis-rate span:nth-child(even){display:none;} /* 일자 라벨 절반만 표시 */
+
+  /* [7] 막대 간격 4px→2px: 31개 기준 막대폭 7.4px→9.3px (+26%) */
+  #bar-rate{gap:2px;}
+}
+</style>
+
 </head>
 <body>
 <div class="app">
