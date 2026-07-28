@@ -114,6 +114,21 @@ body{min-width:844px;overflow-x:auto;}
   display:block;
   margin:0 auto;
 }
+#f-note{
+  text-align:left!important;
+}
+.signature-cell{
+  padding:1px!important;
+  background:#fffbe6;
+}
+.signature-image{
+  display:none;
+  width:100%;
+  max-width:58px;
+  height:32px;
+  margin:0 auto;
+  object-fit:contain;
+}
 
 </style>
 </head>
@@ -183,7 +198,7 @@ body{min-width:844px;overflow-x:auto;}
       <colgroup><col style="width:48%"><col style="width:52%"></colgroup>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;border-top:none;font-size:9px;background:#f0f0f0;font-weight:700;">LOT NO<br><span style="font-size:8px;font-weight:400;">(발행번호)</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;border-top:none;padding:1px;"><input class="inp left" id="f-lot" placeholder="①"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;border-top:none;padding:1px;"><input class="inp center" id="f-lot" placeholder="①"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">열처리방법<br><span style="font-size:8px;font-weight:400;">HEAT TREATMENT METHOD</span></td>
@@ -191,23 +206,23 @@ body{min-width:844px;overflow-x:auto;}
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">거래처<br><span style="font-size:8px;font-weight:400;">CUSTOMER</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp left" id="f-customer" placeholder="③"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-customer" placeholder="③"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">품명<br><span style="font-size:8px;font-weight:400;">DESCRIPTION</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp left" id="f-product" placeholder="④"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-product" placeholder="④"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">품번<br><span style="font-size:8px;font-weight:400;">D.W.G NO</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp left" id="f-dwg" placeholder="⑤"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-dwg" placeholder="⑤"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">재질<br><span style="font-size:8px;font-weight:400;">MATERIAL</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp left" id="f-material" placeholder="⑥"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-material" placeholder="⑥"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;border-bottom:none;font-size:9px;background:#f0f0f0;font-weight:700;">수량<br><span style="font-size:8px;font-weight:400;">LOTSIZE</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;border-bottom:none;padding:1px;"><input class="inp left" id="f-lotsize" placeholder="⑦"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;border-bottom:none;padding:1px;"><input class="inp center" id="f-lotsize" placeholder="⑦"></td>
       </tr>
     </table>
   </div>
@@ -460,9 +475,9 @@ body{min-width:844px;overflow-x:auto;}
       <input class="inp center" id="f-std3" value="-" placeholder="-">
     </td>
     <td style="font-size:9px;">시편</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res3" value="-" placeholder="-"></td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
+    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res3"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg3">
         <option value="">-</option>
@@ -484,9 +499,9 @@ body{min-width:844px;overflow-x:auto;}
       </select>
     </td>
     <td style="font-size:9px;">시편</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res4" value="-" placeholder="-"></td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
+    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res4"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg4">
         <option value="">-</option>
@@ -508,9 +523,9 @@ body{min-width:844px;overflow-x:auto;}
       </select>
     </td>
     <td style="font-size:9px;">현물</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res5" value="-" placeholder="-"></td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
+    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res5"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg5">
         <option value="">-</option>
@@ -532,9 +547,9 @@ body{min-width:844px;overflow-x:auto;}
       </select>
     </td>
     <td style="font-size:9px;">현물</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res6" value="-" placeholder="-"></td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
-    <td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td><td class="dash-cell">-</td>
+    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res6"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg6">
         <option value="">-</option>
@@ -573,11 +588,11 @@ body{min-width:844px;overflow-x:auto;}
   </colgroup>
   <tr style="height:38px;">
     <td style="border-left:none;font-size:9px;">INSPECTED BY :</td>
-    <td class="ycell" style="padding:1px;"><select class="sel" id="f-inspected"><option value="">-</option><option value="최석현">최석현</option><option value="김종렬">김종렬</option></select></td>
-    <td style="font-size:9px;">인</td>
+    <td class="ycell" style="padding:1px;"><select class="sel" id="f-inspected" onchange="updateSignature('f-inspected','inspected-signature')"><option value="">-</option><option value="최석현">최석현</option><option value="김종렬">김종렬</option></select></td>
+    <td class="signature-cell"><img id="inspected-signature" class="signature-image" alt="INSPECTED BY 서명"></td>
     <td style="font-size:9px;">APPROVED BY :</td>
-    <td class="ycell" style="padding:1px;"><select class="sel" id="f-approved"><option value="">-</option><option value="정성훈">정성훈</option><option value="최석현">최석현</option></select></td>
-    <td style="font-size:9px;">인</td>
+    <td class="ycell" style="padding:1px;"><select class="sel" id="f-approved" onchange="updateSignature('f-approved','approved-signature')"><option value="">-</option><option value="최석현">최석현</option></select></td>
+    <td class="signature-cell"><img id="approved-signature" class="signature-image" alt="APPROVED BY 서명"></td>
     <td style="border-right:none;"></td>
   </tr>
 </table>
@@ -651,6 +666,7 @@ async function initializePage() {
   document.getElementById("q-date").value = today;
   document.getElementById("f-date").value = today;
   drawYAxis("hrc", []);
+  updateAllSignatures();
   showLoading("로그인 및 회사 권한을 확인하는 중입니다.");
 
   try {
@@ -772,6 +788,34 @@ function ss(id, value) {
     element.add(new Option(normalized, normalized));
   }
   element.value = normalized;
+}
+
+const SIGNATURE_IMAGES = {
+  "최석현": "img/signature_choi_seokhyeon.png",
+  "김종렬": "img/signature_kim_jongryeol.png",
+  "박덕주": "img/signature_park.png"
+};
+
+function updateSignature(selectId, imageId) {
+  const select = document.getElementById(selectId);
+  const image = document.getElementById(imageId);
+  if (!select || !image) return;
+
+  const imagePath = SIGNATURE_IMAGES[select.value] || "";
+  if (!imagePath) {
+    image.removeAttribute("src");
+    image.style.display = "none";
+    return;
+  }
+
+  image.src = imagePath;
+  image.alt = select.value + " 서명";
+  image.style.display = "block";
+}
+
+function updateAllSignatures() {
+  updateSignature("f-inspected", "inspected-signature");
+  updateSignature("f-approved", "approved-signature");
 }
 
 function localDateText(date) {
@@ -1020,13 +1064,13 @@ function applyProductionFields(row) {
   for (let i = 4; i <= 8; i += 1) sv("hd0" + i, "");
 
   sv("f-std3", "-");
-  sv("f-res3", row.core_hardness || "-");
+  sv("f-res3", row.core_hardness === "-" ? "" : (row.core_hardness || ""));
   sv("f-std4", "-");
-  sv("f-res4", "-");
+  sv("f-res4", "");
   sv("f-std5", "-");
-  sv("f-res5", "-");
+  sv("f-res5", "");
   sv("f-std6", "-");
-  sv("f-res6", "-");
+  sv("f-res6", "");
   sv("f-note", row.inspection_report_special_notes || "");
 
   const judgment = row.inspection_result === "양호"
@@ -1060,13 +1104,13 @@ function clearReportOnlyFields() {
 
   sv("f-std2", "");
   sv("f-std3", "-");
-  sv("f-res3", "-");
+  sv("f-res3", "");
   sv("f-std4", "-");
-  sv("f-res4", "-");
+  sv("f-res4", "");
   sv("f-std5", "-");
-  sv("f-res5", "-");
+  sv("f-res5", "");
   sv("f-std6", "-");
-  sv("f-res6", "-");
+  sv("f-res6", "");
 
   for (let i = 1; i <= 6; i += 1) {
     ss("f-jdg" + i, "");
@@ -1074,6 +1118,7 @@ function clearReportOnlyFields() {
 
   ss("f-inspected", "");
   ss("f-approved", "");
+  updateAllSignatures();
   document.getElementById("unit-hrc").checked = true;
 }
 
@@ -1118,12 +1163,13 @@ function applyReportData(data) {
     const stdValue = data["insp_std" + i];
     const resultValue = data["insp_result" + i];
     if (stdValue) sv("f-std" + i, stdValue);
-    if (resultValue) sv("f-res" + i, resultValue);
+    sv("f-res" + i, resultValue && resultValue !== "-" ? resultValue : "");
     ss("f-jdg" + i, data["insp_jdg" + i] || "");
   }
 
   ss("f-inspected", data.inspected_by || "");
-  ss("f-approved", data.approved_by || "");
+  ss("f-approved", data.approved_by === "정성훈" ? "" : (data.approved_by || ""));
+  updateAllSignatures();
 
   const unit = data.measure_unit || "hrc";
   const unitElement = document.getElementById("unit-" + unit);
@@ -1326,13 +1372,14 @@ function resetForm() {
 
   sv("f-method", "고주파열처리");
   sv("f-std3", "-");
-  sv("f-res3", "-");
+  sv("f-res3", "");
   sv("f-std4", "-");
-  sv("f-res4", "-");
+  sv("f-res4", "");
   sv("f-std5", "-");
-  sv("f-res5", "-");
+  sv("f-res5", "");
   sv("f-std6", "-");
-  sv("f-res6", "-");
+  sv("f-res6", "");
+  updateAllSignatures();
 
   clearMainGraph();
   document.getElementById("hv-line").setAttribute("points", "");
@@ -1558,6 +1605,14 @@ async function exportPDF() {
   const fullHeight = target.scrollHeight;
 
   try {
+    await Promise.all(Array.from(target.querySelectorAll("img")).map(function(image) {
+      if (image.complete) return Promise.resolve();
+      return new Promise(function(resolve) {
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", resolve, { once: true });
+      });
+    }));
+
     const canvas = await html2canvas(target, {
       scale: 3,
       backgroundColor: "#ffffff",
@@ -1574,8 +1629,10 @@ async function exportPDF() {
         const clonedTarget = clonedDocument.getElementById("doc-container");
         if (!clonedTarget) return;
 
-        clonedTarget.querySelectorAll(".ycell").forEach(function(element) {
+        clonedTarget.style.background = "#ffffff";
+        clonedTarget.querySelectorAll("div, table, thead, tbody, tfoot, tr, td, th, .ycell, .dash-cell").forEach(function(element) {
           element.style.background = "#ffffff";
+          element.style.backgroundColor = "#ffffff";
         });
 
         let index = 0;
