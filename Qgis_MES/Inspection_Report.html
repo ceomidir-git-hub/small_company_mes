@@ -644,6 +644,8 @@ const PRODUCTION_COLUMNS = [
   "core_hardness",
   "inspection_result",
   "inspection_report_special_notes",
+  "inspected_by",
+  "approved_by",
   "is_active"
 ].join(",");
 
@@ -1073,6 +1075,14 @@ function applyProductionFields(row) {
   sv("f-res6", "");
   sv("f-note", row.inspection_report_special_notes || "");
 
+  /*
+   * 검사자·승인자 이름은 Total_Production_DB에 직접 저장합니다.
+   * 저장된 이름을 기준으로 GitHub img 폴더의 PNG 서명을 다시 표시합니다.
+   */
+  ss("f-inspected", row.inspected_by || "");
+  ss("f-approved", row.approved_by === "정성훈" ? "" : (row.approved_by || ""));
+  updateAllSignatures();
+
   const judgment = row.inspection_result === "양호"
     ? "합격"
     : row.inspection_result === "불량"
@@ -1167,8 +1177,16 @@ function applyReportData(data) {
     ss("f-jdg" + i, data["insp_jdg" + i] || "");
   }
 
-  ss("f-inspected", data.inspected_by || "");
-  ss("f-approved", data.approved_by === "정성훈" ? "" : (data.approved_by || ""));
+  /*
+   * 검사자·승인자는 Total_Production_DB 값을 우선 사용합니다.
+   * 기존 inspection_reports 데이터만 존재하는 과거 성적서는 보조값으로 복원합니다.
+   */
+  if (!v("f-inspected") && data.inspected_by) {
+    ss("f-inspected", data.inspected_by);
+  }
+  if (!v("f-approved") && data.approved_by && data.approved_by !== "정성훈") {
+    ss("f-approved", data.approved_by);
+  }
   updateAllSignatures();
 
   const unit = data.measure_unit || "hrc";
@@ -1254,6 +1272,8 @@ async function saveToDb() {
       hardening_depth_p3: cleanVal(v("hd03")) || null,
       core_hardness: cleanVal(v("f-res3")) || null,
       inspection_report_special_notes: cleanVal(v("f-note")),
+      inspected_by: cleanVal(v("f-inspected")) || null,
+      approved_by: cleanVal(v("f-approved")) || null,
       inspection_result: overallInspectionResult(),
       updated_at: new Date().toISOString()
     };
