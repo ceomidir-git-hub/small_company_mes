@@ -6,8 +6,6 @@
 <title>불량률 현황 | HeatPro MES</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; background: #f0f2f5; color: #222; min-height: 100vh; }
@@ -459,53 +457,197 @@ function exportCSV() {
 }
 
 /* =========================================================
-   PDF 다운로드
+   A4 가로 1장 벡터 PDF 출력
+   - 브라우저 인쇄 엔진: 한글 문자와 표 선을 벡터로 출력
+   - Chart.js canvas 대신 인쇄 전용 SVG 그래프 생성
+   - 그래프와 1일~31일 전체 상세표를 A4 가로 1장에 고정 배치
+   - A4 297×210mm, 인쇄 여백 5mm, 실사용 영역 287×200mm 기준
    ========================================================= */
+function escapePrintHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function makeDefectPrintSvg() {
+  const width = 1400;
+  const height = 300;
+  const margin = { left: 72, right: 24, top: 30, bottom: 34 };
+  const plotW = width - margin.left - margin.right;
+  const plotH = height - margin.top - margin.bottom;
+  const points = [];
+  let maxValue = 0;
+
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    const row = lastDayData[day - 1];
+    const value = day <= lastActualDays && row && row.hasData ? getVal(row, "ppm") : null;
+    if (value !== null) maxValue = Math.max(maxValue, value);
+    points.push({ day: day, value: value });
+  }
+
+  const yMax = Math.max(1000, Math.ceil((maxValue * 1.2 || 1000) / 1000) * 1000);
+  const x = function (day) {
+    return margin.left + ((day - 1) / (MAX_DAYS - 1)) * plotW;
+  };
+  const y = function (value) {
+    return margin.top + plotH - (value / yMax) * plotH;
+  };
+
+  let svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + width + ' ' + height + '" preserveAspectRatio="none" role="img" aria-label="불량률 그래프">';
+  svg += '<rect width="100%" height="100%" fill="#ffffff"/>';
+
+  for (let index = 0; index <= 5; index++) {
+    const value = Math.round(yMax * index / 5);
+    const yy = y(value);
+    svg += '<line x1="' + margin.left + '" y1="' + yy + '" x2="' + (width - margin.right) + '" y2="' + yy + '" stroke="#d9dfe7" stroke-width="1"/>';
+    svg += '<text x="' + (margin.left - 9) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="#425466">' + value.toLocaleString() + '</text>';
+  }
+
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    const xx = x(day);
+    const invalid = day > lastActualDays;
+    svg += '<line x1="' + xx + '" y1="' + margin.top + '" x2="' + xx + '" y2="' + (margin.top + plotH) + '" stroke="' + (invalid ? '#e3e3e3' : '#f0f2f5') + '" stroke-width="0.8"/>';
+    svg += '<text x="' + xx + '" y="' + (height - 12) + '" text-anchor="middle" font-size="8.5" fill="' + (invalid ? '#a8a8a8' : '#425466') + '">' + day + '</text>';
+  }
+
+  const valid = points.filter(function (point) { return point.value !== null; });
+  if (valid.length > 1) {
+    svg += '<polyline fill="none" stroke="#cc0000" stroke-width="2.4" points="' + valid.map(function (point) {
+      return x(point.day) + ',' + y(point.value);
+    }).join(' ') + '"/>';
+  }
+
+  valid.forEach(function (point) {
+    const xx = x(point.day);
+    const yy = y(point.value);
+    const labelY = Math.max(11, yy - (point.day % 2 === 0 ? 8 : 14));
+    svg += '<circle cx="' + xx + '" cy="' + yy + '" r="3.3" fill="#cc0000" stroke="#ffffff" stroke-width="1.2"/>';
+    if (point.value > 0) {
+      svg += '<text x="' + xx + '" y="' + labelY + '" text-anchor="middle" font-size="7.6" font-weight="700" fill="#cc0000">' + point.value.toLocaleString() + '</text>';
+    }
+  });
+
+  svg += '<text x="15" y="' + (margin.top + plotH / 2) + '" transform="rotate(-90 15 ' + (margin.top + plotH / 2) + ')" text-anchor="middle" font-size="10" fill="#1a3a5c">불량률(PPM)</text>';
+  svg += '<g transform="translate(' + (width - 225) + ',15)"><line x1="0" y1="0" x2="28" y2="0" stroke="#cc0000" stroke-width="2.4"/><text x="34" y="4" font-size="10" fill="#222">불량률(PPM)</text><line x1="130" y1="0" x2="158" y2="0" stroke="#1a3a5c" stroke-width="1.8" stroke-dasharray="7 5"/><text x="165" y="4" font-size="10" fill="#222">목표 0</text></g>';
+  svg += '</svg>';
+  return svg;
+}
+
+function makeDefectPrintTable() {
+  const rows = [
+    { key: "input", label: "생산수량", group: "" },
+    { key: "good", label: "양품수량", group: "" },
+    { key: "bad", label: "불량수량", group: "" },
+    { key: "ppm", label: "불량률(PPM)", group: "", emphasis: true },
+    { key: "out", label: "외관", group: "불량" },
+    { key: "cont", label: "오염", group: "불량" },
+    { key: "scratch", label: "찍힘", group: "불량" },
+    { key: "drop", label: "탈락", group: "불량" },
+    { key: "hard", label: "경도", group: "불량" },
+    { key: "deform", label: "변형", group: "불량" },
+    { key: "badsum", label: "불량합계", group: "" },
+    { key: "ppm2", label: "불량률(PPM)", group: "", emphasis: true }
+  ];
+
+  let html = '<table class="report-table"><colgroup><col class="col-group"><col class="col-label"><col class="col-total">';
+  for (let day = 1; day <= MAX_DAYS; day++) html += '<col class="col-day">';
+  html += '</colgroup><thead><tr><th>구분</th><th>항목</th><th>합계</th>';
+  for (let day = 1; day <= MAX_DAYS; day++) {
+    const invalid = day > lastActualDays;
+    html += '<th class="' + (invalid ? 'none' : (isHoliday(YEAR, lastMonth, day) ? 'holiday' : '')) + '">' + day + '</th>';
+  }
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(function (definition) {
+    let total = 0;
+    for (let day = 1; day <= lastActualDays; day++) total += getVal(lastDayData[day - 1], definition.key);
+
+    html += '<tr class="' + (definition.emphasis ? 'emphasis' : '') + '">';
+    html += '<td class="group-cell">' + escapePrintHtml(definition.group) + '</td>';
+    html += '<td class="label-cell">' + escapePrintHtml(definition.label) + '</td>';
+    html += '<td class="total-cell">' + total.toLocaleString() + '</td>';
+
+    for (let day = 1; day <= MAX_DAYS; day++) {
+      const invalid = day > lastActualDays;
+      const row = lastDayData[day - 1];
+      const holiday = !invalid && isHoliday(YEAR, lastMonth, day);
+      const value = !invalid && row && row.hasData ? getVal(row, definition.key) : null;
+      const bad = value !== null && value > 0 && (definition.emphasis || definition.key === "bad" || definition.key === "badsum");
+      html += '<td class="' + (invalid ? 'none ' : '') + (holiday ? 'holiday ' : '') + (bad ? 'bad-cell' : '') + '">' + (value === null ? '-' : value.toLocaleString()) + '</td>';
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  return html;
+}
+
+function buildDefectPrintDocument() {
+  const companyName = currentProfile && currentProfile.company_name ? currentProfile.company_name : "";
+  const page = '<section class="page"><div class="report-head"><div><h1>불량률 현황</h1><p>Defect Rate Graph</p></div><div class="meta">' +
+    escapePrintHtml(companyName) + '<br>' + YEAR + '년 ' + lastMonth + '월 · 설비: ' + escapePrintHtml(lastEquipLabel) + '</div></div>' +
+    '<div class="section-title">일별 불량률 추이 <span>[목표: 0 PPM]</span></div>' +
+    '<div class="chart-box">' + makeDefectPrintSvg() + '</div>' +
+    '<div class="section-title table-title">일별 불량 현황 상세 <span>1일 - 31일</span></div>' +
+    makeDefectPrintTable() +
+    '<div class="report-foot"><span>불량률(PPM) = 불량수량 ÷ 생산수량 × 1,000,000</span><span><i class="holiday-box"></i>휴일 <i class="bad-box"></i>불량 발생 <i class="none-box"></i>없는 날짜</span></div></section>';
+
+  return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>Defect Rate Graph PDF</title><style>' +
+    '@page{size:A4 landscape;margin:5mm;}*{box-sizing:border-box;}html,body{width:287mm;height:200mm;margin:0;padding:0;background:#fff;color:#111;font-family:"Malgun Gothic","맑은 고딕","Noto Sans KR",sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;overflow:hidden;}' +
+    '.page{width:287mm;height:198mm;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;page-break-inside:avoid;page-break-after:avoid;break-after:avoid;}' +
+    '.report-head{height:10mm;flex:0 0 10mm;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:0.6mm solid #1a3a5c;padding:0 0 1.2mm;margin-bottom:1mm;}.report-head h1{font-size:13pt;line-height:1;margin:0;color:#1a3a5c;}.report-head p{font-size:6pt;line-height:1;margin:0.8mm 0 0;color:#66788a;}.meta{text-align:right;font-size:6.2pt;line-height:1.35;color:#33475b;}' +
+    '.section-title{height:5mm;flex:0 0 5mm;font-size:7.2pt;line-height:5mm;font-weight:700;background:#1a3a5c;color:#fff;padding:0 2.2mm;}.section-title span{float:right;font-size:5.8pt;font-weight:400;}.table-title{margin-top:1.2mm;}' +
+    '.chart-box{height:86mm;flex:0 0 86mm;border:0.2mm solid #cfd6df;border-top:0;overflow:hidden;}.chart-box svg{display:block;width:100%;height:100%;}' +
+    '.report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:5pt;line-height:1;break-inside:avoid;page-break-inside:avoid;}.report-table thead tr{height:5mm;}.report-table tbody tr{height:5.7mm;}.report-table th,.report-table td{border:0.18mm solid #66717f;text-align:center;padding:0.18mm 0.1mm;white-space:nowrap;overflow:hidden;text-overflow:clip;vertical-align:middle;}.report-table th{background:#1a3a5c;color:#fff;font-weight:700;font-size:5.05pt;}.report-table .col-group{width:10mm;}.report-table .col-label{width:19mm;}.report-table .col-total{width:14mm;}.report-table .col-day{width:auto;}.report-table .group-cell{font-size:4.55pt;background:#e8ecf5;color:#1a3a5c;font-weight:700;}.report-table .label-cell{text-align:left;padding-left:0.8mm;background:#f4f7fa;font-weight:700;font-size:5.15pt;}.report-table .total-cell{background:#fff4cc;font-weight:700;font-size:5.05pt;}.report-table .holiday{background:#fff0f0;color:#a00000;}.report-table .none{background:#ededed;color:#999;}.report-table .bad-cell{background:#ffe3e3;color:#b00000;font-weight:700;}.report-table tr.emphasis td{color:#b00000;font-weight:700;}' +
+    '.report-foot{height:5.5mm;flex:0 0 5.5mm;display:flex;align-items:center;justify-content:space-between;font-size:5.3pt;color:#33475b;border-top:0.2mm solid #9fb4c8;background:#eef4fa;padding:0 1.5mm;margin-top:1mm;white-space:nowrap;}.holiday-box,.bad-box,.none-box{display:inline-block;width:2.6mm;height:2.2mm;vertical-align:middle;margin:0 0.5mm 0 1.2mm;border:0.15mm solid #999;}.holiday-box{background:#fff0f0;}.bad-box{background:#ffe3e3;}.none-box{background:#ededed;}' +
+    '@media print{html,body{width:287mm;height:200mm;}.page{width:287mm;height:198mm;}}@media screen{body{width:auto;height:auto;background:#dfe4ea;padding:8mm;overflow:auto;}.page{margin:0 auto;background:#fff;box-shadow:0 2mm 8mm rgba(0,0,0,.18);}}' +
+    '</style></head><body>' + page + '</body></html>';
+}
+
 async function exportPDF() {
-  if (!hasData) {
+  if (!hasData || !lastDayData) {
     setActionStatus("PDF 실패: 먼저 조회를 진행해 주세요.", "error");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank", "width=1400,height=950");
+  if (!printWindow) {
+    setActionStatus("PDF 실패: 브라우저의 팝업 차단을 해제해 주세요.", "error");
     return;
   }
 
   const button = document.getElementById("btnPdf");
   const originalText = button.textContent;
-  button.textContent = "생성 중...";
+  button.textContent = "1장 인쇄 준비 중...";
   setButtonsDisabled(true);
-  setActionStatus("PDF를 생성하는 중입니다.", "loading");
+  setActionStatus("A4 가로 1장 벡터 PDF를 준비하는 중입니다.", "loading");
 
   try {
-    const target = document.querySelector(".container");
-    const canvas = await html2canvas(target, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true
-    });
+    printWindow.document.open();
+    printWindow.document.write(buildDefectPrintDocument());
+    printWindow.document.close();
 
-    const imageData = canvas.toDataURL("image/png");
-    const jsPDFCtor = window.jspdf.jsPDF;
-    const pdf = new jsPDFCtor({
-      orientation: "landscape",
-      unit: "mm",
-      format: "a4"
-    });
+    const openPrintDialog = function () {
+      window.setTimeout(function () {
+        printWindow.focus();
+        printWindow.print();
+      }, 350);
+    };
 
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 8;
-    const maxWidth = pageWidth - margin * 2;
-    const maxHeight = pageHeight - margin * 2;
-    const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
-    const renderWidth = canvas.width * ratio;
-    const renderHeight = canvas.height * ratio;
-    const x = (pageWidth - renderWidth) / 2;
+    if (printWindow.document.fonts && printWindow.document.fonts.ready) {
+      printWindow.document.fonts.ready.then(openPrintDialog).catch(openPrintDialog);
+    } else {
+      openPrintDialog();
+    }
 
-    pdf.addImage(imageData, "PNG", x, margin, renderWidth, renderHeight);
-    pdf.save("Defect_Rate_Graph_" + YEAR + "_" + pad2(lastMonth) + ".pdf");
-
-    setActionStatus("PDF 다운로드 완료", "success");
+    setActionStatus("A4 가로 1장 인쇄창을 열었습니다. 1일~31일 전체가 한 장에 출력됩니다.", "success");
   } catch (error) {
-    console.error("PDF 생성 실패:", error);
-    setActionStatus("PDF 생성 실패: " + dbErrorMessage(error), "error");
+    console.error("A4 1장 벡터 PDF 출력 실패:", error);
+    if (!printWindow.closed) printWindow.close();
+    setActionStatus("PDF 출력 실패: " + dbErrorMessage(error), "error");
   } finally {
     button.textContent = originalText;
     setButtonsDisabled(false);
