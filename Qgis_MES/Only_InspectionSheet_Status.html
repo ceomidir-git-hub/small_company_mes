@@ -49,7 +49,7 @@ nav a.active{background:var(--blue-lt);color:var(--blue-dk);border-color:#B5D4F4
 .t-title{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;}
 .cnt-badge{background:var(--blue-lt);color:var(--blue-dk);font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:960px;}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;min-width:1450px;}
 thead tr.gr th{padding:7px 5px;text-align:center;font-size:12px;font-weight:700;border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);}
 thead tr.gr th:last-child{border-right:none;}
 thead tr.sr th{padding:5px;text-align:center;font-size:12px;font-weight:600;border-bottom:1px solid var(--gray-bd);border-right:1px solid var(--gray-bd);color:var(--text-sub);}
@@ -215,14 +215,25 @@ button:disabled{opacity:.55;cursor:not-allowed;}
           <col style="width:54px"/>  <!-- 재질 -->
           <col style="width:56px"/>  <!-- 입고수량 -->
           <col style="width:62px"/>  <!-- 성적서 -->
-          <col style="width:80px"/>  <!-- 검사결과 (수정가능) -->
-          <col style="width:180px"/> <!-- 특이사항 (수정가능) -->
+          <col style="width:96px"/>  <!-- 도면경도 -->
+          <col style="width:58px"/>  <!-- 경도 P1 -->
+          <col style="width:58px"/>  <!-- 경도 P2 -->
+          <col style="width:58px"/>  <!-- 경도 P3 -->
+          <col style="width:110px"/> <!-- 도면경화깊이 -->
+          <col style="width:62px"/>  <!-- 경화깊이 P1 -->
+          <col style="width:62px"/>  <!-- 경화깊이 P2 -->
+          <col style="width:62px"/>  <!-- 경화깊이 P3 -->
+          <col style="width:80px"/>  <!-- 검사결과 -->
+          <col style="width:180px"/> <!-- 특이사항 -->
           <col style="width:50px"/>  <!-- 저장 -->
         </colgroup>
         <thead>
           <tr class="gr">
             <th rowspan="2" class="th-no">No</th>
-            <th colspan="10" class="th-main">검사성적서 정보</th>
+            <th colspan="8" class="th-main">기본정보</th>
+            <th colspan="4" class="th-main">경도</th>
+            <th colspan="4" class="th-main">경화깊이</th>
+            <th colspan="2" class="th-main">판정 및 비고</th>
             <th rowspan="2" class="th-act">저장</th>
           </tr>
           <tr class="sr">
@@ -234,12 +245,20 @@ button:disabled{opacity:.55;cursor:not-allowed;}
             <th class="sr-main">재질</th>
             <th class="sr-main">입고수량</th>
             <th class="sr-main">성적서</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">도면경도(Hrc,Hs,Hv) ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">P1 ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">P2 ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">P3 ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">도면경화깊이(mm) ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">P1 ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">P2 ✎</th>
+            <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">P3 ✎</th>
             <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">검사결과 ✎</th>
             <th class="sr-main" style="color:var(--blue-dk);font-weight:700;">특이사항 ✎</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr class="empty-row"><td colspan="12">조회 조건을 선택한 후 조회 버튼을 눌러주세요.</td></tr>
+          <tr class="empty-row"><td colspan="20">조회 조건을 선택한 후 조회 버튼을 눌러주세요.</td></tr>
         </tbody>
       </table>
     </div>
@@ -269,7 +288,9 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 const SELECT_COLUMNS = [
   "production_system_id","company_id","work_date","customer_name",
   "item_name","item_number","material_name","receiving_quantity",
-  "lot_no","inspection_result","special_notes","is_active"
+  "lot_no","tempering_hardness_hrc","p1","p2","p3",
+  "hardening_depth","hardening_depth_p1","hardening_depth_p2","hardening_depth_p3",
+  "inspection_result","special_notes","is_active"
 ].join(",");
 
 const RES_OPTS = ["양호","불량","대기"];
@@ -498,7 +519,7 @@ function resetFilter(){
 
 function renderInitialTable(){
   document.getElementById("tbody").innerHTML =
-    '<tr class="empty-row"><td colspan="12">조회 조건을 선택한 후 조회 버튼을 눌러주세요.</td></tr>';
+    '<tr class="empty-row"><td colspan="20">조회 조건을 선택한 후 조회 버튼을 눌러주세요.</td></tr>';
   document.getElementById("tCount").textContent = "0건";
 }
 
@@ -530,7 +551,7 @@ function renderTable(rows){
   document.getElementById("tCount").textContent = rows.length.toLocaleString("ko-KR")+"건";
   const tbody = document.getElementById("tbody");
   if(!rows.length){
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="12">조회된 데이터가 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="20">조회된 데이터가 없습니다.</td></tr>';
     return;
   }
 
@@ -546,6 +567,14 @@ function renderTable(rows){
       '<td><span class="td-ro">'+escapeHtml(row.material_name||"")+'</span></td>'+
       '<td><span class="td-ro">'+escapeHtml(row.receiving_quantity==null?"":String(row.receiving_quantity))+'</span></td>'+
       '<td class="cert-badge-cell"><span class="badge '+certClass(result)+'">'+certVal(result)+'</span></td>'+
+      '<td>'+tdInput("tempering_hardness_hrc",row.tempering_hardness_hrc,index)+'</td>'+
+      '<td>'+tdInput("p1",row.p1,index)+'</td>'+
+      '<td>'+tdInput("p2",row.p2,index)+'</td>'+
+      '<td>'+tdInput("p3",row.p3,index)+'</td>'+
+      '<td>'+tdInput("hardening_depth",row.hardening_depth,index)+'</td>'+
+      '<td>'+tdInput("hardening_depth_p1",row.hardening_depth_p1,index)+'</td>'+
+      '<td>'+tdInput("hardening_depth_p2",row.hardening_depth_p2,index)+'</td>'+
+      '<td>'+tdInput("hardening_depth_p3",row.hardening_depth_p3,index)+'</td>'+
       '<td>'+tdSelect("inspection_result",result,RES_OPTS,index)+'</td>'+
       '<td>'+tdInput("special_notes",row.special_notes,index)+'</td>'+
       '<td><button class="save-btn" id="sbtn-'+index+'" type="button" onclick="saveRow('+index+')">저장</button></td>'+
@@ -587,12 +616,12 @@ async function saveRow(index){
     return;
   }
 
-  const resultEl = tableRow.querySelector('[data-field="inspection_result"]');
-  const noteEl = tableRow.querySelector('[data-field="special_notes"]');
-  const updateData = {
-    inspection_result:resultEl ? resultEl.value : row.inspection_result,
-    special_notes:noteEl ? noteEl.value.trim() : row.special_notes
-  };
+  const updateData = {};
+  changed.forEach(function(element){
+    const field = element.dataset.field;
+    if(!field) return;
+    updateData[field] = element.value.trim();
+  });
 
   button.disabled = true;
   button.textContent = "저장중";
@@ -657,18 +686,38 @@ function doExport(){
     return;
   }
 
-  const headers = ["NO","LOT NO","작업일","고객사","품명","품번","재질","입고수량","성적서","검사결과","특이사항"];
+  const headers = [
+    "NO","LOT NO","작업일","고객사","품명","품번","재질","입고수량","성적서",
+    "도면경도(Hrc,Hs,Hv)","경도 P1","경도 P2","경도 P3",
+    "도면경화깊이(mm)","경화깊이 P1","경화깊이 P2","경화깊이 P3",
+    "검사결과","특이사항"
+  ];
   const lines = [headers.map(csvCell).join(",")];
 
   document.getElementById("tbody").querySelectorAll("tr[data-idx]").forEach(function(tableRow,index){
     const row = filteredRows[index];
-    const resultEl = tableRow.querySelector('[data-field="inspection_result"]');
-    const noteEl = tableRow.querySelector('[data-field="special_notes"]');
-    const result = resultEl ? resultEl.value : row.inspection_result || "";
-    const note = noteEl ? noteEl.value : row.special_notes || "";
+    function currentValue(field,fallback){
+      const element = tableRow.querySelector('[data-field="'+field+'"]');
+      return element ? element.value : (fallback == null ? "" : fallback);
+    }
+
+    const drawingHardness = currentValue("tempering_hardness_hrc",row.tempering_hardness_hrc);
+    const hardnessP1 = currentValue("p1",row.p1);
+    const hardnessP2 = currentValue("p2",row.p2);
+    const hardnessP3 = currentValue("p3",row.p3);
+    const drawingDepth = currentValue("hardening_depth",row.hardening_depth);
+    const depthP1 = currentValue("hardening_depth_p1",row.hardening_depth_p1);
+    const depthP2 = currentValue("hardening_depth_p2",row.hardening_depth_p2);
+    const depthP3 = currentValue("hardening_depth_p3",row.hardening_depth_p3);
+    const result = currentValue("inspection_result",row.inspection_result || "");
+    const note = currentValue("special_notes",row.special_notes || "");
+
     lines.push([
       index+1,row.lot_no,row.work_date,row.customer_name,row.item_name,row.item_number,
-      row.material_name,row.receiving_quantity,certVal(result),result,note
+      row.material_name,row.receiving_quantity,certVal(result),
+      drawingHardness,hardnessP1,hardnessP2,hardnessP3,
+      drawingDepth,depthP1,depthP2,depthP3,
+      result,note
     ].map(csvCell).join(","));
   });
 
