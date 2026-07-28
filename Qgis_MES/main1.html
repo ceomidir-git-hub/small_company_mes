@@ -72,7 +72,9 @@
   .bars .bar .bar-label{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 3px);text-align:center;font-family:var(--font-mono);font-size:0.62rem;font-weight:600;color:var(--text);white-space:nowrap;line-height:1.2;pointer-events:none;}
   .bars.muted .bar{background:linear-gradient(180deg,#5B86C9 0%,#3D6BB0 100%);}
   .bars.acc .bar{background:linear-gradient(180deg,#61E39B 0%,var(--good) 100%);}
-  .chart-axis{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.62rem;color:#5C6878;margin-top:6px;}
+  .chart-axis{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.62rem;font-weight:700;color:var(--muted);margin-top:6px;}
+  .chart-axis span{font-weight:700;}
+  .linechart{overflow:visible;}
   .chart-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);}
   .chart-foot .big{font-size:1.1rem;color:var(--text);font-weight:600;}
   .chart-link{display:block;color:inherit;text-decoration:none;transition:transform 0.16s ease,border-color 0.16s ease,box-shadow 0.16s ease;}
@@ -319,13 +321,10 @@
   .flow-step{min-width:0;flex:1 1 0;}
   .flow-step .node{transform:scale(.9);}
 
-  /* [6] 31일 일별 차트: 막대폭 약 7px vs 라벨폭 약 35px → 겹침
-         → 일별 차트 막대 라벨 숨김(축·목표선으로 판독), 월별 라벨은 유지 */
-  #bar-rate .bar-label{display:none;}
-  #axis-rate span:nth-child(even){display:none;} /* 일자 라벨 절반만 표시 */
-
-  /* [7] 막대 간격 4px→2px: 31개 기준 막대폭 7.4px→9.3px (+26%) */
-  #bar-rate{gap:2px;}
+  /* [6] 일별 설비가동률은 SVG 꺾은선으로 표시한다.
+         X축은 숫자만 사용하고 선택일까지만 표시한다. */
+  #axis-rate,#axis-cumdefect{font-weight:700;}
+  #axis-rate span,#axis-cumdefect span{font-weight:700;}
 }
 </style>
 
@@ -482,11 +481,11 @@
         <div class="chart-grid-2">
           <a class="panel chart-link" href="./Monthly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="월별생산실적 상세 화면 열기" title="월별생산실적 상세 화면 열기"><h3>월별생산실적 <span class="tag">개</span></h3><div class="bars" id="bar-prod"></div><div class="chart-axis" id="axis-prod"></div></a>
           <!-- ── 2026-07-17 변경: 월 가동률 → 이번달 일별 가동률(전체 설비 합산) SVG 꺾은선, 목표% 헤더 표기 ── -->
-          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="설비가동률 그래프 상세 화면 열기" title="설비가동률 그래프 상세 화면 열기"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><div class="rate-bar-shell"><div class="rate-y-axis" aria-hidden="true"><span class="y100">100%</span><span class="y50">50%</span></div><div class="bars" id="bar-rate"></div></div><div class="chart-axis" id="axis-rate"></div></a>
+          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="설비가동률 그래프 상세 화면 열기" title="설비가동률 그래프 상세 화면 열기"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><svg class="linechart" viewBox="0 0 240 156" preserveAspectRatio="none" aria-label="일별 설비가동률 꺾은선 그래프"><g id="line-rate"></g></svg><div class="chart-axis" id="axis-rate"></div></a>
         </div>
         <div class="chart-grid-3">
           <a class="panel chart-link" href="./Yearly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="누적 생산실적 상세 화면 열기" title="누적 생산실적 상세 화면 열기"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></a>
-          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월별 설비가동률 그래프 상세 화면 열기" title="월별 설비가동률 그래프 상세 화면 열기"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--good)">-</span></div></a>
+          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월별 설비가동률 그래프 상세 화면 열기" title="월별 설비가동률 그래프 상세 화면 열기"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--bad)">-</span></div></a>
           <a class="panel chart-link" href="Defect_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월누적 불량률 그래프 상세 화면 열기" title="월누적 불량률 그래프 상세 화면 열기"><h3>월누적 불량률 <span class="tag">%</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></a>
         </div>
         <section>
@@ -911,7 +910,7 @@ function initializeEmptyDashboard() {
   [
     "bar-prod",
     "axis-prod",
-    "bar-rate",
+    "line-rate",
     "axis-rate",
     "bar-cumprod",
     "axis-cumprod",
@@ -1146,13 +1145,16 @@ function dashboardRenderLine(groupId, axisId, values, labels, options) {
   renderTicks.forEach(function (tick) {
     const y = pointY(tick);
     svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--line);stroke-width:0.8;opacity:0.85" vector-effect="non-scaling-stroke"/>');
-    svg.push('<text x="2" y="' + (y + 3.5).toFixed(1) + '" text-anchor="start" style="fill:var(--muted);font-size:8.5px;font-family:var(--font-mono)">' + formatY(tick) + '</text>');
+    svg.push('<text x="2" y="' + (y + 3.5).toFixed(1) + '" text-anchor="start" style="fill:var(--muted);font-size:8.5px;font-family:var(--font-mono);font-weight:700">' + formatY(tick) + '</text>');
   });
 
   if (options && Number.isFinite(Number(options.target))) {
     const target = Number(options.target);
     const y = pointY(target);
-    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:5 4;opacity:0.95" vector-effect="non-scaling-stroke"/>');
+    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--bad);stroke-width:1.4;stroke-dasharray:5 4;opacity:0.98" vector-effect="non-scaling-stroke"/>');
+    if (options.targetLabel) {
+      svg.push('<text x="' + (right - 1) + '" y="' + (y - 4).toFixed(1) + '" text-anchor="end" style="fill:var(--bad);font-size:8.5px;font-family:var(--font-mono);font-weight:800">' + options.targetLabel + '</text>');
+    }
   }
 
   if (available.length) {
@@ -1176,8 +1178,13 @@ function dashboardRenderLine(groupId, axisId, values, labels, options) {
       const cy = pointY(point.value).toFixed(1);
       const labelValue = options && typeof options.formatter === 'function' ? options.formatter(point.value) : point.value;
       svg.push('<circle cx="' + cx + '" cy="' + cy + '" r="3.2" style="fill:' + strokeColor + ';stroke:var(--panel);stroke-width:1.4" vector-effect="non-scaling-stroke"><title>' + labels[point.index] + ': ' + labelValue + '</title></circle>');
-      if (options && options.showPointLabels) {
-        svg.push('<text x="' + cx + '" y="' + (Number(cy) - 7).toFixed(1) + '" text-anchor="middle" style="fill:var(--text);font-size:8.5px;font-family:var(--font-mono);font-weight:700">' + labelValue + '</text>');
+      const pointLabelMin = options && Number.isFinite(Number(options.pointLabelMin))
+        ? Number(options.pointLabelMin)
+        : null;
+      const canShowPointLabel = options && options.showPointLabels &&
+        (pointLabelMin === null || point.value >= pointLabelMin);
+      if (canShowPointLabel) {
+        svg.push('<text x="' + cx + '" y="' + (Number(cy) - 7).toFixed(1) + '" text-anchor="middle" style="fill:var(--text);font-size:8.5px;font-family:var(--font-mono);font-weight:800">' + labelValue + '</text>');
       }
     });
   } else {
@@ -1383,8 +1390,8 @@ function dashboardRenderAll(rows, detailRows) {
     "axis-cumrate",
     operating.monthlyRates.slice(0, selectedMonth),
     visibleMonthLabels,
-    function (value) { return value.toFixed(1) + "%"; },
-    { variant:"default", labelMin:50 }
+    function (value) { return Math.round(value) + "%"; },
+    { variant:"default", showZeroLabel:true }
   );
 
   let totalOperation = 0;
@@ -1395,7 +1402,7 @@ function dashboardRenderAll(rows, detailRows) {
   }
 
   const aggregateRate = totalLoad > 0 ? totalOperation / totalLoad * 100 : 0;
-  document.getElementById("foot-cumrate").textContent = aggregateRate.toFixed(1) + "%";
+  document.getElementById("foot-cumrate").textContent = Math.round(aggregateRate) + "%";
 
   const currentMonthDaily = operating.dailyByMonth[selectedMonth - 1];
   const dailyRateValues = [];
@@ -1404,7 +1411,7 @@ function dashboardRenderAll(rows, detailRows) {
 
   for (let day = 1; day <= monthDays; day++) {
     const dateText = year + "-" + pad2(selectedMonth) + "-" + pad2(day);
-    dailyLabels.push(day + "일");
+    dailyLabels.push(String(day));
 
     if (dateText > selectedText || dashboardIsHoliday(year, selectedMonth, day)) {
       dailyRateValues.push(null);
@@ -1419,13 +1426,38 @@ function dashboardRenderAll(rows, detailRows) {
   document.getElementById("rate-panel-title").textContent = selectedMonth + "월 설비가동률";
   document.getElementById("rate-target-tag").textContent = "목표 " + DASHBOARD_TARGET_RATE + "%";
 
-  dashboardRenderBars(
-    "bar-rate",
+  const visibleDailyRateValues = dailyRateValues.slice(0, selectedDay);
+  const visibleDailyRateLabels = dailyLabels.slice(0, selectedDay);
+  const validDailyRates = visibleDailyRateValues.filter(function (value) {
+    return value != null && Number.isFinite(Number(value));
+  });
+  const dailyRateMaximum = validDailyRates.length
+    ? Math.max.apply(null, validDailyRates)
+    : 0;
+  const dailyRateSuggestedMax = Math.max(
+    100,
+    Math.ceil(Math.max(dailyRateMaximum, DASHBOARD_TARGET_RATE) / 20) * 20
+  );
+  const dailyRateTicks = [0, 50, DASHBOARD_TARGET_RATE, 100];
+  if (dailyRateSuggestedMax > 100) dailyRateTicks.push(dailyRateSuggestedMax);
+
+  dashboardRenderLine(
+    "line-rate",
     "axis-rate",
-    dailyRateValues.map(function (value) { return value == null ? 0 : value; }),
-    dailyLabels,
-    function (value) { return value.toFixed(1) + "%"; },
-    { variant:"default", labelMin:50, minHeight:4, maxHeight:84 }
+    visibleDailyRateValues,
+    visibleDailyRateLabels,
+    {
+      yMin:0,
+      suggestedMax:dailyRateSuggestedMax,
+      yTicks:Array.from(new Set(dailyRateTicks)).sort(function (a, b) { return a - b; }),
+      color:"var(--info)",
+      target:DASHBOARD_TARGET_RATE,
+      targetLabel:"목표 80%",
+      showPointLabels:true,
+      pointLabelMin:50,
+      formatter:function (value) { return Math.round(value) + "%"; },
+      yAxisFormatter:function (value) { return Math.round(value) + "%"; }
+    }
   );
 
   const cumulativeDefectRate = [];
@@ -1444,31 +1476,39 @@ function dashboardRenderAll(rows, detailRows) {
   }
 
   const currentDefectRate = inputRunning > 0 ? defectRunning / inputRunning * 100 : 0;
-  document.getElementById("foot-cumdefect").textContent = currentDefectRate.toFixed(2) + "%";
+  document.getElementById("foot-cumdefect").textContent = Math.round(currentDefectRate) + "%";
 
-  const defectStep = 0.2;
-  const defectSuggestedMax = Math.max(
-    0.6,
-    Math.ceil(Math.max(currentDefectRate, 0.01) / defectStep) * defectStep
-  );
+  const visibleCumulativeDefectRate = cumulativeDefectRate.slice(0, selectedDay);
+  const visibleDefectLabels = dailyLabels.slice(0, selectedDay);
+  const validDefectRates = visibleCumulativeDefectRate.filter(function (value) {
+    return value != null && Number.isFinite(Number(value));
+  });
+  const defectMaximum = validDefectRates.length
+    ? Math.max.apply(null, validDefectRates)
+    : 0;
+  const defectSuggestedMax = Math.max(1, Math.ceil(defectMaximum));
   const defectTicks = [];
-  for (let tick = -0.2; tick <= defectSuggestedMax + 0.0001; tick += defectStep) {
-    defectTicks.push(Math.round(tick * 10) / 10);
+  const defectTickStep = defectSuggestedMax <= 5 ? 1 : Math.ceil(defectSuggestedMax / 5);
+  for (let tick = 0; tick <= defectSuggestedMax; tick += defectTickStep) {
+    defectTicks.push(tick);
+  }
+  if (defectTicks[defectTicks.length - 1] !== defectSuggestedMax) {
+    defectTicks.push(defectSuggestedMax);
   }
 
   dashboardRenderLine(
     "line-defect",
     "axis-cumdefect",
-    cumulativeDefectRate,
-    dailyLabels,
+    visibleCumulativeDefectRate,
+    visibleDefectLabels,
     {
-      yMin:-0.2,
+      yMin:0,
       suggestedMax:defectSuggestedMax,
       yTicks:defectTicks,
       color:"var(--bad)",
       showPointLabels:false,
-      formatter:function (value) { return value.toFixed(2) + "%"; },
-      yAxisFormatter:function (value) { return value.toFixed(1) + "%"; }
+      formatter:function (value) { return Math.round(value) + "%"; },
+      yAxisFormatter:function (value) { return Math.round(value) + "%"; }
     }
   );
 }
