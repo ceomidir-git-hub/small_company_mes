@@ -93,7 +93,7 @@
   .status-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
   .doc-section h3{font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:4px;}
   .doc-sub{font-size:0.78rem;color:var(--muted);margin-bottom:14px;font-family:var(--font-mono);}
-  .doc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;flex:1;}
+  .doc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1;}
   .doc-card{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:10px 10px 8px;cursor:pointer;transition:border-color 0.15s,transform 0.15s;display:flex;flex-direction:column;gap:6px;}
   .doc-card:hover{border-color:var(--accent);transform:translateY(-2px);}
   .doc-card .doc-icon{width:26px;height:26px;border-radius:6px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:0.82rem;color:var(--accent);}
@@ -197,7 +197,7 @@
     .date-nav button{padding:5px 9px;border-radius:7px;font-size:.82rem;}
     .date-nav .date-label{min-width:124px;padding:5px 12px;font-size:.86rem;}
 
-    .grid{grid-template-columns:minmax(0,1fr) clamp(360px,23vw,430px);gap:16px;align-items:start;justify-content:stretch;}
+    .grid{grid-template-columns:minmax(0,1fr) clamp(480px,30vw,620px);gap:16px;align-items:start;justify-content:stretch;}
     .grid>div,.grid>div:first-child,.grid>div:last-child{width:100%;min-width:0;}
     .kpi-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
     .kpi{min-width:0;min-height:124px;padding:16px 16px 14px;border-radius:13px;}
@@ -234,12 +234,12 @@
 
     .doc-section h3{font-size:.98rem;}
     .doc-sub{margin-bottom:11px;font-size:.68rem;}
-    .doc-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
-    .doc-card{min-width:0;gap:5px;padding:9px 9px 8px;border-radius:8px;}
-    .doc-card .doc-icon{width:25px;height:25px;border-radius:6px;font-size:.78rem;}
-    .doc-card .doc-title{font-size:.72rem;line-height:1.3;word-break:keep-all;overflow-wrap:anywhere;}
-    .doc-card .doc-meta{font-size:.56rem;line-height:1.2;}
-    .doc-card .doc-preview{height:30px;}
+    .doc-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+    .doc-card{min-width:0;gap:5px;padding:8px 8px 7px;border-radius:8px;}
+    .doc-card .doc-icon{width:24px;height:24px;border-radius:6px;font-size:.74rem;}
+    .doc-card .doc-title{font-size:.68rem;line-height:1.25;word-break:keep-all;overflow-wrap:anywhere;}
+    .doc-card .doc-meta{font-size:.52rem;line-height:1.15;}
+    .doc-card .doc-preview{height:24px;}
 
     .modules{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
     .module-card{min-width:0;padding:15px;border-radius:12px;}
@@ -310,7 +310,7 @@
 
   /* [3] 우측 패널: 최소 360px 강제 → 300px~340px로 완화
          (1440px에서 좌측 차트영역 788px → 858px, +8.9%) */
-  .grid{grid-template-columns:minmax(0,1fr) clamp(300px,22vw,340px);gap:14px;}
+  .grid{grid-template-columns:minmax(0,1fr) clamp(430px,31vw,520px);gap:14px;}
 
   /* [4] 여백 압축: 패딩 합계 약 -20px */
   .main{padding:16px 18px 32px;gap:14px;}
