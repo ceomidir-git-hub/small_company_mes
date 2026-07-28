@@ -628,7 +628,7 @@ const PRODUCTION_COLUMNS = [
   "hardening_depth_p3",
   "core_hardness",
   "inspection_result",
-  "special_notes",
+  "inspection_report_special_notes",
   "is_active"
 ].join(",");
 
@@ -1027,7 +1027,7 @@ function applyProductionFields(row) {
   sv("f-res5", "-");
   sv("f-std6", "-");
   sv("f-res6", "-");
-  sv("f-note", row.special_notes || "");
+  sv("f-note", row.inspection_report_special_notes || "");
 
   const judgment = row.inspection_result === "양호"
     ? "합격"
@@ -1122,7 +1122,6 @@ function applyReportData(data) {
     ss("f-jdg" + i, data["insp_jdg" + i] || "");
   }
 
-  sv("f-note", data.special_note || v("f-note"));
   ss("f-inspected", data.inspected_by || "");
   ss("f-approved", data.approved_by || "");
 
@@ -1150,12 +1149,6 @@ async function saveToDb() {
     return;
   }
 
-  if (!reportTableAvailable) {
-    showToast("검사성적서 저장 테이블(inspection_reports) 확인이 필요합니다.");
-    setQueryMessage("성적서 전용 저장 테이블을 확인할 수 없습니다.", "err");
-    return;
-  }
-
   const button = document.querySelector(".tb-btn.green");
   const previousText = button ? button.textContent : "";
   if (button) {
@@ -1167,26 +1160,42 @@ async function saveToDb() {
 
   try {
     const reportData = collectReportData();
+    let savedReport = currentReportRow;
+    let reportOnlyFieldsSaved = false;
 
-    const reportPayload = {
-      company_id: currentProfile.company_id,
-      production_system_id: currentProductionRow.production_system_id,
-      lot_no: cleanVal(v("f-lot")),
-      report_data: reportData,
-      is_active: true
-    };
+    /*
+     * inspection_reports 테이블은 기존 성적서 전용항목 저장용으로만 선택 사용합니다.
+     * 검사성적서 특이사항은 Total_Production_DB의
+     * inspection_report_special_notes 열에 독립적으로 저장합니다.
+     */
+    if (reportTableAvailable) {
+      const reportPayload = {
+        company_id: currentProfile.company_id,
+        production_system_id: currentProductionRow.production_system_id,
+        lot_no: cleanVal(v("f-lot")),
+        report_data: reportData,
+        is_active: true
+      };
 
-    const { data: savedReport, error: reportError } = await sb
-      .from(REPORT_TABLE)
-      .upsert(reportPayload, {
-        onConflict: "company_id,production_system_id"
-      })
-      .select("inspection_report_system_id,production_system_id,lot_no,report_data,is_active")
-      .single();
+      const { data, error: reportError } = await sb
+        .from(REPORT_TABLE)
+        .upsert(reportPayload, {
+          onConflict: "company_id,production_system_id"
+        })
+        .select("inspection_report_system_id,production_system_id,lot_no,report_data,is_active")
+        .single();
 
-    if (reportError) {
-      if (isMissingReportTableError(reportError)) reportTableAvailable = false;
-      throw reportError;
+      if (reportError) {
+        if (isMissingReportTableError(reportError)) {
+          reportTableAvailable = false;
+          console.warn("inspection_reports 테이블 미확인. 생산실적 검사값과 검사성적서 특이사항만 저장합니다.", reportError);
+        } else {
+          throw reportError;
+        }
+      } else {
+        savedReport = data;
+        reportOnlyFieldsSaved = true;
+      }
     }
 
     const productionUpdate = {
@@ -1198,7 +1207,7 @@ async function saveToDb() {
       hardening_depth_p2: cleanVal(v("hd02")) || null,
       hardening_depth_p3: cleanVal(v("hd03")) || null,
       core_hardness: cleanVal(v("f-res3")) || null,
-      special_notes: cleanVal(v("f-note")),
+      inspection_report_special_notes: cleanVal(v("f-note")),
       inspection_result: overallInspectionResult(),
       updated_at: new Date().toISOString()
     };
@@ -1213,12 +1222,17 @@ async function saveToDb() {
 
     if (productionError) throw productionError;
 
-    currentReportRow = savedReport;
+    currentReportRow = savedReport || null;
     currentProductionRow = updatedProduction;
     queryResults[queryIndex] = updatedProduction;
 
-    setQueryMessage("성적서 저장이 완료되었습니다.", "ok");
-    showToast("✅ 성적서 저장 완료");
+    if (reportOnlyFieldsSaved || reportTableAvailable) {
+      setQueryMessage("성적서 저장이 완료되었습니다.", "ok");
+      showToast("✅ 성적서 저장 완료");
+    } else {
+      setQueryMessage("검사값과 검사성적서 특이사항 저장이 완료되었습니다.", "ok");
+      showToast("✅ 검사성적서 특이사항 저장 완료");
+    }
   } catch (error) {
     console.error(error);
     setQueryMessage("저장 실패: " + formatDbError(error), "err");
@@ -1249,7 +1263,6 @@ function collectReportData() {
     insp_std2: cleanVal(v("f-std2")),
     insp_jdg1: cleanVal(v("f-jdg1")),
     insp_jdg2: cleanVal(v("f-jdg2")),
-    special_note: cleanVal(v("f-note")),
     inspected_by: cleanVal(v("f-inspected")),
     approved_by: cleanVal(v("f-approved"))
   };
