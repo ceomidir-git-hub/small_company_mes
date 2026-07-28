@@ -62,20 +62,24 @@
   .flow-step.done .node{color:var(--good);border-color:rgba(67,209,122,0.35);}
   @keyframes furnace-pulse{0%,100%{box-shadow:0 0 0 4px var(--accent-glow),0 0 18px var(--accent-glow);}50%{box-shadow:0 0 0 7px rgba(255,107,53,0.18),0 0 36px var(--accent-glow);}}
   .flow-arrow{color:#3C4554;font-size:0.95rem;flex-shrink:1;margin:0 2px;align-self:center;margin-bottom:22px;}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;}
+  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%), var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 18px 14px;box-shadow:0 10px 24px rgba(0,0,0,0.10);}
   .panel h3{font-family:var(--font-display);font-size:0.98rem;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
   .panel h3 .tag{font-family:var(--font-mono);font-size:0.7rem;color:var(--muted);font-weight:500;background:var(--panel-2);border:1px solid var(--line);padding:3px 9px;border-radius:999px;}
   .chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
-  .bars{display:flex;align-items:flex-end;gap:4px;height:140px;padding-top:24px;position:relative;overflow:visible;}
-  .bars .bar{flex:1;background:linear-gradient(180deg,#FF8A5C 0%,var(--accent) 100%);border-radius:3px 3px 0 0;min-height:4px;position:relative;transition:height 0.4s ease;}
-  .bars .bar .bar-label{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 3px);text-align:center;font-family:var(--font-mono);font-size:0.62rem;font-weight:600;color:var(--text);white-space:nowrap;line-height:1.2;pointer-events:none;}
-  .bars.muted .bar{background:linear-gradient(180deg,#5B86C9 0%,#3D6BB0 100%);}
-  .bars.acc .bar{background:linear-gradient(180deg,#61E39B 0%,var(--good) 100%);}
+  .bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding:28px 8px 4px;position:relative;overflow:visible;}
+  .bars .bar{flex:1;background:linear-gradient(180deg,#FFBEA3 0%,#FF8358 42%,#5B86FF 100%);border-radius:12px 12px 4px 4px;min-height:6px;position:relative;transition:height 0.45s ease, transform 0.18s ease;box-shadow:0 10px 16px rgba(22,36,62,0.20);}
+  .bars .bar .bar-label{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 8px);text-align:center;font-family:var(--font-mono);font-size:0.62rem;font-weight:700;color:var(--text);white-space:nowrap;line-height:1.2;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,0.28);}
+  .bars.muted .bar{background:linear-gradient(180deg,#A4C7FF 0%,#5B86FF 45%,#2F63D8 100%);}
+  .bars.acc .bar{background:linear-gradient(180deg,#B7F7CF 0%,#5CE28F 45%,#25B96B 100%);}
   .chart-axis{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.62rem;color:#5C6878;margin-top:6px;}
   .chart-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-family:var(--font-mono);font-size:0.74rem;color:var(--muted);}
   .chart-foot .big{font-size:1.1rem;color:var(--text);font-weight:600;}
-  .linechart{width:100%;height:140px;display:block;}
+  .chart-link{display:block;color:inherit;text-decoration:none;transition:transform 0.16s ease,border-color 0.16s ease,box-shadow 0.16s ease;}
+  .chart-link:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.18);box-shadow:0 14px 30px rgba(0,0,0,0.16);}
+  .chart-link .panel-hint{font-family:var(--font-mono);font-size:0.62rem;color:#6E7E93;text-align:right;margin-top:4px;}
+
+  .linechart{width:100%;height:156px;display:block;}
   .status-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:0.72rem;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel-2);}
   .status-pill.run{color:var(--good);border-color:rgba(67,209,122,0.3);}
   .status-pill.run .dot{background:var(--good);box-shadow:0 0 6px var(--good);}
@@ -1613,16 +1617,25 @@ function dashboardRenderAxis(elementId, labels) {
   }).join("");
 }
 
-function dashboardRenderBars(containerId, axisId, values, labels, formatter) {
+function dashboardRenderBars(containerId, axisId, values, labels, formatter, options) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
   const numericValues = values.map(dashboardToNumber);
   const maximum = Math.max.apply(null, numericValues.concat([1]));
+  const containerClasses = ["bars"];
+
+  if (options && options.variant === "muted") containerClasses.push("muted");
+  if (options && options.variant === "acc") containerClasses.push("acc");
+  container.className = containerClasses.join(" ");
+
+  const minHeight = options && Number.isFinite(Number(options.minHeight)) ? Number(options.minHeight) : 6;
+  const maxHeight = options && Number.isFinite(Number(options.maxHeight)) ? Number(options.maxHeight) : 88;
+  const showZeroLabel = Boolean(options && options.showZeroLabel);
 
   container.innerHTML = numericValues.map(function (value, index) {
-    const height = value > 0 ? Math.max(5, Math.min(84, value / maximum * 84)) : 4;
-    const label = value > 0 ? formatter(value) : "";
+    const height = value > 0 ? Math.max(minHeight, Math.min(maxHeight, value / maximum * maxHeight)) : minHeight;
+    const label = value > 0 || showZeroLabel ? formatter(value) : "";
     return '<div class="bar" style="height:' + height.toFixed(1) + '%" title="' +
       labels[index] + ': ' + formatter(value) + '">' +
       (label ? '<span class="bar-label">' + label + '</span>' : '') +
@@ -1637,11 +1650,11 @@ function dashboardRenderLine(groupId, axisId, values, labels, options) {
   if (!group) return;
 
   const width = 240;
-  const height = 140;
-  const left = 10;
+  const height = 156;
+  const left = 24;
   const right = 230;
-  const top = 14;
-  const bottom = 120;
+  const top = 12;
+  const bottom = 128;
   const available = [];
 
   values.forEach(function (value, index) {
@@ -1649,56 +1662,89 @@ function dashboardRenderLine(groupId, axisId, values, labels, options) {
     available.push({ index:index, value:Number(value) });
   });
 
+  const ticks = Array.isArray(options && options.yTicks) ? options.yTicks
+    .map(function (value) { return Number(value); })
+    .filter(function (value) { return Number.isFinite(value); })
+    : [];
   const suggestedMax = dashboardToNumber(options && options.suggestedMax);
   const valueMax = available.length
     ? Math.max.apply(null, available.map(function (point) { return point.value; }))
     : 0;
-  const yMax = Math.max(suggestedMax, valueMax * 1.15, 1);
+  const tickMax = ticks.length ? Math.max.apply(null, ticks) : 0;
+  const yMax = Math.max(suggestedMax, valueMax * 1.15, tickMax, 1);
   const denominator = Math.max(values.length - 1, 1);
+  const zeroLift = Number.isFinite(Number(options && options.zeroLift)) ? Number(options.zeroLift) : 0;
+  const strokeColor = options && options.color ? options.color : 'var(--info)';
+  const fillId = groupId + '-fill';
 
   function pointX(index) {
     return left + (right - left) * index / denominator;
   }
 
   function pointY(value) {
-    return bottom - (bottom - top) * Math.max(0, value) / yMax;
+    const numeric = Math.max(0, Number(value) || 0);
+    let y = bottom - (bottom - top) * numeric / yMax;
+    if (numeric === 0 && zeroLift > 0) {
+      y = Math.min(bottom - zeroLift, bottom - 1);
+    }
+    return y;
+  }
+
+  function formatY(value) {
+    if (options && typeof options.yAxisFormatter === 'function') {
+      return options.yAxisFormatter(value);
+    }
+    if (options && typeof options.formatter === 'function') {
+      return options.formatter(value);
+    }
+    return String(value);
   }
 
   const svg = [];
+  svg.push('<defs><linearGradient id="' + fillId + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="' + strokeColor + '" stop-opacity="0.28"/><stop offset="100%" stop-color="' + strokeColor + '" stop-opacity="0.02"/></linearGradient></defs>');
 
-  [0, 0.5, 1].forEach(function (ratio) {
-    const y = top + (bottom - top) * ratio;
-    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--line);stroke-width:0.8" vector-effect="non-scaling-stroke"/>');
+  const renderTicks = ticks.length ? ticks.slice().sort(function (a, b) { return a - b; }) : [0, yMax / 2, yMax];
+  renderTicks.forEach(function (tick) {
+    const y = pointY(tick);
+    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--line);stroke-width:0.8;opacity:0.85" vector-effect="non-scaling-stroke"/>');
+    svg.push('<text x="2" y="' + (y + 3.5).toFixed(1) + '" text-anchor="start" style="fill:var(--muted);font-size:8.5px;font-family:var(--font-mono)">' + formatY(tick) + '</text>');
   });
 
   if (options && Number.isFinite(Number(options.target))) {
     const target = Number(options.target);
     const y = pointY(target);
-    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:5 4" vector-effect="non-scaling-stroke"/>');
+    svg.push('<line x1="' + left + '" y1="' + y.toFixed(1) + '" x2="' + right + '" y2="' + y.toFixed(1) + '" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:5 4;opacity:0.95" vector-effect="non-scaling-stroke"/>');
   }
 
   if (available.length) {
     const points = available.map(function (point) {
-      return pointX(point.index).toFixed(1) + "," + pointY(point.value).toFixed(1);
-    }).join(" ");
+      return pointX(point.index).toFixed(1) + ',' + pointY(point.value).toFixed(1);
+    }).join(' ');
 
-    svg.push('<polyline points="' + points + '" fill="none" style="stroke:' +
-      (options && options.color ? options.color : 'var(--info)') +
-      ';stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round" vector-effect="non-scaling-stroke"/>');
+    const areaPoints = [left + ',' + bottom]
+      .concat(available.map(function (point) {
+        return pointX(point.index).toFixed(1) + ',' + pointY(point.value).toFixed(1);
+      }))
+      .concat([pointX(available[available.length - 1].index).toFixed(1) + ',' + bottom])
+      .join(' ');
+
+    svg.push('<polygon points="' + areaPoints + '" fill="url(#' + fillId + ')"/>');
+    svg.push('<polyline points="' + points + '" fill="none" style="stroke:' + strokeColor + ';stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round" vector-effect="non-scaling-stroke"/>');
 
     available.forEach(function (point) {
-      svg.push('<circle cx="' + pointX(point.index).toFixed(1) + '" cy="' + pointY(point.value).toFixed(1) + '" r="2.4" style="fill:' +
-        (options && options.color ? options.color : 'var(--info)') +
-        ';stroke:var(--panel);stroke-width:1" vector-effect="non-scaling-stroke"><title>' +
-        labels[point.index] + ': ' +
-        (options && typeof options.formatter === "function" ? options.formatter(point.value) : point.value) +
-        '</title></circle>');
+      const cx = pointX(point.index).toFixed(1);
+      const cy = pointY(point.value).toFixed(1);
+      const labelValue = options && typeof options.formatter === 'function' ? options.formatter(point.value) : point.value;
+      svg.push('<circle cx="' + cx + '" cy="' + cy + '" r="3.2" style="fill:' + strokeColor + ';stroke:var(--panel);stroke-width:1.4" vector-effect="non-scaling-stroke"><title>' + labels[point.index] + ': ' + labelValue + '</title></circle>');
+      if (options && options.showPointLabels) {
+        svg.push('<text x="' + cx + '" y="' + (Number(cy) - 7).toFixed(1) + '" text-anchor="middle" style="fill:var(--text);font-size:8.5px;font-family:var(--font-mono);font-weight:700">' + labelValue + '</text>');
+      }
     });
   } else {
-    svg.push('<text x="120" y="72" text-anchor="middle" style="fill:var(--muted);font-size:10px">데이터 없음</text>');
+    svg.push('<text x="120" y="78" text-anchor="middle" style="fill:var(--muted);font-size:10px">데이터 없음</text>');
   }
 
-  group.innerHTML = svg.join("");
+  group.innerHTML = svg.join('');
 
   const axisIndexes = [];
   if (labels.length <= 12) {
@@ -1862,24 +1908,28 @@ function dashboardRenderAll(rows, detailRows) {
     cumulativeProduction.push(productionRunning);
   });
 
-  const monthLabels = Array.from({ length:12 }, function (_, index) {
+  const visibleMonthLabels = Array.from({ length:selectedMonth }, function (_, index) {
     return (index + 1) + "월";
   });
+  const visibleMonthlyProduction = monthlyProduction.slice(0, selectedMonth);
+  const visibleCumulativeProduction = cumulativeProduction.slice(0, selectedMonth);
 
   dashboardRenderBars(
     "bar-prod",
     "axis-prod",
-    monthlyProduction,
-    monthLabels,
-    dashboardFormatNumber
+    visibleMonthlyProduction,
+    visibleMonthLabels,
+    dashboardFormatNumber,
+    { variant:"default" }
   );
 
   dashboardRenderBars(
     "bar-cumprod",
     "axis-cumprod",
-    cumulativeProduction,
-    monthLabels,
-    dashboardFormatNumber
+    visibleCumulativeProduction,
+    visibleMonthLabels,
+    dashboardFormatNumber,
+    { variant:"default" }
   );
 
   document.getElementById("foot-cumprod").textContent =
@@ -1891,9 +1941,10 @@ function dashboardRenderAll(rows, detailRows) {
   dashboardRenderBars(
     "bar-cumrate",
     "axis-cumrate",
-    operating.monthlyRates,
-    monthLabels,
-    function (value) { return value.toFixed(1) + "%"; }
+    operating.monthlyRates.slice(0, selectedMonth),
+    visibleMonthLabels,
+    function (value) { return value.toFixed(1) + "%"; },
+    { variant:"acc", showZeroLabel:true }
   );
 
   let totalOperation = 0;
@@ -1934,10 +1985,13 @@ function dashboardRenderAll(rows, detailRows) {
     dailyRateValues,
     dailyLabels,
     {
-      suggestedMax:120,
+      suggestedMax:100,
+      yTicks:[50, 100],
       target:DASHBOARD_TARGET_RATE,
       color:"var(--info)",
-      formatter:function (value) { return value.toFixed(1) + "%"; }
+      showPointLabels:true,
+      formatter:function (value) { return value.toFixed(1) + "%"; },
+      yAxisFormatter:function (value) { return value.toFixed(0) + "%"; }
     }
   );
 
@@ -1959,15 +2013,21 @@ function dashboardRenderAll(rows, detailRows) {
   const currentDefectRate = inputRunning > 0 ? defectRunning / inputRunning * 100 : 0;
   document.getElementById("foot-cumdefect").textContent = currentDefectRate.toFixed(2) + "%";
 
+  const defectSuggestedMax = Math.max(0.5, currentDefectRate * 1.2);
+
   dashboardRenderLine(
     "line-defect",
     "axis-cumdefect",
     cumulativeDefectRate,
     dailyLabels,
     {
-      suggestedMax:Math.max(1, currentDefectRate * 1.2),
+      suggestedMax:defectSuggestedMax,
+      yTicks:[0, defectSuggestedMax / 2, defectSuggestedMax],
       color:"var(--bad)",
-      formatter:function (value) { return value.toFixed(2) + "%"; }
+      zeroLift:8,
+      showPointLabels:false,
+      formatter:function (value) { return value.toFixed(2) + "%"; },
+      yAxisFormatter:function (value) { return value.toFixed(2) + "%"; }
     }
   );
 }
