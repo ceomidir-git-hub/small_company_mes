@@ -276,6 +276,7 @@ button:disabled{opacity:.55;cursor:not-allowed;}
 const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
 const TABLE_NAME = "Total_Production_DB";
+const REPORT_TABLE = "inspection_reports";
 const CUSTOMER_TABLE = "customers";
 const LOGIN_PAGE_URL = "../index.html";
 
@@ -288,7 +289,12 @@ const SELECT_COLUMNS = [
   "item_name","item_number","material_name","receiving_quantity",
   "lot_no","tempering_hardness_hrc","p1","p2","p3",
   "hardening_depth","hardening_depth_p1","hardening_depth_p2","hardening_depth_p3",
-  "inspection_result","special_notes","is_active"
+  "inspection_result","is_active"
+].join(",");
+
+const REPORT_SELECT_COLUMNS = [
+  "inspection_report_system_id","company_id","production_system_id",
+  "lot_no","report_data","is_active"
 ].join(",");
 
 const RES_OPTS = ["양호","불량","대기"];
@@ -402,6 +408,90 @@ async function fetchAllRows(tableName,selectColumns,buildQuery){
   return rows;
 }
 
+async function fetchReportRowsByProductionIds(productionIds){
+  const ids = Array.from(new Set((productionIds || []).filter(Boolean)));
+  if(!ids.length) return [];
+
+  const chunkSize = 200;
+  let rows = [];
+
+  for(let i=0;i<ids.length;i+=chunkSize){
+    const chunk = ids.slice(i,i+chunkSize);
+    const {data,error} = await sb
+      .from(REPORT_TABLE)
+      .select(REPORT_SELECT_COLUMNS)
+      .eq("company_id",currentProfile.company_id)
+      .eq("is_active",true)
+      .in("production_system_id",chunk);
+
+    if(error) throw error;
+    rows = rows.concat(data || []);
+  }
+
+  return rows;
+}
+
+async function attachInspectionReportNotes(rows){
+  const reportRows = await fetchReportRowsByProductionIds(
+    rows.map(function(row){return row.production_system_id;})
+  );
+
+  const reportMap = new Map();
+  reportRows.forEach(function(reportRow){
+    reportMap.set(reportRow.production_system_id,reportRow);
+  });
+
+  return rows.map(function(row){
+    const reportRow = reportMap.get(row.production_system_id) || null;
+    const reportData = reportRow && reportRow.report_data && typeof reportRow.report_data === "object"
+      ? reportRow.report_data
+      : {};
+
+    return Object.assign({},row,{
+      inspection_report_system_id:reportRow ? reportRow.inspection_report_system_id : null,
+      report_data:reportData,
+      report_special_note:String(reportData.special_note || "")
+    });
+  });
+}
+
+async function saveInspectionReportNote(row,noteValue){
+  const {data:existing,error:existingError} = await sb
+    .from(REPORT_TABLE)
+    .select(REPORT_SELECT_COLUMNS)
+    .eq("company_id",currentProfile.company_id)
+    .eq("production_system_id",row.production_system_id)
+    .maybeSingle();
+
+  if(existingError) throw existingError;
+
+  const existingReportData = existing && existing.report_data && typeof existing.report_data === "object"
+    ? existing.report_data
+    : {};
+
+  const mergedReportData = Object.assign({},existingReportData,{
+    special_note:String(noteValue == null ? "" : noteValue).trim()
+  });
+
+  const payload = {
+    company_id:currentProfile.company_id,
+    production_system_id:row.production_system_id,
+    lot_no:String(row.lot_no || "").trim() || null,
+    report_data:mergedReportData,
+    is_active:true
+  };
+
+  const {data,error} = await sb
+    .from(REPORT_TABLE)
+    .upsert(payload,{onConflict:"company_id,production_system_id"})
+    .select(REPORT_SELECT_COLUMNS)
+    .single();
+
+  if(error) throw error;
+  if(!data) throw new Error("검사성적서 특이사항 저장 결과를 확인할 수 없습니다.");
+  return data;
+}
+
 async function loadFilterOptions(){
   const companySelect = document.getElementById("fCompany");
   const lotSelect = document.getElementById("fLotNo");
@@ -471,7 +561,7 @@ async function applyFilter(){
   setStatus("loading","조회 중입니다.");
 
   try{
-    filteredRows = await fetchAllRows(TABLE_NAME,SELECT_COLUMNS,function(query){
+    const productionRows = await fetchAllRows(TABLE_NAME,SELECT_COLUMNS,function(query){
       let q = query.eq("is_active",true);
       if(from) q = q.gte("work_date",from);
       if(to) q = q.lte("work_date",to);
@@ -484,6 +574,8 @@ async function applyFilter(){
               .order("item_name",{ascending:true})
               .order("production_system_id",{ascending:true});
     });
+
+    filteredRows = await attachInspectionReportNotes(productionRows);
 
     filteredRows.sort(function(a,b){
       const lotA = String(a.lot_no || "").trim();
@@ -590,7 +682,7 @@ function renderTable(rows){
       '<td>'+tdInput("hardening_depth_p2",row.hardening_depth_p2,index)+'</td>'+
       '<td>'+tdInput("hardening_depth_p3",row.hardening_depth_p3,index)+'</td>'+
       '<td>'+tdSelect("inspection_result",result,RES_OPTS,index)+'</td>'+
-      '<td>'+tdInput("special_notes",row.special_notes,index)+'</td>'+
+      '<td>'+tdInput("report_special_note",row.report_special_note,index)+'</td>'+
       '<td><button class="save-btn" id="sbtn-'+index+'" type="button" onclick="saveRow('+index+')">저장</button></td>'+
       '</tr>';
   }).join("");
@@ -630,11 +722,21 @@ async function saveRow(index){
     return;
   }
 
-  const updateData = {};
+  const productionUpdateData = {};
+  let reportNoteChanged = false;
+  let reportNoteValue = row.report_special_note || "";
+
   changed.forEach(function(element){
     const field = element.dataset.field;
     if(!field) return;
-    updateData[field] = element.value.trim();
+
+    if(field === "report_special_note"){
+      reportNoteChanged = true;
+      reportNoteValue = element.value.trim();
+      return;
+    }
+
+    productionUpdateData[field] = element.value.trim();
   });
 
   button.disabled = true;
@@ -642,16 +744,39 @@ async function saveRow(index){
   setStatus("loading","NO "+(index+1)+" 저장 중입니다.");
 
   try{
-    const {data,error} = await sb.from(TABLE_NAME).update(updateData)
-      .eq("production_system_id",row.production_system_id)
-      .eq("company_id",currentProfile.company_id)
-      .select(SELECT_COLUMNS)
-      .single();
+    let updatedProduction = row;
+    let savedReport = null;
 
-    if(error) throw error;
-    if(!data) throw new Error("저장된 행을 확인할 수 없습니다.");
+    if(Object.keys(productionUpdateData).length){
+      const {data,error} = await sb.from(TABLE_NAME).update(productionUpdateData)
+        .eq("production_system_id",row.production_system_id)
+        .eq("company_id",currentProfile.company_id)
+        .select(SELECT_COLUMNS)
+        .single();
 
-    filteredRows[index] = data;
+      if(error) throw error;
+      if(!data) throw new Error("생산실적 저장 행을 확인할 수 없습니다.");
+      updatedProduction = data;
+    }
+
+    if(reportNoteChanged){
+      savedReport = await saveInspectionReportNote(row,reportNoteValue);
+    }
+
+    const savedReportData = savedReport && savedReport.report_data && typeof savedReport.report_data === "object"
+      ? savedReport.report_data
+      : row.report_data || {};
+
+    filteredRows[index] = Object.assign({},updatedProduction,{
+      inspection_report_system_id:savedReport
+        ? savedReport.inspection_report_system_id
+        : row.inspection_report_system_id || null,
+      report_data:savedReportData,
+      report_special_note:reportNoteChanged
+        ? String(savedReportData.special_note || "")
+        : String(row.report_special_note || "")
+    });
+
     changed.forEach(function(el){el.classList.remove("modified");});
     button.classList.add("saved");
     button.textContent = "완료";
@@ -724,7 +849,7 @@ function doExport(){
     const depthP2 = currentValue("hardening_depth_p2",row.hardening_depth_p2);
     const depthP3 = currentValue("hardening_depth_p3",row.hardening_depth_p3);
     const result = currentValue("inspection_result",row.inspection_result || "");
-    const note = currentValue("special_notes",row.special_notes || "");
+    const note = currentValue("report_special_note",row.report_special_note || "");
 
     lines.push([
       index+1,row.lot_no,row.work_date,row.customer_name,row.item_name,row.item_number,
