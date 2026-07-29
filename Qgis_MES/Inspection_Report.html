@@ -644,6 +644,12 @@ const PRODUCTION_COLUMNS = [
   "core_hardness",
   "inspection_result",
   "inspection_report_special_notes",
+  "inspection_structure_standard",
+  "inspection_structure_judgment",
+  "inspection_distortion_standard",
+  "inspection_distortion_judgment",
+  "inspection_crack_standard",
+  "inspection_crack_judgment",
   "inspected_by",
   "approved_by",
   "is_active"
@@ -1067,11 +1073,11 @@ function applyProductionFields(row) {
 
   sv("f-std3", "-");
   sv("f-res3", row.core_hardness === "-" ? "" : (row.core_hardness || ""));
-  sv("f-std4", "-");
+  sv("f-std4", row.inspection_structure_standard || "육안");
   sv("f-res4", "");
-  sv("f-std5", "-");
+  sv("f-std5", row.inspection_distortion_standard || "육안");
   sv("f-res5", "");
-  sv("f-std6", "-");
+  sv("f-std6", row.inspection_crack_standard || "육안");
   sv("f-res6", "");
   sv("f-note", row.inspection_report_special_notes || "");
 
@@ -1092,9 +1098,9 @@ function applyProductionFields(row) {
   ss("f-jdg1", judgment);
   ss("f-jdg2", judgment);
   ss("f-jdg3", "");
-  ss("f-jdg4", "");
-  ss("f-jdg5", "");
-  ss("f-jdg6", "");
+  ss("f-jdg4", row.inspection_structure_judgment || "");
+  ss("f-jdg5", row.inspection_distortion_judgment || "");
+  ss("f-jdg6", row.inspection_crack_judgment || "");
 }
 
 function clearReportOnlyFields() {
@@ -1115,11 +1121,11 @@ function clearReportOnlyFields() {
   sv("f-std2", "");
   sv("f-std3", "-");
   sv("f-res3", "");
-  sv("f-std4", "-");
+  sv("f-std4", "육안");
   sv("f-res4", "");
-  sv("f-std5", "-");
+  sv("f-std5", "육안");
   sv("f-res5", "");
-  sv("f-std6", "-");
+  sv("f-std6", "육안");
   sv("f-res6", "");
 
   for (let i = 1; i <= 6; i += 1) {
@@ -1172,9 +1178,21 @@ function applyReportData(data) {
   for (let i = 3; i <= 6; i += 1) {
     const stdValue = data["insp_std" + i];
     const resultValue = data["insp_result" + i];
-    if (stdValue) sv("f-std" + i, stdValue);
-    sv("f-res" + i, resultValue && resultValue !== "-" ? resultValue : "");
-    ss("f-jdg" + i, data["insp_jdg" + i] || "");
+    const judgmentValue = data["insp_jdg" + i];
+
+    /*
+     * 심부경도·조직·변형·균열은 Total_Production_DB 값을 우선합니다.
+     * 과거 inspection_reports 데이터만 존재할 때만 보조값으로 복원합니다.
+     */
+    if (!v("f-std" + i) && stdValue) {
+      sv("f-std" + i, stdValue);
+    }
+    if (!v("f-res" + i) && resultValue && resultValue !== "-") {
+      sv("f-res" + i, resultValue);
+    }
+    if (!v("f-jdg" + i) && judgmentValue) {
+      ss("f-jdg" + i, judgmentValue);
+    }
   }
 
   /*
@@ -1272,6 +1290,12 @@ async function saveToDb() {
       hardening_depth_p3: cleanVal(v("hd03")) || null,
       core_hardness: cleanVal(v("f-res3")) || null,
       inspection_report_special_notes: cleanVal(v("f-note")),
+      inspection_structure_standard: cleanVal(v("f-std4")) || null,
+      inspection_structure_judgment: cleanVal(v("f-jdg4")) || null,
+      inspection_distortion_standard: cleanVal(v("f-std5")) || null,
+      inspection_distortion_judgment: cleanVal(v("f-jdg5")) || null,
+      inspection_crack_standard: cleanVal(v("f-std6")) || null,
+      inspection_crack_judgment: cleanVal(v("f-jdg6")) || null,
       inspected_by: cleanVal(v("f-inspected")) || null,
       approved_by: cleanVal(v("f-approved")) || null,
       inspection_result: overallInspectionResult(),
@@ -1393,11 +1417,11 @@ function resetForm() {
   sv("f-method", "고주파열처리");
   sv("f-std3", "-");
   sv("f-res3", "");
-  sv("f-std4", "-");
+  sv("f-std4", "육안");
   sv("f-res4", "");
-  sv("f-std5", "-");
+  sv("f-std5", "육안");
   sv("f-res5", "");
-  sv("f-std6", "-");
+  sv("f-std6", "육안");
   sv("f-res6", "");
   updateAllSignatures();
 
