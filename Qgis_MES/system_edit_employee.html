@@ -47,7 +47,7 @@ button:disabled{cursor:not-allowed;opacity:.48}
 .mail-setting-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:13px}
 .mail-setting-head h2{margin:0;color:#0e3f9d;font-size:17px}
 .mail-setting-help{margin-top:5px;color:#64748b;font-size:12px;line-height:1.5}
-.mail-setting-grid{display:grid;grid-template-columns:180px 190px minmax(220px,1fr) 170px auto;align-items:end;gap:12px}
+.mail-setting-grid{display:grid;grid-template-columns:180px 190px minmax(300px,1fr) 170px auto;align-items:end;gap:12px}
 .readonly-box{min-height:40px;display:flex;align-items:center;padding:8px 10px;border:1px solid #c7d0dc;border-radius:7px;background:#f8fafc;color:#334155;font-size:13px}
 .switch-box{min-height:40px;display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid #c7d0dc;border-radius:7px;background:#fff}
 .switch-box input{width:18px;height:18px;min-height:auto;margin:0}
@@ -151,7 +151,7 @@ tfoot td{position:sticky;bottom:0;z-index:2;background:#edf2ff;color:#0e3f9d;fon
       <div>
         <h2>DAILY REPORT 일괄 발송 설정</h2>
         <div class="mail-setting-help">
-          발송시간은 직원별로 저장하지 않습니다. 로그인 회사의 수신 대상 직원 전체에게 동일한 시간에 일괄 발송합니다.
+          매일 설정된 시간에 전일 생산실적을 확인합니다. 전일 생산실적이 1건 이상이면 수신 대상 직원 전체에게 발송하고, 0건이면 발송하지 않습니다. 요일과 공휴일은 판단 기준으로 사용하지 않습니다.
         </div>
       </div>
     </div>
@@ -171,11 +171,8 @@ tfoot td{position:sticky;bottom:0;z-index:2;background:#edf2ff;color:#0e3f9d;fon
       </div>
 
       <div class="field">
-        <label for="nonWorkdayAction">토·일·공휴일 처리</label>
-        <select id="nonWorkdayAction">
-          <option value="send_notice">휴무 안내 메일 발송</option>
-          <option value="skip">메일 발송하지 않음</option>
-        </select>
+        <label>발송 조건</label>
+        <div class="readonly-box">전일 생산실적 1건 이상이면 무조건 발송</div>
       </div>
 
       <div class="field">
@@ -496,7 +493,7 @@ async function loadMailSetting() {
 
   const { data, error } = await sb
     .from("daily_report_settings")
-    .select("is_enabled,send_time,timezone,non_workday_action,updated_at")
+    .select("is_enabled,send_time,timezone,updated_at")
     .eq("company_id", currentProfile.company_id)
     .maybeSingle();
 
@@ -508,21 +505,16 @@ async function loadMailSetting() {
   const setting = data || {
     is_enabled: false,
     send_time: "08:00:00",
-    timezone: "Asia/Seoul",
-    non_workday_action: "send_notice"
+    timezone: "Asia/Seoul"
   };
 
   document.getElementById("mailIsEnabled").checked = setting.is_enabled === true;
   document.getElementById("mailSendTime").value = String(setting.send_time || "08:00").slice(0, 5);
-  document.getElementById("nonWorkdayAction").value = setting.non_workday_action || "send_notice";
 
   const enabledText = setting.is_enabled ? "사용" : "중지";
-  const actionText = setting.non_workday_action === "skip"
-    ? "휴무일 발송 생략"
-    : "휴무 안내 메일 발송";
 
   status.textContent =
-    `현재 설정: 자동메일 ${enabledText} · ${String(setting.send_time || "08:00").slice(0, 5)} · ${actionText} · Asia/Seoul`;
+    `현재 설정: 자동메일 ${enabledText} · ${String(setting.send_time || "08:00").slice(0, 5)} · 전일 생산실적이 있으면 발송 · 없으면 미발송 · Asia/Seoul`;
 }
 
 async function saveMailSetting() {
@@ -539,7 +531,9 @@ async function saveMailSetting() {
     is_enabled: document.getElementById("mailIsEnabled").checked,
     send_time: sendTime,
     timezone: "Asia/Seoul",
-    non_workday_action: document.getElementById("nonWorkdayAction").value,
+    // 기존 DB 열과의 호환을 위해 skip으로 고정합니다.
+    // 실제 발송 여부는 요일이 아니라 전일 생산실적 존재 여부로 판단합니다.
+    non_workday_action: "skip",
     updated_at: new Date().toISOString()
   };
 
