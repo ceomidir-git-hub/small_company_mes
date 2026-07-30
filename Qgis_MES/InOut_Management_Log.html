@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>입출고관리대장 | HeatPro MES</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --blue:#185FA5;--blue-dark:#0C447C;--blue-soft:#E6F1FB;
+    --green:#2F7D32;--green-soft:#EAF5EA;--amber:#B46A09;--amber-soft:#FFF1D8;
+    --red:#B83232;--red-soft:#FCEBEB;--purple:#7656A6;--purple-soft:#F2ECFA;
+    --bg:#F5F7FA;--panel:#FFFFFF;--line:#D7DEE7;--line-soft:#E9EDF2;
+    --text:#202733;--muted:#6B7788;--shadow:0 8px 24px rgba(36,50,70,.08)
+  }
+  html.auth-pending body{visibility:hidden}
+  html,body{width:100%;min-height:100%;overflow-x:hidden}
+  body{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  button,input,select{font:inherit}
+  button{cursor:pointer}
+
+  .topbar{height:58px;padding:0 22px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px;position:sticky;top:0;z-index:100}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--blue-dark);white-space:nowrap}
+  .brand-mark{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(145deg,var(--blue),var(--blue-dark));color:#fff;box-shadow:0 5px 14px rgba(24,95,165,.24)}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .top-btn{min-height:34px;padding:6px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);font-size:12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .top-btn:hover{border-color:var(--blue);color:var(--blue)}
+  .logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+  .container{width:min(1420px,100%);margin:0 auto;padding:20px 18px 48px}
+  .page-head{display:flex;align-items:center;gap:11px;margin-bottom:15px}
+  .page-head h1{font-size:22px;line-height:1.2}
+  .page-head .sub{font-size:12px;color:var(--muted)}
+  .year-badge{margin-left:auto;border:1px solid #B9D4EF;background:var(--blue-soft);color:var(--blue-dark);font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px}
+
+  .filter-card,.chart-card,.table-card,.stat-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  .filter-card{padding:14px 16px;margin-bottom:12px}
+  .section-label{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.06em;margin-bottom:9px}
+  .filter-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .filter-row+.filter-row{margin-top:9px}
+  .field{display:flex;align-items:center;gap:6px}
+  .field label{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
+  .field input,.field select{height:34px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--text);padding:0 9px;outline:none}
+  .field input:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.10)}
+  .field input[type=date]{width:142px}
+  .field select{min-width:150px}
+  .sep{color:var(--muted)}
+  .button-row{margin-left:auto;display:flex;gap:7px}
+  .btn{height:34px;padding:0 13px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--muted);font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:5px}
+  .btn:hover{background:#F2F5F8;color:var(--text)}
+  .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn-primary:hover{background:var(--blue-dark);color:#fff}
+
+  .chart-card{padding:15px 16px 11px;margin-bottom:12px;overflow:hidden}
+  .chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:3px}
+  .chart-title{font-size:15px;font-weight:800}
+  .chart-sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .legend{display:flex;align-items:center;gap:13px;font-size:11px;font-weight:800;color:var(--muted);white-space:nowrap}
+  .legend-item{display:flex;align-items:center;gap:5px}
+  .legend-line{width:18px;height:3px;border-radius:4px}
+  .chart-wrap{width:100%;overflow:hidden}
+  #inoutChart{width:100%;height:240px;display:block}
+  .chart-axis{height:20px;display:flex;justify-content:space-between;align-items:center;padding-left:45px;padding-right:13px;color:var(--muted);font-size:11px;font-weight:800}
+
+  .stats-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
+  .stat-card{padding:13px 15px;min-width:0}
+  .stat-label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:5px;white-space:nowrap}
+  .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .stat-value{font-size:21px;font-weight:900;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .unit{font-size:11px;color:var(--muted);font-weight:600;margin-left:3px}
+
+  .table-card{overflow:hidden}
+  .table-toolbar{min-height:48px;padding:9px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .table-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800}
+  .count-badge{font-size:11px;color:var(--blue-dark);background:var(--blue-soft);padding:3px 9px;border-radius:999px}
+  .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+  table{width:100%;min-width:1190px;border-collapse:collapse;table-layout:fixed;font-size:12px}
+  col.c-no{width:42px} col.c-date{width:112px} col.c-customer{width:120px} col.c-item{width:132px}
+  col.c-number{width:120px} col.c-material{width:85px} col.c-qty{width:86px} col.c-qt{width:100px}
+  col.c-result{width:94px} col.c-cert{width:86px} col.c-save{width:74px}
+  thead th{border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;font-weight:900}
+  thead th:last-child{border-right:none}
+  thead tr.group th{height:33px;font-size:11px}
+  thead tr.sub th{height:34px;font-size:11px}
+  .th-no,.th-action{background:#F1F3F6;color:#596576}
+  .th-in{background:var(--green-soft);color:#256629}
+  .th-out{background:var(--amber-soft);color:#8B5107}
+  .th-check{background:var(--purple-soft);color:#62478B}
+  tbody td{height:40px;padding:4px;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);text-align:center;overflow:hidden}
+  tbody td:last-child{border-right:none}
+  tbody tr:hover td{background:#FAFBFC}
+  .td-no{font-size:11px;color:var(--muted)}
+  .cell-input{width:100%;height:29px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--text);padding:0 5px;text-align:center;outline:none;font-size:11px}
+  .cell-input:hover{border-color:var(--line);background:#F7F9FB}
+  .cell-input:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 2px rgba(24,95,165,.10)}
+  .cell-input.modified{border-color:#E09B29;background:#FFF3D8}
+  .save-btn{height:27px;padding:0 8px;border:1px solid var(--blue);border-radius:5px;background:var(--blue-soft);color:var(--blue-dark);font-size:10px;font-weight:900}
+  .save-btn:hover{background:#CFE4F8}
+  .save-btn:disabled{opacity:.58;cursor:wait}
+  .save-btn.saved{border-color:var(--green);background:var(--green-soft);color:var(--green)}
+  .badge{display:inline-flex;align-items:center;justify-content:center;min-width:58px;height:23px;border-radius:999px;font-size:10px;font-weight:900}
+  .badge.pass{background:var(--green-soft);color:var(--green)}
+  .badge.fail{background:var(--red-soft);color:var(--red)}
+  .badge.wait{background:#F0F2F5;color:var(--muted)}
+  .empty-row td{height:130px;color:var(--muted);font-size:13px;border-right:none}
+  .status-bar{min-height:35px;border-top:1px solid var(--line);padding:7px 13px;display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px;font-weight:700}
+  .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+  .status-dot.loading{background:var(--amber);animation:pulse 1s infinite}
+  .status-dot.error{background:var(--red)}
+  @keyframes pulse{50%{opacity:.3}}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:9999;background:#26313F;color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .toast.show{opacity:1}
+
+  @media(max-width:1050px){
+    .stats-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .container{padding:16px 12px 36px}
+  }
+  @media(max-width:720px){
+    .topbar{height:54px;padding:0 10px}.brand{font-size:13px}.brand-mark{width:27px;height:27px}
+    .top-btn{min-height:31px;padding:5px 8px;font-size:10px}.top-actions{gap:5px}
+    .page-head{align-items:flex-start;flex-wrap:wrap}.page-head h1{font-size:18px}.page-head .sub{width:100%;padding-left:42px}.year-badge{margin-left:0}
+    .filter-card{padding:12px}.field{width:100%}.field label{min-width:55px}.field input[type=date],.field select{flex:1;min-width:0;width:auto}
+    .button-row{width:100%;margin-left:0;justify-content:flex-end}
+    .stats-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.stat-card{padding:11px}.stat-value{font-size:18px}
+    .chart-card{padding:12px 10px 8px}.chart-head{flex-direction:column}.legend{align-self:flex-end}#inoutChart{height:205px}.chart-axis{padding-left:38px;padding-right:7px;font-size:9px}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">↕</span><span>HeatPro MES · 입출고관리대장</span></div>
+  <div class="top-actions">
+    <a class="top-btn" href="main1.html">⌂ 메인메뉴</a>
+    <button class="top-btn logout-btn" type="button" onclick="logoutCurrentUser()">로그아웃</button>
+  </div>
+</header>
+
+<main class="container">
+  <div class="page-head">
+    <span class="brand-mark">📦</span>
+    <div><h1>입출고 관리대장</h1><div class="sub">Inbound &amp; Outbound Management Log</div></div>
+    <span class="year-badge" id="yearBadge">26년도</span>
+  </div>
+
+  <section class="filter-card">
+    <div class="section-label">조회 조건</div>
+    <div class="filter-row">
+      <div class="field"><label for="fFrom">조회 기간</label><input type="date" id="fFrom"><span class="sep">~</span><input type="date" id="fTo"></div>
+      <div class="field"><label for="fInDate">입고일</label><input type="date" id="fInDate"></div>
+      <div class="field"><label for="fOutDate">출고일</label><input type="date" id="fOutDate"></div>
+    </div>
+    <div class="filter-row">
+      <div class="field"><label for="fCompany">고객사</label><select id="fCompany"><option value="">전체</option></select></div>
+      <div class="button-row">
+        <button class="btn" type="button" onclick="resetFilter()">↻ 초기화</button>
+        <button class="btn btn-primary" type="button" onclick="applyFilter()">⌕ 조회</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-card">
+    <div class="chart-head">
+      <div><div class="chart-title" id="chartTitle">월별 입출고 현황</div><div class="chart-sub">선택 월의 1일부터 기준일까지 일별 수량 합계</div></div>
+      <div class="legend"><span class="legend-item"><span class="legend-line" style="background:var(--green)"></span>입고수량</span><span class="legend-item"><span class="legend-line" style="background:var(--amber)"></span>출고수량</span></div>
+    </div>
+    <div class="chart-wrap"><svg id="inoutChart" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-label="일별 입출고 수량 그래프"></svg></div>
+    <div class="chart-axis" id="chartAxis"></div>
+  </section>
+
+  <section class="stats-row">
+    <div class="stat-card"><div class="stat-label"><span class="dot" style="background:var(--green)"></span>총 입고건수</div><div class="stat-value" id="kInCount">0<span class="unit">건</span></div></div>
+    <div class="stat-card"><div class="stat-label"><span class="dot" style="background:var(--green)"></span>총 입고수량</div><div class="stat-value" id="kInQty">0<span class="unit">ea</span></div></div>
+    <div class="stat-card"><div class="stat-label"><span class="dot" style="background:var(--amber)"></span>총 출고건수</div><div class="stat-value" id="kOutCount">0<span class="unit">건</span></div></div>
+    <div class="stat-card"><div class="stat-label"><span class="dot" style="background:var(--amber)"></span>총 출고수량</div><div class="stat-value" id="kOutQty">0<span class="unit">ea</span></div></div>
+    <div class="stat-card"><div class="stat-label"><span class="dot" style="background:var(--blue)"></span>검사 합격률</div><div class="stat-value" id="kPassRate">0<span class="unit">%</span></div></div>
+  </section>
+
+  <section class="table-card">
+    <div class="table-toolbar">
+      <div class="table-title">▦ 입출고 내역 <span class="count-badge" id="tCount">0건</span></div>
+      <button class="btn" type="button" onclick="exportCSV()">⇩ CSV 내보내기</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col class="c-no"><col class="c-date"><col class="c-customer"><col class="c-item"><col class="c-number"><col class="c-material"><col class="c-qty"><col class="c-qt"><col class="c-date"><col class="c-qty"><col class="c-result"><col class="c-cert"><col class="c-save">
+        </colgroup>
+        <thead>
+          <tr class="group"><th rowspan="2" class="th-no">No</th><th colspan="7" class="th-in">입고 관리</th><th colspan="2" class="th-out">출고 관리</th><th colspan="2" class="th-check">검사 관리</th><th rowspan="2" class="th-action">저장</th></tr>
+          <tr class="sub"><th class="th-in">입고일</th><th class="th-in">고객사</th><th class="th-in">품명</th><th class="th-in">품번</th><th class="th-in">재질</th><th class="th-in">입고수량</th><th class="th-in">외관열처리(QT)</th><th class="th-out">출고일</th><th class="th-out">출고수량</th><th class="th-check">검사결과</th><th class="th-check">성적서</th></tr>
+        </thead>
+        <tbody id="tbody"><tr class="empty-row"><td colspan="13">데이터를 불러오는 중입니다.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="status-bar"><span class="status-dot loading" id="sDot"></span><span id="sText">로그인 및 데이터 확인 중...</span></div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+
+const SUPABASE_URL="https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY="sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const TABLE_NAME="Total_Production_DB";
+const LOGIN_PAGE_URL="../index.html";
+const PAGE_SIZE=1000;
+
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+let currentUser=null;
+let currentProfile=null;
+let allRows=[];
+let filteredRows=[];
+
+function pad2(value){return String(value).padStart(2,"0")}
+function ymd(date){return date.getFullYear()+"-"+pad2(date.getMonth()+1)+"-"+pad2(date.getDate())}
+function toNumber(value){const n=Number(String(value==null?"":value).replace(/,/g,""));return Number.isFinite(n)?n:0}
+function fmt(value){return Math.round(toNumber(value)).toLocaleString("ko-KR")}
+function safe(value){return String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function dateOnly(value){return value?String(value).slice(0,10):""}
+function getReceivingQty(row){const qty=toNumber(row.receiving_quantity);return qty>0?qty:toNumber(row.input_quantity)}
+function certificateValue(result){const value=String(result||"").trim();if(value==="양호"||value==="합격")return"합격";if(value==="불량"||value==="불합격")return"불합격";return"대기"}
+function certificateClass(result){const value=certificateValue(result);return value==="합격"?"pass":value==="불합격"?"fail":"wait"}
+function redirectToLogin(){window.location.replace(LOGIN_PAGE_URL)}
+
+async function verifyAccess(){
+  const userResult=await sb.auth.getUser();
+  const user=userResult.data&&userResult.data.user;
+  if(userResult.error||!user){redirectToLogin();return false}
+  const profileResult=await sb.from("profiles").select("company_id,is_active").eq("user_id",user.id).single();
+  const profile=profileResult.data;
+  if(profileResult.error||!profile||profile.is_active!==true||!profile.company_id){
+    await sb.auth.signOut({scope:"local"});redirectToLogin();return false
+  }
+  currentUser=user;currentProfile=profile;return true
+}
+
+async function logoutCurrentUser(){
+  const button=document.querySelector(".logout-btn");
+  if(button){button.disabled=true;button.textContent="로그아웃 중"}
+  await sb.auth.signOut({scope:"local"});redirectToLogin()
+}
+
+sb.auth.onAuthStateChange(function(event){if(event==="SIGNED_OUT")redirectToLogin()});
+
+function setDefaultDates(){
+  const today=new Date();
+  document.getElementById("fFrom").value=today.getFullYear()+"-"+pad2(today.getMonth()+1)+"-01";
+  document.getElementById("fTo").value=ymd(today);
+  document.getElementById("yearBadge").textContent=String(today.getFullYear()).slice(-2)+"년도";
+}
+
+async function fetchAllRows(){
+  const rows=[];let from=0;
+  const columns=["production_system_id","company_id","work_date","receiving_date","customer_name","item_name","item_number","material_name","input_quantity","receiving_quantity","receiving_heat_treatment_qt","shipping_date","shipping_quantity","inspection_result","is_active"].join(",");
+  while(true){
+    const result=await sb.from(TABLE_NAME).select(columns).eq("company_id",currentProfile.company_id).eq("is_active",true).order("receiving_date",{ascending:true,nullsFirst:false}).order("production_system_id",{ascending:true}).range(from,from+PAGE_SIZE-1);
+    if(result.error)throw result.error;
+    const page=result.data||[];rows.push.apply(rows,page);
+    if(page.length<PAGE_SIZE)break;from+=PAGE_SIZE
+  }
+  return rows
+}
+
+function populateCustomers(){
+  const select=document.getElementById("fCompany");
+  const current=select.value;
+  const names=Array.from(new Set(allRows.map(function(row){return String(row.customer_name||"").trim()}).filter(Boolean))).sort(function(a,b){return a.localeCompare(b,"ko")});
+  select.innerHTML='<option value="">전체</option>'+names.map(function(name){return'<option value="'+safe(name)+'">'+safe(name)+'</option>'}).join("");
+  if(names.indexOf(current)>=0)select.value=current
+}
+
+function rowInRange(row,from,to){
+  const dates=[dateOnly(row.receiving_date),dateOnly(row.shipping_date)].filter(Boolean);
+  if(!dates.length)return false;
+  return dates.some(function(value){return(!from||value>=from)&&(!to||value<=to)})
+}
+
+function applyFilter(){
+  const from=document.getElementById("fFrom").value;
+  const to=document.getElementById("fTo").value;
+  const inDate=document.getElementById("fInDate").value;
+  const outDate=document.getElementById("fOutDate").value;
+  const company=document.getElementById("fCompany").value;
+  filteredRows=allRows.filter(function(row){
+    if(!rowInRange(row,from,to))return false;
+    if(inDate&&dateOnly(row.receiving_date)!==inDate)return false;
+    if(outDate&&dateOnly(row.shipping_date)!==outDate)return false;
+    if(company&&String(row.customer_name||"")!==company)return false;
+    return true
+  }).sort(function(a,b){
+    const ad=dateOnly(a.receiving_date)||dateOnly(a.shipping_date)||"9999-12-31";
+    const bd=dateOnly(b.receiving_date)||dateOnly(b.shipping_date)||"9999-12-31";
+    if(ad!==bd)return ad.localeCompare(bd);
+    return String(a.customer_name||"").localeCompare(String(b.customer_name||""),"ko")
+  });
+  renderTable(filteredRows);updateKPI(filteredRows);renderMonthlyChart(allRows);setStatus("ok","조회 완료 · "+filteredRows.length+"건")
+}
+
+function resetFilter(){setDefaultDates();document.getElementById("fInDate").value="";document.getElementById("fOutDate").value="";document.getElementById("fCompany").value="";applyFilter()}
+
+function selectOptions(current,options){
+  const values=options.slice();if(current&&values.indexOf(current)<0)values.unshift(current);
+  return values.map(function(value){return'<option value="'+safe(value)+'"'+(value===current?' selected':'')+'>'+safe(value)+'</option>'}).join("")
+}
+
+function inputCell(field,value,type,index){
+  const extra=type==="number"?' min="0" step="1"':'';
+  return'<td><input class="cell-input" type="'+type+'" value="'+safe(type==="date"?dateOnly(value):value)+'" data-field="'+field+'" data-index="'+index+'" oninput="markModified(this)"'+extra+'></td>'
+}
+
+function selectCell(field,value,options,index,withCert){
+  return'<td><select class="cell-input" data-field="'+field+'" data-index="'+index+'" onchange="markModified(this);'+(withCert?'syncCertificate('+index+',this.value)':'')+'">'+selectOptions(String(value||""),options)+'</select></td>'
+}
+
+function renderTable(rows){
+  document.getElementById("tCount").textContent=rows.length+"건";
+  const tbody=document.getElementById("tbody");
+  if(!rows.length){tbody.innerHTML='<tr class="empty-row"><td colspan="13">조회된 데이터가 없습니다.</td></tr>';return}
+  tbody.innerHTML=rows.map(function(row,index){
+    const cert=certificateValue(row.inspection_result);
+    return'<tr data-index="'+index+'">'+
+      '<td class="td-no">'+(index+1)+'</td>'+inputCell("receiving_date",row.receiving_date,"date",index)+inputCell("customer_name",row.customer_name,"text",index)+inputCell("item_name",row.item_name,"text",index)+inputCell("item_number",row.item_number,"text",index)+inputCell("material_name",row.material_name,"text",index)+inputCell("receiving_quantity",getReceivingQty(row),"number",index)+selectCell("receiving_heat_treatment_qt",row.receiving_heat_treatment_qt||"미실시",["실시","미실시","불량"],index,false)+inputCell("shipping_date",row.shipping_date,"date",index)+inputCell("shipping_quantity",row.shipping_quantity,"number",index)+selectCell("inspection_result",row.inspection_result||"대기",["양호","불량","대기"],index,true)+
+      '<td><span class="badge '+certificateClass(row.inspection_result)+' cert-badge">'+cert+'</span></td><td><button class="save-btn" id="save-'+index+'" type="button" onclick="saveRow('+index+')">저장</button></td></tr>'
+  }).join("")
+}
+
+function markModified(element){element.classList.add("modified")}
+function syncCertificate(index,value){const row=document.querySelector('tr[data-index="'+index+'"]');if(!row)return;const badge=row.querySelector(".cert-badge");badge.className="badge "+certificateClass(value)+" cert-badge";badge.textContent=certificateValue(value)}
+
+async function saveRow(index){
+  const row=filteredRows[index];const tr=document.querySelector('tr[data-index="'+index+'"]');const button=document.getElementById("save-"+index);
+  if(!row||!tr||!button)return;
+  const updateData={};
+  tr.querySelectorAll("[data-field]").forEach(function(element){
+    const field=element.dataset.field;let value=element.value.trim();
+    if(field==="receiving_quantity"||field==="shipping_quantity")value=value===""?null:Math.max(0,Math.round(toNumber(value)));
+    else if((field==="receiving_date"||field==="shipping_date")&&value==="")value=null;
+    else if(value==="")value=null;
+    updateData[field]=value
+  });
+  button.disabled=true;button.textContent="저장중";
+  const result=await sb.from(TABLE_NAME).update(updateData).eq("production_system_id",row.production_system_id).eq("company_id",currentProfile.company_id).select("production_system_id").single();
+  if(result.error){button.disabled=false;button.textContent="저장";showToast("저장 실패: "+errorMessage(result.error));return}
+  Object.assign(row,updateData);
+  const source=allRows.find(function(item){return item.production_system_id===row.production_system_id});if(source)Object.assign(source,updateData);
+  tr.querySelectorAll(".modified").forEach(function(element){element.classList.remove("modified")});
+  button.disabled=false;button.classList.add("saved");button.textContent="완료";showToast("저장되었습니다.");updateKPI(filteredRows);renderMonthlyChart(allRows);
+  setTimeout(function(){button.classList.remove("saved");button.textContent="저장"},1800)
+}
+
+function updateKPI(rows){
+  const inRows=rows.filter(function(row){return dateOnly(row.receiving_date)&&getReceivingQty(row)>0});
+  const outRows=rows.filter(function(row){return dateOnly(row.shipping_date)&&toNumber(row.shipping_quantity)>0});
+  const judged=rows.filter(function(row){const value=String(row.inspection_result||"");return value==="양호"||value==="불량"||value==="합격"||value==="불합격"});
+  const passed=judged.filter(function(row){const value=String(row.inspection_result||"");return value==="양호"||value==="합격"}).length;
+  const rate=judged.length?Math.round(passed/judged.length*100):0;
+  document.getElementById("kInCount").innerHTML=fmt(inRows.length)+'<span class="unit">건</span>';
+  document.getElementById("kInQty").innerHTML=fmt(inRows.reduce(function(sum,row){return sum+getReceivingQty(row)},0))+'<span class="unit">ea</span>';
+  document.getElementById("kOutCount").innerHTML=fmt(outRows.length)+'<span class="unit">건</span>';
+  document.getElementById("kOutQty").innerHTML=fmt(outRows.reduce(function(sum,row){return sum+toNumber(row.shipping_quantity)},0))+'<span class="unit">ea</span>';
+  document.getElementById("kPassRate").innerHTML=rate+'<span class="unit">%</span>'
+}
+
+function niceStep(maxValue){if(maxValue<=10)return 2;if(maxValue<=50)return 10;if(maxValue<=200)return 50;if(maxValue<=1000)return 200;if(maxValue<=5000)return 1000;return Math.ceil(maxValue/5/1000)*1000}
+
+function renderMonthlyChart(rows){
+  const toValue=document.getElementById("fTo").value||ymd(new Date());
+  const target=new Date(toValue+"T00:00:00");
+  const year=target.getFullYear();const month=target.getMonth()+1;const days=new Date(year,month,0).getDate();
+  const today=new Date();let cutoff=days;
+  if(year===today.getFullYear()&&month===today.getMonth()+1)cutoff=Math.min(days,today.getDate());
+  if(target>today&&!(year===today.getFullYear()&&month===today.getMonth()+1))cutoff=0;
+  const inbound=Array(days).fill(null);const outbound=Array(days).fill(null);
+  for(let day=1;day<=cutoff;day++){inbound[day-1]=0;outbound[day-1]=0}
+  rows.forEach(function(row){
+    const inDate=dateOnly(row.receiving_date);const outDate=dateOnly(row.shipping_date);
+    if(inDate){const parts=inDate.split("-");if(Number(parts[0])===year&&Number(parts[1])===month&&Number(parts[2])<=cutoff)inbound[Number(parts[2])-1]+=getReceivingQty(row)}
+    if(outDate){const parts=outDate.split("-");if(Number(parts[0])===year&&Number(parts[1])===month&&Number(parts[2])<=cutoff)outbound[Number(parts[2])-1]+=toNumber(row.shipping_quantity)}
+  });
+  document.getElementById("chartTitle").textContent=year+"년 "+month+"월 일별 입출고 수량";
+  document.getElementById("yearBadge").textContent=String(year).slice(-2)+"년도";
+  const maxValue=Math.max.apply(null,inbound.concat(outbound).filter(function(v){return v!=null}).concat([0]));
+  const step=niceStep(maxValue);const yMax=Math.max(step*5,Math.ceil(maxValue/step)*step);
+  const svg=document.getElementById("inoutChart");const width=1000,height=260,left=54,right=982,top=20,bottom=220;
+  const denominator=Math.max(days-1,1);
+  function x(index){return left+(right-left)*index/denominator}
+  function y(value){return bottom-(bottom-top)*(toNumber(value)/Math.max(yMax,1))}
+  const chunks=[];
+  for(let tick=0;tick<=yMax;tick+=step){const py=y(tick);chunks.push('<line x1="'+left+'" y1="'+py+'" x2="'+right+'" y2="'+py+'" stroke="var(--line)" stroke-width="1" vector-effect="non-scaling-stroke"/>');chunks.push('<text x="4" y="'+(py+4)+'" fill="var(--muted)" font-size="12" font-weight="800">'+fmt(tick)+'</text>')}
+  function drawSeries(values,color,label){
+    const points=[];values.forEach(function(value,index){if(value!=null)points.push({index:index,value:value})});
+    if(!points.length)return;
+    chunks.push('<polyline points="'+points.map(function(point){return x(point.index)+','+y(point.value)}).join(' ')+'" fill="none" stroke="'+color+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>');
+    points.forEach(function(point){if(point.value<=0)return;const px=x(point.index),py=y(point.value);chunks.push('<circle cx="'+px+'" cy="'+py+'" r="4" fill="'+color+'" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"><title>'+label+' '+(point.index+1)+'일: '+fmt(point.value)+'ea</title></circle>');chunks.push('<text x="'+px+'" y="'+(py-8)+'" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="900">'+fmt(point.value)+'</text>')})
+  }
+  drawSeries(inbound,"var(--green)","입고");drawSeries(outbound,"var(--amber)","출고");
+  if(maxValue===0)chunks.push('<text x="500" y="125" text-anchor="middle" fill="var(--muted)" font-size="15" font-weight="800">해당 월의 입출고 데이터가 없습니다.</text>');
+  svg.innerHTML=chunks.join("");
+  const indexes=[];[1,5,10,15,20,25,days].forEach(function(day){if(day<=days&&indexes.indexOf(day)<0)indexes.push(day)});document.getElementById("chartAxis").innerHTML=indexes.map(function(day){return"<span>"+day+"</span>"}).join("")
+}
+
+function exportCSV(){
+  if(!filteredRows.length){showToast("내보낼 데이터가 없습니다.");return}
+  const headers=["No","입고일","고객사","품명","품번","재질","입고수량","외관열처리(QT)","출고일","출고수량","검사결과","성적서"];
+  const lines=["\uFEFF"+headers.join(",")];
+  filteredRows.forEach(function(row,index){const values=[index+1,dateOnly(row.receiving_date),row.customer_name,row.item_name,row.item_number,row.material_name,getReceivingQty(row),row.receiving_heat_treatment_qt,dateOnly(row.shipping_date),toNumber(row.shipping_quantity),row.inspection_result,certificateValue(row.inspection_result)];lines.push(values.map(function(value){return'"'+String(value==null?"":value).replace(/"/g,'""')+'"'}).join(","))});
+  const blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="InOut_Management_Log_"+ymd(new Date())+".csv";a.click();URL.revokeObjectURL(url);showToast("CSV 내보내기 완료 · "+filteredRows.length+"건")
+}
+
+function errorMessage(error){if(!error)return"알 수 없는 오류";if(error.code==="42501")return"조회 또는 수정 권한이 없습니다. RLS 정책을 확인해 주세요.";return error.message||error.details||error.hint||String(error)}
+function setStatus(type,message){const dot=document.getElementById("sDot");dot.className="status-dot"+(type==="loading"?" loading":type==="error"?" error":"");document.getElementById("sText").textContent=message}
+function showToast(message){const toast=document.getElementById("toast");toast.textContent=message;toast.classList.add("show");setTimeout(function(){toast.classList.remove("show")},2600)}
+
+async function initialize(){
+  try{
+    setDefaultDates();setStatus("loading","로그인 권한 확인 중...");
+    const allowed=await verifyAccess();if(!allowed)return;
+    document.documentElement.classList.remove("auth-pending");setStatus("loading","Supabase 입출고 데이터를 불러오는 중...");
+    allRows=await fetchAllRows();populateCustomers();applyFilter();setStatus("ok","데이터 로드 완료 · 전체 "+allRows.length+"건")
+  }catch(error){console.error("입출고관리대장 초기화 실패",error);document.documentElement.classList.remove("auth-pending");allRows=[];filteredRows=[];renderTable([]);updateKPI([]);renderMonthlyChart([]);setStatus("error","조회 실패: "+errorMessage(error));showToast("조회 실패: "+errorMessage(error))}
+}
+
+window.addEventListener("load",initialize);
+</script>
+</body>
+</html>
