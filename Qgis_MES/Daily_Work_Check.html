@@ -210,7 +210,7 @@
 <script>
 "use strict";
 
-/* Daily_Work_Check read-delete-only fix version: 2026-07-27-v3 */
+/* Daily_Work_Check work-date input-order version: 2026-07-30-v4 */
 
 /* ══════════════════════════════════════════════
    Supabase 연결 및 테이블 설정
@@ -266,6 +266,7 @@ const NUM_KEYS = [
 const SELECT_COLUMNS = [
   "production_system_id",
   "company_id",
+  "created_at",
   "receiving_date",
   "work_date",
   "customer_name",
@@ -606,9 +607,9 @@ async function searchData() {
         if (material) filtered = filtered.eq("material_name", material);
 
         return filtered
+          /* 작업일 오름차순 → 같은 작업일은 실제 등록 입력 순서 */
           .order("work_date", { ascending:true, nullsFirst:false })
-          .order("customer_name", { ascending:true })
-          .order("item_name", { ascending:true })
+          .order("created_at", { ascending:true, nullsFirst:false })
           .order("production_system_id", { ascending:true });
       }
     );
