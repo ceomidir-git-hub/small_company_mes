@@ -171,7 +171,7 @@
     outline: none;
     font-family: inherit;
     font-size: 12px;
-    background: transparent;
+    background: #FFFFF0;
     resize: none;
     text-align: center;
   }
@@ -182,7 +182,7 @@
   input[type=date] { text-align: left; }
   textarea { min-height: 40px; text-align: left; }
   input[type=text]:focus, input[type=date]:focus, textarea:focus {
-    background: #fff8dc;
+    background: #FFFFF0;
   }
   input.mmdd { letter-spacing: 1px; text-align: center; }
   input.fill-marker { color:#c0392b; font-weight:bold; }
@@ -206,7 +206,7 @@
     flex-direction: column;
     cursor: pointer;
     overflow: hidden;
-    background: #fafafa;
+    background: #FFFFF0;
   }
   .photo-box img { max-width: 100%; max-height: 86mm; object-fit: contain; }
   .photo-box .placeholder { font-size: 11px; color: #999; }
@@ -269,7 +269,7 @@
   <tbody>
     <tr style="height:7.06mm;">
       <td class="label">문서번호</td>
-      <td colspan="2"><input type="text" name="doc_no" value="26-002"></td>
+      <td colspan="2"><input type="text" name="doc_no"></td>
       <td colspan="8" class="title-cell" rowspan="3">개&nbsp;선&nbsp;보&nbsp;고&nbsp;서</td>
       <td class="small-label">일자</td>
       <td class="small-label">작성</td>
@@ -278,19 +278,19 @@
     </tr>
     <tr style="height:7.06mm;">
       <td class="label">작성부서</td>
-      <td colspan="2"><input type="text" name="write_dept" value="개발품질구매"></td>
+      <td colspan="2"><input type="text" name="write_dept"></td>
       <td class="small-label">전</td>
-      <td><input type="date" name="approve_before_write" value="2026-01-17"></td>
-      <td><input type="text" class="sign-placeholder" name="approve_before_review" placeholder="(사인1)"></td>
-      <td><input type="text" class="mmdd" name="approve_before_approve" value="01/17" maxlength="5" pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])"></td>
+      <td><input type="date" name="approve_before_write"></td>
+      <td><input type="text" class="sign-placeholder" name="approve_before_review"></td>
+      <td><input type="text" class="mmdd" name="approve_before_approve" maxlength="5" pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])"></td>
     </tr>
     <tr style="height:7.06mm;">
       <td class="label">작 성 자</td>
-      <td colspan="2"><input type="text" name="writer" value="김종렬"></td>
+      <td colspan="2"><input type="text" name="writer"></td>
       <td class="small-label">후</td>
-      <td><input type="date" name="approve_after_write" value="2026-01-19"></td>
-      <td><input type="text" class="sign-placeholder" name="approve_after_review" placeholder="(사인2)"></td>
-      <td><input type="text" class="mmdd" name="approve_after_approve" value="01/19" maxlength="5" pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])"></td>
+      <td><input type="date" name="approve_after_write"></td>
+      <td><input type="text" class="sign-placeholder" name="approve_after_review"></td>
+      <td><input type="text" class="mmdd" name="approve_after_approve" maxlength="5" pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])"></td>
     </tr>
   </tbody>
 </table>
@@ -316,11 +316,11 @@
     <!-- 구분 / 항목 / 주제 -->
     <tr style="height:7.06mm;">
       <td class="label">구&nbsp;&nbsp;분</td>
-      <td colspan="2"><input type="text" name="category" value="환경"></td>
+      <td colspan="2"><input type="text" name="category"></td>
       <td class="label">항&nbsp;&nbsp;목</td>
-      <td colspan="3"><input type="text" name="item" value="정리"></td>
+      <td colspan="3"><input type="text" name="item"></td>
       <td class="label">주&nbsp;&nbsp;제</td>
-      <td colspan="7"><input type="text" name="subject" value="환경 정리 정돈 실시"></td>
+      <td colspan="7"><input type="text" name="subject"></td>
     </tr>
 
     <!-- 개선전/개선후 라벨 -->
@@ -347,33 +347,33 @@
     <!-- 발견일자 / 장소 / 개선일자 / 개선자 -->
     <tr style="height:7.78mm;">
       <td class="label">발 견 일 자</td>
-      <td colspan="2"><input type="date" name="found_date" value="2026-01-17"></td>
+      <td colspan="2"><input type="date" name="found_date"></td>
       <td class="label">장소(공정명)</td>
-      <td colspan="3"><input type="text" name="location" value="현장사무실 앞"></td>
+      <td colspan="3"><input type="text" name="location"></td>
       <td class="label">개선일자</td>
-      <td colspan="3"><input type="date" name="improve_date" value="2026-01-19"></td>
+      <td colspan="3"><input type="date" name="improve_date"></td>
       <td class="label">개 선 자</td>
-      <td colspan="3"><input type="text" name="improver" value="최석현"></td>
+      <td colspan="3"><input type="text" name="improver"></td>
     </tr>
 
     <!-- 개선요구일 / 개선부서 / 확인자 / 남은과제 -->
     <tr style="height:7.78mm;">
       <td class="label">개선요구일</td>
-      <td colspan="2"><input type="date" name="request_date" value="2026-01-19"></td>
+      <td colspan="2"><input type="date" name="request_date"></td>
       <td class="label">개 선 부 서</td>
-      <td colspan="3"><input type="text" name="improve_dept" value="개발품질구매"></td>
+      <td colspan="3"><input type="text" name="improve_dept"></td>
       <td class="label">확 인 자</td>
-      <td colspan="3"><input type="text" name="confirmer" value="최석현"></td>
+      <td colspan="3"><input type="text" name="confirmer"></td>
       <td class="label">남은 과제</td>
-      <td colspan="3"><input type="text" class="fill-marker" name="remaining_task" value="마"></td>
+      <td colspan="3"><input type="text" class="fill-marker" name="remaining_task"></td>
     </tr>
 
     <!-- 문제점및개선안 / 개선실적및개선효과 / 사후관리 -->
     <tr style="height:7.06mm;">
       <td class="label" rowspan="3">문 제 점<br>및<br>개 선 안</td>
-      <td colspan="6" rowspan="3"><textarea name="problem_plan">게시판앞 정리 정돈 미흡</textarea></td>
+      <td colspan="6" rowspan="3"><textarea name="problem_plan"></textarea></td>
       <td class="label" rowspan="3">개선실적<br>및<br>개선효과</td>
-      <td colspan="4" rowspan="3"><textarea name="result_effect">게시판 앞 정리정돈 완료</textarea></td>
+      <td colspan="4" rowspan="3"><textarea name="result_effect"></textarea></td>
       <td colspan="3" class="label">사후관리</td>
     </tr>
     <tr style="height:7.78mm;">
