@@ -350,19 +350,191 @@
       th, td { padding: 8px 7px; }
     }
 
+    /* =========================================================
+       PDF 출력 전용 설정
+       - 브라우저 인쇄 엔진을 사용하므로 문자/선은 벡터로 출력됨
+       - A4 가로 1장 기준으로 열 너비와 글자 크기를 별도 지정
+       ========================================================= */
     @media print {
-      @page { size: A4 landscape; margin: 8mm; }
-      body { background: #ffffff; font-size: 9px; }
-      .page { padding: 0; }
-      h1 { margin-bottom: 10px; font-size: 16px; }
-      .search-panel, .report-actions, .manage-column, .modal-backdrop, .loading, .notice { display: none !important; }
-      .report-panel { padding: 0; border: 0; }
-      .report-header { min-height: auto; margin-bottom: 10px; }
-      .list-head { margin-bottom: 6px; }
-      .table-wrap { overflow: visible; }
-      table { min-width: 0; }
-      th, td { padding: 4px 3px; }
-      thead th { position: static; }
+      @page {
+        size: A4 landscape;
+        margin: 7mm;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: "Malgun Gothic", "Noto Sans KR", Arial, sans-serif;
+        font-size: 10pt;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .search-panel,
+      .report-actions,
+      .manage-column,
+      col.manage,
+      .modal-backdrop,
+      .loading,
+      .notice {
+        display: none !important;
+      }
+
+      .report-panel {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: #ffffff !important;
+      }
+
+      .report-header {
+        min-height: 0;
+        margin: 0 0 3.5mm;
+        padding: 0;
+        display: block;
+      }
+
+      .report-header h1 {
+        margin: 0;
+        padding: 0;
+        color: #000000 !important;
+        text-align: center;
+        font-size: 18pt;
+        line-height: 1.2;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .list-head {
+        display: block;
+        margin: 0 0 2.2mm;
+        padding: 0;
+      }
+
+      .list-title {
+        margin: 0;
+        color: #000000 !important;
+        font-size: 11.5pt;
+        line-height: 1.2;
+        font-weight: 800;
+      }
+
+      .count {
+        color: #000000 !important;
+        font-size: 10pt;
+        font-weight: 700;
+      }
+
+      .table-wrap {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        border: 0.35mm solid #000000;
+        background: #ffffff !important;
+      }
+
+      table {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff !important;
+      }
+
+      col.no             { width: 5%; }
+      col.company-number { width: 10%; }
+      col.customer       { width: 15%; }
+      col.boss           { width: 9%; }
+      col.manager        { width: 9%; }
+      col.phone          { width: 13%; }
+      col.address        { width: 31%; }
+      col.active         { width: 8%; }
+
+      thead {
+        display: table-header-group;
+      }
+
+      tbody {
+        display: table-row-group;
+      }
+
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      th,
+      td {
+        height: 7mm;
+        padding: 1.2mm 1.3mm;
+        border-right: 0.25mm solid #6b7280;
+        border-bottom: 0.25mm solid #6b7280;
+        color: #000000 !important;
+        background: #ffffff !important;
+        font-size: 9.5pt;
+        line-height: 1.15;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: clip;
+      }
+
+      th {
+        position: static !important;
+        height: 7.5mm;
+        background: #f3f4f6 !important;
+        font-size: 10pt;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      td.customer-name,
+      td.address {
+        text-align: left;
+      }
+
+      td.address {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: keep-all;
+      }
+
+      tbody tr:nth-child(even) td {
+        background: #ffffff !important;
+      }
+
+      .status {
+        min-width: 0;
+        padding: 0;
+        border-radius: 0;
+        color: #000000 !important;
+        background: transparent !important;
+        font-size: 9.5pt;
+        font-weight: 800;
+      }
+
+      th:last-child,
+      td:last-child {
+        border-right: 0;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
     }
   </style>
 </head>
@@ -836,9 +1008,34 @@
       showNotice("고객사가 삭제되었습니다.", "success");
     }
 
+    function getPdfFileName() {
+      const now = new Date();
+      const yyyy = String(now.getFullYear());
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      return `Customer_Managerment_Log_${yyyy}${mm}${dd}`;
+    }
+
     $("btnPdf").addEventListener("click", () => {
+      const originalTitle = document.title;
+      const pdfTitle = getPdfFileName();
+
+      // 브라우저 PDF 저장 시 기본 파일명이 아래 형식으로 제안되도록 제목을 임시 변경한다.
+      document.title = pdfTitle;
       showNotice("PDF 변환 창을 열었습니다.", "success");
+
+      const restoreTitle = () => {
+        document.title = originalTitle;
+        window.removeEventListener("afterprint", restoreTitle);
+      };
+
+      window.addEventListener("afterprint", restoreTitle);
       window.print();
+
+      // 일부 브라우저에서 afterprint가 발생하지 않는 경우를 대비한다.
+      window.setTimeout(() => {
+        if (document.title === pdfTitle) document.title = originalTitle;
+      }, 1500);
     });
 
     $("btnSearch").addEventListener("click", () => {
