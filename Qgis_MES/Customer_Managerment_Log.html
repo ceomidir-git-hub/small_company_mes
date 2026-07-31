@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고객관리대장</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --line: #9ca3af;
+      --line-dark: #111827;
+      --text: #111827;
+      --muted: #6b7280;
+      --head: #f3f4f6;
+      --soft: #fafafa;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --green: #059669;
+      --green-dark: #047857;
+      --red: #dc2626;
+      --red-dark: #b91c1c;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #ffffff;
+      color: var(--text);
+      font-family: Arial, "Noto Sans KR", "Malgun Gothic", sans-serif;
+      font-size: 15px;
+    }
+
+    html.auth-pending body { visibility: hidden; }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+
+    .page {
+      width: 100%;
+      padding: 24px 18px 32px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      text-align: center;
+      font-size: 24px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
+    .search-panel {
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+    }
+
+    .search-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid #9ca3af;
+      border-radius: 3px;
+      padding: 8px 10px;
+      background: #ffffff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, .12);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn {
+      min-height: 40px;
+      padding: 8px 18px;
+      border: 1px solid #9ca3af;
+      border-radius: 3px;
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .btn:hover { background: #f3f4f6; }
+    .btn.primary { border-color: var(--blue); background: var(--blue); color: #ffffff; }
+    .btn.primary:hover { background: var(--blue-dark); }
+    .btn.success { border-color: var(--green); background: var(--green); color: #ffffff; }
+    .btn.success:hover { background: var(--green-dark); }
+    .btn.danger { border-color: var(--red); background: var(--red); color: #ffffff; }
+    .btn.danger:hover { background: var(--red-dark); }
+    .btn.small { min-height: 32px; padding: 5px 11px; font-size: 13px; }
+    .btn.outline-blue { border-color: #60a5fa; color: #1d4ed8; background: #ffffff; }
+    .btn.outline-red { border-color: #f87171; color: #dc2626; background: #ffffff; }
+
+    .list-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 10px;
+    }
+
+    .list-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .count { color: var(--muted); font-size: 14px; font-weight: 700; }
+
+    .notice {
+      display: none;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .notice.show { display: block; }
+    .notice.success { color: #065f46; border-color: #6ee7b7; background: #ecfdf5; }
+    .notice.error { color: #991b1b; border-color: #fca5a5; background: #fef2f2; }
+    .notice.info { color: #1e40af; border-color: #93c5fd; background: #eff6ff; }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line-dark);
+      background: #ffffff;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1130px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: #ffffff;
+    }
+
+    col.no { width: 58px; }
+    col.company-number { width: 115px; }
+    col.customer { width: 170px; }
+    col.boss { width: 100px; }
+    col.manager { width: 100px; }
+    col.phone { width: 140px; }
+    col.address { width: 330px; }
+    col.active { width: 85px; }
+    col.manage { width: 145px; }
+
+    th, td {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 9px 8px;
+      text-align: center;
+      vertical-align: middle;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    th:last-child, td:last-child { border-right: 0; }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--head);
+      font-weight: 800;
+    }
+
+    tbody tr:nth-child(even) td { background: var(--soft); }
+    td.customer-name, td.address { text-align: left; }
+    td.address { overflow: hidden; text-overflow: ellipsis; }
+
+    .status {
+      display: inline-block;
+      min-width: 46px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .status.on { color: #047857; background: #d1fae5; }
+    .status.off { color: #991b1b; background: #fee2e2; }
+
+    .empty { height: 110px; color: var(--muted); font-weight: 700; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(17, 24, 39, .48);
+    }
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(560px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
+      border: 1px solid #4b5563;
+      background: #ffffff;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, .24);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 18px;
+      border-bottom: 1px solid #d1d5db;
+      background: var(--head);
+    }
+
+    .modal-header h2 { margin: 0; font-size: 19px; }
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      background: transparent;
+      font-size: 25px;
+      line-height: 1;
+      color: #4b5563;
+    }
+
+    .modal-body { padding: 18px; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .modal-grid .full { grid-column: 1 / -1; }
+    .required::after { content: " *"; color: var(--red); }
+    textarea { min-height: 80px !important; resize: vertical; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 18px;
+      border-top: 1px solid #d1d5db;
+      background: #fafafa;
+    }
+
+    .confirm-modal { width: min(430px, 100%); }
+    .confirm-message { margin: 0; line-height: 1.7; white-space: pre-line; }
+
+    .loading {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, .72);
+    }
+    .loading.show { display: flex; }
+    .loading-box {
+      padding: 16px 22px;
+      border: 1px solid #9ca3af;
+      background: #ffffff;
+      font-weight: 800;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+    }
+
+    @media (max-width: 900px) {
+      .search-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 16px 10px 24px; }
+      h1 { margin-bottom: 14px; font-size: 20px; }
+      body { font-size: 14px; }
+      .search-grid { grid-template-columns: 1fr; }
+      .toolbar, .list-head { align-items: stretch; flex-direction: column; }
+      .button-group { width: 100%; }
+      .button-group .btn { flex: 1 1 auto; }
+      .modal-grid { grid-template-columns: 1fr; }
+      .modal-grid .full { grid-column: auto; }
+      th, td { padding: 8px 7px; }
+    }
+
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      body { background: #ffffff; font-size: 9px; }
+      .page { padding: 0; }
+      h1 { margin-bottom: 10px; font-size: 16px; }
+      .search-panel, .manage-column, .modal-backdrop, .loading, .notice { display: none !important; }
+      .table-wrap { overflow: visible; }
+      table { min-width: 0; }
+      th, td { padding: 4px 3px; }
+      thead th { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>고객관리대장</h1>
+
+    <section class="search-panel" aria-label="고객사 조회 조건">
+      <div class="search-grid">
+        <div class="field">
+          <label for="searchCompanyNumber">고객관리번호</label>
+          <input id="searchCompanyNumber" type="text" placeholder="예: A-001" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="searchCustomerName">고객사</label>
+          <input id="searchCustomerName" type="text" placeholder="고객사명 입력" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="searchManager">담당자</label>
+          <input id="searchManager" type="text" placeholder="담당자명 입력" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="searchActive">사용여부</label>
+          <select id="searchActive">
+            <option value="all">전체</option>
+            <option value="true">사용</option>
+            <option value="false">중지</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="button-group">
+          <button class="btn primary" type="button" id="btnSearch">조회</button>
+          <button class="btn" type="button" id="btnReset">초기화</button>
+        </div>
+        <button class="btn success" type="button" id="btnNew">신규등록</button>
+      </div>
+    </section>
+
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+    <section aria-label="고객사 목록">
+      <div class="list-head">
+        <h2 class="list-title">고객 목록 <span id="countLabel" class="count">(0건)</span></h2>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <colgroup>
+            <col class="no">
+            <col class="company-number">
+            <col class="customer">
+            <col class="boss">
+            <col class="manager">
+            <col class="phone">
+            <col class="address">
+            <col class="active">
+            <col class="manage">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>번호</th>
+              <th>고객관리번호</th>
+              <th>고객사</th>
+              <th>대표자</th>
+              <th>담당자</th>
+              <th>전화번호</th>
+              <th>주소</th>
+              <th>사용여부</th>
+              <th class="manage-column">관리</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td class="empty" colspan="9">고객사 데이터를 불러오는 중입니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="editModalBackdrop" class="modal-backdrop" role="presentation">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <div class="modal-header">
+        <h2 id="editModalTitle">고객사 신규등록</h2>
+        <button type="button" class="modal-close" id="btnModalClose" aria-label="팝업 닫기">×</button>
+      </div>
+
+      <form id="customerForm">
+        <div class="modal-body">
+          <div class="modal-grid">
+            <div class="field">
+              <label class="required" for="companyNumber">고객관리번호</label>
+              <input id="companyNumber" type="text" maxlength="30" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label for="isActive">사용여부</label>
+              <select id="isActive">
+                <option value="true">사용</option>
+                <option value="false">중지</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label class="required" for="customerName">고객사</label>
+              <input id="customerName" type="text" maxlength="100" autocomplete="off" required>
+            </div>
+            <div class="field">
+              <label for="boss">대표자</label>
+              <input id="boss" type="text" maxlength="50" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="manager">담당자</label>
+              <input id="manager" type="text" maxlength="50" autocomplete="off">
+            </div>
+            <div class="field full">
+              <label for="phone">전화번호</label>
+              <input id="phone" type="tel" maxlength="50" autocomplete="off">
+            </div>
+            <div class="field full">
+              <label for="address">주소</label>
+              <textarea id="address" maxlength="300"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn" type="button" id="btnModalCancel">취소</button>
+          <button class="btn primary" type="submit" id="btnSave">등록</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div id="deleteModalBackdrop" class="modal-backdrop" role="presentation">
+    <section class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <div class="modal-header">
+        <h2 id="deleteModalTitle">고객사 삭제 확인</h2>
+        <button type="button" class="modal-close" id="btnDeleteModalClose" aria-label="팝업 닫기">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteMessage" class="confirm-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" id="btnDeleteCancel">취소</button>
+        <button class="btn danger" type="button" id="btnDeleteConfirm">삭제</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="loadingOverlay" class="loading" aria-hidden="true">
+    <div id="loadingText" class="loading-box">처리 중입니다.</div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+    const QGIS_COMPANY_ID = "17f2ff71-20db-49ff-b682-279989776817";
+    const LOGIN_PAGE_URL = "../index.html";
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+
+    let currentProfile = null;
+    let allRows = [];
+    let visibleRows = [];
+    let modalMode = "new";
+    let selectedCustomerId = null;
+    let pendingDeleteId = null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function normalizeText(value) {
+      return String(value ?? "").trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function formatDbError(error) {
+      if (!error) return "알 수 없는 오류입니다.";
+      if (error.code === "23505") return "같은 회사에 같은 고객관리번호가 이미 등록되어 있습니다.";
+      if (error.code === "23503") return "품목 등 다른 업무 데이터에서 사용 중이므로 삭제할 수 없습니다.";
+      if (error.code === "42501") return "이 작업에 대한 권한이 없습니다. Supabase RLS 정책을 확인해 주세요.";
+      return error.message || String(error);
+    }
+
+    function showNotice(message, type = "info") {
+      const notice = $("notice");
+      notice.textContent = message;
+      notice.className = "notice show " + type;
+    }
+
+    function clearNotice() {
+      const notice = $("notice");
+      notice.textContent = "";
+      notice.className = "notice";
+    }
+
+    function showLoading(show, message = "처리 중입니다.") {
+      $("loadingText").textContent = message;
+      $("loadingOverlay").classList.toggle("show", Boolean(show));
+      $("loadingOverlay").setAttribute("aria-hidden", show ? "false" : "true");
+    }
+
+    async function verifyQgisAccess() {
+      const { data: userData, error: userError } = await sb.auth.getUser();
+      const user = userData?.user;
+
+      if (userError || !user) {
+        window.location.replace(LOGIN_PAGE_URL);
+        return false;
+      }
+
+      const { data: profile, error: profileError } = await sb
+        .from("profiles")
+        .select("company_id,is_active")
+        .eq("user_id", user.id)
+        .single();
+
+      if (
+        profileError ||
+        !profile ||
+        profile.is_active !== true ||
+        profile.company_id !== QGIS_COMPANY_ID
+      ) {
+        console.error("QGIS 접근 권한 확인 실패:", profileError);
+        await sb.auth.signOut({ scope: "local" });
+        window.location.replace(LOGIN_PAGE_URL);
+        return false;
+      }
+
+      currentProfile = profile;
+      document.documentElement.classList.remove("auth-pending");
+      return true;
+    }
+
+    async function loadRows() {
+      if (!currentProfile) return;
+
+      clearNotice();
+      showLoading(true, "고객사 목록을 불러오는 중입니다.");
+
+      const { data, error } = await sb
+        .from("customers")
+        .select("customer_system_id,company_number,customer_name,boss,manager,phone,address,is_active")
+        .eq("company_id", currentProfile.company_id)
+        .order("company_number", { ascending: true });
+
+      showLoading(false);
+
+      if (error) {
+        allRows = [];
+        visibleRows = [];
+        renderRows();
+        showNotice("조회 실패: " + formatDbError(error), "error");
+        return;
+      }
+
+      allRows = data || [];
+      applySearch();
+    }
+
+    function applySearch() {
+      const companyNumber = normalizeText($("searchCompanyNumber").value).toLowerCase();
+      const customerName = normalizeText($("searchCustomerName").value).toLowerCase();
+      const manager = normalizeText($("searchManager").value).toLowerCase();
+      const active = $("searchActive").value;
+
+      visibleRows = allRows.filter((row) => {
+        const matchCompanyNumber = !companyNumber || normalizeText(row.company_number).toLowerCase().includes(companyNumber);
+        const matchCustomerName = !customerName || normalizeText(row.customer_name).toLowerCase().includes(customerName);
+        const matchManager = !manager || normalizeText(row.manager).toLowerCase().includes(manager);
+        const matchActive = active === "all" || String(row.is_active !== false) === active;
+        return matchCompanyNumber && matchCustomerName && matchManager && matchActive;
+      });
+
+      renderRows();
+    }
+
+    function renderRows() {
+      const body = $("tableBody");
+      $("countLabel").textContent = `(${visibleRows.length}건)`;
+
+      if (!visibleRows.length) {
+        body.innerHTML = '<tr><td class="empty" colspan="9">표시할 고객사가 없습니다.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = visibleRows.map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(row.company_number)}</td>
+          <td class="customer-name">${escapeHtml(row.customer_name)}</td>
+          <td>${escapeHtml(row.boss)}</td>
+          <td>${escapeHtml(row.manager)}</td>
+          <td>${escapeHtml(row.phone)}</td>
+          <td class="address" title="${escapeHtml(row.address)}">${escapeHtml(row.address)}</td>
+          <td><span class="status ${row.is_active !== false ? "on" : "off"}">${row.is_active !== false ? "사용" : "중지"}</span></td>
+          <td class="manage-column">
+            <button class="btn small outline-blue" type="button" data-action="edit" data-id="${escapeHtml(row.customer_system_id)}">수정</button>
+            <button class="btn small outline-red" type="button" data-action="delete" data-id="${escapeHtml(row.customer_system_id)}">삭제</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function resetSearch() {
+      $("searchCompanyNumber").value = "";
+      $("searchCustomerName").value = "";
+      $("searchManager").value = "";
+      $("searchActive").value = "all";
+      visibleRows = [...allRows];
+      renderRows();
+      clearNotice();
+    }
+
+    function resetForm() {
+      $("customerForm").reset();
+      $("isActive").value = "true";
+      selectedCustomerId = null;
+    }
+
+    function openNewModal() {
+      modalMode = "new";
+      resetForm();
+      $("editModalTitle").textContent = "고객사 신규등록";
+      $("btnSave").textContent = "등록";
+      $("editModalBackdrop").classList.add("show");
+      document.body.style.overflow = "hidden";
+      setTimeout(() => $("companyNumber").focus(), 0);
+    }
+
+    function openEditModal(id) {
+      const row = allRows.find((item) => item.customer_system_id === id);
+      if (!row) {
+        showNotice("수정할 고객사 정보를 찾을 수 없습니다.", "error");
+        return;
+      }
+
+      modalMode = "edit";
+      selectedCustomerId = id;
+      $("companyNumber").value = row.company_number || "";
+      $("customerName").value = row.customer_name || "";
+      $("boss").value = row.boss || "";
+      $("manager").value = row.manager || "";
+      $("phone").value = row.phone || "";
+      $("address").value = row.address || "";
+      $("isActive").value = String(row.is_active !== false);
+      $("editModalTitle").textContent = "고객사 정보 수정";
+      $("btnSave").textContent = "저장";
+      $("editModalBackdrop").classList.add("show");
+      document.body.style.overflow = "hidden";
+      setTimeout(() => $("customerName").focus(), 0);
+    }
+
+    function closeEditModal() {
+      $("editModalBackdrop").classList.remove("show");
+      document.body.style.overflow = "";
+      resetForm();
+    }
+
+    async function saveCustomer(event) {
+      event.preventDefault();
+      if (!currentProfile) return;
+
+      const payload = {
+        company_id: currentProfile.company_id,
+        company_number: normalizeText($("companyNumber").value),
+        customer_name: normalizeText($("customerName").value),
+        boss: normalizeText($("boss").value) || null,
+        manager: normalizeText($("manager").value) || null,
+        phone: normalizeText($("phone").value) || null,
+        address: normalizeText($("address").value) || null,
+        is_active: $("isActive").value === "true"
+      };
+
+      if (!payload.company_number || !payload.customer_name) {
+        alert("고객관리번호와 고객사를 입력해 주세요.");
+        return;
+      }
+
+      showLoading(true, modalMode === "new" ? "고객사를 등록하는 중입니다." : "고객사 정보를 수정하는 중입니다.");
+
+      let result;
+      if (modalMode === "new") {
+        result = await sb.from("customers").insert(payload);
+      } else {
+        result = await sb
+          .from("customers")
+          .update(payload)
+          .eq("customer_system_id", selectedCustomerId)
+          .eq("company_id", currentProfile.company_id);
+      }
+
+      showLoading(false);
+
+      if (result.error) {
+        alert("저장 실패: " + formatDbError(result.error));
+        return;
+      }
+
+      const message = modalMode === "new"
+        ? "고객사가 등록되었습니다."
+        : "고객사 정보가 수정되었습니다.";
+
+      closeEditModal();
+      await loadRows();
+      showNotice(message, "success");
+    }
+
+    function openDeleteModal(id) {
+      const row = allRows.find((item) => item.customer_system_id === id);
+      if (!row) {
+        showNotice("삭제할 고객사 정보를 찾을 수 없습니다.", "error");
+        return;
+      }
+
+      pendingDeleteId = id;
+      $("deleteMessage").textContent =
+        `선택한 고객사를 삭제하시겠습니까?\n\n고객관리번호: ${row.company_number || ""}\n고객사: ${row.customer_name || ""}\n\n품목 등 다른 업무 데이터에서 사용 중이면 삭제되지 않습니다.`;
+      $("deleteModalBackdrop").classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeDeleteModal() {
+      $("deleteModalBackdrop").classList.remove("show");
+      document.body.style.overflow = "";
+      pendingDeleteId = null;
+    }
+
+    async function deleteCustomer() {
+      if (!pendingDeleteId || !currentProfile) return;
+
+      const deleteId = pendingDeleteId;
+      showLoading(true, "고객사를 삭제하는 중입니다.");
+
+      const { error } = await sb
+        .from("customers")
+        .delete()
+        .eq("customer_system_id", deleteId)
+        .eq("company_id", currentProfile.company_id);
+
+      showLoading(false);
+
+      if (error) {
+        alert("삭제 실패: " + formatDbError(error));
+        return;
+      }
+
+      closeDeleteModal();
+      await loadRows();
+      showNotice("고객사가 삭제되었습니다.", "success");
+    }
+
+    $("btnSearch").addEventListener("click", () => {
+      clearNotice();
+      applySearch();
+      showNotice(`조회가 완료되었습니다. ${visibleRows.length}건이 표시됩니다.`, "info");
+    });
+
+    $("btnReset").addEventListener("click", resetSearch);
+    $("btnNew").addEventListener("click", openNewModal);
+    $("customerForm").addEventListener("submit", saveCustomer);
+    $("btnModalClose").addEventListener("click", closeEditModal);
+    $("btnModalCancel").addEventListener("click", closeEditModal);
+    $("btnDeleteModalClose").addEventListener("click", closeDeleteModal);
+    $("btnDeleteCancel").addEventListener("click", closeDeleteModal);
+    $("btnDeleteConfirm").addEventListener("click", deleteCustomer);
+
+    $("tableBody").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+
+      const id = button.dataset.id;
+      if (button.dataset.action === "edit") openEditModal(id);
+      if (button.dataset.action === "delete") openDeleteModal(id);
+    });
+
+    ["searchCompanyNumber", "searchCustomerName", "searchManager"].forEach((id) => {
+      $(id).addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          $("btnSearch").click();
+        }
+      });
+    });
+
+    $("editModalBackdrop").addEventListener("click", (event) => {
+      if (event.target === $("editModalBackdrop")) closeEditModal();
+    });
+
+    $("deleteModalBackdrop").addEventListener("click", (event) => {
+      if (event.target === $("deleteModalBackdrop")) closeDeleteModal();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if ($("deleteModalBackdrop").classList.contains("show")) closeDeleteModal();
+      else if ($("editModalBackdrop").classList.contains("show")) closeEditModal();
+    });
+
+    sb.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") window.location.replace(LOGIN_PAGE_URL);
+    });
+
+    async function initializePage() {
+      try {
+        const allowed = await verifyQgisAccess();
+        if (!allowed) return;
+        await loadRows();
+      } catch (error) {
+        document.documentElement.classList.remove("auth-pending");
+        showNotice("화면 초기화 오류: " + formatDbError(error), "error");
+      }
+    }
+
+    window.addEventListener("load", initializePage);
+  </script>
+</body>
+</html>
