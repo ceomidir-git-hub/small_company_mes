@@ -16,7 +16,7 @@ button{cursor:pointer}
 button:disabled{cursor:not-allowed;opacity:.55}
 
 .topbar{
-  width:min(1100px,100%);margin:0 auto 12px;padding:10px 12px;
+  width:210mm;max-width:100%;margin:0 auto 12px;padding:10px 12px;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   background:#172235;color:#fff;border-radius:10px;box-shadow:0 7px 20px rgba(15,23,42,.14)
 }
@@ -29,7 +29,7 @@ button:disabled{cursor:not-allowed;opacity:.55}
 .top-btn:hover{border-color:#ff8a5c}
 .top-btn.logout:hover{border-color:#ff6b6b;color:#ffb0b0}
 
-.status-wrap{width:min(1100px,100%);margin:0 auto 9px;min-height:34px;padding:7px 11px;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #d4dce6;border-radius:8px;background:#fff;font-size:12px}
+.status-wrap{width:210mm;max-width:100%;margin:0 auto 9px;min-height:34px;padding:7px 11px;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #d4dce6;border-radius:8px;background:#fff;font-size:12px}
 .status-text{color:#667085;font-weight:700}
 .status-text.error{color:#b42318}
 .status-text.success{color:#067647}
@@ -92,7 +92,7 @@ tr.save-error td{background:#fff0f0}
   </div>
   <div class="top-actions">
     <button type="button" class="top-btn" onclick="goMain()">메인메뉴</button>
-    <button type="button" class="top-btn" onclick="loadEquipmentList()">새로고침</button>
+    <button type="button" class="top-btn" id="pdfBtn" onclick="exportPdf()">PDF 다운로드</button>
     <button type="button" class="top-btn logout" onclick="logout()">로그아웃</button>
   </div>
 </header>
@@ -107,9 +107,6 @@ tr.save-error td{background:#fff0f0}
     <div class="title">제 조 설 비 등 록 대 장</div>
 
     <div class="info">
-      <button type="button" class="action-btn" onclick="loadEquipmentList()">조회</button>
-      <button type="button" class="action-btn save-btn" id="saveBtn" onclick="saveAllEquipment()">전체 저장</button>
-      <button type="button" class="action-btn pdf-btn" id="pdfBtn" onclick="exportPdf()">PDF 다운로드</button>
       <b>* 작성일&nbsp;</b>
       <input type="date" id="writeDate">
     </div>
@@ -265,8 +262,6 @@ function renderEquipmentTable(rows){
 
 async function loadEquipmentList(){
   if(!currentProfile)return;
-  const saveBtn=document.getElementById("saveBtn");
-  saveBtn.disabled=true;
   setLoadStatus("Supabase에서 제조설비를 불러오는 중입니다.");
 
   const result=await sb
@@ -274,8 +269,6 @@ async function loadEquipmentList(){
     .select("equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_date,special_notes,is_active")
     .eq("company_id",currentProfile.company_id)
     .order("equipment_number",{ascending:true});
-
-  saveBtn.disabled=false;
 
   if(result.error){
     equipmentRows=[];
