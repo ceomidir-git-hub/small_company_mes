@@ -50,6 +50,9 @@
   .kpi .kpi-value .unit{font-size:0.95rem;color:var(--muted);font-weight:500;}
   .kpi.accent .kpi-value{color:var(--accent);}
   .kpi .kpi-foot{margin-top:10px;font-size:0.74rem;color:#5C6878;font-family:var(--font-mono);}
+  .kpi-link{color:inherit;text-decoration:none;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;}
+  .kpi-link:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 14px 30px rgba(0,0,0,.16);}
+  .kpi-link:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
   .flow-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 18px;display:flex;flex-direction:column;}
   .flow-card h3{font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:4px;}
   .flow-card .flow-sub{font-size:0.78rem;color:var(--muted);margin-bottom:18px;font-family:var(--font-mono);}
@@ -370,7 +373,7 @@
     <!-- 2. 설비관리 -->
     <div class="nav-item" id="m-equip" onclick="toggleMenu('equip')"><div class="nav-left"><span class="icon">⚙️</span> 설비관리</div><span class="chevron">▼</span></div>
     <div class="sub-menu" id="sub-equip">
-      <a class="sub-item" href="Machine_operation_Log.html">설비운영관리대장</a>
+      <a class="sub-item" href="Machine_operation_Log.html">제조설비 등록대장</a>
       <a class="sub-item" href="Machine_Repair_Status.html">설비수리현황</a>
       <a class="sub-item" href="Inspection_Tool_Status.html">검사장비현황</a>
       <a class="sub-item" href="Operating_Rate.html">설비가동률</a>
@@ -470,11 +473,11 @@
             <div class="kpi-value"><span id="kpi-production">-</span><span class="unit">개</span></div>
             <div class="kpi-foot">전 라인 합산 (양품+불량 기준)</div>
           </div>
-          <div class="kpi">
+          <a class="kpi kpi-link" href="Machine_operation_Log.html" target="_blank" rel="noopener noreferrer" aria-label="제조설비 등록대장 열기" title="제조설비 등록대장 열기">
             <div class="kpi-label"><span class="ico">⚡</span> 오늘 작동설비</div>
             <div class="kpi-value" id="kpi-equipment" style="font-size:1.35rem;">-</div>
             <div class="kpi-foot"><span id="kpi-equipment-status" class="status-pill"><span class="dot"></span> -</span></div>
-          </div>
+          </a>
           <div class="kpi">
             <div class="kpi-label"><span class="ico">🚚</span> 오늘 출하건수</div>
             <div class="kpi-value"><span id="kpi-shipment">-</span><span class="unit">건</span></div>
@@ -543,8 +546,8 @@
             <a class="doc-card" href="./Work_Condition_Management.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">⚙️</div><div class="doc-preview"></div><div class="doc-title">작업조건관리대장</div><div class="doc-meta">WORK CONDITION</div></a>
             <a class="doc-card" href="Operating_Rate_Graph.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">⏱️</div><div class="doc-preview"></div><div class="doc-title">설비가동률(G)</div><div class="doc-meta">OPERATING RATE GRAPH</div></a>
             <a class="doc-card" href="Machine_Repair_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🔧</div><div class="doc-preview"></div><div class="doc-title">설비수리현황</div><div class="doc-meta">REPAIR STATUS</div></a>
-            <!-- ── 2026-07-04 순서 변경: 설비운영관리대장 → 검사장비현황 ── -->
-            <a class="doc-card" href="Machine_operation_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🏭</div><div class="doc-preview"></div><div class="doc-title">설비운영관리대장</div><div class="doc-meta">MACHINE OP. LOG</div></a>
+            <!-- ── 2026-07-04 순서 변경: 제조설비 등록대장 → 검사장비현황 ── -->
+            <a class="doc-card" href="Machine_operation_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🏭</div><div class="doc-preview"></div><div class="doc-title">제조설비 등록대장</div><div class="doc-meta">MANUFACTURING EQUIPMENT</div></a>
             <a class="doc-card" href="Inspection_Tool_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🧰</div><div class="doc-preview"></div><div class="doc-title">검사장비현황</div><div class="doc-meta">EQUIP. STATUS</div></a>
             <a class="doc-card" href="Only_InspectionSheet_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📋</div><div class="doc-preview"></div><div class="doc-title">검사성적서관리현황</div><div class="doc-meta">INSPECTION SHEET</div></a>
             <a class="doc-card" href="Inspection_Report.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📝</div><div class="doc-preview"></div><div class="doc-title">검사성적서보고서</div><div class="doc-meta">INSPECTION REPORT</div></a>
