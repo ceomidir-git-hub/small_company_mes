@@ -124,7 +124,7 @@ tr.save-error td{background:#fff0f0}
           <th style="width:55px">대수</th>
           <th style="width:90px">제작사</th>
           <th style="width:100px">설치일자</th>
-          <th style="width:90px">비고</th>
+          <th style="width:90px">특이사항</th>
         </tr>
       </thead>
       <tbody id="equipTableBody">
@@ -256,7 +256,7 @@ function renderEquipmentTable(rows){
       +'<td><input type="number" min="1" step="1" value="'+escapeHtml(row.quantity == null ? "" : row.quantity)+'" data-field="quantity"></td>'
       +'<td><input value="'+escapeHtml(row.manufacturer)+'" data-field="manufacturer" maxlength="160"></td>'
       +'<td><input type="date" value="'+escapeHtml(dateOnly(row.installation_date))+'" data-field="installation_date"></td>'
-      +'<td><input value="'+escapeHtml(row.remarks)+'" data-field="remarks" maxlength="500"></td>'
+      +'<td><input value="'+escapeHtml(row.special_notes)+'" data-field="special_notes" maxlength="500"></td>'
       +'</tr>';
   }).join("");
 
@@ -271,7 +271,7 @@ async function loadEquipmentList(){
 
   const result=await sb
     .from(EQUIPMENT_TABLE)
-    .select("equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_date,remarks,is_active")
+    .select("equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_date,special_notes,is_active")
     .eq("company_id",currentProfile.company_id)
     .order("equipment_number",{ascending:true});
 
@@ -306,7 +306,7 @@ function collectRowsFromTable(){
       quantity:quantityText===""?null:Number(quantityText),
       manufacturer:get("manufacturer")||null,
       installation_date:get("installation_date")||null,
-      remarks:get("remarks")||null
+      special_notes:get("special_notes")||null
     });
   });
   return rows;
@@ -351,7 +351,7 @@ async function saveAllEquipment(){
       quantity:row.quantity,
       manufacturer:row.manufacturer,
       installation_date:row.installation_date,
-      remarks:row.remarks
+      special_notes:row.special_notes
     };
 
     const result=await sb
@@ -394,7 +394,7 @@ function collectRowsForPdf(){
       quantity:row.quantity == null ? "" : row.quantity,
       manufacturer:row.manufacturer || "",
       installation_date:row.installation_date || "",
-      remarks:row.remarks || ""
+      special_notes:row.special_notes || ""
     };
   });
 }
@@ -436,7 +436,7 @@ function buildPdfPageEl(chunk,pageNo,totalPages,writeDateValue){
   table.innerHTML='<thead><tr>'
     +'<th style="width:45px">NO</th><th style="width:95px">설비번호</th><th>제조설비명</th>'
     +'<th style="width:95px">용량/능력</th><th style="width:55px">대수</th>'
-    +'<th style="width:90px">제작사</th><th style="width:100px">설치일자</th><th style="width:90px">비고</th>'
+    +'<th style="width:90px">제작사</th><th style="width:100px">설치일자</th><th style="width:90px">특이사항</th>'
     +'</tr></thead>';
 
   const tbody=document.createElement("tbody");
@@ -447,7 +447,7 @@ function buildPdfPageEl(chunk,pageNo,totalPages,writeDateValue){
       return '<tr><td>'+escapeHtml(row.NO)+'</td><td>'+escapeHtml(row.equipment_number)+'</td>'
         +'<td>'+escapeHtml(row.equipment_name)+'</td><td>'+escapeHtml(row.capacity_spec)+'</td>'
         +'<td>'+escapeHtml(row.quantity)+'</td><td>'+escapeHtml(row.manufacturer)+'</td>'
-        +'<td>'+escapeHtml(row.installation_date)+'</td><td>'+escapeHtml(row.remarks)+'</td></tr>';
+        +'<td>'+escapeHtml(row.installation_date)+'</td><td>'+escapeHtml(row.special_notes)+'</td></tr>';
     }).join("");
   }
   table.appendChild(tbody);
