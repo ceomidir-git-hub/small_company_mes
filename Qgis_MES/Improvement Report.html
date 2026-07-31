@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>개선보고서 (QP09-QI900-F002)</title>
+<style>
+  /*
+    ==========================================================
+    [사이즈 변경 이력 - 절대 임의로 건드리지 말 것]
+    이번 변경:
+      (1) 아래쪽(입력폼 표) "개선보고서" 제목 글자 크기를 2배로 확대 (26px → 52px)
+          [가로폭 계산] 제목칸(E~L, 8열) 가용폭 = 494.49px
+            - 글자폭(5자×52px)=260px, 자간(13칸×10px, 자간 유지)=130px
+            - 기존처럼 글자 사이 공백을 nbsp 2개로 두면 예상폭 598px → 초과(103.5px 부족)
+            - 공백을 nbsp 1개로 줄이면 예상폭 454px → 494.49px 이내로 충분히 수용 (여유 40.5px)
+            → 자간(10px)과 열 폭(%)은 그대로 유지, 글자 사이 nbsp 개수만 2개→1개로 조정해 해결
+          [세로 계산] 제목셀 총 높이(3행 병합) = 7.06mm×3 = 21.18mm = 80.05px
+            - 52px 폰트의 예상 줄높이(1.2배) = 62.4px → 여유 17.65px, 행높이 변경 불필요
+    변경하지 않은 항목: TABLE1/TABLE2 열 폭(%), 모든 행 높이(mm), .sheet 패딩, 테두리 굵기(0.5px),
+                      상단 app-frame 타이틀바("개선보고서" 20px)
+    ----------------------------------------------------------
+    [행 높이 산출 근거: 원본 엑셀 pt → mm, 1pt = 0.3528mm]
+      TABLE1 r1(문서번호/제목/결재헤더) 20.0pt  → 7.06mm
+      TABLE1 r2(작성부서/전)            20.0pt  → 7.06mm
+      TABLE1 r3(작성자/후)              20.0pt  → 7.06mm
+      TABLE2 r1(구분/항목/주제)         20.0pt  → 7.06mm
+      TABLE2 r2(개선전후 라벨)          22.05pt → 7.78mm
+      TABLE2 r3(사진, 114pt+96pt)       210.0pt → 74.09mm → 94.09mm(+20mm 추가확장)  ← 사진칸
+      TABLE2 r4(발견일자 등)            22.05pt → 7.78mm
+      TABLE2 r5(개선요구일 등)          22.05pt → 7.78mm
+      TABLE2 r6(문제점 라벨 시작)       20.0pt  → 7.06mm
+      TABLE2 r7(1차/2차/3차 라벨)       22.05pt → 7.78mm
+      TABLE2 r8(사후관리 입력)          30.0pt  → 10.58mm
+      TABLE2 r9(footer)                 16.05pt → 5.66mm
+      전체 합계 = 156.75mm + 20mm(사진칸 추가확장) = 176.75mm (A4 가로 사용가능 높이 194mm 이내)
+    ----------------------------------------------------------
+    [재계산된 열 폭(%) - 이번 변경 반영]
+      TABLE1: B 9.03 | C 6.25 | D 6.25 | E~L(8열) 각 5.82 | M 4.86
+              N(작성) 9.03 | O(검토) 9.03 | P(승인) 9.03   합계=100.04
+      TABLE2: B(구분) 9.03 | C(환경1) 6.25 | D(환경2) 6.25 | E 9.17
+              F 5.30 | G 6.38 | H 6.38 | I 6.76 | J 5.30 | K 6.38
+              L 6.38 | M 7.15 | N(1차) 6.43 | O(2차) 6.43 | P(3차) 6.43
+              합계=100.02
+    ==========================================================
+  */
+  @page { size: A4 landscape; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+    background: #e9ecef;
+    margin: 0;
+    padding: 20px;
+    color: #111;
+  }
+  /* [신규] 상단 타이틀바 + 2구역 버튼 프레임 */
+  /* [SIZE 수정] 상단 프레임 폭을 아래쪽 표(.sheet, 297mm)와 동일하게 맞춤. 아래쪽 표(.sheet)는 미수정 */
+  .app-frame {
+    width: 297mm;
+    margin: 0 auto 16px auto;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #d8dbe0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  /* [SIZE 수정] 프레임 높이 20% 축소: 세로 패딩만 계수 0.708 적용 (18px→13px), 아이콘/글자 크기는 유지 */
+  .app-titlebar {
+    background: #1e2a45;
+    padding: 13px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-titlebar svg { width: 24px; height: 24px; color: #fff; }
+  .app-titlebar .title { font-size: 20px; font-weight: 700; color: #fff; }
+  /* [SIZE 수정] 프레임 높이 20% 축소: 세로 패딩만 계수 0.708 적용 (16px→11px) */
+  .app-buttonarea {
+    background: #f4f5f7;
+    padding: 11px 24px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .app-btn-group { display: flex; gap: 10px; }
+  .app-btn-group.nav { padding-right: 20px; border-right: 1px solid #d8dbe0; }
+  /* [SIZE 수정] 프레임 높이 20% 축소: 버튼 세로 패딩 계수 0.708 적용 (9px→6px) */
+  .app-buttonarea button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #c7cbd1;
+    color: #222;
+  }
+  .app-buttonarea button:hover { background: #f0f1f3; }
+  .app-buttonarea button.primary {
+    background: #1e2a45; border-color: #1e2a45; color: #fff; font-weight: 600;
+  }
+  .app-buttonarea button.primary:hover { background: #16213a; }
+  .app-buttonarea button.danger {
+    background: #a13d2f; border-color: #a13d2f; color: #fff; font-weight: 600;
+  }
+  .app-buttonarea button.danger:hover { background: #8c3527; }
+
+  /* [SIZE: 페이지] A4 가로 = 297mm(가로) x 210mm(세로) - 변경 없음 */
+  /* [SIZE: 표 위치] 상단 패딩 8mm → 20mm 로 확대하여 표 전체를 아래로 이동 */
+  .sheet {
+    width: 297mm;
+    min-height: 210mm;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(0,0,0,0.25);
+    padding: 20mm 8mm 8mm 8mm;
+  }
+
+  table.form {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  table.form.body-table { margin-top: -0.5px; }
+
+  /* [SIZE: 테두리] 가는선 0.5px - 변경 없음 */
+  table.form td, table.form th {
+    border: 0.5px solid #000;
+    padding: 3px 5px;
+    font-size: 12px;
+    vertical-align: middle;
+  }
+  .label {
+    background: #f2f2f2;
+    text-align: center;
+    font-weight: bold;
+    white-space: pre-line;
+  }
+  /* [SIZE 수정] table.form td(0,1,2)에 밀려 52px가 적용 안 되던 버그 수정
+     → 선택자를 table.form td.title-cell(0,2,2)로 올려 우선순위 확보
+     [35px 축소 재계산] 가용폭 494.49px, nbsp 1개 기준 예상폭 335px → 여유 159.49px (문제없음)
+                       행높이 80.05px, 줄높이(1.2배) 42px → 여유 38.05px (문제없음) */
+  table.form td.title-cell {
+    text-align: center;
+    font-size: 35px;
+    font-weight: bold;
+    letter-spacing: 10px;
+  }
+  .small-label {
+    font-size: 10px;
+    text-align: center;
+    background:#f2f2f2;
+    font-weight:bold;
+    white-space: nowrap;
+    padding: 3px 2px;
+  }
+  .doc-code { font-size: 10px; text-align: left; }
+  .doc-footer-cell { font-size: 10px; text-align: center; }
+  .doc-footer-cell.align-right { text-align: right; }
+  .empty-cell { background:#fff; text-align:center; color:#999; }
+  /* [SIZE: 맨 아래 문서정보 행] 좌/중간/우/하단 테두리를 흰색으로 감춤 (상단 테두리만 유지) */
+  tr.footer-row td {
+    border-left-color: #fff;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+  }
+  .fill-marker { color:#c0392b; font-weight:bold; } /* 빈칸 확인용 문자 표시색 */
+
+  input[type=text], input[type=date], textarea {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 12px;
+    background: transparent;
+    resize: none;
+    text-align: center;
+  }
+  input[name=doc_no], input[name=write_dept], input[name=writer],
+  input[name=category], input[name=item], input[name=subject],
+  input[name=location], input[name=improver], input[name=improve_dept],
+  input[name=confirmer], input[name=remaining_task] { text-align: left; }
+  input[type=date] { text-align: left; }
+  textarea { min-height: 40px; text-align: left; }
+  input[type=text]:focus, input[type=date]:focus, textarea:focus {
+    background: #fff8dc;
+  }
+  input.mmdd { letter-spacing: 1px; text-align: center; }
+  input.fill-marker { color:#c0392b; font-weight:bold; }
+  /* [신규] 사인 자리표시(사인1/사인2) - 희미한 회색 */
+  input.sign-placeholder { text-align: center; }
+  input.sign-placeholder::placeholder { color: #c9c9c9; font-style: italic; }
+
+  .photo-cell {
+    text-align: center;
+    padding: 4px;
+  }
+  /* [SIZE: 사진칸] 74.09mm → 94.09mm 로 아래쪽으로 20mm 확장, 패딩 감안 88mm */
+  .photo-box {
+    width: 100%;
+    height: 100%;
+    min-height: 88mm;
+    border: 0.5px dashed #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    cursor: pointer;
+    overflow: hidden;
+    background: #fafafa;
+  }
+  .photo-box img { max-width: 100%; max-height: 86mm; object-fit: contain; }
+  .photo-box .placeholder { font-size: 11px; color: #999; }
+  .photo-box input[type=file] { display: none; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .app-frame { display: none; }
+    /* [SIZE 수정] 인쇄시 1장 안에 들어오도록 패딩 재계산
+       인쇄가능높이 190mm(=210-@page여백20) - 콘텐츠 176.75mm - 여유5mm = 8.25mm → 상하 각 4mm */
+    .sheet { box-shadow: none; margin: 0; width: auto; min-height: auto; padding: 4mm 8mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-frame">
+  <div class="app-titlebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="6" y="3" width="12" height="18" rx="2"/>
+      <path d="M9 3v2h6V3"/>
+      <path d="M9 9h6M9 13h6M9 17h3"/>
+    </svg>
+    <span class="title">개선보고서</span>
+  </div>
+  <div class="app-buttonarea">
+    <div class="app-btn-group nav">
+      <button type="button" onclick="location.reload()">초기화</button>
+      <button type="button" onclick="alert('메인화면으로 이동')">메인화면</button>
+      <button type="button" onclick="history.back()">이전화면</button>
+    </div>
+    <div class="app-btn-group action">
+      <button type="button" class="primary" onclick="alert('조회 기능은 실제 시스템 연동 시 동작합니다.')">조회</button>
+      <button type="button" onclick="alert('수정 기능은 실제 시스템 연동 시 동작합니다.')">수정</button>
+      <button type="button" onclick="alert('저장 기능은 실제 시스템 연동 시 동작합니다.')">저장</button>
+      <button type="button" class="danger" onclick="window.print()">PDF 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet">
+<form id="reportForm">
+
+<!--
+  ============================================================
+  TABLE 1 : 헤더/결재란 (문서번호·제목·작성/검토/승인)
+  [SIZE 고정값 - 열 폭 변경 없음]
+    B 9.03% | C 6.25% | D 6.25% | E~L(제목,8열) 각 5.21%
+    M 4.86% | N(작성) 13.89% | O(검토) 9.03% | P(승인) 9.03%
+  [행 높이 - 이번에 원본 엑셀 기준으로 재적용: 각 행 7.06mm]
+  ============================================================
+-->
+<table class="form header-table">
+  <colgroup>
+    <col style="width:9.03%"><col style="width:6.25%"><col style="width:6.25%">
+    <col style="width:5.82%"><col style="width:5.82%"><col style="width:5.82%"><col style="width:5.82%">
+    <col style="width:5.82%"><col style="width:5.82%"><col style="width:5.82%"><col style="width:5.82%">
+    <col style="width:4.86%"><col style="width:9.03%"><col style="width:9.03%"><col style="width:9.03%">
+  </colgroup>
+  <tbody>
+    <tr style="height:7.06mm;">
+      <td class="label">문서번호</td>
+      <td colspan="2"><input type="text" name="doc_no" value="26-002"></td>
+      <td colspan="8" class="title-cell" rowspan="3">개&nbsp;선&nbsp;보&nbsp;고&nbsp;서</td>
+      <td class="small-label">일자</td>
+      <td class="small-label">작성</td>
+      <td class="small-label">검토</td>
+      <td class="small-label">승인</td>
+    </tr>
+    <tr style="height:7.06mm;">
+      <td class="label">작성부서</td>
+      <td colspan="2"><input type="text" name="write_dept" value="개발품질구매"></td>
+      <td class="small-label">전</td>
+      <td><input type="date" name="approve_before_write" value="2026-01-17"></td>
+      <td><input type="text" class="sign-placeholder" name="approve_before_review" placeholder="(사인1)"></td>
+      <td><input type="text" class="mmdd" name="approve_before_approve" value="01/17" maxlength="5" pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])"></td>
+    </tr>
+    <tr style="height:7.06mm;">
+      <td class="label">작 성 자</td>
+      <td colspan="2"><input type="text" name="writer" value="김종렬"></td>
+      <td class="small-label">후</td>
+      <td><input type="date" name="approve_after_write" value="2026-01-19"></td>
+      <td><input type="text" class="sign-placeholder" name="approve_after_review" placeholder="(사인2)"></td>
+      <td><input type="text" class="mmdd" name="approve_after_approve" value="01/19" maxlength="5" pattern="(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])"></td>
+    </tr>
+  </tbody>
+</table>
+
+<!--
+  ============================================================
+  TABLE 2 : 본문 (구분/항목/주제 ~ 사후관리 ~ 하단 문서정보)
+  [SIZE 고정값 - 열 폭 변경 없음]
+    B 8.28% | C 7.65% | D 4.73% | E 9.28% | F 5.36% | G 6.45%
+    H 6.45% | I 6.84% | J 5.36% | K 6.45% | L 6.45% | M 7.23%
+    N(1차) 6.5% | O(2차) 6.5% | P(3차) 6.5%
+  [행 높이 - 원본 엑셀 기준 재적용, 사진칸 74.09mm로 확대]
+  ============================================================
+-->
+<table class="form body-table">
+  <colgroup>
+    <col style="width:9.03%"><col style="width:6.25%"><col style="width:6.25%"><col style="width:9.17%">
+    <col style="width:5.30%"><col style="width:6.38%"><col style="width:6.38%"><col style="width:6.76%">
+    <col style="width:5.30%"><col style="width:6.38%"><col style="width:6.38%"><col style="width:7.15%">
+    <col style="width:6.43%"><col style="width:6.43%"><col style="width:6.43%">
+  </colgroup>
+  <tbody>
+    <!-- 구분 / 항목 / 주제 -->
+    <tr style="height:7.06mm;">
+      <td class="label">구&nbsp;&nbsp;분</td>
+      <td colspan="2"><input type="text" name="category" value="환경"></td>
+      <td class="label">항&nbsp;&nbsp;목</td>
+      <td colspan="3"><input type="text" name="item" value="정리"></td>
+      <td class="label">주&nbsp;&nbsp;제</td>
+      <td colspan="7"><input type="text" name="subject" value="환경 정리 정돈 실시"></td>
+    </tr>
+
+    <!-- 개선전/개선후 라벨 -->
+    <tr style="height:7.78mm;">
+      <td colspan="7" class="label">개&nbsp;&nbsp;선&nbsp;&nbsp;전&nbsp;&nbsp;(사진 또는 현상 설명)</td>
+      <td colspan="8" class="label">개&nbsp;&nbsp;선&nbsp;&nbsp;후&nbsp;&nbsp;(사진 또는 개선내용 설명)</td>
+    </tr>
+    <!-- 사진 첨부 영역 [SIZE: 74.09mm → 94.09mm 로 아래쪽으로 20mm 추가 확장] -->
+    <tr style="height:94.09mm;">
+      <td colspan="7" class="photo-cell">
+        <label class="photo-box" id="beforeBox">
+          <span class="placeholder">클릭하여 개선 전 사진 첨부</span>
+          <input type="file" accept="image/*" onchange="previewImage(this,'beforeBox')">
+        </label>
+      </td>
+      <td colspan="8" class="photo-cell">
+        <label class="photo-box" id="afterBox">
+          <span class="placeholder">클릭하여 개선 후 사진 첨부</span>
+          <input type="file" accept="image/*" onchange="previewImage(this,'afterBox')">
+        </label>
+      </td>
+    </tr>
+
+    <!-- 발견일자 / 장소 / 개선일자 / 개선자 -->
+    <tr style="height:7.78mm;">
+      <td class="label">발 견 일 자</td>
+      <td colspan="2"><input type="date" name="found_date" value="2026-01-17"></td>
+      <td class="label">장소(공정명)</td>
+      <td colspan="3"><input type="text" name="location" value="현장사무실 앞"></td>
+      <td class="label">개선일자</td>
+      <td colspan="3"><input type="date" name="improve_date" value="2026-01-19"></td>
+      <td class="label">개 선 자</td>
+      <td colspan="3"><input type="text" name="improver" value="최석현"></td>
+    </tr>
+
+    <!-- 개선요구일 / 개선부서 / 확인자 / 남은과제 -->
+    <tr style="height:7.78mm;">
+      <td class="label">개선요구일</td>
+      <td colspan="2"><input type="date" name="request_date" value="2026-01-19"></td>
+      <td class="label">개 선 부 서</td>
+      <td colspan="3"><input type="text" name="improve_dept" value="개발품질구매"></td>
+      <td class="label">확 인 자</td>
+      <td colspan="3"><input type="text" name="confirmer" value="최석현"></td>
+      <td class="label">남은 과제</td>
+      <td colspan="3"><input type="text" class="fill-marker" name="remaining_task" value="마"></td>
+    </tr>
+
+    <!-- 문제점및개선안 / 개선실적및개선효과 / 사후관리 -->
+    <tr style="height:7.06mm;">
+      <td class="label" rowspan="3">문 제 점<br>및<br>개 선 안</td>
+      <td colspan="6" rowspan="3"><textarea name="problem_plan">게시판앞 정리 정돈 미흡</textarea></td>
+      <td class="label" rowspan="3">개선실적<br>및<br>개선효과</td>
+      <td colspan="4" rowspan="3"><textarea name="result_effect">게시판 앞 정리정돈 완료</textarea></td>
+      <td colspan="3" class="label">사후관리</td>
+    </tr>
+    <tr style="height:7.78mm;">
+      <td class="small-label">1차</td>
+      <td class="small-label">2차</td>
+      <td class="small-label">3차</td>
+    </tr>
+    <tr style="height:10.58mm;">
+      <td><input type="date" name="follow1"></td>
+      <td><input type="date" name="follow2"></td>
+      <td><input type="date" name="follow3"></td>
+    </tr>
+
+    <!-- 하단 문서정보 [SIZE: 문서번호+바+사+아 4칸 병합 / A4 크기 우측정렬 / 이 행 테두리(상단 제외) 흰색 처리] -->
+    <tr style="height:5.66mm;" class="footer-row">
+      <td colspan="4" class="doc-code">QP09-QI900-F002</td>
+      <td colspan="7" class="doc-footer-cell">QGIS</td>
+      <td colspan="4" class="doc-footer-cell align-right">A4(210×297)mm</td>
+    </tr>
+  </tbody>
+</table>
+
+</form>
+</div>
+
+<script>
+function previewImage(input, boxId) {
+  if (!input.files || !input.files[0]) return;
+  const box = document.getElementById(boxId);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    box.innerHTML = '<img src="' + e.target.result + '" alt="첨부 이미지">';
+    const newInput = document.createElement('input');
+    newInput.type = 'file';
+    newInput.accept = 'image/*';
+    newInput.style.display = 'none';
+    newInput.onchange = function(){ previewImage(this, boxId); };
+    box.appendChild(newInput);
+    box.querySelector('input').files = input.files;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// 검토/승인 "월/일" 입력칸: 숫자만 입력해도 자동으로 "MM/DD" 형태로 정리
+document.querySelectorAll('input.mmdd').forEach(function(el){
+  el.addEventListener('input', function(){
+    let digits = this.value.replace(/\D/g, '').slice(0,4);
+    if (digits.length >= 3) {
+      this.value = digits.slice(0,2) + '/' + digits.slice(2);
+    } else {
+      this.value = digits;
+    }
+    this.classList.remove('fill-marker');
+  });
+});
+
+function resetForm() {
+  if (confirm('입력한 내용을 모두 초기화하시겠습니까?')) {
+    document.getElementById('reportForm').reset();
+    document.getElementById('beforeBox').innerHTML =
+      '<span class="placeholder">클릭하여 개선 전 사진 첨부</span><input type="file" accept="image/*" onchange="previewImage(this,\'beforeBox\')">';
+    document.getElementById('afterBox').innerHTML =
+      '<span class="placeholder">클릭하여 개선 후 사진 첨부</span><input type="file" accept="image/*" onchange="previewImage(this,\'afterBox\')">';
+  }
+}
+</script>
+</body>
+</html>
