@@ -166,7 +166,6 @@
     border-right-color: #fff;
     border-bottom-color: #fff;
   }
-  .fill-marker { color:#c0392b; font-weight:bold; } /* 빈칸 확인용 문자 표시색 */
 
   input[type=text], input[type=date], textarea {
     width: 100%;
@@ -193,7 +192,10 @@
     cursor: default;
   }
   input.mmdd { letter-spacing: 1px; text-align: center; }
-  input.fill-marker { color:#c0392b; font-weight:bold; }
+  input[name=remaining_task] { color:#000; font-weight:normal; }
+  input.review-empty { color:#b8b8b8; }
+  input.review-empty::-webkit-datetime-edit { color:#c8c8c8; }
+  input.review-empty::-webkit-calendar-picker-indicator { opacity:0.35; pointer-events:none; }
 
   .photo-cell {
     text-align: center;
@@ -327,7 +329,7 @@
       <td colspan="2"><input type="text" name="write_dept" list="departmentList" maxlength="100" autocomplete="off"></td>
       <td class="small-label">전</td>
       <td><input type="date" name="write_before_date" readonly aria-label="작성 전 날짜"></td>
-      <td><input type="date" name="review_before_date" aria-label="검토 전 날짜"></td>
+      <td><input type="date" class="review-empty" name="review_before_date" readonly tabindex="-1" aria-label="검토 전 빈칸"></td>
       <td><input type="text" class="mmdd linked-date" name="approve_before_date" readonly aria-label="승인 전 날짜"></td>
     </tr>
     <tr style="height:7.06mm;">
@@ -335,7 +337,7 @@
       <td colspan="2"><input type="text" name="writer" list="employeeNameList" maxlength="100" autocomplete="off"></td>
       <td class="small-label">후</td>
       <td><input type="date" name="write_after_date" readonly aria-label="작성 후 날짜"></td>
-      <td><input type="date" name="review_after_date" aria-label="검토 후 날짜"></td>
+      <td><input type="date" class="review-empty" name="review_after_date" readonly tabindex="-1" aria-label="검토 후 빈칸"></td>
       <td><input type="text" class="mmdd linked-date" name="approve_after_date" readonly aria-label="승인 후 날짜"></td>
     </tr>
   </tbody>
@@ -411,7 +413,7 @@
       <td class="label">확 인 자</td>
       <td colspan="3"><input type="text" name="confirmer" list="employeeNameList" maxlength="100" autocomplete="off"></td>
       <td class="label">남은 과제</td>
-      <td colspan="3"><input type="text" class="fill-marker" name="remaining_task"></td>
+      <td colspan="3"><input type="text" name="remaining_task"></td>
     </tr>
 
     <!-- 문제점및개선안 / 개선실적및개선효과 / 사후관리 -->
@@ -820,6 +822,7 @@ function previewImage(input, boxId) {
   clearPreviewObjectUrl(type);
   previewObjectUrls[type] = URL.createObjectURL(file);
   renderPhotoBox(type, previewObjectUrls[type]);
+  showToast("사진이 선택되었습니다. 저장 또는 수정 버튼을 누르면 Supabase Private Storage에 업로드됩니다.", "info", 5000);
 
   if (type === "before") syncBeforeDates();
   if (type === "after") syncAfterDates();
@@ -915,8 +918,8 @@ function buildPayload(photoPaths) {
     category_name: getValue("category"),
     item_name: getValue("item"),
     subject: getValue("subject"),
-    review_before_date: getNullableValue("review_before_date"),
-    review_after_date: getNullableValue("review_after_date"),
+    review_before_date: null,
+    review_after_date: null,
     before_photo_path: photoPaths.before,
     after_photo_path: photoPaths.after,
     found_date: getNullableValue("found_date"),
@@ -1088,8 +1091,8 @@ function fillForm(row) {
   updateItemDatalist();
   setValue("item", row.item_name);
   setValue("subject", row.subject);
-  setValue("review_before_date", row.review_before_date);
-  setValue("review_after_date", row.review_after_date);
+  setValue("review_before_date", "");
+  setValue("review_after_date", "");
   setValue("found_date", row.found_date);
   setValue("request_date", row.request_date);
   setValue("location", row.location);
