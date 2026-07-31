@@ -44,7 +44,7 @@
     }
 
     h1 {
-      margin: 0 0 18px;
+      margin: 0;
       text-align: center;
       font-size: 24px;
       line-height: 1.35;
@@ -126,6 +126,38 @@
     .btn.small { min-height: 32px; padding: 5px 11px; font-size: 13px; }
     .btn.outline-blue { border-color: #60a5fa; color: #1d4ed8; background: #ffffff; }
     .btn.outline-red { border-color: #f87171; color: #dc2626; background: #ffffff; }
+
+    .report-panel {
+      padding: 16px 14px 18px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+    }
+
+    .report-header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      margin-bottom: 12px;
+    }
+
+    .report-actions {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn.pdf {
+      border-color: #374151;
+      background: #374151;
+      color: #ffffff;
+    }
+
+    .btn.pdf:hover { background: #1f2937; }
 
     .list-head {
       display: flex;
@@ -304,7 +336,10 @@
 
     @media (max-width: 600px) {
       .page { padding: 16px 10px 24px; }
-      h1 { margin-bottom: 14px; font-size: 20px; }
+      h1 { font-size: 20px; }
+      .report-header { justify-content: flex-start; padding-right: 0; flex-wrap: wrap; gap: 10px; }
+      .report-header h1 { width: 100%; }
+      .report-actions { position: static; transform: none; width: 100%; justify-content: flex-end; }
       body { font-size: 14px; }
       .search-grid { grid-template-columns: 1fr; }
       .toolbar, .list-head { align-items: stretch; flex-direction: column; }
@@ -320,7 +355,10 @@
       body { background: #ffffff; font-size: 9px; }
       .page { padding: 0; }
       h1 { margin-bottom: 10px; font-size: 16px; }
-      .search-panel, .manage-column, .modal-backdrop, .loading, .notice { display: none !important; }
+      .search-panel, .report-actions, .manage-column, .modal-backdrop, .loading, .notice { display: none !important; }
+      .report-panel { padding: 0; border: 0; }
+      .report-header { min-height: auto; margin-bottom: 10px; }
+      .list-head { margin-bottom: 6px; }
       .table-wrap { overflow: visible; }
       table { min-width: 0; }
       th, td { padding: 4px 3px; }
@@ -330,8 +368,6 @@
 </head>
 <body>
   <main class="page">
-    <h1>고객관리대장</h1>
-
     <section class="search-panel" aria-label="고객사 조회 조건">
       <div class="search-grid">
         <div class="field">
@@ -367,7 +403,14 @@
 
     <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
-    <section aria-label="고객사 목록">
+    <section class="report-panel" aria-label="고객사 목록">
+      <div class="report-header">
+        <h1>고객관리대장</h1>
+        <div class="report-actions">
+          <button class="btn pdf" type="button" id="btnPdf">PDF 변환</button>
+        </div>
+      </div>
+
       <div class="list-head">
         <h2 class="list-title">고객 목록 <span id="countLabel" class="count">(0건)</span></h2>
       </div>
@@ -792,6 +835,11 @@
       await loadRows();
       showNotice("고객사가 삭제되었습니다.", "success");
     }
+
+    $("btnPdf").addEventListener("click", () => {
+      showNotice("PDF 변환 창을 열었습니다.", "success");
+      window.print();
+    });
 
     $("btnSearch").addEventListener("click", () => {
       clearNotice();
