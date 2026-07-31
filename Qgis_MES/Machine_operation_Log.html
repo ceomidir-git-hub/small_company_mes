@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제조설비 등록대장</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Malgun Gothic","맑은 고딕",sans-serif}
+html.auth-pending body{visibility:hidden}
+body{background:#eef2f6;color:#111;padding:14px;min-height:100vh}
+button,input{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.55}
+
+.topbar{
+  width:min(1100px,100%);margin:0 auto 12px;padding:10px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#172235;color:#fff;border-radius:10px;box-shadow:0 7px 20px rgba(15,23,42,.14)
+}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-mark{width:34px;height:34px;display:grid;place-items:center;border-radius:9px;background:#ff6b35;font-size:18px;flex:0 0 auto}
+.brand strong{display:block;font-size:16px}
+.brand small{display:block;margin-top:2px;color:#b8c4d6;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.top-btn{min-height:34px;padding:6px 10px;border:1px solid #40506a;border-radius:7px;background:#22324b;color:#fff;font-size:12px;font-weight:700;white-space:nowrap}
+.top-btn:hover{border-color:#ff8a5c}
+.top-btn.logout:hover{border-color:#ff6b6b;color:#ffb0b0}
+
+.status-wrap{width:min(1100px,100%);margin:0 auto 9px;min-height:34px;padding:7px 11px;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #d4dce6;border-radius:8px;background:#fff;font-size:12px}
+.status-text{color:#667085;font-weight:700}
+.status-text.error{color:#b42318}
+.status-text.success{color:#067647}
+.company-badge{padding:4px 9px;border-radius:999px;background:#edf4ff;color:#1849a9;font-size:11px;font-weight:800;white-space:nowrap}
+
+.page-scroll{width:100%;overflow-x:auto;padding-bottom:8px}
+.page{
+  width:210mm;min-height:297mm;margin:auto;background:#fff;padding:15mm;
+  box-shadow:0 0 10px rgba(0,0,0,.15)
+}
+.title{text-align:center;font-size:26px;font-weight:bold;letter-spacing:8px;margin-bottom:18px}
+.info{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:14px}
+.info input{border:none;border-bottom:1px solid #000;width:130px;text-align:center;font-size:14px;background:#fff}
+.action-btn{border:1px solid #999;background:#fff;border-radius:4px;padding:4px 10px;font-size:12px;font-weight:700}
+.action-btn:hover{background:#eee}
+.save-btn{border-color:#1a5fb4;background:#1a5fb4;color:#fff}
+.save-btn:hover{background:#154a8f}
+.pdf-btn{border-color:#333;background:#333;color:#fff}
+.pdf-btn:hover{background:#000}
+
+.pdf-offscreen{position:fixed;left:-99999px;top:0}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{border:1px solid #000;text-align:center;height:31px;font-size:13px}
+th{background:#e8e8e8;font-weight:bold}
+td input{width:100%;height:100%;border:none;text-align:center;font-size:13px;outline:none;background:transparent;padding:0 3px}
+td input:focus{background:#fff8dc;box-shadow:inset 0 0 0 2px #d89a00}
+tr.dirty td{background:#fff9e8}
+tr.dirty td input{background:#fff9e8}
+tr.save-error td{background:#fff0f0}
+.empty-row{height:90px;color:#667085;font-weight:700}
+.footer{margin-top:8px;display:flex;justify-content:space-between;font-size:11px}
+
+@media(max-width:760px){
+  body{padding:7px}
+  .topbar{align-items:flex-start;padding:9px;border-radius:8px}
+  .brand small{display:none}
+  .top-actions{gap:4px}
+  .top-btn{min-height:31px;padding:5px 7px;font-size:10px}
+  .status-wrap{font-size:11px;padding:7px 8px}
+  .page{margin:0;width:210mm}
+}
+
+@media print{
+  body{background:#fff;padding:0}
+  .topbar,.status-wrap,.action-btn{display:none!important}
+  .page-scroll{overflow:visible;padding:0}
+  .page{width:100%;min-height:auto;padding:12mm;box-shadow:none}
+  @page{size:A4;margin:0}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">⚙️</div>
+    <div>
+      <strong>제조설비 등록대장</strong>
+      <small>로그인 회사의 제조설비만 조회·수정합니다.</small>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button type="button" class="top-btn" onclick="goMain()">메인메뉴</button>
+    <button type="button" class="top-btn" onclick="loadEquipmentList()">새로고침</button>
+    <button type="button" class="top-btn logout" onclick="logout()">로그아웃</button>
+  </div>
+</header>
+
+<div class="status-wrap">
+  <span id="loadStatus" class="status-text">로그인 회사와 Supabase 연결을 확인하는 중입니다.</span>
+  <span id="companyBadge" class="company-badge">회사 확인 중</span>
+</div>
+
+<div class="page-scroll">
+  <div class="page" id="printPage">
+    <div class="title">제 조 설 비 등 록 대 장</div>
+
+    <div class="info">
+      <button type="button" class="action-btn" onclick="loadEquipmentList()">조회</button>
+      <button type="button" class="action-btn save-btn" id="saveBtn" onclick="saveAllEquipment()">전체 저장</button>
+      <button type="button" class="action-btn pdf-btn" id="pdfBtn" onclick="exportPdf()">PDF 다운로드</button>
+      <b>* 작성일&nbsp;</b>
+      <input type="date" id="writeDate">
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:45px">NO</th>
+          <th style="width:95px">설비번호</th>
+          <th>제조설비명</th>
+          <th style="width:95px">용량/능력</th>
+          <th style="width:55px">대수</th>
+          <th style="width:90px">제작사</th>
+          <th style="width:100px">설치일자</th>
+          <th style="width:90px">비고</th>
+        </tr>
+      </thead>
+      <tbody id="equipTableBody">
+        <tr><td colspan="8" class="empty-row">불러오는 중...</td></tr>
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <div>QP04-QI510-F001</div>
+      <div id="footerCompany">QGIS</div>
+      <div>A4(210×297)mm</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const LOGIN_PAGE_URL = "../index.html";
+const MAIN_PAGE_URL = "main1.html";
+const EQUIPMENT_TABLE = "equipment";
+const PDF_ROWS_PER_PAGE = 27;
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+});
+
+let currentUser = null;
+let currentProfile = null;
+let currentCompany = { company_code:"QGIS", company_name:"큐지스" };
+let equipmentRows = [];
+
+function escapeHtml(value){
+  return String(value == null ? "" : value).replace(/[&<>"']/g,function(ch){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];
+  });
+}
+
+function normalizeText(value){return String(value == null ? "" : value).trim()}
+function dateOnly(value){return value ? String(value).slice(0,10) : ""}
+
+function setLoadStatus(text,type){
+  const el=document.getElementById("loadStatus");
+  el.textContent=text;
+  el.className="status-text"+(type?" "+type:"");
+}
+
+function formatDbError(error){
+  if(!error)return "알 수 없는 오류입니다.";
+  if(error.code==="23505")return "같은 회사에 같은 설비번호가 이미 등록되어 있습니다.";
+  if(error.code==="23514")return "대수 또는 입력값을 확인해 주세요.";
+  if(error.code==="42501")return "이 작업에 대한 권한이 없습니다. RLS 정책을 확인해 주세요.";
+  return error.message || error.details || error.hint || String(error);
+}
+
+function redirectToLogin(){window.location.replace(LOGIN_PAGE_URL)}
+function goMain(){window.location.href=MAIN_PAGE_URL}
+
+async function logout(){
+  await sb.auth.signOut({scope:"local"});
+  redirectToLogin();
+}
+
+async function verifyCompanyAccess(){
+  const userResult=await sb.auth.getUser();
+  const user=userResult.data && userResult.data.user;
+  if(userResult.error || !user){redirectToLogin();return false}
+
+  const profileResult=await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id",user.id)
+    .single();
+
+  const profile=profileResult.data;
+  if(profileResult.error || !profile || profile.is_active!==true || !profile.company_id){
+    console.error("회사 권한 확인 실패:",profileResult.error);
+    await sb.auth.signOut({scope:"local"});
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser=user;
+  currentProfile=profile;
+
+  const companyResult=await sb
+    .from("companies")
+    .select("company_code,company_name")
+    .eq("company_id",profile.company_id)
+    .maybeSingle();
+
+  if(!companyResult.error && companyResult.data){
+    currentCompany=companyResult.data;
+  }
+
+  const companyCode=normalizeText(currentCompany.company_code)||"회사";
+  const companyName=normalizeText(currentCompany.company_name);
+  document.getElementById("companyBadge").textContent=companyName?companyCode+" · "+companyName:companyCode;
+  document.getElementById("footerCompany").textContent=companyCode;
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+function setWriteDateToFirstOfMonth(){
+  const d=new Date();
+  document.getElementById("writeDate").value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-01";
+}
+
+function markDirty(event){
+  const tr=event.target.closest("tr[data-id]");
+  if(tr){tr.classList.add("dirty");tr.classList.remove("save-error")}
+}
+
+function renderEquipmentTable(rows){
+  const body=document.getElementById("equipTableBody");
+  if(!rows.length){
+    body.innerHTML='<tr><td colspan="8" class="empty-row">등록된 설비 데이터가 없습니다.</td></tr>';
+    return;
+  }
+
+  body.innerHTML=rows.map(function(row,index){
+    return '<tr data-id="'+escapeHtml(row.equipment_system_id)+'">'
+      +'<td>'+(index+1)+'</td>'
+      +'<td><input value="'+escapeHtml(row.equipment_number)+'" data-field="equipment_number" maxlength="60"></td>'
+      +'<td><input value="'+escapeHtml(row.equipment_name)+'" data-field="equipment_name" maxlength="160"></td>'
+      +'<td><input value="'+escapeHtml(row.capacity_spec)+'" data-field="capacity_spec" maxlength="100"></td>'
+      +'<td><input type="number" min="1" step="1" value="'+escapeHtml(row.quantity == null ? "" : row.quantity)+'" data-field="quantity"></td>'
+      +'<td><input value="'+escapeHtml(row.manufacturer)+'" data-field="manufacturer" maxlength="160"></td>'
+      +'<td><input type="date" value="'+escapeHtml(dateOnly(row.installation_date))+'" data-field="installation_date"></td>'
+      +'<td><input value="'+escapeHtml(row.remarks)+'" data-field="remarks" maxlength="500"></td>'
+      +'</tr>';
+  }).join("");
+
+  body.querySelectorAll("input").forEach(function(input){input.addEventListener("input",markDirty)});
+}
+
+async function loadEquipmentList(){
+  if(!currentProfile)return;
+  const saveBtn=document.getElementById("saveBtn");
+  saveBtn.disabled=true;
+  setLoadStatus("Supabase에서 제조설비를 불러오는 중입니다.");
+
+  const result=await sb
+    .from(EQUIPMENT_TABLE)
+    .select("equipment_system_id,equipment_number,equipment_name,capacity_spec,quantity,manufacturer,installation_date,remarks,is_active")
+    .eq("company_id",currentProfile.company_id)
+    .order("equipment_number",{ascending:true});
+
+  saveBtn.disabled=false;
+
+  if(result.error){
+    equipmentRows=[];
+    renderEquipmentTable([]);
+    setLoadStatus("조회 실패: "+formatDbError(result.error),"error");
+    return;
+  }
+
+  equipmentRows=result.data || [];
+  renderEquipmentTable(equipmentRows);
+  setLoadStatus("조회 완료 · 로그인 회사 설비 "+equipmentRows.length+"건","success");
+}
+
+function collectRowsFromTable(){
+  const rows=[];
+  document.querySelectorAll('#equipTableBody tr[data-id]').forEach(function(tr){
+    function get(field){
+      const input=tr.querySelector('[data-field="'+field+'"]');
+      return input?normalizeText(input.value):"";
+    }
+    const quantityText=get("quantity");
+    rows.push({
+      tr:tr,
+      equipment_system_id:tr.dataset.id,
+      equipment_number:get("equipment_number"),
+      equipment_name:get("equipment_name"),
+      capacity_spec:get("capacity_spec")||null,
+      quantity:quantityText===""?null:Number(quantityText),
+      manufacturer:get("manufacturer")||null,
+      installation_date:get("installation_date")||null,
+      remarks:get("remarks")||null
+    });
+  });
+  return rows;
+}
+
+function validateRows(rows){
+  for(let index=0;index<rows.length;index++){
+    const row=rows[index];
+    if(!row.equipment_number || !row.equipment_name){
+      throw new Error((index+1)+"행의 설비번호와 제조설비명을 입력해 주세요.");
+    }
+    if(row.quantity!==null && (!Number.isInteger(row.quantity) || row.quantity<1)){
+      throw new Error((index+1)+"행의 대수는 1 이상의 정수로 입력해 주세요.");
+    }
+  }
+}
+
+async function saveAllEquipment(){
+  if(!currentProfile)return;
+  const rows=collectRowsFromTable();
+  if(!rows.length){alert("저장할 데이터가 없습니다.");return}
+
+  try{validateRows(rows)}catch(error){
+    setLoadStatus(error.message,"error");
+    alert(error.message);
+    return;
+  }
+
+  const saveBtn=document.getElementById("saveBtn");
+  saveBtn.disabled=true;
+  setLoadStatus("제조설비 "+rows.length+"건을 저장하는 중입니다.");
+
+  let successCount=0;
+  const failures=[];
+
+  for(const row of rows){
+    row.tr.classList.remove("save-error");
+    const payload={
+      equipment_number:row.equipment_number,
+      equipment_name:row.equipment_name,
+      capacity_spec:row.capacity_spec,
+      quantity:row.quantity,
+      manufacturer:row.manufacturer,
+      installation_date:row.installation_date,
+      remarks:row.remarks
+    };
+
+    const result=await sb
+      .from(EQUIPMENT_TABLE)
+      .update(payload)
+      .eq("equipment_system_id",row.equipment_system_id)
+      .eq("company_id",currentProfile.company_id)
+      .select("equipment_system_id")
+      .maybeSingle();
+
+    if(result.error || !result.data){
+      row.tr.classList.add("save-error");
+      failures.push(row.equipment_number+" : "+formatDbError(result.error || new Error("수정 대상 행을 확인할 수 없습니다.")));
+    }else{
+      successCount++;
+      row.tr.classList.remove("dirty");
+    }
+  }
+
+  saveBtn.disabled=false;
+
+  if(failures.length){
+    setLoadStatus("저장 결과 · 성공 "+successCount+"건 / 실패 "+failures.length+"건","error");
+    alert("일부 저장에 실패했습니다.\n\n"+failures.join("\n"));
+    return;
+  }
+
+  setLoadStatus("전체 저장 완료 · "+successCount+"건","success");
+  alert("전체 저장이 완료되었습니다. ("+successCount+"건)");
+  await loadEquipmentList();
+}
+
+function collectRowsForPdf(){
+  return collectRowsFromTable().map(function(row,index){
+    return {
+      NO:index+1,
+      equipment_number:row.equipment_number,
+      equipment_name:row.equipment_name,
+      capacity_spec:row.capacity_spec || "",
+      quantity:row.quantity == null ? "" : row.quantity,
+      manufacturer:row.manufacturer || "",
+      installation_date:row.installation_date || "",
+      remarks:row.remarks || ""
+    };
+  });
+}
+
+function chunkRows(rows,size){
+  const chunks=[];
+  for(let index=0;index<rows.length;index+=size)chunks.push(rows.slice(index,index+size));
+  return chunks.length?chunks:[[]];
+}
+
+function toGrayscale(canvas){
+  const ctx=canvas.getContext("2d");
+  const image=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const data=image.data;
+  for(let index=0;index<data.length;index+=4){
+    const gray=.299*data[index]+.587*data[index+1]+.114*data[index+2];
+    data[index]=gray;data[index+1]=gray;data[index+2]=gray;
+  }
+  ctx.putImageData(image,0,0);
+  return canvas;
+}
+
+function buildPdfPageEl(chunk,pageNo,totalPages,writeDateValue){
+  const wrap=document.createElement("div");
+  wrap.className="page";
+
+  const title=document.createElement("div");
+  title.className="title";
+  title.textContent="제 조 설 비 등 록 대 장";
+  wrap.appendChild(title);
+
+  const info=document.createElement("div");
+  info.className="info";
+  info.innerHTML=(totalPages>1?'<span style="font-size:12px;color:#555;margin-right:8px">('+pageNo+'/'+totalPages+'페이지)</span>':"")
+    +'<b>* 작성일&nbsp;</b><span>'+escapeHtml(writeDateValue || "")+'</span>';
+  wrap.appendChild(info);
+
+  const table=document.createElement("table");
+  table.innerHTML='<thead><tr>'
+    +'<th style="width:45px">NO</th><th style="width:95px">설비번호</th><th>제조설비명</th>'
+    +'<th style="width:95px">용량/능력</th><th style="width:55px">대수</th>'
+    +'<th style="width:90px">제작사</th><th style="width:100px">설치일자</th><th style="width:90px">비고</th>'
+    +'</tr></thead>';
+
+  const tbody=document.createElement("tbody");
+  if(!chunk.length){
+    tbody.innerHTML='<tr><td colspan="8">등록된 설비 데이터가 없습니다.</td></tr>';
+  }else{
+    tbody.innerHTML=chunk.map(function(row){
+      return '<tr><td>'+escapeHtml(row.NO)+'</td><td>'+escapeHtml(row.equipment_number)+'</td>'
+        +'<td>'+escapeHtml(row.equipment_name)+'</td><td>'+escapeHtml(row.capacity_spec)+'</td>'
+        +'<td>'+escapeHtml(row.quantity)+'</td><td>'+escapeHtml(row.manufacturer)+'</td>'
+        +'<td>'+escapeHtml(row.installation_date)+'</td><td>'+escapeHtml(row.remarks)+'</td></tr>';
+    }).join("");
+  }
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+
+  const footer=document.createElement("div");
+  footer.className="footer";
+  footer.innerHTML='<div>QP04-QI510-F001</div><div>'+escapeHtml(currentCompany.company_code || "QGIS")+'</div><div>A4(210×297)mm</div>';
+  wrap.appendChild(footer);
+  return wrap;
+}
+
+async function exportPdf(){
+  const btn=document.getElementById("pdfBtn");
+  const originalText=btn.textContent;
+  btn.disabled=true;
+  btn.textContent="PDF 생성 중...";
+
+  const rows=collectRowsForPdf();
+  const writeDateValue=document.getElementById("writeDate").value;
+  const chunks=chunkRows(rows,PDF_ROWS_PER_PAGE);
+  const offscreen=document.createElement("div");
+  offscreen.className="pdf-offscreen";
+  document.body.appendChild(offscreen);
+
+  const pageElements=chunks.map(function(chunk,index){
+    const page=buildPdfPageEl(chunk,index+1,chunks.length,writeDateValue);
+    offscreen.appendChild(page);
+    return page;
+  });
+
+  const pdf=new window.jspdf.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+
+  try{
+    for(let index=0;index<pageElements.length;index++){
+      const canvas=await html2canvas(pageElements[index],{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false});
+      toGrayscale(canvas);
+      if(index>0)pdf.addPage("a4","portrait");
+      pdf.addImage(canvas.toDataURL("image/png"),"PNG",0,0,210,297);
+    }
+    const companyCode=normalizeText(currentCompany.company_code)||"COMPANY";
+    pdf.save("Machine_operation_Log_"+companyCode+"_"+(writeDateValue || "date")+".pdf");
+    setLoadStatus("PDF 다운로드가 완료되었습니다.","success");
+  }catch(error){
+    setLoadStatus("PDF 생성 실패: "+error.message,"error");
+    alert("PDF 생성 중 오류가 발생했습니다: "+error.message);
+  }finally{
+    offscreen.remove();
+    btn.disabled=false;
+    btn.textContent=originalText;
+  }
+}
+
+sb.auth.onAuthStateChange(function(event){if(event==="SIGNED_OUT")redirectToLogin()});
+
+async function initializePage(){
+  setWriteDateToFirstOfMonth();
+  try{
+    const allowed=await verifyCompanyAccess();
+    if(!allowed)return;
+    await loadEquipmentList();
+  }catch(error){
+    document.documentElement.classList.remove("auth-pending");
+    setLoadStatus("화면 초기화 실패: "+formatDbError(error),"error");
+  }
+}
+
+window.addEventListener("load",initializePage);
+</script>
+</body>
+</html>
