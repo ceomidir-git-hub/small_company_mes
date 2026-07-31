@@ -588,7 +588,7 @@ body{min-width:844px;overflow-x:auto;}
   </colgroup>
   <tr style="height:38px;">
     <td style="border-left:none;font-size:9px;">INSPECTED BY :</td>
-    <td class="ycell" style="padding:1px;"><select class="sel" id="f-inspected" onchange="updateSignature('f-inspected','inspected-signature')"><option value="">-</option><option value="최석현">최석현</option><option value="김종열">김종열</option></select></td>
+    <td class="ycell" style="padding:1px;"><select class="sel" id="f-inspected" onchange="updateSignature('f-inspected','inspected-signature')"><option value="">-</option><option value="최석현">최석현</option><option value="김종렬">김종렬</option></select></td>
     <td class="signature-cell"><img id="inspected-signature" class="signature-image" crossorigin="anonymous" referrerpolicy="no-referrer" alt="INSPECTED BY 서명"></td>
     <td style="font-size:9px;">APPROVED BY :</td>
     <td class="ycell" style="padding:1px;"><select class="sel" id="f-approved" onchange="updateSignature('f-approved','approved-signature')"><option value="">-</option><option value="최석현">최석현</option></select></td>
@@ -796,18 +796,34 @@ function sv(id, value) {
 function ss(id, value) {
   const element = document.getElementById(id);
   if (!element) return;
-  const normalized = value || "";
+
+  /*
+   * 검사성적서 화면에서는 이름을 "김종렬"로 통일합니다.
+   * 과거 데이터에 "김종열"이 저장되어 있어도 "김종렬"로 표시합니다.
+   */
+  let normalized = value || "";
+
+  if (
+    (id === "f-inspected" || id === "f-approved") &&
+    normalized === "김종열"
+  ) {
+    normalized = "김종렬";
+  }
+
   const exists = Array.from(element.options || []).some(function(option) {
     return option.value === normalized;
   });
+
   if (normalized && !exists) {
     element.add(new Option(normalized, normalized));
   }
+
   element.value = normalized;
 }
 
-const SIGNATURE_NAME_ALIASES = {
-  "김종렬": "김종열"
+const SIGNATURE_LOOKUP_ALIASES = {
+  "김종렬": ["김종열"],
+  "김종열": ["김종렬"]
 };
 
 async function loadSignatureEmployees() {
@@ -873,9 +889,14 @@ async function loadSignatureEmployees() {
   }));
 }
 
-function normalizedSignatureName(value) {
+function signatureLookupNames(value) {
   const name = String(value || "").trim();
-  return SIGNATURE_NAME_ALIASES[name] || name;
+  if (!name) return [];
+
+  return [
+    name,
+    ...(SIGNATURE_LOOKUP_ALIASES[name] || [])
+  ];
 }
 
 function updateSignature(selectId, imageId) {
@@ -883,8 +904,15 @@ function updateSignature(selectId, imageId) {
   const image = document.getElementById(imageId);
   if (!select || !image) return;
 
-  const selectedName = normalizedSignatureName(select.value);
-  const signature = signatureEmployees.get(selectedName);
+  const selectedName = String(select.value || "").trim();
+  const lookupNames = signatureLookupNames(selectedName);
+
+  let signature = null;
+  for (const lookupName of lookupNames) {
+    signature = signatureEmployees.get(lookupName);
+    if (signature) break;
+  }
+
   const signedUrl = signature ? signature.signedUrl : "";
 
   if (!signedUrl) {
