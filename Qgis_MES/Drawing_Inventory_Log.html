@@ -566,6 +566,22 @@ function makeStamp(worker, dateValue) {
     '</div>';
 }
 
+/* PDF 캡처 전용 도장
+   - 화면용 CSS 상속이나 html2canvas의 inline-flex 처리에 의존하지 않습니다.
+   - 이름과 날짜를 원 안에 절대 위치로 고정하여 PDF에서도 반드시 표시합니다. */
+function makePdfStamp(worker, dateValue) {
+  const name = normalizeText(worker);
+  const date = normalizeText(dateValue);
+  if (!name || !date) {
+    return '<span style="display:inline-block;padding:3px 7px;border:1px solid #f3c99b;border-radius:99px;background:#fff3e0;color:#e65100;font-size:9px;font-weight:700;white-space:nowrap;">정보 미입력</span>';
+  }
+
+  return '<div style="position:relative;width:48px;height:48px;margin:0 auto;border:2px solid #1565c0;border-radius:50%;background:#fff;color:#1565c0;overflow:hidden;box-sizing:border-box;">' +
+    '<div style="position:absolute;left:2px;right:2px;top:10px;text-align:center;font-family:Malgun Gothic,Arial,sans-serif;font-size:10px;font-weight:700;line-height:1;white-space:nowrap;">' + escapeHtml(name) + '</div>' +
+    '<div style="position:absolute;left:2px;right:2px;top:27px;text-align:center;font-family:Arial,Malgun Gothic,sans-serif;font-size:7px;font-weight:700;line-height:1;white-space:nowrap;">' + escapeHtml(formatStampDate(date)) + '</div>' +
+    '</div>';
+}
+
 function setStatus(type, text) {
   const dot = document.getElementById("statusDot");
   const label = document.getElementById("statusText");
@@ -913,8 +929,8 @@ function downloadCSV() {
 function buildPdfRows(rows, startIndex) {
   return rows.map(function(row, localIndex) {
     const shippingHtml = normalizeText(row.shipping_date)
-      ? makeStamp(row.worker_name, row.shipping_date)
-      : '<span class="waiting-label">반출대기</span>';
+      ? makePdfStamp(row.worker_name, row.shipping_date)
+      : '<span style="display:inline-block;padding:3px 7px;border:1px solid #f3c99b;border-radius:99px;background:#fff3e0;color:#e65100;font-size:9px;font-weight:700;white-space:nowrap;">반출대기</span>';
 
     return "<tr>" +
       "<td>" + (startIndex + localIndex + 1) + "</td>" +
@@ -924,7 +940,7 @@ function buildPdfRows(rows, startIndex) {
       '<td style="text-align:left">' + escapeHtml(normalizeText(row.item_name)) + "</td>" +
       "<td>" + escapeHtml(normalizeText(row.item_number) || "미입력") + "</td>" +
       "<td>" + getDrawingStatusHtml(row) + "</td>" +
-      "<td>" + makeStamp(row.worker_name, row.receiving_date) + "</td>" +
+      "<td>" + makePdfStamp(row.worker_name, row.receiving_date) + "</td>" +
       "<td>" + shippingHtml + "</td>" +
       "<td>" + getNoteHtml(row) + "</td>" +
       "</tr>";
@@ -943,7 +959,7 @@ async function exportPDF() {
   setButtonsDisabled(true);
   setStatus("loading", "PDF 파일을 생성하는 중입니다.");
 
-  const rowsPerPage = 18;
+  const rowsPerPage = 13;
   const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
   const drawingYes = filteredRows.filter(hasDrawing).length;
   const drawingNo = filteredRows.filter(hasNoDrawing).length;
@@ -971,28 +987,30 @@ async function exportPDF() {
     for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
       const start = pageIndex * rowsPerPage;
       const pageRows = filteredRows.slice(start, start + rowsPerPage);
+      /* 모든 페이지를 동일한 A4 가로 비율의 고정 캡처 크기로 생성합니다.
+         마지막 페이지의 행 수가 적더라도 1~마지막 페이지의 제목, 표, 글자 크기가 동일합니다. */
       capture.innerHTML =
-        '<div style="width:1440px;background:#fff;padding:22px;font-family:Malgun Gothic,Arial,sans-serif;color:#222;">' +
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #aaa;padding-bottom:8px;margin-bottom:8px;">' +
+        '<div style="width:1440px;height:995px;box-sizing:border-box;overflow:hidden;background:#fff;padding:20px 22px 16px;font-family:Malgun Gothic,Arial,sans-serif;color:#222;display:flex;flex-direction:column;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #aaa;padding-bottom:7px;margin-bottom:7px;flex:0 0 auto;">' +
             '<div><div style="font-size:22px;font-weight:700;letter-spacing:5px;">도 면 관 리 대 장</div>' +
             '<div style="font-size:11px;color:#555;margin-top:3px;">Drawing Inventory Log · HeatPro MES · 자동 생성 문서</div></div>' +
-            '<div style="font-size:11px;color:#555;text-align:right;line-height:1.7;">조회기간 : ' + escapeHtml(from) + ' ~ ' + escapeHtml(to) + '<br>고객사 : ' + escapeHtml(customer) + '<br>출력일시 : ' + escapeHtml(new Date().toLocaleString("ko-KR")) + '</div>' +
+            '<div style="font-size:11px;color:#555;text-align:right;line-height:1.65;">조회기간 : ' + escapeHtml(from) + ' ~ ' + escapeHtml(to) + '<br>고객사 : ' + escapeHtml(customer) + '<br>출력일시 : ' + escapeHtml(new Date().toLocaleString("ko-KR")) + '</div>' +
           '</div>' +
-          '<div style="display:flex;gap:22px;font-size:12px;margin:7px 0 9px;">' +
+          '<div style="display:flex;gap:22px;font-size:12px;margin:6px 0 8px;flex:0 0 auto;">' +
             '<span><b>전체 :</b> ' + filteredRows.length + '건</span>' +
             '<span><b>도면 있음 :</b> ' + drawingYes + '건</span>' +
             '<span><b>도면 없음 :</b> ' + drawingNo + '건</span>' +
             (drawingCheck ? '<span><b>확인 필요 :</b> ' + drawingCheck + '건</span>' : '') +
             '<span><b>반출대기 :</b> ' + waiting + '건</span>' +
           '</div>' +
-          '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+          '<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px;flex:0 0 auto;">' +
             '<thead><tr>' +
               '<th style="width:42px;">NO</th><th style="width:90px;">입고일</th><th style="width:90px;">작업일</th>' +
               '<th style="width:105px;">고객사</th><th style="width:150px;">품명</th><th style="width:140px;">품번</th>' +
               '<th style="width:125px;">도면상태</th><th style="width:90px;">접수현황</th><th style="width:90px;">반출현황</th><th>비고</th>' +
             '</tr></thead><tbody>' + buildPdfRows(pageRows, start) + '</tbody>' +
           '</table>' +
-          '<div style="display:flex;justify-content:space-between;border-top:1px solid #aaa;margin-top:10px;padding-top:5px;color:#777;font-size:9px;">' +
+          '<div style="display:flex;justify-content:space-between;border-top:1px solid #aaa;margin-top:auto;padding-top:5px;color:#777;font-size:9px;flex:0 0 auto;">' +
             '<span>※ 도면 “무”는 “도면 없음 / 구두 협의”, 미선택은 “확인 필요”로 표시됩니다.</span>' +
             '<span>' + (pageIndex + 1) + ' / ' + totalPages + ' page</span>' +
           '</div>' +
@@ -1000,7 +1018,7 @@ async function exportPDF() {
 
       capture.querySelectorAll("th,td").forEach(function(cell) {
         cell.style.border = "1px solid #c7ccd4";
-        cell.style.padding = "4px 5px";
+        cell.style.padding = "3px 4px";
         cell.style.textAlign = cell.style.textAlign || "center";
         cell.style.verticalAlign = "middle";
       });
@@ -1010,17 +1028,27 @@ async function exportPDF() {
         cell.style.fontWeight = "700";
       });
 
-      const canvas = await html2canvas(capture, {
+      /* 캡처 DOM의 이름/날짜가 완전히 배치된 다음 캡처합니다. */
+      await new Promise(function(resolve) {
+        requestAnimationFrame(function() {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      const canvas = await html2canvas(capture.firstElementChild, {
         scale: 2,
         backgroundColor: "#ffffff",
-        useCORS: true
+        useCORS: true,
+        logging: false
       });
       const image = canvas.toDataURL("image/png");
-      const ratio = Math.min(maxW / canvas.width, maxH / canvas.height);
-      const renderW = canvas.width * ratio;
+
+      /* 페이지별 높이에 따라 자동 축소하지 않고, 모든 페이지를 동일한 폭으로 고정합니다. */
+      const ratio = maxW / canvas.width;
+      const renderW = maxW;
       const renderH = canvas.height * ratio;
-      const x = (pageW - renderW) / 2;
-      const y = margin;
+      const x = margin;
+      const y = (pageH - renderH) / 2;
 
       if (pageIndex > 0) pdf.addPage();
       pdf.addImage(image, "PNG", x, y, renderW, renderH);
