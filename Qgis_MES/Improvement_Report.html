@@ -1409,13 +1409,13 @@ async function loadReportLookupPage(pageIndex) {
     const { data, error, count } = await sb
       .from("improvement_reports")
       .select(
-        "improvement_report_system_id, document_number, subject, found_date, writer_name, document_year, document_sequence",
+        "improvement_report_system_id, document_number, subject, found_date, writer_name, created_at",
         { count: "exact" }
       )
       .eq("company_id", currentProfile.company_id)
       .eq("is_deleted", false)
-      .order("document_year", { ascending: false })
-      .order("document_sequence", { ascending: false })
+      .order("document_number", { ascending: false })
+      .order("created_at", { ascending: false })
       .range(from, to);
 
     if (error) throw new Error(formatDbError(error));
