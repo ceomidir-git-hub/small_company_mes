@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>개선보고서 목록</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --line: #9ca3af;
+      --line-dark: #111827;
+      --text: #111827;
+      --muted: #6b7280;
+      --head: #f3f4f6;
+      --soft: #fafafa;
+      --blue: #2563eb;
+      --blue-dark: #1d4ed8;
+      --pdf: #374151;
+      --pdf-dark: #1f2937;
+      --green: #059669;
+      --red: #dc2626;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #ffffff;
+      color: var(--text);
+      font-family: Arial, "Noto Sans KR", "Malgun Gothic", sans-serif;
+      font-size: 15px;
+    }
+
+    html.auth-pending body { visibility: hidden; }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+
+    .page {
+      width: 100%;
+      padding: 24px 18px 32px;
+    }
+
+    .search-panel {
+      margin-bottom: 14px;
+      padding: 14px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+    }
+
+    .search-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr .9fr 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid #9ca3af;
+      border-radius: 3px;
+      background: #ffffff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, .12);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      min-height: 40px;
+      padding: 8px 18px;
+      border: 1px solid #9ca3af;
+      border-radius: 3px;
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .btn:hover { background: #f3f4f6; }
+    .btn.primary { border-color: var(--blue); background: var(--blue); color: #ffffff; }
+    .btn.primary:hover { background: var(--blue-dark); }
+    .btn.pdf { border-color: var(--pdf); background: var(--pdf); color: #ffffff; }
+    .btn.pdf:hover { background: var(--pdf-dark); }
+
+    .notice {
+      display: none;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .notice.show { display: block; }
+    .notice.success { color: #065f46; border-color: #6ee7b7; background: #ecfdf5; }
+    .notice.error { color: #991b1b; border-color: #fca5a5; background: #fef2f2; }
+    .notice.info { color: #1e40af; border-color: #93c5fd; background: #eff6ff; }
+
+    .report-panel {
+      padding: 16px 14px 18px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+    }
+
+    .report-header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      margin-bottom: 12px;
+    }
+
+    .report-header h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 24px;
+      line-height: 1.35;
+      font-weight: 800;
+    }
+
+    .report-actions {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .list-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line-dark);
+      background: #ffffff;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1620px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      background: #ffffff;
+    }
+
+    col.no { width: 60px; }
+    col.document-number { width: 110px; }
+    col.write-date { width: 105px; }
+    col.complete-date { width: 105px; }
+    col.category { width: 90px; }
+    col.item { width: 120px; }
+    col.subject { width: 230px; }
+    col.problem { width: 400px; }
+    col.result { width: 400px; }
+
+    th, td {
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 9px 8px;
+      text-align: center;
+      vertical-align: middle;
+      line-height: 1.45;
+    }
+
+    th:last-child, td:last-child { border-right: 0; }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--head);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) td { background: var(--soft); }
+
+    td.subject,
+    td.long-text {
+      text-align: left;
+      white-space: normal;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .document-link {
+      display: inline-block;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--blue-dark);
+      font-weight: 800;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .document-link:hover { color: #1e3a8a; }
+    .document-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+
+    .empty {
+      height: 110px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .loading {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .loading.show { display: flex; }
+
+    .loading-box {
+      padding: 16px 22px;
+      border: 1px solid #9ca3af;
+      background: #ffffff;
+      font-weight: 800;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+    }
+
+    @media (max-width: 1200px) {
+      .search-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 14px; }
+      .page { padding: 16px 10px 24px; }
+      .search-grid { grid-template-columns: 1fr; }
+      .toolbar { align-items: stretch; }
+      .toolbar .btn { flex: 1 1 0; }
+      .report-header {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .report-header h1 { width: 100%; font-size: 20px; }
+      .report-actions {
+        position: static;
+        width: 100%;
+        transform: none;
+        text-align: right;
+      }
+      .list-head { align-items: flex-start; }
+      th, td { padding: 8px 7px; }
+    }
+
+    @media print {
+      @page { size: A4 landscape; margin: 7mm; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 8pt;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page { padding: 0; }
+      .search-panel,
+      .report-actions,
+      .notice,
+      .loading { display: none !important; }
+
+      .report-panel {
+        padding: 0;
+        border: 0;
+      }
+
+      .report-header { min-height: 0; margin-bottom: 3mm; }
+      .report-header h1 { font-size: 16pt; }
+      .list-head { margin-bottom: 2mm; }
+      .list-title { font-size: 10pt; }
+      .count { font-size: 9pt; }
+
+      .table-wrap {
+        overflow: visible;
+        border: .35mm solid #000000;
+      }
+
+      table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed;
+      }
+
+      col.no { width: 4%; }
+      col.document-number { width: 8%; }
+      col.write-date { width: 7%; }
+      col.complete-date { width: 7%; }
+      col.category { width: 6%; }
+      col.item { width: 8%; }
+      col.subject { width: 14%; }
+      col.problem { width: 23%; }
+      col.result { width: 23%; }
+
+      th, td {
+        padding: 1mm;
+        border-right: .2mm solid #6b7280;
+        border-bottom: .2mm solid #6b7280;
+        font-size: 7.5pt;
+        line-height: 1.25;
+        color: #000000 !important;
+        background: #ffffff !important;
+      }
+
+      thead th {
+        position: static;
+        background: #f3f4f6 !important;
+        font-size: 8pt;
+      }
+
+      .document-link {
+        color: #000000 !important;
+        text-decoration: none;
+      }
+
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="search-panel" aria-label="개선보고서 조회 조건">
+      <div class="search-grid">
+        <div class="field">
+          <label for="searchDocumentNumber">문서번호</label>
+          <input id="searchDocumentNumber" type="text" placeholder="예: 26-026" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label for="searchStartDate">작성일 시작</label>
+          <input id="searchStartDate" type="date">
+        </div>
+
+        <div class="field">
+          <label for="searchEndDate">작성일 종료</label>
+          <input id="searchEndDate" type="date">
+        </div>
+
+        <div class="field">
+          <label for="searchCategory">구분</label>
+          <select id="searchCategory">
+            <option value="">전체</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="searchItem">항목</label>
+          <input id="searchItem" type="text" placeholder="항목명 입력" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn primary" type="button" id="btnSearch">조회</button>
+        <button class="btn" type="button" id="btnReset">초기화</button>
+      </div>
+    </section>
+
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+    <section class="report-panel" aria-label="개선보고서 목록">
+      <div class="report-header">
+        <h1>개선보고서 목록</h1>
+        <div class="report-actions">
+          <button class="btn pdf" type="button" id="btnPdf">PDF 변환</button>
+        </div>
+      </div>
+
+      <div class="list-head">
+        <h2 class="list-title">개선보고서 목록 <span id="countLabel" class="count">(0건)</span></h2>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <colgroup>
+            <col class="no">
+            <col class="document-number">
+            <col class="write-date">
+            <col class="complete-date">
+            <col class="category">
+            <col class="item">
+            <col class="subject">
+            <col class="problem">
+            <col class="result">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>번호</th>
+              <th>문서번호</th>
+              <th>작성일</th>
+              <th>완료일</th>
+              <th>구분</th>
+              <th>항목</th>
+              <th>주제</th>
+              <th>문제점 / 개선안</th>
+              <th>개선실적 / 개선효과</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td class="empty" colspan="9">개선보고서 데이터를 불러오는 중입니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="loadingOverlay" class="loading" aria-hidden="true">
+    <div id="loadingText" class="loading-box">처리 중입니다.</div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+    const LOGIN_PAGE_URL = "../index.html";
+    const REPORT_PAGE_URL = "Improvement_Report.html";
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+
+    let currentProfile = null;
+    let allRows = [];
+    let visibleRows = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function normalizeText(value) {
+      return String(value ?? "").trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/`/g, "&#96;");
+    }
+
+    function formatDbError(error) {
+      if (!error) return "알 수 없는 오류입니다.";
+      if (error.code === "42501") return "이 작업에 대한 권한이 없습니다. Supabase RLS 정책을 확인해 주세요.";
+      if (error.code === "42P01") return "개선보고서 테이블을 찾을 수 없습니다.";
+      if (error.code === "42703" || error.code === "PGRST204") return "HTML과 Supabase 열 이름이 일치하지 않습니다.";
+      return error.message || error.details || error.hint || String(error);
+    }
+
+    function showNotice(message, type = "info") {
+      const notice = $("notice");
+      notice.textContent = message;
+      notice.className = "notice show " + type;
+    }
+
+    function clearNotice() {
+      const notice = $("notice");
+      notice.textContent = "";
+      notice.className = "notice";
+    }
+
+    function showLoading(show, message = "처리 중입니다.") {
+      $("loadingText").textContent = message;
+      $("loadingOverlay").classList.toggle("show", Boolean(show));
+      $("loadingOverlay").setAttribute("aria-hidden", show ? "false" : "true");
+    }
+
+    async function verifyAccess() {
+      const { data: userData, error: userError } = await sb.auth.getUser();
+      const user = userData?.user;
+
+      if (userError || !user) {
+        window.location.replace(LOGIN_PAGE_URL);
+        return false;
+      }
+
+      const { data: profile, error: profileError } = await sb
+        .from("profiles")
+        .select("company_id,is_active")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profileError || !profile || profile.is_active !== true || !profile.company_id) {
+        console.error("회사 접근 권한 확인 실패:", profileError);
+        await sb.auth.signOut({ scope: "local" });
+        window.location.replace(LOGIN_PAGE_URL);
+        return false;
+      }
+
+      currentProfile = profile;
+      document.documentElement.classList.remove("auth-pending");
+      return true;
+    }
+
+    async function loadRows() {
+      if (!currentProfile) return;
+
+      clearNotice();
+      showLoading(true, "개선보고서 목록을 불러오는 중입니다.");
+
+      const { data, error } = await sb
+        .from("improvement_reports")
+        .select("document_number,found_date,improve_date,category_name,item_name,subject,problem_plan,result_effect")
+        .eq("company_id", currentProfile.company_id)
+        .eq("is_deleted", false)
+        .eq("is_active", true)
+        .order("found_date", { ascending: false, nullsFirst: false })
+        .order("document_number", { ascending: false });
+
+      showLoading(false);
+
+      if (error) {
+        allRows = [];
+        visibleRows = [];
+        renderRows();
+        showNotice("조회 실패: " + formatDbError(error), "error");
+        return;
+      }
+
+      allRows = data || [];
+      updateCategoryOptions();
+      applySearch(false);
+    }
+
+    function updateCategoryOptions() {
+      const select = $("searchCategory");
+      const currentValue = select.value;
+      const categories = [...new Set(allRows.map((row) => normalizeText(row.category_name)).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "ko"));
+
+      select.innerHTML = '<option value="">전체</option>' + categories
+        .map((value) => `<option value="${escapeAttribute(value)}">${escapeHtml(value)}</option>`)
+        .join("");
+
+      if (categories.includes(currentValue)) select.value = currentValue;
+    }
+
+    function renderRows() {
+      const body = $("tableBody");
+      $("countLabel").textContent = `(${visibleRows.length}건)`;
+
+      if (!visibleRows.length) {
+        body.innerHTML = '<tr><td class="empty" colspan="9">표시할 개선보고서가 없습니다.</td></tr>';
+        return;
+      }
+
+      body.innerHTML = visibleRows.map((row, index) => {
+        const documentNumber = normalizeText(row.document_number);
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>
+              <button
+                class="document-link"
+                type="button"
+                data-document-number="${escapeAttribute(documentNumber)}"
+                aria-label="개선보고서 ${escapeAttribute(documentNumber)} 열기"
+              >${escapeHtml(documentNumber)}</button>
+            </td>
+            <td>${escapeHtml(row.found_date)}</td>
+            <td>${escapeHtml(row.improve_date)}</td>
+            <td>${escapeHtml(row.category_name)}</td>
+            <td>${escapeHtml(row.item_name)}</td>
+            <td class="subject">${escapeHtml(row.subject)}</td>
+            <td class="long-text">${escapeHtml(row.problem_plan)}</td>
+            <td class="long-text">${escapeHtml(row.result_effect)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function applySearch(showResultNotice = true) {
+      const documentNumber = normalizeText($("searchDocumentNumber").value).toLowerCase();
+      const startDate = $("searchStartDate").value;
+      const endDate = $("searchEndDate").value;
+      const category = $("searchCategory").value;
+      const item = normalizeText($("searchItem").value).toLowerCase();
+
+      if (startDate && endDate && startDate > endDate) {
+        showNotice("작성일 시작일은 종료일보다 늦을 수 없습니다.", "error");
+        return;
+      }
+
+      visibleRows = allRows.filter((row) => {
+        const rowDocument = normalizeText(row.document_number).toLowerCase();
+        const rowDate = normalizeText(row.found_date);
+        const rowCategory = normalizeText(row.category_name);
+        const rowItem = normalizeText(row.item_name).toLowerCase();
+
+        const matchDocument = !documentNumber || rowDocument.includes(documentNumber);
+        const matchStartDate = !startDate || (rowDate && rowDate >= startDate);
+        const matchEndDate = !endDate || (rowDate && rowDate <= endDate);
+        const matchCategory = !category || rowCategory === category;
+        const matchItem = !item || rowItem.includes(item);
+
+        return matchDocument && matchStartDate && matchEndDate && matchCategory && matchItem;
+      });
+
+      renderRows();
+      if (showResultNotice) {
+        showNotice(`조회가 완료되었습니다. ${visibleRows.length}건이 표시됩니다.`, "info");
+      }
+    }
+
+    function resetSearch() {
+      $("searchDocumentNumber").value = "";
+      $("searchStartDate").value = "";
+      $("searchEndDate").value = "";
+      $("searchCategory").value = "";
+      $("searchItem").value = "";
+      visibleRows = [...allRows];
+      renderRows();
+      clearNotice();
+    }
+
+    function openReport(documentNumber) {
+      const normalizedNumber = normalizeText(documentNumber);
+      if (!normalizedNumber) {
+        showNotice("열 수 있는 문서번호가 없습니다.", "error");
+        return;
+      }
+
+      const reportUrl = `${REPORT_PAGE_URL}?document_number=${encodeURIComponent(normalizedNumber)}`;
+      const reportWindow = window.open(reportUrl, "_blank");
+
+      if (!reportWindow) {
+        showNotice("새 창이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 클릭해 주세요.", "error");
+        return;
+      }
+
+      let attempts = 0;
+      const maxAttempts = 120;
+      const timer = window.setInterval(() => {
+        attempts += 1;
+
+        if (reportWindow.closed) {
+          window.clearInterval(timer);
+          return;
+        }
+
+        try {
+          const loadingOverlay = reportWindow.document.getElementById("loadingOverlay");
+          const pageReady = reportWindow.document.readyState === "complete";
+          const authReady = !reportWindow.document.documentElement.classList.contains("auth-pending");
+          const loadingDone = !loadingOverlay || !loadingOverlay.classList.contains("show");
+          const loaderReady = typeof reportWindow.loadReportByDocumentNumber === "function";
+
+          if (pageReady && authReady && loadingDone && loaderReady) {
+            window.clearInterval(timer);
+            reportWindow.loadReportByDocumentNumber(normalizedNumber);
+            reportWindow.focus();
+            return;
+          }
+        } catch (error) {
+          // 로그인 이동 중이거나 문서가 아직 같은 출처로 준비되지 않은 동안은 다시 확인한다.
+        }
+
+        if (attempts >= maxAttempts) {
+          window.clearInterval(timer);
+          showNotice(
+            `${normalizedNumber} 개선보고서 화면은 열렸지만 자동 조회가 지연되고 있습니다. 열린 화면의 조회 버튼에서 문서번호를 확인해 주세요.`,
+            "info"
+          );
+        }
+      }, 250);
+    }
+
+    function getPdfFileName() {
+      const now = new Date();
+      const yyyy = String(now.getFullYear());
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      return `Improvement_Report_List_${yyyy}${mm}${dd}`;
+    }
+
+    function printPdf() {
+      const originalTitle = document.title;
+      const pdfTitle = getPdfFileName();
+      let restored = false;
+
+      const restoreTitle = () => {
+        if (restored) return;
+        restored = true;
+        document.title = originalTitle;
+      };
+
+      document.title = pdfTitle;
+      window.addEventListener("afterprint", restoreTitle, { once: true });
+      window.setTimeout(() => window.print(), 50);
+      window.setTimeout(restoreTitle, 5000);
+    }
+
+    $("btnSearch").addEventListener("click", () => applySearch(true));
+    $("btnReset").addEventListener("click", resetSearch);
+    $("btnPdf").addEventListener("click", printPdf);
+
+    $("tableBody").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-document-number]");
+      if (!button) return;
+      openReport(button.dataset.documentNumber);
+    });
+
+    ["searchDocumentNumber", "searchItem"].forEach((id) => {
+      $(id).addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          applySearch(true);
+        }
+      });
+    });
+
+    sb.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") window.location.replace(LOGIN_PAGE_URL);
+    });
+
+    async function initializePage() {
+      try {
+        const allowed = await verifyAccess();
+        if (!allowed) return;
+        await loadRows();
+      } catch (error) {
+        document.documentElement.classList.remove("auth-pending");
+        showLoading(false);
+        showNotice("화면 초기화 오류: " + formatDbError(error), "error");
+      }
+    }
+
+    window.addEventListener("load", initializePage);
+  </script>
+</body>
+</html>
