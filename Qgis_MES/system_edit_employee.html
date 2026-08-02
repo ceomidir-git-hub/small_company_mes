@@ -937,7 +937,6 @@ async function saveRecord() {
   }
 
   const payload = {
-    company_id: currentProfile.company_id,
     employee_code: employeeCode,
     position_name: normalizeText(document.getElementById("positionName").value) || null,
     employee_name: normalizeText(document.getElementById("employeeName").value) || null,
@@ -955,6 +954,7 @@ async function saveRecord() {
   };
 
   if (mode === "new") {
+    payload.company_id = currentProfile.company_id;
     payload.email_address = emailAddress || null;
     payload.created_at = new Date().toISOString();
   }
