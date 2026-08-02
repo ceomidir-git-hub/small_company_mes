@@ -156,6 +156,7 @@ const SUPABASE_KEY="sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
 const LOGIN_PAGE_URL="../index.html";
 const MAIN_PAGE_URL="main1.html";
 const TABLE_NAME="inspection_tools";
+const SELECT_FIELDS="inspection_tool_system_id,company_id,display_order,lot_number,tool_name,model_spec,manufacturer,quantity,unit,device_number,equipment_location,calibration_date_1,calibration_number_1,calibration_agency_1,calibration_date_2,calibration_number_2,calibration_agency_2,calibration_date_3,calibration_number_3,calibration_agency_3,remarks,is_active";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 
 let currentProfile=null;
@@ -203,10 +204,30 @@ function setMode(next){
   $("btnSave").disabled=!editing;
 }
 function updateSelectionButtons(){const has=Boolean(selectedId);$("btnEdit").disabled=!has;$("btnDelete").disabled=!has}
-function nextOrder(){return rows.reduce((max,row)=>Math.max(max,Number(row.display_order)||0),0)+1}
 
-function startNew(){
-  clearNotice();selectedId=null;updateSelectionButtons();clearForm();$("displayOrder").value=nextOrder();$("quantity").value="1";$("unit").value="EA";setMode("new");$("lotNumber").focus();renderRows();
+async function getNextDisplayOrder(){
+  const {data,error}=await sb.from(TABLE_NAME)
+    .select("display_order")
+    .eq("company_id",currentProfile.company_id)
+    .eq("is_active",true)
+    .order("display_order",{ascending:false})
+    .limit(1);
+  if(error)throw error;
+  return (Number(data?.[0]?.display_order)||0)+1;
+}
+
+async function startNew(){
+  clearNotice();selectedId=null;updateSelectionButtons();clearForm();
+  showLoading("신규 등록 순번을 확인하는 중입니다...");
+  try{
+    $("displayOrder").value=await getNextDisplayOrder();
+    $("quantity").value="1";$("unit").value="EA";
+    setMode("new");renderRows();$("lotNumber").focus();
+  }catch(error){
+    notice("신규 등록 준비 실패: "+dbError(error),"error");
+  }finally{
+    hideLoading();
+  }
 }
 function startEdit(){
   if(!selectedId)return notice("수정할 검사장비를 선택해 주세요.","error");
@@ -230,27 +251,70 @@ async function saveRecord(){
   showLoading("저장 중입니다...");
   const result=mode==="new"?await sb.from(TABLE_NAME).insert(data):await sb.from(TABLE_NAME).update(data).eq("inspection_tool_system_id",selectedId).eq("company_id",currentProfile.company_id);
   hideLoading();if(result.error)return notice("저장 실패: "+dbError(result.error),"error");
-  const message=mode==="new"?"검사장비 신규 등록이 완료되었습니다.":"검사장비 수정 및 저장이 완료되었습니다.";setMode("view");selectedId=null;updateSelectionButtons();clearForm();await loadRows();notice(message,"success");
+  const message=mode==="new"?"검사장비 신규 등록이 완료되었습니다.":"검사장비 수정 및 저장이 완료되었습니다.";setMode("view");selectedId=null;updateSelectionButtons();clearForm();await loadRows(false,false);notice(message,"success");
 }
 
 async function deleteSelected(){
   if(!selectedId)return notice("삭제할 검사장비를 선택해 주세요.","error");if(!confirm("선택한 검사장비를 삭제하시겠습니까?"))return;
   showLoading("삭제 중입니다...");const {error}=await sb.from(TABLE_NAME).delete().eq("inspection_tool_system_id",selectedId).eq("company_id",currentProfile.company_id);hideLoading();
-  if(error)return notice("삭제 실패: "+dbError(error),"error");selectedId=null;updateSelectionButtons();setMode("view");clearForm();await loadRows();notice("검사장비 삭제가 완료되었습니다.","success");
+  if(error)return notice("삭제 실패: "+dbError(error),"error");selectedId=null;updateSelectionButtons();setMode("view");clearForm();await loadRows(false,false);notice("검사장비 삭제가 완료되었습니다.","success");
 }
 
-async function loadRows(){
+async function loadRows(useFilters=false,showSuccess=true){
   showLoading("검사장비 데이터를 조회하는 중입니다...");
-  const {data,error}=await sb.from(TABLE_NAME).select("inspection_tool_system_id,company_id,display_order,lot_number,tool_name,model_spec,manufacturer,quantity,unit,device_number,equipment_location,calibration_date_1,calibration_number_1,calibration_agency_1,calibration_date_2,calibration_number_2,calibration_agency_2,calibration_date_3,calibration_number_3,calibration_agency_3,remarks,is_active").eq("company_id",currentProfile.company_id).eq("is_active",true).order("display_order",{ascending:true}).order("inspection_tool_system_id",{ascending:true});
-  hideLoading();if(error){rows=[];visibleRows=[];renderRows();return notice("조회 실패: "+dbError(error),"error")}
-  rows=data||[];applyFilters();notice("검사장비 "+rows.length+"건을 조회했습니다.","success");
+  try{
+    let query=sb.from(TABLE_NAME)
+      .select(SELECT_FIELDS)
+      .eq("company_id",currentProfile.company_id)
+      .eq("is_active",true);
+
+    if(useFilters){
+      const lot=clean($("searchLot").value);
+      const name=clean($("searchName").value);
+      const location=clean($("searchLocation").value);
+      if(lot)query=query.ilike("lot_number",`%${lot}%`);
+      if(name)query=query.ilike("tool_name",`%${name}%`);
+      if(location)query=query.ilike("equipment_location",`%${location}%`);
+    }
+
+    const {data,error}=await query
+      .order("display_order",{ascending:true})
+      .order("inspection_tool_system_id",{ascending:true});
+
+    if(error)throw error;
+    rows=data||[];
+    visibleRows=[...rows];
+    selectedId=null;
+    updateSelectionButtons();
+    setMode("view");
+    clearForm();
+    renderRows();
+    if(showSuccess){
+      notice(useFilters
+        ?"조회 조건에 맞는 검사장비 "+visibleRows.length+"건을 DB에서 조회했습니다."
+        :"검사장비 "+visibleRows.length+"건을 DB에서 조회했습니다.","success");
+    }
+    return true;
+  }catch(error){
+    rows=[];visibleRows=[];selectedId=null;updateSelectionButtons();renderRows();
+    notice("조회 실패: "+dbError(error),"error");
+    return false;
+  }finally{
+    hideLoading();
+  }
 }
-function applyFilters(){
-  const lot=clean($("searchLot").value).toLowerCase(),name=clean($("searchName").value).toLowerCase(),location=clean($("searchLocation").value).toLowerCase();
-  visibleRows=rows.filter(row=>(!lot||clean(row.lot_number).toLowerCase().includes(lot))&&(!name||clean(row.tool_name).toLowerCase().includes(name))&&(!location||clean(row.equipment_location).toLowerCase().includes(location)));renderRows();
+
+async function searchRows(){
+  clearNotice();
+  await loadRows(true,true);
 }
-function searchRows(){clearNotice();applyFilters();notice("조회 조건에 맞는 검사장비 "+visibleRows.length+"건을 표시했습니다.","success")}
-function resetPage(){$("searchLot").value="";$("searchName").value="";$("searchLocation").value="";selectedId=null;updateSelectionButtons();setMode("view");clearForm();clearNotice();visibleRows=[...rows];renderRows();notice("화면을 초기화했습니다.","info")}
+
+async function resetPage(){
+  $("searchLot").value="";$("searchName").value="";$("searchLocation").value="";
+  clearNotice();
+  const ok=await loadRows(false,false);
+  if(ok)notice("조회 조건과 입력 화면을 초기화하고 DB 전체 목록을 다시 불러왔습니다.","info");
+}
 function selectRow(id){selectedId=id;updateSelectionButtons();setMode("view");clearForm();renderRows();notice("선택한 검사장비를 수정하거나 삭제할 수 있습니다.","info")}
 
 function dataRowsHtml(row){
@@ -269,7 +333,13 @@ function renderRows(){
 }
 function savePdf(){if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");notice("조회된 "+visibleRows.length+"건을 PDF 저장용 화면으로 변환했습니다.","success");setTimeout(()=>window.print(),100)}
 
-async function init(){try{if(await auth()){setMode("view");updateSelectionButtons();await loadRows()}}catch(error){document.documentElement.classList.remove("auth-pending");hideLoading();notice("화면 초기화 오류: "+dbError(error),"error")}}
+["searchLot","searchName","searchLocation"].forEach(id=>{
+  $(id).addEventListener("keydown",event=>{
+    if(event.key==="Enter"){event.preventDefault();searchRows()}
+  });
+});
+
+async function init(){try{if(await auth()){setMode("view");updateSelectionButtons();await loadRows(false,true)}}catch(error){document.documentElement.classList.remove("auth-pending");hideLoading();notice("화면 초기화 오류: "+dbError(error),"error")}}
 sb.auth.onAuthStateChange(event=>{if(event==="SIGNED_OUT")redirectToLogin()});
 addEventListener("load",init);
 </script>
