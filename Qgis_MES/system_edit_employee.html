@@ -115,6 +115,100 @@ tfoot td{position:sticky;bottom:0;z-index:2;background:#edf2ff;color:#0e3f9d;fon
   .action-buttons .btn{width:100%}
   .list-frame{padding:10px}
 }
+
+/* ===== 2026-08-02 컴팩트 화면 및 관리자 권한 표시 ===== */
+.page{padding:8px 10px}
+.title-frame{align-items:center;gap:10px;margin-bottom:7px}
+.title-area h1{font-size:21px;line-height:1.15}
+.file-name{font-size:11px}
+.subtitle{margin-top:3px;font-size:11px}
+.main-button{min-width:96px;height:34px;padding:0 12px;font-size:12px}
+.search-frame{grid-template-columns:160px 160px minmax(220px,1fr) auto;gap:8px;padding:10px 12px}
+.field{gap:4px}
+.field label{font-size:11px}
+.field input,.field select,.field textarea{min-height:34px;padding:6px 8px;font-size:12px}
+.field textarea{min-height:68px}
+.search-buttons,.action-buttons{gap:6px}
+.btn{min-height:34px;padding:6px 12px;font-size:12px}
+.mail-setting-frame{margin-top:8px;padding:10px 12px}
+.mail-setting-head{margin-bottom:7px}
+.mail-setting-head h2{font-size:15px}
+.mail-setting-help{margin-top:3px;font-size:11px;line-height:1.35}
+.mail-setting-grid{grid-template-columns:150px 160px minmax(260px,1fr) 140px auto;gap:8px}
+.readonly-box,.switch-box{min-height:34px;padding:6px 8px;font-size:12px}
+.switch-box label{font-size:12px}
+.setting-status{margin-top:6px;font-size:11px}
+.action-frame{padding:8px 0 6px}
+.guide-group{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap}
+.admin-access{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border:1px solid #cbd5e1;border-radius:999px;background:#f8fafc;color:#64748b;font-size:11px;font-weight:800;white-space:nowrap}
+.admin-access.on{border-color:#86efac;background:#ecfdf5;color:#047857}
+.admin-access.off{border-color:#fecaca;background:#fff1f2;color:#be123c}
+.editor-frame{margin-bottom:8px;padding:11px 12px}
+.editor-head{margin-bottom:8px}
+.editor-head h2{font-size:15px}
+.editor-grid{gap:8px}
+.list-frame{padding:10px 12px 11px}
+.list-title{margin:0 0 8px;font-size:17px}
+.table-wrap{width:100%;min-height:300px;max-height:calc(100vh - 355px);overflow-y:auto;overflow-x:hidden}
+table{width:100%;min-width:0;table-layout:fixed;font-size:11px}
+thead th{padding:7px 4px;white-space:normal;word-break:keep-all;line-height:1.2}
+tbody td,tfoot td{padding:6px 4px;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.25;vertical-align:middle}
+.text-left{max-width:none}
+.list-footer{padding-top:7px;font-size:11px}
+
+/* 넓은 화면에서는 모든 상세열을 표시합니다. */
+thead th:nth-child(1),tbody td:nth-child(1){width:4%}
+thead th:nth-child(2),tbody td:nth-child(2){width:7%}
+thead th:nth-child(3),tbody td:nth-child(3){width:6%}
+thead th:nth-child(4),tbody td:nth-child(4){width:7%}
+thead th:nth-child(5),tbody td:nth-child(5){width:12%}
+thead th:nth-child(6),tbody td:nth-child(6){width:9%}
+thead th:nth-child(7),tbody td:nth-child(7){width:15%}
+thead th:nth-child(8),tbody td:nth-child(8){width:8%}
+thead th:nth-child(9),tbody td:nth-child(9){width:8%}
+thead th:nth-child(10),tbody td:nth-child(10){width:14%}
+thead th:nth-child(11),tbody td:nth-child(11){width:8%}
+thead th:nth-child(12),tbody td:nth-child(12){width:8%}
+thead th:nth-child(13),tbody td:nth-child(13){width:6%}
+thead th:nth-child(14),tbody td:nth-child(14){width:12%}
+thead th:nth-child(15),tbody td:nth-child(15){width:5%}
+
+/* 노트북 폭에서는 보조 상세열을 숨기고, 선택 행의 전체 내용은 입력영역에서 확인합니다. */
+@media(max-width:1550px){
+  .optional-col{display:none}
+  .table-wrap{max-height:calc(100vh - 350px)}
+  thead th:nth-child(1),tbody td:nth-child(1){width:5%}
+  thead th:nth-child(2),tbody td:nth-child(2){width:9%}
+  thead th:nth-child(3),tbody td:nth-child(3){width:8%}
+  thead th:nth-child(4),tbody td:nth-child(4){width:9%}
+  thead th:nth-child(5),tbody td:nth-child(5){width:19%}
+  thead th:nth-child(6),tbody td:nth-child(6){width:13%}
+  thead th:nth-child(7),tbody td:nth-child(7){width:24%}
+  thead th:nth-child(8),tbody td:nth-child(8){width:9%}
+  thead th:nth-child(15),tbody td:nth-child(15){width:4%}
+}
+@media(max-width:1100px){
+  .mail-setting-grid{grid-template-columns:1fr 1fr}
+  .mail-setting-actions{grid-column:1/-1}
+  .search-frame{grid-template-columns:1fr 1fr}
+  .search-buttons{grid-column:1/-1}
+  .table-wrap{max-height:520px}
+}
+@media(max-width:760px){
+  .page{padding:6px}
+  .title-frame{align-items:flex-start}
+  .title-area h1{font-size:18px}
+  .subtitle{line-height:1.35}
+  .search-frame,.mail-setting-grid{grid-template-columns:1fr}
+  .search-buttons,.mail-setting-actions{grid-column:auto}
+  .compact-hide-mobile{display:none}
+  .action-frame{gap:7px}
+  .guide-group{width:100%}
+  .table-wrap{min-height:260px;max-height:460px}
+  table{font-size:10px}
+  thead th,tbody td,tfoot td{padding:6px 3px}
+}
+
 </style>
 </head>
 <body>
@@ -189,7 +283,10 @@ tfoot td{position:sticky;bottom:0;z-index:2;background:#edf2ff;color:#0e3f9d;fon
   </section>
 
   <section class="action-frame">
-    <div id="guideText" class="guide-text">조회 버튼을 눌러 사원정보를 불러오세요.</div>
+    <div class="guide-group">
+      <div id="guideText" class="guide-text">조회 버튼을 눌러 사원정보를 불러오세요.</div>
+      <div id="adminAccess" class="admin-access">관리자 권한 확인 중</div>
+    </div>
     <div class="action-buttons">
       <button id="btnNew" class="btn btn-green" type="button" onclick="startNew()">＋ 등록</button>
       <button id="btnEdit" class="btn btn-blue" type="button" onclick="startEdit()" disabled>✎ 수정</button>
@@ -286,15 +383,15 @@ tfoot td{position:sticky;bottom:0;z-index:2;background:#edf2ff;color:#0e3f9d;fon
             <th>직위</th>
             <th>이름</th>
             <th>부서명</th>
-            <th>폰번호</th>
-            <th>이메일 주소</th>
+            <th class="compact-hide-mobile">폰번호</th>
+            <th class="compact-hide-mobile">이메일 주소</th>
             <th>DAILY REPORT</th>
-            <th>생년월일</th>
-            <th>주소</th>
-            <th>입사일</th>
-            <th>퇴사일</th>
-            <th>국적</th>
-            <th>특이사항</th>
+            <th class="optional-col">생년월일</th>
+            <th class="optional-col">주소</th>
+            <th class="optional-col">입사일</th>
+            <th class="optional-col">퇴사일</th>
+            <th class="optional-col">국적</th>
+            <th class="optional-col">특이사항</th>
             <th>상태</th>
           </tr>
         </thead>
@@ -421,7 +518,7 @@ async function verifyCompanyAccess() {
 
   const { data: profile, error: profileError } = await sb
     .from("profiles")
-    .select("company_id,is_active")
+    .select("company_id,is_active,is_system_admin")
     .eq("user_id", user.id)
     .single();
 
@@ -436,17 +533,42 @@ async function verifyCompanyAccess() {
   return true;
 }
 
+function hasSystemAdminPermission() {
+  return currentProfile?.is_system_admin === true;
+}
+
+function requireSystemAdmin(actionText = "이 작업") {
+  if (hasSystemAdminPermission()) return true;
+  showNotice("시스템 관리자만 " + actionText + "을(를) 사용할 수 있습니다.", "error");
+  return false;
+}
+
+function applyAdminAccessUI() {
+  const isAdmin = hasSystemAdminPermission();
+  const badge = document.getElementById("adminAccess");
+  badge.className = "admin-access " + (isAdmin ? "on" : "off");
+  badge.textContent = isAdmin
+    ? "● 시스템 관리자 · 등록/수정/삭제/저장 가능"
+    : "● 일반 사용자 · 조회만 가능";
+
+  document.getElementById("mailIsEnabled").disabled = !isAdmin;
+  document.getElementById("mailSendTime").disabled = !isAdmin;
+  document.getElementById("btnSaveMailSetting").disabled = !isAdmin;
+}
+
 function setMode(nextMode) {
   mode = nextMode;
-  const editing = mode === "new" || mode === "edit";
+  const isAdmin = hasSystemAdminPermission();
+  const editing = isAdmin && (mode === "new" || mode === "edit");
 
   editableIds.forEach(id => {
     document.getElementById(id).disabled = !editing;
   });
 
+  document.getElementById("btnNew").disabled = !isAdmin || editing;
   document.getElementById("btnSave").disabled = !editing;
-  document.getElementById("btnEdit").disabled = !selectedId || editing;
-  document.getElementById("btnDelete").disabled = !selectedId || editing;
+  document.getElementById("btnEdit").disabled = !isAdmin || !selectedId || editing;
+  document.getElementById("btnDelete").disabled = !isAdmin || !selectedId || editing;
   document.getElementById("editorFrame").classList.toggle("show", editing || Boolean(selectedId));
 
   const badge = document.getElementById("modeBadge");
@@ -519,6 +641,7 @@ async function loadMailSetting() {
 
 async function saveMailSetting() {
   clearNotice();
+  if (!requireSystemAdmin("메일설정 저장")) return;
 
   const sendTime = document.getElementById("mailSendTime").value;
   if (!sendTime) {
@@ -638,15 +761,15 @@ function renderRows() {
             <td>${escapeHtml(row.position_name)}</td>
             <td>${escapeHtml(row.employee_name)}</td>
             <td>${escapeHtml(row.department_name)}</td>
-            <td>${escapeHtml(row.phone)}</td>
-            <td class="text-left" title="${escapeHtml(row.email_address)}">${escapeHtml(row.email_address)}</td>
+            <td class="compact-hide-mobile">${escapeHtml(row.phone)}</td>
+            <td class="text-left compact-hide-mobile" title="${escapeHtml(row.email_address)}">${escapeHtml(row.email_address)}</td>
             <td class="${mailClass}">${mailText}</td>
-            <td>${escapeHtml(row.birth_date)}</td>
-            <td class="text-left" title="${escapeHtml(row.address)}">${escapeHtml(row.address)}</td>
-            <td>${escapeHtml(row.hire_date)}</td>
-            <td>${escapeHtml(row.termination_date)}</td>
-            <td>${escapeHtml(row.nationality)}</td>
-            <td class="text-left" title="${escapeHtml(row.special_notes)}">${escapeHtml(row.special_notes)}</td>
+            <td class="optional-col">${escapeHtml(row.birth_date)}</td>
+            <td class="text-left optional-col" title="${escapeHtml(row.address)}">${escapeHtml(row.address)}</td>
+            <td class="optional-col">${escapeHtml(row.hire_date)}</td>
+            <td class="optional-col">${escapeHtml(row.termination_date)}</td>
+            <td class="optional-col">${escapeHtml(row.nationality)}</td>
+            <td class="text-left optional-col" title="${escapeHtml(row.special_notes)}">${escapeHtml(row.special_notes)}</td>
             <td>${row.is_active ? "사용" : "중지"}</td>
           </tr>`;
       }).join("")
@@ -681,6 +804,7 @@ function selectRow(id) {
 }
 
 function startNew() {
+  if (!requireSystemAdmin("사원 등록")) return;
   clearNotice();
   clearForm();
   setMode("new");
@@ -689,6 +813,7 @@ function startNew() {
 }
 
 function startEdit() {
+  if (!requireSystemAdmin("사원 수정")) return;
   if (!selectedId) {
     showNotice("수정할 사원을 목록에서 선택해 주세요.", "error");
     return;
@@ -700,6 +825,7 @@ function startEdit() {
 }
 
 async function saveRecord() {
+  if (!requireSystemAdmin("사원 저장")) return;
   if (mode !== "new" && mode !== "edit") {
     showNotice("등록 또는 수정 버튼을 먼저 눌러 주세요.", "error");
     return;
@@ -786,6 +912,7 @@ async function saveRecord() {
 }
 
 async function deleteSelected() {
+  if (!requireSystemAdmin("사원 삭제")) return;
   if (!selectedId) {
     showNotice("삭제할 사원을 목록에서 선택해 주세요.", "error");
     return;
@@ -830,11 +957,20 @@ async function initializePage() {
     const ok = await verifyCompanyAccess();
     if (!ok) return;
 
+    applyAdminAccessUI();
     setMode("view");
+
+    if (!hasSystemAdminPermission()) {
+      updateGuide("일반 사용자는 자기 회사 사원정보를 조회할 수 있으며, 등록·수정·삭제·저장은 관리자만 가능합니다.");
+    }
+
     await Promise.all([
       loadMailSetting(),
       loadRows()
     ]);
+
+    applyAdminAccessUI();
+    setMode("view");
   } catch (error) {
     document.documentElement.classList.remove("auth-pending");
     showNotice("화면 초기화 오류: " + formatDbError(error), "error");
