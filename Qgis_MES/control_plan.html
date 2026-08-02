@@ -486,6 +486,7 @@ table.hdr select.db-input {
   const LOGIN_PAGE_URL = "../index.html";
   const MASTER_TABLE = "control_plans";
   const VALUE_TABLE = "control_plan_input_values";
+  const APPROVAL_TABLE = "control_plan_approvals";
   const EXPECTED_INPUT_COUNT = 429;
   const VALUE_JOINER = " / ";
   const VALUE_SPLIT_PATTERN = /\s+\/\s+/;
@@ -848,6 +849,90 @@ table.hdr select.db-input {
     return rows;
   }
 
+  function buildApprovalRows(controlPlanId) {
+    const now = new Date().toISOString();
+    return [
+      { fieldNo: 6, role: "owner" },
+      { fieldNo: 7, role: "approver" }
+    ].map(({ fieldNo, role }) => {
+      const selectedName = normalizeText(getControlValue(controlByNo.get(fieldNo)));
+      return {
+        company_id: currentProfile.company_id,
+        control_plan_system_id: controlPlanId,
+        field_no: fieldNo,
+        approval_role: role,
+        approver_name: selectedName || null,
+        is_active: Boolean(selectedName),
+        updated_at: now
+      };
+    });
+  }
+
+  async function saveApprovalRows(controlPlanId) {
+    const rows = buildApprovalRows(controlPlanId);
+    const { error } = await sb
+      .from(APPROVAL_TABLE)
+      .upsert(rows, {
+        onConflict: "company_id,control_plan_system_id,approval_role"
+      });
+
+    if (error) throw error;
+  }
+
+  async function fetchApprovalRows(controlPlanId) {
+    const { data, error } = await sb
+      .from(APPROVAL_TABLE)
+      .select("field_no,approval_role,approver_name,signature_storage_path,approved_at,is_active")
+      .eq("company_id", currentProfile.company_id)
+      .eq("control_plan_system_id", controlPlanId)
+      .order("field_no", { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  function applyApprovalRows(rows) {
+    rows
+      .filter(row => row.is_active === true)
+      .forEach(row => {
+        const control = controlByNo.get(Number(row.field_no));
+        if (!control) return;
+        const displayValue = normalizeText(row.approver_name);
+        if (displayValue) setControlValue(control, displayValue);
+      });
+  }
+
+  async function verifyDatabaseTables() {
+    const results = await Promise.all([
+      sb
+        .from(MASTER_TABLE)
+        .select("control_plan_system_id", { count: "exact", head: true })
+        .eq("company_id", currentProfile.company_id)
+        .eq("is_active", true),
+      sb
+        .from(VALUE_TABLE)
+        .select("input_value_system_id", { count: "exact", head: true })
+        .eq("company_id", currentProfile.company_id),
+      sb
+        .from(APPROVAL_TABLE)
+        .select("control_plan_approval_system_id", { count: "exact", head: true })
+        .eq("company_id", currentProfile.company_id)
+    ]);
+
+    const tableNames = [MASTER_TABLE, VALUE_TABLE, APPROVAL_TABLE];
+    results.forEach((result, index) => {
+      if (result.error) {
+        throw new Error(`${tableNames[index]} 연결 실패: ${dbMessage(result.error)}`);
+      }
+    });
+
+    return {
+      activePlanCount: Number(results[0].count || 0),
+      storedValueCount: Number(results[1].count || 0),
+      approvalCount: Number(results[2].count || 0)
+    };
+  }
+
   async function requireAuthenticatedProfile() {
     if (!window.supabase || typeof window.supabase.createClient !== "function") {
       throw new Error("Supabase 모듈을 불러오지 못했습니다.");
@@ -976,7 +1061,10 @@ table.hdr select.db-input {
 
       if (masterError) throw masterError;
 
-      const valueRows = await fetchPlanValues(master.control_plan_system_id);
+      const [valueRows, approvalRows] = await Promise.all([
+        fetchPlanValues(master.control_plan_system_id),
+        fetchApprovalRows(master.control_plan_system_id)
+      ]);
       const storedInputCount = new Set(valueRows.map(row => Number(row.input_no))).size;
       if (storedInputCount !== EXPECTED_INPUT_COUNT) {
         throw new Error(
@@ -985,6 +1073,7 @@ table.hdr select.db-input {
       }
 
       applyValueRows(valueRows);
+      applyApprovalRows(approvalRows);
       currentPlanId = master.control_plan_system_id;
       sourcePlanId = null;
       sourcePlanNumber = "";
@@ -992,7 +1081,7 @@ table.hdr select.db-input {
       setMode("view");
       setStatus(
         `조회 완료 · ${identityText()} · 관리계획번호 ${master.plan_no} · ` +
-        `${valueRows.length}개 DB 행`
+        `입력값 ${valueRows.length}행 · 결재 ${approvalRows.length}행`
       );
     } catch (error) {
       console.error("관리계획서 조회 오류:", error);
@@ -1350,11 +1439,25 @@ table.hdr select.db-input {
         .neq("save_batch_id", batchId);
       if (cleanupError) throw cleanupError;
 
-      const savedRows = await fetchPlanValues(targetPlanId);
+      await saveApprovalRows(targetPlanId);
+
+      const [savedRows, savedApprovals] = await Promise.all([
+        fetchPlanValues(targetPlanId),
+        fetchApprovalRows(targetPlanId)
+      ]);
       const savedInputCount = new Set(savedRows.map(row => Number(row.input_no))).size;
       if (savedInputCount !== EXPECTED_INPUT_COUNT) {
         throw new Error(
           `저장 검증 실패: 입력번호 ${savedInputCount}개 / 정상 ${EXPECTED_INPUT_COUNT}개`
+        );
+      }
+
+      const approvalFieldCount = new Set(
+        savedApprovals.map(row => Number(row.field_no))
+      ).size;
+      if (approvalFieldCount !== 2) {
+        throw new Error(
+          `결재 저장 검증 실패: 결재 필드 ${approvalFieldCount}개 / 정상 2개`
         );
       }
 
@@ -1639,24 +1742,18 @@ table.hdr select.db-input {
   async function initialize() {
     autoGrowAll();
     setMode("view");
-    setBusy(true, "로그인, 회사 정보, 고객사·품목 DB를 확인하고 있습니다.");
+    setBusy(true, "로그인, 회사 정보, 고객사·품목 및 관리계획서 DB 3개를 확인하고 있습니다.");
 
     try {
       validateFormMapping();
       await requireAuthenticatedProfile();
       await loadReferenceData();
-
-      const { count, error } = await sb
-        .from(MASTER_TABLE)
-        .select("control_plan_system_id", { count: "exact", head: true })
-        .eq("company_id", currentProfile.company_id)
-        .eq("is_active", true);
-      if (error) throw error;
+      const dbState = await verifyDatabaseTables();
 
       setMode("view");
       setStatus(
-        `Supabase 연결 완료 · 입력항목 429개 · 사용 중인 관리계획서 ${Number(count || 0)}건 · ` +
-        "조회 또는 신규등록을 선택해 주세요."
+        `Supabase DB 연결 완료 · 관리계획서 테이블 3개 확인 · 입력항목 429개 · ` +
+        `사용 중인 관리계획서 ${dbState.activePlanCount}건 · 조회 또는 신규등록을 선택해 주세요.`
       );
     } catch (error) {
       console.error("초기화 오류:", error);
