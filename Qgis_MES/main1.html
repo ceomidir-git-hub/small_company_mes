@@ -126,6 +126,8 @@
   /* ── 메일 발송 기능 (2026-07-02 추가) ── */
   .mail-btn{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:0.85rem;font-family:var(--font-body);display:flex;align-items:center;gap:6px;}
   .mail-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .mail-btn:disabled{opacity:.45;cursor:not-allowed;color:var(--muted);border-color:var(--line);background:var(--panel-2);box-shadow:none;}
+  .mail-btn:disabled:hover{color:var(--muted);border-color:var(--line);background:var(--panel-2);}
   .mail-btn .mdot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
   .mail-btn .mdot.ok{background:var(--good);box-shadow:0 0 6px var(--good);}
   .mail-btn .mdot.fail{background:var(--bad);box-shadow:0 0 6px var(--bad);}
@@ -350,8 +352,8 @@
       <button id="themeBtn" class="theme-toggle" onclick="toggleTheme()">☀️ 라이트모드</button>
       <div class="user-chip"><div class="avatar">👤</div><span id="currentUserName">관리자</span></div>
       <button class="logout-btn" type="button" onclick="logoutCurrentUser()">로그아웃</button>
-      <button class="mail-btn" onclick="openMailStatusModal()"><span class="mdot" id="mailStatusDot"></span>메일링확인</button>
-      <button class="mail-btn" onclick="confirmSendReportNow()">지금발송</button>
+      <button id="mailStatusBtn" class="mail-btn" type="button" onclick="openMailStatusModal()" disabled aria-disabled="true" title="관리자만 사용할 수 있습니다."><span class="mdot" id="mailStatusDot"></span>메일링확인</button>
+      <button id="mailSendNowBtn" class="mail-btn" type="button" onclick="confirmSendReportNow()" disabled aria-disabled="true" title="관리자만 사용할 수 있습니다.">지금발송</button>
     </div>
   </header>
 
@@ -642,7 +644,7 @@ async function verifyQgisAccess() {
     await supabaseClient
       .from("profiles")
       .select(
-        "company_id, is_active"
+        "company_id, is_active, login_enabled, access_role"
       )
       .eq(
         "user_id",
@@ -650,10 +652,17 @@ async function verifyQgisAccess() {
       )
       .single();
 
+  const hasValidRole =
+    profile &&
+    ["admin", "user", "viewer"]
+      .includes(profile.access_role);
+
   const isQgisUser =
     !profileError &&
     profile &&
     profile.is_active === true &&
+    profile.login_enabled === true &&
+    hasValidRole &&
     profile.company_id ===
       QGIS_COMPANY_ID;
 
@@ -1731,7 +1740,54 @@ function toggleMenu(key) {
   openMenus[key] = !isOpen;
 }
 
+function isCurrentUserAdmin() {
+  return (
+    currentProfile &&
+    currentProfile.access_role === "admin"
+  );
+}
+
+function applyMailPermissionUI() {
+  const isAdmin = isCurrentUserAdmin();
+  const buttonIds = [
+    "mailStatusBtn",
+    "mailSendNowBtn"
+  ];
+
+  buttonIds.forEach(function (buttonId) {
+    const button = document.getElementById(buttonId);
+
+    if (!button) return;
+
+    button.disabled = !isAdmin;
+    button.setAttribute(
+      "aria-disabled",
+      String(!isAdmin)
+    );
+    button.title = isAdmin
+      ? ""
+      : "관리자만 사용할 수 있습니다.";
+  });
+
+  if (!isAdmin) {
+    closeMailStatusModal();
+  }
+}
+
+function requireMailAdminPermission() {
+  if (isCurrentUserAdmin()) {
+    return true;
+  }
+
+  alert("관리자만 사용할 수 있습니다.");
+  return false;
+}
+
 function openMailStatusModal() {
+  if (!requireMailAdminPermission()) {
+    return;
+  }
+
   const overlay = document.getElementById("mailStatusOverlay");
   const content = document.getElementById("mailLogContent");
 
@@ -1759,6 +1815,10 @@ function closeMailStatusModal() {
 }
 
 function confirmSendReportNow() {
+  if (!requireMailAdminPermission()) {
+    return;
+  }
+
   alert(
     "현재 메일링 기능은 연결되지 않아 실제 메일이 발송되지 않습니다.\n" +
     "Supabase Edge Function과 회사별 메일 발송 이력 테이블 연결이 필요합니다."
@@ -1782,6 +1842,7 @@ async function initializeProtectedPage() {
     }
 
     currentProfile = access.profile;
+    applyMailPermissionUI();
 
     document
       .documentElement
