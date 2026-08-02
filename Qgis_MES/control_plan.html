@@ -192,9 +192,24 @@ table.hdr select.db-input {
 @media print {
   .form-toolbar { display: none !important; }
   .form-scroll { overflow: visible; padding: 0; }
-  .db-input {
+
+  /*
+   * PDF 저장은 브라우저 인쇄 엔진을 사용하므로 표·문자는 벡터로 유지된다.
+   * 입력요소의 흰색 배경을 제거하여, 노란색/연노란색/흰색 등
+   * 각 부모 셀의 원래 배경색이 입력 영역에도 동일하게 이어지도록 한다.
+   */
+  td, th, .db-input {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .db-input,
+  .db-input[readonly],
+  .db-input.fetched,
+  select.db-input,
+  textarea.db-input {
     border: none !important;
-    background: #fff !important;
+    background: transparent !important;
+    background-color: transparent !important;
     box-shadow: none !important;
     padding: 0 !important;
   }
@@ -1950,9 +1965,38 @@ table.hdr select.db-input {
     }
   }
 
+  function sanitizePdfFileNamePart(value, fallback) {
+    const normalized = normalizeText(value) || fallback;
+    return normalized
+      .replace(/[\\/:*?"<>|]/g, "_")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function buildPdfFileName() {
+    const identity = getIdentity();
+    const customerName = sanitizePdfFileNamePart(identity.customerName, "고객사미입력");
+    const itemName = sanitizePdfFileNamePart(identity.itemName, "품명미입력");
+    const itemNumber = sanitizePdfFileNamePart(identity.itemNumber, "품번미입력");
+    return `관리계획서_${customerName}-${itemName}-${itemNumber}`;
+  }
+
   function saveVectorPdf() {
-    setStatus("벡터 PDF 저장용 인쇄 화면을 엽니다. 인쇄 대상에서 ‘PDF로 저장’을 선택해 주세요.");
-    window.setTimeout(() => window.print(), 120);
+    const originalTitle = document.title;
+    const pdfFileName = buildPdfFileName();
+
+    // Chrome/Edge의 ‘PDF로 저장’ 기본 파일명은 문서 제목을 사용한다.
+    document.title = pdfFileName;
+
+    const restoreDocumentTitle = () => {
+      document.title = originalTitle;
+    };
+    window.addEventListener("afterprint", restoreDocumentTitle, { once: true });
+
+    setStatus(
+      `벡터 PDF 저장 화면을 엽니다. 기본 파일명: ${pdfFileName}.pdf`
+    );
+    window.setTimeout(() => window.print(), 150);
   }
 
   btnLoad.addEventListener("click", openLookupModal);
