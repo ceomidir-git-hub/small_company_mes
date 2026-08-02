@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>검사장비현황 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#f4f6f9;--card:#fff;--line:#cfd6e1;--line-soft:#e3e8ef;--text:#1f2937;
+    --muted:#64748b;--blue:#1f5edb;--blue-dark:#1647ad;--green:#079660;
+    --green-dark:#05784d;--red:#dc2f45;--red-dark:#b91f34;--orange:#e38b20;
+    --shadow:0 3px 12px rgba(15,23,42,.06);--radius:9px;--print-line:1px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",Arial,sans-serif;background:var(--bg);color:var(--text)}
+  html.auth-pending body{visibility:hidden}
+  button,input,textarea{font:inherit}
+  button{cursor:pointer} button:disabled{cursor:not-allowed;opacity:.48}
+  .page{width:100%;margin:0 auto;padding:12px}
+  .title-frame{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+  .title-area h1{margin:0;color:#0e3f9d;font-size:24px;line-height:1.2;letter-spacing:-.5px}
+  .file-name{margin-left:5px;color:#667085;font-size:14px;font-weight:400}
+  .subtitle{margin-top:5px;color:#5f6b7a;font-size:14px}
+  .main-button{min-width:112px;height:42px;padding:0 16px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#1f2937;font-weight:700;box-shadow:var(--shadow)}
+  .main-button:hover{background:#f8fafc}
+  .toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:13px 14px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
+  .btn{min-height:40px;padding:8px 16px;border:1px solid var(--line);border-radius:7px;background:#fff;color:#1f2937;font-size:14px;font-weight:800;white-space:nowrap}
+  .btn:hover{filter:brightness(.97)}
+  .btn-blue{border-color:var(--blue);background:var(--blue);color:#fff}.btn-blue:hover{background:var(--blue-dark)}
+  .btn-green{border-color:var(--green);background:var(--green);color:#fff}.btn-green:hover{background:var(--green-dark)}
+  .btn-red{border-color:var(--red);background:var(--red);color:#fff}.btn-red:hover{background:var(--red-dark)}
+  .btn-orange{border-color:var(--orange);background:var(--orange);color:#fff}
+  .search-frame{display:grid;grid-template-columns:repeat(3,minmax(170px,1fr));gap:14px;padding:16px;margin-bottom:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
+  .field{display:flex;flex-direction:column;gap:6px;min-width:0}.field label{color:#445267;font-size:14px;font-weight:700}
+  .field input,.field textarea{width:100%;min-height:40px;padding:8px 10px;border:1px solid #c7d0dc;border-radius:7px;background:#fff;color:var(--text);outline:none}
+  .field textarea{min-height:76px;resize:vertical;line-height:1.45}
+  .field input:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,94,219,.12)}
+  .notice{display:none;margin-bottom:12px;padding:10px 12px;border-radius:7px;font-size:14px;line-height:1.5}.notice.show{display:block}.notice.info{background:#eff6ff;color:#1d4ed8}.notice.success{background:#ecfdf5;color:#047857}.notice.error{background:#fff1f2;color:#be123c}
+  .editor-frame{display:none;margin-bottom:12px;padding:15px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
+  .editor-frame.show{display:block}.editor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.editor-head h2{margin:0;color:#0e3f9d;font-size:17px}
+  .mode-badge{padding:5px 10px;border-radius:999px;background:#e9eef7;color:#45556d;font-size:11px;font-weight:800}.mode-badge.new{background:#e6f7ef;color:#047857}.mode-badge.edit{background:#fff3df;color:#a35405}
+  .editor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.editor-grid .full{grid-column:1/-1}.section-label{grid-column:1/-1;padding:8px 10px;border-left:4px solid var(--blue);background:#eef4ff;color:#0e3f9d;font-size:14px;font-weight:800}
+  .list-frame{padding:14px 16px 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
+  .screen-title{margin:2px 0 12px;color:#0e3f9d;font-size:18px;text-align:center}.sheet{width:100%;margin:0 auto;background:#fff}
+  table.title-box{width:100%;border-collapse:collapse;margin-bottom:6px}table.title-box td{border:1px solid #000;text-align:center;vertical-align:middle;font-size:25px;font-weight:800;height:52px;letter-spacing:2px}
+  .table-wrap{width:100%;overflow:auto;border:1px solid #cbd5e1;background:#fff}
+  table.main{width:100%;min-width:1320px;border-collapse:collapse;table-layout:fixed}
+  table.main th,table.main td{border:1px solid #000;text-align:center;vertical-align:middle;font-size:12px;line-height:1.25;padding:4px 3px;overflow:hidden;word-break:break-word;white-space:pre-line}
+  table.main thead th{font-weight:800;background:#f8fafc;height:36px}table.main thead tr.sub-header th{height:30px}.data-main td{height:38px}.data-sub td{height:32px}.grey{background:#ededed}.selected-row td{background:#e8f0ff!important}.clickable{cursor:pointer}.clickable:hover td{filter:brightness(.97)}
+  .footer-line{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:11px}.list-footer{display:flex;justify-content:flex-end;padding-top:10px;color:#475569;font-size:14px;font-weight:700}
+  .loading{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(15,23,42,.42)}.loading.show{display:flex}.loading-box{padding:17px 22px;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.18);font-weight:800}
+  @page{size:A4 landscape;margin:8mm}
+  @media print{
+    html,body{background:#fff!important;color:#000!important}.page{padding:0}.title-frame,.toolbar,.search-frame,.notice,.editor-frame,.screen-title,.list-footer,.loading{display:none!important}.list-frame{padding:0;border:0;box-shadow:none;background:#fff!important}.table-wrap{overflow:visible;border:0}.sheet{width:281mm;max-width:281mm}.sheet table.main{min-width:0!important;width:100%!important}.sheet table.main th,.sheet table.main td{font-size:8.6pt!important;padding:1.2px 2px!important;background:#fff;color:#000}.sheet table.main .grey{background:#ededed!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet table.title-box td{font-size:17pt;height:10.5mm}.data-main td{height:7.9mm!important}.data-sub td{height:7.9mm!important}.selected-row td{background:inherit!important}.footer-line{font-size:8pt;margin-top:1.8mm}}
+  @media(max-width:900px){.search-frame{grid-template-columns:1fr 1fr}.editor-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.page{padding:8px}.title-area h1{font-size:19px}.file-name{display:block;margin:3px 0 0}.main-button{min-width:92px;height:38px;padding:0 10px;font-size:13px}.toolbar{display:grid;grid-template-columns:1fr 1fr}.toolbar .btn{width:100%;padding:7px 6px}.search-frame,.editor-grid{grid-template-columns:1fr}.list-frame{padding:10px}}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="title-frame">
+    <div class="title-area">
+      <h1>검사장비현황 <span class="file-name">_Inspection_Tool_Status.html</span></h1>
+      <div class="subtitle">HeatPro MES · 로그인 회사의 검사장비 조회·등록·수정·삭제</div>
+    </div>
+    <button class="main-button" type="button" onclick="goMain()">⌂ 메인화면</button>
+  </section>
+
+  <section class="toolbar" aria-label="검사장비 업무 버튼">
+    <button id="btnNew" class="btn btn-green" type="button" onclick="startNew()">＋ 등록</button>
+    <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
+    <button id="btnEdit" class="btn btn-blue" type="button" onclick="startEdit()" disabled>✎ 수정</button>
+    <button id="btnSave" class="btn btn-green" type="button" onclick="saveRecord()" disabled>▣ 저장</button>
+    <button id="btnDelete" class="btn btn-red" type="button" onclick="deleteSelected()" disabled>▣ 삭제</button>
+    <button class="btn" type="button" onclick="resetPage()">초기화</button>
+    <button class="btn btn-red" type="button" onclick="savePdf()">PDF 저장</button>
+  </section>
+
+  <section class="search-frame" aria-label="검사장비 조회 조건">
+    <div class="field"><label for="searchLot">LOT 번호</label><input id="searchLot" placeholder="전체"></div>
+    <div class="field"><label for="searchName">측정장비명</label><input id="searchName" placeholder="전체"></div>
+    <div class="field"><label for="searchLocation">장비위치</label><input id="searchLocation" placeholder="전체"></div>
+  </section>
+
+  <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+  <section id="editorFrame" class="editor-frame">
+    <div class="editor-head"><h2>검사장비 정보 입력</h2><span id="modeBadge" class="mode-badge">대기</span></div>
+    <form id="editForm" onsubmit="return false;">
+      <div class="editor-grid">
+        <div class="field"><label for="displayOrder">순번 *</label><input id="displayOrder" type="number" min="1" step="1" disabled></div>
+        <div class="field"><label for="lotNumber">LOT 번호 *</label><input id="lotNumber" maxlength="60" disabled></div>
+        <div class="field"><label for="toolName">측정장비명 *</label><input id="toolName" maxlength="160" disabled></div>
+        <div class="field"><label for="modelSpec">규격 &amp; 모델명</label><input id="modelSpec" maxlength="120" disabled></div>
+        <div class="field"><label for="manufacturer">제작회사</label><input id="manufacturer" maxlength="160" disabled></div>
+        <div class="field"><label for="quantity">수량</label><input id="quantity" type="number" min="1" step="1" disabled></div>
+        <div class="field"><label for="unit">단위</label><input id="unit" maxlength="30" disabled></div>
+        <div class="field"><label for="deviceNumber">기기번호</label><input id="deviceNumber" maxlength="100" disabled></div>
+        <div class="field"><label for="equipmentLocation">장비위치</label><input id="equipmentLocation" maxlength="120" disabled></div>
+
+        <div class="section-label">교정 1</div>
+        <div class="field"><label for="calibrationDate1">교정일자</label><input id="calibrationDate1" maxlength="60" placeholder="예: 2026.06.23" disabled></div>
+        <div class="field"><label for="calibrationNumber1">교정번호</label><input id="calibrationNumber1" maxlength="120" disabled></div>
+        <div class="field"><label for="calibrationAgency1">교정기관</label><input id="calibrationAgency1" maxlength="160" disabled></div>
+
+        <div class="section-label">교정 2</div>
+        <div class="field"><label for="calibrationDate2">교정일자</label><input id="calibrationDate2" maxlength="60" placeholder="날짜 또는 고장으로 미사용" disabled></div>
+        <div class="field"><label for="calibrationNumber2">교정번호</label><input id="calibrationNumber2" maxlength="120" disabled></div>
+        <div class="field"><label for="calibrationAgency2">교정기관</label><input id="calibrationAgency2" maxlength="160" disabled></div>
+
+        <div class="section-label">교정 3</div>
+        <div class="field"><label for="calibrationDate3">교정일자</label><input id="calibrationDate3" maxlength="60" disabled></div>
+        <div class="field"><label for="calibrationNumber3">교정번호</label><input id="calibrationNumber3" maxlength="120" disabled></div>
+        <div class="field"><label for="calibrationAgency3">교정기관</label><input id="calibrationAgency3" maxlength="160" disabled></div>
+        <div class="field full"><label for="remarks">비고</label><textarea id="remarks" maxlength="500" disabled></textarea></div>
+      </div>
+    </form>
+  </section>
+
+  <section class="list-frame">
+    <h2 class="screen-title">측정장비 관리목록</h2>
+    <div class="sheet">
+      <table class="title-box"><tr><td>측정장비&nbsp;&nbsp;관리목록</td></tr></table>
+      <div class="table-wrap">
+        <table class="main">
+          <colgroup>
+            <col style="width:2.49%"><col style="width:5.63%"><col style="width:8.19%"><col style="width:7.10%">
+            <col style="width:9.59%"><col style="width:2.73%"><col style="width:4.61%"><col style="width:4.92%">
+            <col style="width:6.15%"><col style="width:6.50%"><col style="width:8.22%"><col style="width:6.50%">
+            <col style="width:8.22%"><col style="width:6.50%"><col style="width:8.22%"><col style="width:4.44%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th rowspan="2">순번</th><th rowspan="2">LOT<br>번호</th><th rowspan="2">측정장비명</th><th rowspan="2">규격&amp;모델명</th>
+              <th rowspan="2">제작회사</th><th rowspan="2">수량</th><th rowspan="2">단위</th><th rowspan="2">기기번호</th><th rowspan="2">장비위치</th>
+              <th colspan="2">교정(년,월,일)</th><th colspan="2">교정(년,월,일)</th><th colspan="2">교정(년,월,일)</th><th rowspan="2">비고</th>
+            </tr>
+            <tr class="sub-header"><th>교정번호</th><th>교정기관</th><th>교정번호</th><th>교정기관</th><th>교정번호</th><th>교정기관</th></tr>
+          </thead>
+          <tbody id="tableBody"><tr><td colspan="16" style="height:120px;color:#64748b">데이터를 불러오는 중입니다.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="footer-line"><span>QP06-QI610-F001</span><span id="companyCode"></span><span>A4(210×297)㎜</span></div>
+    </div>
+    <div id="countLabel" class="list-footer">총 0건</div>
+  </section>
+</main>
+
+<div id="loadingOverlay" class="loading"><div id="loadingText" class="loading-box">처리 중입니다...</div></div>
+
+<script>
+"use strict";
+const SUPABASE_URL="https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY="sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const LOGIN_PAGE_URL="../index.html";
+const MAIN_PAGE_URL="main1.html";
+const TABLE_NAME="inspection_tools";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+
+let currentProfile=null;
+let companyInfo=null;
+let rows=[];
+let visibleRows=[];
+let selectedId=null;
+let mode="view";
+
+const fieldIds=["displayOrder","lotNumber","toolName","modelSpec","manufacturer","quantity","unit","deviceNumber","equipmentLocation","calibrationDate1","calibrationNumber1","calibrationAgency1","calibrationDate2","calibrationNumber2","calibrationAgency2","calibrationDate3","calibrationNumber3","calibrationAgency3","remarks"];
+const $=id=>document.getElementById(id);
+const clean=value=>String(value??"").trim();
+const valueOrNull=value=>clean(value)||null;
+const escapeHtml=value=>String(value??"").replace(/[&<>'"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+
+function goMain(){location.href=MAIN_PAGE_URL}
+function redirectToLogin(){location.replace(LOGIN_PAGE_URL)}
+function showLoading(text){$("loadingText").textContent=text||"처리 중입니다...";$("loadingOverlay").classList.add("show")}
+function hideLoading(){$("loadingOverlay").classList.remove("show")}
+function notice(message,type="info"){$("notice").textContent=message;$("notice").className="notice show "+type}
+function clearNotice(){$("notice").className="notice";$("notice").textContent=""}
+function dbError(error){if(!error)return "알 수 없는 오류입니다.";if(error.code==="42P01")return "inspection_tools 테이블이 없습니다. 제공된 SQL을 먼저 실행해 주세요.";if(error.code==="42501")return "권한이 없습니다. RLS 정책과 로그인 회사 연결을 확인해 주세요.";if(error.code==="23505")return "같은 회사에 동일한 LOT 번호가 이미 등록되어 있습니다.";return error.message||error.details||error.hint||String(error)}
+
+async function auth(){
+  const {data:userData,error:userError}=await sb.auth.getUser();
+  const user=userData?.user;
+  if(userError||!user){redirectToLogin();return false}
+  const {data:profile,error:profileError}=await sb.from("profiles").select("company_id,is_active").eq("user_id",user.id).single();
+  if(profileError||!profile||profile.is_active!==true||!profile.company_id){await sb.auth.signOut({scope:"local"});redirectToLogin();return false}
+  currentProfile=profile;
+  const {data:company}=await sb.from("companies").select("company_code,company_name").eq("company_id",profile.company_id).maybeSingle();
+  companyInfo=company||null;
+  $("companyCode").textContent=companyInfo?.company_code||"";
+  document.documentElement.classList.remove("auth-pending");
+  return true;
+}
+
+function setInputsEnabled(enabled){fieldIds.forEach(id=>$(id).disabled=!enabled)}
+function clearForm(){fieldIds.forEach(id=>$(id).value="")}
+function setMode(next){
+  mode=next;const editing=next==="new"||next==="edit";
+  $("editorFrame").classList.toggle("show",editing);setInputsEnabled(editing);
+  $("modeBadge").textContent=next==="new"?"신규 등록":next==="edit"?"수정":"대기";
+  $("modeBadge").className="mode-badge"+(next==="new"?" new":next==="edit"?" edit":"");
+  $("btnSave").disabled=!editing;
+}
+function updateSelectionButtons(){const has=Boolean(selectedId);$("btnEdit").disabled=!has;$("btnDelete").disabled=!has}
+function nextOrder(){return rows.reduce((max,row)=>Math.max(max,Number(row.display_order)||0),0)+1}
+
+function startNew(){
+  clearNotice();selectedId=null;updateSelectionButtons();clearForm();$("displayOrder").value=nextOrder();$("quantity").value="1";$("unit").value="EA";setMode("new");$("lotNumber").focus();renderRows();
+}
+function startEdit(){
+  if(!selectedId)return notice("수정할 검사장비를 선택해 주세요.","error");
+  const row=rows.find(item=>item.inspection_tool_system_id===selectedId);if(!row)return notice("선택한 데이터를 찾을 수 없습니다.","error");
+  fillForm(row);setMode("edit");$("lotNumber").focus();
+}
+function fillForm(row){
+  $("displayOrder").value=row.display_order??"";$("lotNumber").value=row.lot_number??"";$("toolName").value=row.tool_name??"";$("modelSpec").value=row.model_spec??"";
+  $("manufacturer").value=row.manufacturer??"";$("quantity").value=row.quantity??"";$("unit").value=row.unit??"";$("deviceNumber").value=row.device_number??"";$("equipmentLocation").value=row.equipment_location??"";
+  $("calibrationDate1").value=row.calibration_date_1??"";$("calibrationNumber1").value=row.calibration_number_1??"";$("calibrationAgency1").value=row.calibration_agency_1??"";
+  $("calibrationDate2").value=row.calibration_date_2??"";$("calibrationNumber2").value=row.calibration_number_2??"";$("calibrationAgency2").value=row.calibration_agency_2??"";
+  $("calibrationDate3").value=row.calibration_date_3??"";$("calibrationNumber3").value=row.calibration_number_3??"";$("calibrationAgency3").value=row.calibration_agency_3??"";$("remarks").value=row.remarks??"";
+}
+function payload(){return{
+  company_id:currentProfile.company_id,display_order:Number($("displayOrder").value),lot_number:clean($("lotNumber").value),tool_name:clean($("toolName").value),model_spec:valueOrNull($("modelSpec").value),manufacturer:valueOrNull($("manufacturer").value),quantity:$("quantity").value?Number($("quantity").value):null,unit:valueOrNull($("unit").value),device_number:valueOrNull($("deviceNumber").value),equipment_location:valueOrNull($("equipmentLocation").value),calibration_date_1:valueOrNull($("calibrationDate1").value),calibration_number_1:valueOrNull($("calibrationNumber1").value),calibration_agency_1:valueOrNull($("calibrationAgency1").value),calibration_date_2:valueOrNull($("calibrationDate2").value),calibration_number_2:valueOrNull($("calibrationNumber2").value),calibration_agency_2:valueOrNull($("calibrationAgency2").value),calibration_date_3:valueOrNull($("calibrationDate3").value),calibration_number_3:valueOrNull($("calibrationNumber3").value),calibration_agency_3:valueOrNull($("calibrationAgency3").value),remarks:valueOrNull($("remarks").value),is_active:true
+}}
+
+async function saveRecord(){
+  if(mode!=="new"&&mode!=="edit")return notice("등록 또는 수정 버튼을 먼저 눌러 주세요.","error");
+  const data=payload();if(!Number.isInteger(data.display_order)||data.display_order<1)return notice("순번은 1 이상의 숫자로 입력해 주세요.","error");if(!data.lot_number||!data.tool_name)return notice("LOT 번호와 측정장비명을 입력해 주세요.","error");
+  showLoading("저장 중입니다...");
+  const result=mode==="new"?await sb.from(TABLE_NAME).insert(data):await sb.from(TABLE_NAME).update(data).eq("inspection_tool_system_id",selectedId).eq("company_id",currentProfile.company_id);
+  hideLoading();if(result.error)return notice("저장 실패: "+dbError(result.error),"error");
+  const message=mode==="new"?"검사장비 신규 등록이 완료되었습니다.":"검사장비 수정 및 저장이 완료되었습니다.";setMode("view");selectedId=null;updateSelectionButtons();clearForm();await loadRows();notice(message,"success");
+}
+
+async function deleteSelected(){
+  if(!selectedId)return notice("삭제할 검사장비를 선택해 주세요.","error");if(!confirm("선택한 검사장비를 삭제하시겠습니까?"))return;
+  showLoading("삭제 중입니다...");const {error}=await sb.from(TABLE_NAME).delete().eq("inspection_tool_system_id",selectedId).eq("company_id",currentProfile.company_id);hideLoading();
+  if(error)return notice("삭제 실패: "+dbError(error),"error");selectedId=null;updateSelectionButtons();setMode("view");clearForm();await loadRows();notice("검사장비 삭제가 완료되었습니다.","success");
+}
+
+async function loadRows(){
+  showLoading("검사장비 데이터를 조회하는 중입니다...");
+  const {data,error}=await sb.from(TABLE_NAME).select("inspection_tool_system_id,company_id,display_order,lot_number,tool_name,model_spec,manufacturer,quantity,unit,device_number,equipment_location,calibration_date_1,calibration_number_1,calibration_agency_1,calibration_date_2,calibration_number_2,calibration_agency_2,calibration_date_3,calibration_number_3,calibration_agency_3,remarks,is_active").eq("company_id",currentProfile.company_id).eq("is_active",true).order("display_order",{ascending:true}).order("inspection_tool_system_id",{ascending:true});
+  hideLoading();if(error){rows=[];visibleRows=[];renderRows();return notice("조회 실패: "+dbError(error),"error")}
+  rows=data||[];applyFilters();notice("검사장비 "+rows.length+"건을 조회했습니다.","success");
+}
+function applyFilters(){
+  const lot=clean($("searchLot").value).toLowerCase(),name=clean($("searchName").value).toLowerCase(),location=clean($("searchLocation").value).toLowerCase();
+  visibleRows=rows.filter(row=>(!lot||clean(row.lot_number).toLowerCase().includes(lot))&&(!name||clean(row.tool_name).toLowerCase().includes(name))&&(!location||clean(row.equipment_location).toLowerCase().includes(location)));renderRows();
+}
+function searchRows(){clearNotice();applyFilters();notice("조회 조건에 맞는 검사장비 "+visibleRows.length+"건을 표시했습니다.","success")}
+function resetPage(){$("searchLot").value="";$("searchName").value="";$("searchLocation").value="";selectedId=null;updateSelectionButtons();setMode("view");clearForm();clearNotice();visibleRows=[...rows];renderRows();notice("화면을 초기화했습니다.","info")}
+function selectRow(id){selectedId=id;updateSelectionButtons();setMode("view");clearForm();renderRows();notice("선택한 검사장비를 수정하거나 삭제할 수 있습니다.","info")}
+
+function dataRowsHtml(row){
+  const id=escapeHtml(row.inspection_tool_system_id),selected=row.inspection_tool_system_id===selectedId?" selected-row":"";
+  return `<tr class="data-main clickable${selected}" onclick="selectRow('${id}')">
+    <td rowspan="2">${escapeHtml(row.display_order)}</td><td rowspan="2">${escapeHtml(row.lot_number)}</td><td rowspan="2">${escapeHtml(row.tool_name)}</td><td rowspan="2">${escapeHtml(row.model_spec)}</td><td rowspan="2">${escapeHtml(row.manufacturer)}</td><td rowspan="2">${escapeHtml(row.quantity)}</td><td rowspan="2">${escapeHtml(row.unit)}</td><td rowspan="2">${escapeHtml(row.device_number)}</td><td rowspan="2">${escapeHtml(row.equipment_location)}</td>
+    <td colspan="2">${escapeHtml(row.calibration_date_1)}</td><td colspan="2">${escapeHtml(row.calibration_date_2)}</td><td colspan="2">${escapeHtml(row.calibration_date_3)}</td><td rowspan="2">${escapeHtml(row.remarks)}</td></tr>
+    <tr class="data-sub clickable${selected}" onclick="selectRow('${id}')"><td class="grey">${escapeHtml(row.calibration_number_1)}</td><td class="grey">${escapeHtml(row.calibration_agency_1)}</td><td class="grey">${escapeHtml(row.calibration_number_2)}</td><td class="grey">${escapeHtml(row.calibration_agency_2)}</td><td class="grey">${escapeHtml(row.calibration_number_3)}</td><td class="grey">${escapeHtml(row.calibration_agency_3)}</td></tr>`;
+}
+function blankRowsHtml(order){return `<tr class="data-main"><td rowspan="2">${order}</td>${'<td rowspan="2"></td>'.repeat(8)}<td colspan="2"></td><td colspan="2"></td><td colspan="2"></td><td rowspan="2"></td></tr><tr class="data-sub">${'<td class="grey"></td>'.repeat(6)}</tr>`}
+function renderRows(){
+  let html=visibleRows.map(dataRowsHtml).join("");
+  const blankCount=Math.max(0,10-visibleRows.length);for(let i=0;i<blankCount;i++)html+=blankRowsHtml(visibleRows.length+i+1);
+  if(!html)html='<tr><td colspan="16" style="height:120px;color:#64748b">조회된 검사장비가 없습니다.</td></tr>';
+  $("tableBody").innerHTML=html;$("countLabel").textContent="총 "+visibleRows.length+"건";
+}
+function savePdf(){if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");notice("조회된 "+visibleRows.length+"건을 PDF 저장용 화면으로 변환했습니다.","success");setTimeout(()=>window.print(),100)}
+
+async function init(){try{if(await auth()){setMode("view");updateSelectionButtons();await loadRows()}}catch(error){document.documentElement.classList.remove("auth-pending");hideLoading();notice("화면 초기화 오류: "+dbError(error),"error")}}
+sb.auth.onAuthStateChange(event=>{if(event==="SIGNED_OUT")redirectToLogin()});
+addEventListener("load",init);
+</script>
+</body>
+</html>
