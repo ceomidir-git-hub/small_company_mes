@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>사원 관리 | HeatPro MES</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="mes_inactivity_timeout.js"></script>
 <style>
 :root{
   --bg:#f4f6f9;
@@ -1069,6 +1070,16 @@ async function initializePage() {
   try {
     const ok = await verifyCompanyAccess();
     if (!ok) return;
+
+    if (typeof window.startMesInactivityTimeout !== "function") {
+      throw new Error("mes_inactivity_timeout.js 파일을 불러오지 못했습니다.");
+    }
+
+    await window.startMesInactivityTimeout({
+      supabaseClient: sb,
+      loginPageUrl: LOGIN_PAGE_URL,
+      timeoutMinutes: 20
+    });
 
     applyPermissionUI();
     clearForm();
