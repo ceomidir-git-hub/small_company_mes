@@ -69,11 +69,11 @@
     .modal-actions .btn{min-width:110px}
     .required{color:#dc2626}
     .help{color:#64748b;font-size:11px}
-    .status-chip{display:inline-block;min-width:52px;padding:3px 8px;border-radius:999px;font-weight:800}
-    .status-chip.미작성{background:#eef2f7;color:#475569}
-    .status-chip.진행중{background:#fff7dd;color:#a16207}
-    .status-chip.완료{background:#eaf8ef;color:#08783e}
 
+
+    .sortable{cursor:pointer;user-select:none}
+    .sortable:hover{background:#1647ad}
+    .sort-mark{display:inline-block;min-width:14px;margin-left:3px;font-size:10px}
     .pagination{display:flex;align-items:center;justify-content:center;gap:5px;padding-top:9px;flex-wrap:wrap}
     .page-btn{min-width:32px;height:30px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;font-size:12px;font-weight:800}
     .page-btn.active{border-color:var(--blue);background:var(--blue);color:#fff}
@@ -143,15 +143,19 @@
       <table>
         <colgroup>
           <col style="width:3.5%"><col style="width:6.5%"><col style="width:7%"><col style="width:8%">
-          <col style="width:10%"><col style="width:10%"><col style="width:6.5%"><col style="width:9%">
-          <col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:7%"><col style="width:4.5%">
+          <col style="width:10.5%"><col style="width:10.5%"><col style="width:6.5%"><col style="width:10%">
+          <col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:7.5%">
         </colgroup>
         <thead><tr>
           <th>번호</th><th>등록일</th><th>고객관리번호</th><th>고객사</th><th>품명</th><th>품번</th>
-          <th>템퍼링</th><th>관리계획서번호</th><th>제조공정도번호</th><th>검사기준서번호</th>
-          <th>작업표준서번호</th><th>진행상태</th><th>사용</th>
+          <th>템퍼링</th>
+          <th class="sortable" onclick="sortByDocument('control_plan_number')">관리계획서번호<span id="sortControlPlan" class="sort-mark"></span></th>
+          <th class="sortable" onclick="sortByDocument('manufacturing_process_number')">제조공정도번호<span id="sortManufacturing" class="sort-mark"></span></th>
+          <th class="sortable" onclick="sortByDocument('inspection_standard_number')">검사기준서번호<span id="sortInspection" class="sort-mark"></span></th>
+          <th class="sortable" onclick="sortByDocument('work_standard_number')">작업표준서번호<span id="sortWork" class="sort-mark"></span></th>
+          <th>사용</th>
         </tr></thead>
-        <tbody id="tableBody"><tr><td class="empty" colspan="13">데이터를 불러오는 중입니다.</td></tr></tbody>
+        <tbody id="tableBody"><tr><td class="empty" colspan="12">데이터를 불러오는 중입니다.</td></tr></tbody>
       </table>
     </div>
     <div id="pagination" class="pagination" aria-label="페이지 이동"></div>
@@ -174,10 +178,6 @@
           <div class="field">
             <label for="temperingStatus">템퍼링 실시 유무</label>
             <select id="temperingStatus"><option value="">미입력</option><option value="미실시">미실시</option><option value="실시">실시</option></select>
-          </div>
-          <div class="field">
-            <label for="documentStatus">미작성/진행중/완료</label>
-            <select id="documentStatus"><option value="미작성">미작성</option><option value="진행중">진행중</option><option value="완료">완료</option></select>
           </div>
           <div class="field"><label for="controlPlanNumber">관리계획서번호</label><input id="controlPlanNumber" maxlength="150" placeholder="예: CO-A-001-01"></div>
           <div class="field"><label for="manufacturingProcessNumber">제조공정도번호</label><input id="manufacturingProcessNumber" maxlength="150" placeholder="예: MP-A-001-01"></div>
@@ -204,7 +204,7 @@ const LOGIN_PAGE_URL="../index.html";
 const MAIN_PAGE_URL="main1.html";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 
-let currentProfile=null,customers=[],allRows=[],visibleRows=[],selectedId=null,mode="view",currentPage=1;const PAGE_SIZE=10;
+let currentProfile=null,customers=[],allRows=[],visibleRows=[],selectedId=null,mode="view",currentPage=1,sortField="",sortDirection="asc";const PAGE_SIZE=10;
 
 function n(v){return String(v??"").trim()}
 function e(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -254,7 +254,7 @@ async function loadRows(){
   try{
     await loadCustomers();
     const {data,error}=await sb.from("items")
-      .select("item_system_id,customer_system_id,registered_date,item_name,item_number,tempering_status,control_plan_number,manufacturing_process_number,inspection_standard_number,work_standard_number,document_status,is_active")
+      .select("item_system_id,customer_system_id,registered_date,item_name,item_number,tempering_status,control_plan_number,manufacturing_process_number,inspection_standard_number,work_standard_number,is_active")
       .eq("company_id",currentProfile.company_id)
       .order("registered_date",{ascending:true,nullsFirst:false})
       .order("item_name",{ascending:true}).order("item_number",{ascending:true});
@@ -273,14 +273,56 @@ function apply(){
     (!itemName||n(r.item_name)===itemName)&&
     (!itemNumber||n(r.item_number).toLowerCase().includes(itemNumber))
   );
-  visibleRows.sort((a,b)=>{
-    const d=n(a.registered_date||"9999-12-31").localeCompare(n(b.registered_date||"9999-12-31"));if(d)return d;
-    const c=n(a.company_number).localeCompare(n(b.company_number),"ko",{numeric:true});if(c)return c;
-    const i=n(a.item_name).localeCompare(n(b.item_name),"ko",{numeric:true});if(i)return i;
-    return n(a.control_plan_number).localeCompare(n(b.control_plan_number),"ko",{numeric:true});
-  });
+  sortVisibleRows();
   currentPage=1;clearSelection();render();
 }
+
+function sortVisibleRows(){
+  if(sortField){
+    visibleRows.sort((a,b)=>{
+      const av=n(a[sortField]),bv=n(b[sortField]);
+      if(!av&&!bv)return 0;
+      if(!av)return 1;
+      if(!bv)return -1;
+      const result=av.localeCompare(bv,"ko",{numeric:true,sensitivity:"base"});
+      return sortDirection==="asc"?result:-result;
+    });
+  }else{
+    visibleRows.sort((a,b)=>{
+      const d=n(a.registered_date||"9999-12-31").localeCompare(n(b.registered_date||"9999-12-31"));if(d)return d;
+      const c=n(a.company_number).localeCompare(n(b.company_number),"ko",{numeric:true});if(c)return c;
+      const i=n(a.item_name).localeCompare(n(b.item_name),"ko",{numeric:true});if(i)return i;
+      return n(a.control_plan_number).localeCompare(n(b.control_plan_number),"ko",{numeric:true});
+    });
+  }
+  updateSortMarks();
+}
+function sortByDocument(field){
+  if(sortField===field){
+    sortDirection=sortDirection==="asc"?"desc":"asc";
+  }else{
+    sortField=field;
+    sortDirection="asc";
+  }
+  sortVisibleRows();
+  currentPage=1;
+  clearSelection();
+  render();
+}
+function updateSortMarks(){
+  const map={
+    control_plan_number:"sortControlPlan",
+    manufacturing_process_number:"sortManufacturing",
+    inspection_standard_number:"sortInspection",
+    work_standard_number:"sortWork"
+  };
+  Object.values(map).forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=""});
+  if(sortField&&map[sortField]){
+    const el=document.getElementById(map[sortField]);
+    if(el)el.textContent=sortDirection==="asc"?"▲":"▼";
+  }
+}
+
 function clearSelection(){selectedId=null;btnEdit.disabled=true;btnDelete.disabled=true}
 async function searchRows(){await loadRows();notice("아이템 조회가 완료되었습니다. 조회 건수: "+visibleRows.length+"건","success")}
 function resetSearch(){searchCustomerId.value="";updateSearchItemNames();searchItemName.value="";searchItemNumber.value="";apply();notice("조회조건을 초기화했습니다.","success")}
@@ -295,11 +337,10 @@ function render(){
       <td>${start+index+1}</td><td>${e(r.registered_date||"")}</td><td>${e(r.company_number)}</td><td>${e(r.customer_name)}</td>
       <td title="${e(r.item_name)}">${e(r.item_name)}</td><td title="${e(r.item_number)}">${e(r.item_number)}</td>
       <td>${e(r.tempering_status||"미입력")}</td><td>${e(r.control_plan_number||"")}</td>
-      <td>${e(r.manufacturing_process_number||"")}</td><td>${e(r.inspection_standard_number||"")}</td>
+      <td title="${e(r.manufacturing_process_number||"")}">${e(r.manufacturing_process_number||"")}</td><td title="${e(r.inspection_standard_number||"")}">${e(r.inspection_standard_number||"")}</td>
       <td>${e(r.work_standard_number||"")}</td>
-      <td><span class="status-chip ${e(r.document_status||"미작성")}">${e(r.document_status||"미작성")}</span></td>
       <td>${r.is_active!==false?"사용":"중지"}</td>
-    </tr>`).join(""):'<tr><td class="empty" colspan="13">표시할 아이템이 없습니다.</td></tr>';
+    </tr>`).join(""):'<tr><td class="empty" colspan="12">표시할 아이템이 없습니다.</td></tr>';
 
   countLabel.textContent="총 "+visibleRows.length+"건 · "+currentPage+"/"+totalPages+"페이지";
   renderPagination(totalPages);
@@ -337,7 +378,7 @@ function selectRow(id){
 }
 function clearForm(){
   editForm.reset();registeredDate.value=new Date().toISOString().slice(0,10);
-  temperingStatus.value="";documentStatus.value="미작성";isActive.checked=true;
+  temperingStatus.value="";isActive.checked=true;
 }
 function fillForm(r){
   registeredDate.value=r.registered_date||"";
@@ -348,7 +389,6 @@ function fillForm(r){
   manufacturingProcessNumber.value=r.manufacturing_process_number||"";
   inspectionStandardNumber.value=r.inspection_standard_number||"";
   workStandardNumber.value=r.work_standard_number||"";
-  documentStatus.value=r.document_status||"미작성";
   isActive.checked=r.is_active!==false;
 }
 function openModal(){itemModal.classList.add("show");document.body.style.overflow="hidden"}
@@ -371,7 +411,6 @@ async function saveRecord(){
     manufacturing_process_number:n(manufacturingProcessNumber.value)||null,
     inspection_standard_number:n(inspectionStandardNumber.value)||null,
     work_standard_number:n(workStandardNumber.value)||null,
-    document_status:n(documentStatus.value)||"미작성",
     is_active:isActive.checked
   };
   if(!selectedCustomer)return notice("고객사를 선택해 주세요.","error");
