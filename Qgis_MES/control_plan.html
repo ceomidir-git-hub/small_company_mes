@@ -388,6 +388,44 @@ table.hdr select.db-input {
   .plan-no-label-cell::after { background: #ffffff !important; }
 }
 </style>
+<style id="control-plan-signature-image-style">
+.approval-signature-cell {
+  padding: .18mm .22mm !important;
+}
+.approval-signature-wrap {
+  width: 100%;
+  height: 100%;
+  min-height: 11.4mm;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: .15mm;
+}
+.approval-signature-wrap > select.db-input {
+  flex: 0 0 4.5mm;
+  min-height: 4.5mm;
+  height: 4.5mm;
+  font-size: 6.2pt;
+}
+.approval-signature-image {
+  display: none;
+  width: 100%;
+  height: 6.0mm;
+  object-fit: contain;
+  margin: 0 auto;
+}
+@media print {
+  .approval-signature-wrap > select.db-input {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .approval-signature-image {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+</style>
 </head>
 <body><div class="form-toolbar">
 <div class="toolbar-title">
@@ -487,6 +525,8 @@ table.hdr select.db-input {
   const MASTER_TABLE = "control_plans";
   const VALUE_TABLE = "control_plan_input_values";
   const APPROVAL_TABLE = "control_plan_approvals";
+  const SIGNATURE_BUCKET = "employee_signatures";
+  const SIGNATURE_URL_EXPIRES_IN = 60 * 60;
   const EXPECTED_INPUT_COUNT = 429;
   const VALUE_JOINER = " / ";
   const VALUE_SPLIT_PATTERN = /\s+\/\s+/;
@@ -530,6 +570,8 @@ table.hdr select.db-input {
   const btnItemApply = document.getElementById("btnItemApply");
 
   const planNoControl = controlByNo.get(4);
+  const ownerApprovalControl = controlByNo.get(6);
+  const approverApprovalControl = controlByNo.get(7);
   const itemNumberControl = controlByNo.get(IDENTITY_INPUTS.itemNumber);
   const itemNameControl = controlByNo.get(IDENTITY_INPUTS.itemName);
   const customerNameControl = controlByNo.get(IDENTITY_INPUTS.customerName);
@@ -555,6 +597,14 @@ table.hdr select.db-input {
   let referenceItems = [];
   let planCatalog = [];
   let selectedLookupPlanId = null;
+  const signatureEmployees = new Map();
+  const signatureUrlCache = new Map();
+  const approvalRowsByField = new Map();
+
+  const SIGNATURE_LOOKUP_ALIASES = Object.freeze({
+    "김종렬": ["김종열"],
+    "김종열": ["김종렬"]
+  });
 
   function setStatus(message) {
     status.textContent = message;
@@ -572,6 +622,172 @@ table.hdr select.db-input {
       '"': "&quot;",
       "'": "&#39;"
     })[character]);
+  }
+
+  function signatureLookupNames(value) {
+    const name = normalizeText(value);
+    if (!name) return [];
+    return [name, ...(SIGNATURE_LOOKUP_ALIASES[name] || [])];
+  }
+
+  function sameSignatureName(left, right) {
+    const leftNames = new Set(signatureLookupNames(left));
+    return signatureLookupNames(right).some(name => leftNames.has(name));
+  }
+
+  function findSignatureEmployee(value) {
+    for (const name of signatureLookupNames(value)) {
+      const signature = signatureEmployees.get(name);
+      if (signature) return signature;
+    }
+    return null;
+  }
+
+  function signatureImageId(fieldNo) {
+    return `control-plan-signature-${fieldNo}`;
+  }
+
+  function ensureApprovalSignatureUi() {
+    [
+      { fieldNo: 6, control: ownerApprovalControl, alt: "담당 서명" },
+      { fieldNo: 7, control: approverApprovalControl, alt: "승인 서명" }
+    ].forEach(({ fieldNo, control, alt }) => {
+      if (!control || document.getElementById(signatureImageId(fieldNo))) return;
+      const cell = control.closest("td");
+      if (!cell) return;
+
+      const wrap = document.createElement("div");
+      wrap.className = "approval-signature-wrap";
+      cell.classList.add("approval-signature-cell");
+      cell.insertBefore(wrap, control);
+      wrap.appendChild(control);
+
+      const image = document.createElement("img");
+      image.id = signatureImageId(fieldNo);
+      image.className = "approval-signature-image";
+      image.crossOrigin = "anonymous";
+      image.referrerPolicy = "no-referrer";
+      image.alt = alt;
+      wrap.appendChild(image);
+    });
+  }
+
+  function clearApprovalSignatureImage(fieldNo) {
+    const image = document.getElementById(signatureImageId(fieldNo));
+    if (!image) return;
+    image.removeAttribute("src");
+    image.style.display = "none";
+  }
+
+  async function signedUrlForStoragePath(storagePath) {
+    const path = normalizeText(storagePath);
+    if (!path || !currentProfile?.company_id) return "";
+
+    const companyFolder = `${currentProfile.company_id}/`;
+    if (!path.startsWith(companyFolder)) {
+      console.warn("로그인 회사 폴더와 다른 사인 경로를 차단했습니다:", path);
+      return "";
+    }
+
+    if (signatureUrlCache.has(path)) return signatureUrlCache.get(path);
+
+    const { data, error } = await sb.storage
+      .from(SIGNATURE_BUCKET)
+      .createSignedUrl(path, SIGNATURE_URL_EXPIRES_IN);
+
+    if (error || !data?.signedUrl) {
+      console.warn("Private Storage 사인 URL 생성 실패:", path, error);
+      return "";
+    }
+
+    signatureUrlCache.set(path, data.signedUrl);
+    return data.signedUrl;
+  }
+
+  async function updateApprovalSignature(fieldNo, notify = false) {
+    const control = controlByNo.get(fieldNo);
+    const image = document.getElementById(signatureImageId(fieldNo));
+    if (!control || !image) return false;
+
+    const selectedName = normalizeText(getControlValue(control));
+    if (!selectedName) {
+      clearApprovalSignatureImage(fieldNo);
+      return false;
+    }
+
+    const employeeSignature = findSignatureEmployee(selectedName);
+    const storedApproval = approvalRowsByField.get(fieldNo);
+    const storedPath = storedApproval && sameSignatureName(
+      selectedName,
+      storedApproval.approver_name
+    )
+      ? normalizeText(storedApproval.signature_storage_path)
+      : "";
+
+    const storagePath = normalizeText(employeeSignature?.storagePath) || storedPath;
+    const signedUrl = employeeSignature?.signedUrl ||
+      await signedUrlForStoragePath(storagePath);
+
+    if (!signedUrl) {
+      clearApprovalSignatureImage(fieldNo);
+      if (notify) {
+        setStatus(`${selectedName} 사인 이미지를 찾지 못했습니다. 사원정보의 signature_storage_path를 확인해 주세요.`);
+      }
+      return false;
+    }
+
+    image.src = signedUrl;
+    image.alt = `${selectedName} 서명`;
+    image.style.display = "block";
+    if (notify) setStatus(`${selectedName} 사인 이미지를 불러왔습니다.`);
+    return true;
+  }
+
+  async function updateAllApprovalSignatures() {
+    await Promise.all([
+      updateApprovalSignature(6, false),
+      updateApprovalSignature(7, false)
+    ]);
+  }
+
+  async function loadSignatureEmployees() {
+    signatureEmployees.clear();
+    signatureUrlCache.clear();
+
+    const { data, error } = await sb
+      .from("employees")
+      .select(
+        "employee_system_id,employee_code,employee_name," +
+        "signature_storage_path,is_active"
+      )
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .not("signature_storage_path", "is", null)
+      .order("employee_code", { ascending: true });
+
+    if (error) {
+      console.warn("사인 정보 조회 실패:", error);
+      return 0;
+    }
+
+    const companyFolder = `${currentProfile.company_id}/`;
+    await Promise.all((data || []).map(async employee => {
+      const employeeName = normalizeText(employee.employee_name);
+      const storagePath = normalizeText(employee.signature_storage_path);
+      if (!employeeName || !storagePath || !storagePath.startsWith(companyFolder)) {
+        return;
+      }
+
+      const signedUrl = await signedUrlForStoragePath(storagePath);
+      signatureEmployees.set(employeeName, {
+        employeeSystemId: employee.employee_system_id,
+        employeeName,
+        storagePath,
+        signedUrl
+      });
+    }));
+
+    return signatureEmployees.size;
   }
 
   function dbMessage(error) {
@@ -760,6 +976,7 @@ table.hdr select.db-input {
   }
 
   function restoreDefaults() {
+    approvalRowsByField.clear();
     controls.forEach(control => {
       const defaultValue = control.dataset.default ?? "";
       setControlValue(
@@ -768,13 +985,16 @@ table.hdr select.db-input {
       );
     });
     autoGrowAll();
+    void updateAllApprovalSignatures();
   }
 
   function clearAllControls() {
+    approvalRowsByField.clear();
     controls.forEach(control => {
       setControlValue(control, control.type === "checkbox" ? false : "");
     });
     autoGrowAll();
+    void updateAllApprovalSignatures();
   }
 
   function validateBeforeSave() {
@@ -856,12 +1076,23 @@ table.hdr select.db-input {
       { fieldNo: 7, role: "approver" }
     ].map(({ fieldNo, role }) => {
       const selectedName = normalizeText(getControlValue(controlByNo.get(fieldNo)));
+      const employeeSignature = findSignatureEmployee(selectedName);
+      const storedApproval = approvalRowsByField.get(fieldNo);
+      const canReuseStored = storedApproval && sameSignatureName(
+        selectedName,
+        storedApproval.approver_name
+      );
+
       return {
         company_id: currentProfile.company_id,
         control_plan_system_id: controlPlanId,
         field_no: fieldNo,
         approval_role: role,
+        approver_employee_system_id: employeeSignature?.employeeSystemId ||
+          (canReuseStored ? storedApproval.approver_employee_system_id : null) || null,
         approver_name: selectedName || null,
+        signature_storage_path: employeeSignature?.storagePath ||
+          (canReuseStored ? storedApproval.signature_storage_path : null) || null,
         is_active: Boolean(selectedName),
         updated_at: now
       };
@@ -882,7 +1113,7 @@ table.hdr select.db-input {
   async function fetchApprovalRows(controlPlanId) {
     const { data, error } = await sb
       .from(APPROVAL_TABLE)
-      .select("field_no,approval_role,approver_name,signature_storage_path,approved_at,is_active")
+      .select("field_no,approval_role,approver_employee_system_id,approver_name,signature_storage_path,approved_at,is_active")
       .eq("company_id", currentProfile.company_id)
       .eq("control_plan_system_id", controlPlanId)
       .order("field_no", { ascending: true });
@@ -892,14 +1123,21 @@ table.hdr select.db-input {
   }
 
   function applyApprovalRows(rows) {
+    approvalRowsByField.clear();
+    [6, 7].forEach(fieldNo => clearApprovalSignatureImage(fieldNo));
+
     rows
       .filter(row => row.is_active === true)
       .forEach(row => {
-        const control = controlByNo.get(Number(row.field_no));
+        const fieldNo = Number(row.field_no);
+        approvalRowsByField.set(fieldNo, row);
+        const control = controlByNo.get(fieldNo);
         if (!control) return;
         const displayValue = normalizeText(row.approver_name);
-        if (displayValue) setControlValue(control, displayValue);
+        setControlValue(control, displayValue);
       });
+
+    void updateAllApprovalSignatures();
   }
 
   async function verifyDatabaseTables() {
@@ -980,7 +1218,7 @@ table.hdr select.db-input {
         .order("company_number", { ascending: true }),
       sb
         .from("items")
-        .select("item_system_id,customer_system_id,item_name,item_number,is_active")
+        .select("item_system_id,customer_system_id,item_name,item_number,control_plan_number,is_active")
         .eq("company_id", currentProfile.company_id)
         .eq("is_active", true)
         .order("item_name", { ascending: true })
@@ -1073,6 +1311,7 @@ table.hdr select.db-input {
       }
 
       applyValueRows(valueRows);
+      setControlValue(planNoControl, master.plan_no || "");
       applyApprovalRows(approvalRows);
       currentPlanId = master.control_plan_system_id;
       sourcePlanId = null;
@@ -1339,10 +1578,12 @@ table.hdr select.db-input {
     }
 
     setIdentity(customer, item);
+    const itemControlPlanNumber = normalizeText(item.control_plan_number);
+    setControlValue(planNoControl, itemControlPlanNumber);
     closeModal(itemModal);
     setStatus(
       `${mode === "copy" ? "복사등록" : "신규등록"} 품목 선택 완료 · ` +
-      `${identityText()} · 관리계획번호와 필요한 내용을 확인한 후 저장해 주세요.`
+      `${identityText()} · 관리계획번호 ${itemControlPlanNumber || "DB 빈값"}`
     );
   }
 
@@ -1461,6 +1702,7 @@ table.hdr select.db-input {
         );
       }
 
+      applyApprovalRows(savedApprovals);
       currentPlanId = targetPlanId;
       loadedIdentity = identity;
       const originalPlanNumber = sourcePlanNumber;
@@ -1689,6 +1931,15 @@ table.hdr select.db-input {
     await loadPlanById(targetPlanId);
   });
 
+  [
+    { fieldNo: 6, control: ownerApprovalControl },
+    { fieldNo: 7, control: approverApprovalControl }
+  ].forEach(({ fieldNo, control }) => {
+    control?.addEventListener("change", () => {
+      void updateApprovalSignature(fieldNo, true);
+    });
+  });
+
   itemCustomer.addEventListener("change", updateItemNames);
   itemNameSelect.addEventListener("change", updateItemNumbers);
   itemNumberSelect.addEventListener("change", validateItemSelection);
@@ -1741,19 +1992,25 @@ table.hdr select.db-input {
 
   async function initialize() {
     autoGrowAll();
+    ensureApprovalSignatureUi();
     setMode("view");
     setBusy(true, "로그인, 회사 정보, 고객사·품목 및 관리계획서 DB 3개를 확인하고 있습니다.");
 
     try {
       validateFormMapping();
       await requireAuthenticatedProfile();
-      await loadReferenceData();
+      const [, signatureCount] = await Promise.all([
+        loadReferenceData(),
+        loadSignatureEmployees()
+      ]);
       const dbState = await verifyDatabaseTables();
+      await updateAllApprovalSignatures();
 
       setMode("view");
       setStatus(
         `Supabase DB 연결 완료 · 관리계획서 테이블 3개 확인 · 입력항목 429개 · ` +
-        `사용 중인 관리계획서 ${dbState.activePlanCount}건 · 조회 또는 신규등록을 선택해 주세요.`
+        `사인 ${signatureCount}명 · 사용 중인 관리계획서 ${dbState.activePlanCount}건 · ` +
+        `조회 또는 신규등록을 선택해 주세요.`
       );
     } catch (error) {
       console.error("초기화 오류:", error);
