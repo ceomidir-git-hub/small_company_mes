@@ -5,771 +5,363 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>아이템 관리 | HeatPro MES</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
-    :root {
-      --bg: #f4f6f9;
-      --card: #ffffff;
-      --line: #cfd6e1;
-      --line-soft: #e3e8ef;
-      --text: #1f2937;
-      --muted: #64748b;
-      --blue: #1f5edb;
-      --blue-dark: #1647ad;
-      --green: #079660;
-      --green-dark: #05784d;
-      --red: #dc2f45;
-      --red-dark: #b91f34;
-      --orange: #e38b20;
-      --shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
-      --radius: 9px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    html.auth-pending body {
-      visibility: hidden;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    button:disabled {
-      cursor: not-allowed;
-      opacity: 0.48;
-    }
-
-    .page {
-      width: 100%;
-      margin: 0 auto;
-      padding: 12px;
-    }
-
-    /* 상단 제목 / 메인화면 프레임 */
-    .title-frame {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 12px;
-    }
-
-    .title-area h1 {
-      margin: 0;
-      color: #0e3f9d;
-      font-size: 24px;
-      line-height: 1.2;
-      letter-spacing: -0.5px;
-    }
-
-    .file-name {
-      margin-left: 5px;
-      color: #667085;
-      font-size: 14px;
-      font-weight: 400;
-    }
-
-    .subtitle {
-      margin-top: 5px;
-      color: #5f6b7a;
-      font-size: 14px;
-    }
-
-    .main-button {
-      min-width: 112px;
-      height: 42px;
-      padding: 0 16px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
-      color: #1f2937;
-      font-weight: 700;
-      box-shadow: var(--shadow);
-    }
-
-    .main-button:hover {
-      background: #f8fafc;
-    }
-
-    /* 조회 프레임 */
-    .search-frame {
-      display: grid;
-      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr) auto;
-      align-items: end;
-      gap: 14px;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--card);
-      box-shadow: var(--shadow);
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .field label {
-      color: #445267;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .field input,
-    .field select,
-    .field textarea {
-      width: 100%;
-      min-height: 40px;
-      padding: 8px 10px;
-      border: 1px solid #c7d0dc;
-      border-radius: 7px;
-      background: #fff;
-      color: var(--text);
-      outline: none;
-    }
-
-    .field textarea {
-      min-height: 92px;
-      resize: vertical;
-      line-height: 1.5;
-    }
-
-    .field input:focus,
-    .field select:focus,
-    .field textarea:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px rgba(31, 94, 219, 0.12);
-    }
-
-    .search-buttons {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-
-    .btn {
-      min-height: 40px;
-      padding: 8px 16px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: #fff;
-      color: #1f2937;
-      font-size: 14px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .btn:hover {
-      filter: brightness(0.97);
-    }
-
-    .btn-blue {
-      border-color: var(--blue);
-      background: var(--blue);
-      color: #fff;
-    }
-
-    .btn-blue:hover {
-      background: var(--blue-dark);
-    }
-
-    .btn-green {
-      border-color: var(--green);
-      background: var(--green);
-      color: #fff;
-    }
-
-    .btn-green:hover {
-      background: var(--green-dark);
-    }
-
-    .btn-red {
-      border-color: var(--red);
-      background: var(--red);
-      color: #fff;
-    }
-
-    .btn-red:hover {
-      background: var(--red-dark);
-    }
-
-    .btn-orange {
-      border-color: var(--orange);
-      background: var(--orange);
-      color: #fff;
-    }
-
-    /* 안내 및 업무 버튼 프레임 */
-    .action-frame {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 12px 0;
-    }
-
-    .guide-text {
-      color: #617087;
-      font-size: 14px;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 9px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    /* 등록/수정 입력 프레임 */
-    .editor-frame {
-      display: none;
-      margin-bottom: 12px;
-      padding: 15px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--card);
-      box-shadow: var(--shadow);
-    }
-
-    .editor-frame.show {
-      display: block;
-    }
-
-    .editor-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .editor-head h2 {
-      margin: 0;
-      color: #0e3f9d;
-      font-size: 17px;
-    }
-
-    .mode-badge {
-      padding: 5px 10px;
-      border-radius: 999px;
-      background: #e9eef7;
-      color: #45556d;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .mode-badge.new {
-      background: #e6f7ef;
-      color: #047857;
-    }
-
-    .mode-badge.edit {
-      background: #fff3df;
-      color: #a35405;
-    }
-
-    .editor-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.3fr 1fr 1fr;
-      gap: 12px;
-    }
-
-    .editor-grid .full {
-      grid-column: 1 / -1;
-    }
-
-    .char-count {
-      margin-top: 4px;
-      color: #64748b;
-      font-size: 11px;
-      text-align: right;
-    }
-
-    /* 목록 프레임 */
-    .list-frame {
-      padding: 14px 16px 16px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--card);
-      box-shadow: var(--shadow);
-    }
-
-    .list-title {
-      margin: 2px 0 12px;
-      color: #0e3f9d;
-      font-size: 18px;
-      text-align: center;
-    }
-
-    .table-wrap {
-      width: 100%;
-      max-height: 560px;
-      overflow: auto;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-    }
-
-    table {
-      width: 100%;
-      min-width: 980px;
-      border-collapse: collapse;
-      table-layout: fixed;
-      font-size: 14px;
-    }
-
-    thead th {
-      position: sticky;
-      top: 0;
-      z-index: 3;
-      padding: 10px 8px;
-      border-right: 1px solid #1248a9;
-      border-bottom: 1px solid #1248a9;
-      background: #1e5bd7;
-      color: #fff;
-      font-weight: 800;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    tbody td,
-    tfoot td {
-      padding: 9px 8px;
-      border-right: 1px solid #d8dee8;
-      border-bottom: 1px solid #d8dee8;
-      text-align: center;
-      vertical-align: middle;
-    }
-
-    tbody tr {
-      cursor: pointer;
-    }
-
-    tbody tr:hover {
-      background: #f5f8fd;
-    }
-
-    tbody tr.selected {
-      background: #e8f0ff;
-      outline: 2px solid rgba(31, 94, 219, 0.28);
-      outline-offset: -2px;
-    }
-
-    .notes-cell {
-      overflow: hidden;
-      text-align: left;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    tfoot td {
-      position: sticky;
-      bottom: 0;
-      z-index: 2;
-      background: #edf2ff;
-      color: #0e3f9d;
-      font-weight: 800;
-    }
-
-    .empty {
-      height: 130px;
-      color: #64748b;
-      text-align: center !important;
-    }
-
-    .list-footer {
-      display: flex;
-      justify-content: flex-end;
-      padding-top: 10px;
-      color: #475569;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .notice {
-      display: none;
-      margin-bottom: 12px;
-      padding: 10px 12px;
-      border-radius: 7px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .notice.show {
-      display: block;
-    }
-
-    .notice.info {
-      background: #eff6ff;
-      color: #1d4ed8;
-    }
-
-    .notice.success {
-      background: #ecfdf5;
-      color: #047857;
-    }
-
-    .notice.error {
-      background: #fff1f2;
-      color: #be123c;
-    }
-
-    .loading {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-      background: rgba(15, 23, 42, 0.42);
-    }
-
-    .loading.show {
-      display: flex;
-    }
-
-    .loading-box {
-      padding: 17px 22px;
-      border-radius: 12px;
-      background: #fff;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
-      font-weight: 800;
-    }
-
-
-    .print-title {
-      display: none;
-      margin: 0 0 12px;
-      color: #000;
-      font-size: 20px;
-      text-align: center;
-    }
-
-    .item-table .col-no { width: 4%; }
-    .item-table .col-date { width: 12%; }
-    .item-table .col-company-no { width: 14%; }
-    .item-table .col-customer { width: 18%; }
-    .item-table .col-item-number { width: 19%; }
-    .item-table .col-item-name { width: 25%; }
-    .item-table .col-status { width: 8%; }
-
-    .item-table th,
-    .item-table td {
-      white-space: nowrap;
-    }
-
-    @page {
-      size: A4 landscape;
-      margin: 10mm;
-    }
-
-    @media print {
-      html, body {
-        background: #fff !important;
-        color: #000 !important;
-      }
-
-      .page {
-        padding: 0;
-      }
-
-      .title-frame,
-      .screen-title,
-      .search-frame,
-      .action-frame,
-      .editor-frame,
-      .notice,
-      .loading,
-      .list-footer {
-        display: none !important;
-      }
-
-      .print-title {
-        display: block !important;
-      }
-
-      .list-frame {
-        padding: 0;
-        border: 0;
-        box-shadow: none;
-        background: #fff !important;
-      }
-
-      .table-wrap {
-        max-height: none;
-        overflow: visible;
-        border: 1px solid #000;
-      }
-
-      table {
-        min-width: 0 !important;
-        width: 100% !important;
-        font-size: 10pt !important;
-        color: #000 !important;
-      }
-
-      thead th, tbody td, tfoot td {
-        position: static !important;
-        border: 1px solid #000 !important;
-        background: #fff !important;
-        color: #000 !important;
-      }
-
-      tbody tr.selected {
-        outline: none;
-        background: #fff !important;
-      }
-    }
-
-    @media (max-width: 900px) {
-      .search-frame {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .search-buttons {
-        grid-column: 1 / -1;
-      }
-
-      .editor-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .action-frame {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .action-buttons {
-        width: 100%;
-        justify-content: flex-start;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .page {
-        padding: 8px;
-      }
-
-      .title-area h1 {
-        font-size: 19px;
-      }
-
-      .file-name {
-        display: block;
-        margin: 3px 0 0;
-      }
-
-      .main-button {
-        min-width: 92px;
-        height: 38px;
-        padding: 0 10px;
-        font-size: 12px;
-      }
-
-      .search-frame,
-      .editor-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .search-buttons {
-        grid-column: auto;
-        justify-content: stretch;
-      }
-
-      .search-buttons .btn {
-        flex: 1;
-      }
-
-      .action-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .action-buttons .btn {
-        width: 100%;
-      }
-
-      .list-frame {
-        padding: 10px;
-      }
-
-      table {
-        min-width: 900px;
-      }
+    :root{
+      --bg:#f4f6f9;--card:#fff;--line:#cfd7e3;--text:#1f2937;--muted:#64748b;
+      --blue:#1f5edb;--blue-dark:#1647ad;--green:#079660;--red:#dc2f45;
+      --shadow:0 3px 12px rgba(15,23,42,.06);--radius:9px
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;background:var(--bg);color:var(--text)}
+    html.auth-pending body{visibility:hidden}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.45}
+    .page{width:100%;padding:8px 10px}
+    .title-frame{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
+    .title-area{min-width:0}
+    .title-area h1{display:inline;margin:0;color:#0e3f9d;font-size:22px;line-height:1.15;letter-spacing:-.4px}
+    .file-name{margin-left:7px;color:#667085;font-size:13px;font-weight:400}
+    .subtitle{margin-top:3px;color:#5f6b7a;font-size:12px}
+    .main-button{height:36px;padding:0 13px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#1f2937;font-size:13px;font-weight:800;box-shadow:var(--shadow)}
+    .search-frame{display:grid;grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) minmax(170px,1fr) auto;align-items:end;gap:9px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
+    .field{display:flex;flex-direction:column;gap:4px;min-width:0}
+    .field label{color:#3f4d62;font-size:12px;font-weight:800}
+    .field input,.field select{width:100%;height:36px;padding:6px 9px;border:1px solid #c7d0dc;border-radius:7px;background:#fff;color:var(--text);outline:none}
+    .field input:focus,.field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(31,94,219,.11)}
+    .search-buttons,.action-buttons{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+    .btn{min-height:36px;padding:7px 13px;border:1px solid var(--line);border-radius:7px;background:#fff;color:#1f2937;font-size:13px;font-weight:800;white-space:nowrap}
+    .btn-blue{border-color:var(--blue);background:var(--blue);color:#fff}
+    .btn-green{border-color:var(--green);background:var(--green);color:#fff}
+    .btn-red{border-color:var(--red);background:var(--red);color:#fff}
+    .action-frame{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 2px}
+    .guide-text{color:#617087;font-size:12px}
+    .list-frame{padding:8px 10px 10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
+    .list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+    .list-title{margin:0;color:#0e3f9d;font-size:16px}
+    .count-label{color:#475569;font-size:12px;font-weight:700}
+    .table-wrap{width:100%;max-height:620px;overflow:auto;border:1px solid #cbd5e1;background:#fff}
+    table{width:100%;min-width:1760px;border-collapse:collapse;table-layout:fixed;font-size:12px}
+    th,td{padding:7px 6px;border-right:1px solid #d8dee8;border-bottom:1px solid #d8dee8;text-align:center;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    thead th{position:sticky;top:0;z-index:3;background:#1e5bd7;color:#fff;font-weight:800}
+    tbody tr{cursor:pointer}
+    tbody tr:hover{background:#f5f8fd}
+    tbody tr.selected{background:#e8f0ff;outline:2px solid rgba(31,94,219,.28);outline-offset:-2px}
+    .empty{height:120px;color:#64748b;text-align:center!important}
+    .notice{display:none;margin:0 0 7px;padding:8px 10px;border-radius:7px;font-size:12px}
+    .notice.show{display:block}
+    .notice.info{background:#eff6ff;color:#1d4ed8}
+    .notice.success{background:#ecfdf5;color:#047857}
+    .notice.error{background:#fff1f2;color:#be123c}
+    .loading{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(15,23,42,.42)}
+    .loading.show{display:flex}
+    .loading-box{padding:16px 21px;border-radius:11px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.18);font-weight:800}
+    .modal-backdrop{display:none;position:fixed;inset:0;z-index:5000;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.48)}
+    .modal-backdrop.show{display:flex}
+    .modal{width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;border-radius:12px;background:#fff;box-shadow:0 20px 60px rgba(15,23,42,.28)}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 12px;border-bottom:1px solid #e3e8ef}
+    .modal-head h2{margin:0;color:#0e3f9d;font-size:19px}
+    .modal-close{width:34px;height:34px;border:0;background:transparent;font-size:25px;line-height:1;color:#475569}
+    .modal-body{padding:14px 18px}
+    .modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 14px}
+    .modal-grid .full{grid-column:1/-1}
+    .modal-actions{display:flex;justify-content:center;gap:10px;padding:12px 18px 17px;border-top:1px solid #e3e8ef}
+    .modal-actions .btn{min-width:110px}
+    .required{color:#dc2626}
+    .help{color:#64748b;font-size:11px}
+    .status-chip{display:inline-block;min-width:52px;padding:3px 8px;border-radius:999px;font-weight:800}
+    .status-chip.미작성{background:#eef2f7;color:#475569}
+    .status-chip.진행중{background:#fff7dd;color:#a16207}
+    .status-chip.완료{background:#eaf8ef;color:#08783e}
+    .print-title{display:none}
+    @page{size:A4 landscape;margin:7mm}
+    @media print{
+      html,body{background:#fff!important;color:#000!important}
+      .page{padding:0}.title-frame,.search-frame,.action-frame,.notice,.loading,.modal-backdrop,.list-head{display:none!important}
+      .print-title{display:block!important;margin:0 0 8px;text-align:center;font-size:17px}
+      .list-frame{padding:0;border:0;box-shadow:none}.table-wrap{max-height:none;overflow:visible;border:1px solid #000}
+      table{min-width:0!important;width:100%!important;font-size:7.5pt!important}
+      th,td{position:static!important;padding:4px 3px!important;border:1px solid #000!important;background:#fff!important;color:#000!important}
+    }
+    @media(max-width:900px){
+      .search-frame{grid-template-columns:1fr 1fr}.search-buttons{grid-column:1/-1}
+      .action-frame{align-items:flex-start;flex-direction:column}.action-buttons{width:100%;justify-content:flex-start}
+    }
+    @media(max-width:600px){
+      .page{padding:6px}.title-area h1{font-size:19px}.file-name{display:block;margin:2px 0 0}
+      .search-frame{grid-template-columns:1fr}.search-buttons{grid-column:auto;justify-content:stretch}
+      .search-buttons .btn{flex:1}.modal-grid{grid-template-columns:1fr}.modal-grid .full{grid-column:auto}
+      .action-buttons{display:grid;grid-template-columns:repeat(3,1fr)}.action-buttons .btn{width:100%}
     }
   </style>
 </head>
-
 <body>
 <main class="page">
   <section class="title-frame">
     <div class="title-area">
-      <h1>아이템 관리 <span class="file-name">_system_edit_item.html</span></h1>
+      <h1>아이템 관리</h1><span class="file-name">_system_edit_item.html</span>
       <div class="subtitle">HeatPro MES · 로그인 회사의 아이템 조회·등록·수정·삭제</div>
     </div>
     <button class="main-button" type="button" onclick="goMain()">⌂ 메인화면</button>
   </section>
 
-  
-<section class="search-frame">
-  <div class="field"><label for="searchCustomerId">고객사명</label><select id="searchCustomerId"><option value="">전체</option></select></div>
-  <div class="field"><label for="searchItemName">품명</label><select id="searchItemName"><option value="">전체</option></select></div>
-  <div class="field"><label for="searchItemNumber">품번</label><input id="searchItemNumber" placeholder="전체"></div>
-  <div class="search-buttons">
-    <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
-    <button class="btn" type="button" onclick="resetSearch()">초기화</button>
-    <button class="btn btn-red" type="button" onclick="savePdf()">PDF 저장</button>
-  </div>
-</section>
+  <section class="search-frame">
+    <div class="field"><label for="searchCustomerId">고객사</label><select id="searchCustomerId"><option value="">전체</option></select></div>
+    <div class="field"><label for="searchItemName">품명</label><select id="searchItemName"><option value="">전체</option></select></div>
+    <div class="field"><label for="searchItemNumber">품번</label><input id="searchItemNumber" placeholder="품번 입력"></div>
+    <div class="search-buttons">
+      <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
+      <button class="btn" type="button" onclick="resetSearch()">초기화</button>
+      <button class="btn btn-red" type="button" onclick="savePdf()">PDF 저장</button>
+    </div>
+  </section>
 
   <section class="action-frame">
     <div id="guideText" class="guide-text">데이터를 불러오는 중입니다.</div>
     <div class="action-buttons">
-      <button id="btnNew" class="btn btn-green" type="button" onclick="startNew()">＋ 등록</button>
+      <button class="btn btn-green" type="button" onclick="startNew()">＋ 등록</button>
       <button id="btnEdit" class="btn btn-blue" type="button" onclick="startEdit()" disabled>✎ 수정</button>
       <button id="btnDelete" class="btn btn-red" type="button" onclick="deleteSelected()" disabled>▣ 삭제</button>
-      <button id="btnSave" class="btn btn-green" type="button" onclick="saveRecord()" disabled>▣ 저장</button>
     </div>
   </section>
 
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
 
-  
-<section id="editorFrame" class="editor-frame"><div class="editor-head"><h2>아이템정보 입력</h2><span id="modeBadge" class="mode-badge">대기</span></div>
-<form id="editForm" onsubmit="return false;"><div class="editor-grid">
-<div class="field"><label for="registeredDate">등록일</label><input id="registeredDate" type="date" disabled></div>
-<div class="field"><label for="customerId">고객사 *</label><select id="customerId" disabled><option value="">고객사 선택</option></select></div>
-<div class="field"><label for="itemNumber">품번 *</label><input id="itemNumber" maxlength="150" disabled></div>
-<div class="field"><label for="itemName">품명 *</label><input id="itemName" maxlength="150" disabled></div>
-<div class="field"><label>사용 상태</label><div class="checkbox-line"><input id="isActive" type="checkbox" checked disabled><label for="isActive">사용</label></div></div>
-</div></form></section>
-
-  
-<section class="list-frame"><h2 class="list-title screen-title">아이템 상세현황</h2><h2 class="print-title">Qgis 고객사별 Item별 상세현황</h2><div class="table-wrap"><table class="item-table"><colgroup><col class="col-no"><col class="col-date"><col class="col-company-no"><col class="col-customer"><col class="col-item-number"><col class="col-item-name"><col class="col-status"></colgroup><thead><tr><th>NO</th><th>등록일</th><th>고객관리번호</th><th>고객사명</th><th>품번</th><th>품명</th><th>상태</th></tr></thead><tbody id="tableBody"><tr><td class="empty" colspan="7">데이터를 불러오는 중입니다.</td></tr></tbody><tfoot><tr><td colspan="2">합계</td><td id="totalCount" colspan="5">0건</td></tr></tfoot></table></div><div id="countLabel" class="list-footer">총 0건</div></section>
+  <section class="list-frame">
+    <div class="list-head">
+      <h2 class="list-title">아이템 목록</h2>
+      <div id="countLabel" class="count-label">총 0건</div>
+    </div>
+    <h2 class="print-title">Qgis 고객사별 Item 상세현황</h2>
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col style="width:50px"><col style="width:95px"><col style="width:105px"><col style="width:145px">
+          <col style="width:150px"><col style="width:155px"><col style="width:105px"><col style="width:150px">
+          <col style="width:160px"><col style="width:150px"><col style="width:150px"><col style="width:90px"><col style="width:70px">
+        </colgroup>
+        <thead><tr>
+          <th>번호</th><th>등록일</th><th>고객관리번호</th><th>고객사</th><th>품명</th><th>품번</th>
+          <th>템퍼링</th><th>관리계획서번호</th><th>제조공정도번호</th><th>검사기준서번호</th>
+          <th>작업표준서번호</th><th>진행상태</th><th>사용</th>
+        </tr></thead>
+        <tbody id="tableBody"><tr><td class="empty" colspan="13">데이터를 불러오는 중입니다.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
 </main>
 
-<div id="loadingOverlay" class="loading">
-  <div id="loadingText" class="loading-box">처리 중입니다...</div>
-</div>
+<section id="itemModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">아이템 정보 등록</h2>
+      <button class="modal-close" type="button" onclick="closeModal()" aria-label="닫기">×</button>
+    </div>
+    <form id="editForm" onsubmit="return false;">
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div class="field"><label for="registeredDate">등록일</label><input id="registeredDate" type="date"></div>
+          <div class="field"><label for="customerId">고객사 <span class="required">*</span></label><select id="customerId"><option value="">고객사 선택</option></select></div>
+          <div class="field"><label for="itemName">품명 <span class="required">*</span></label><input id="itemName" maxlength="150"></div>
+          <div class="field"><label for="itemNumber">품번 <span class="required">*</span></label><input id="itemNumber" maxlength="150"></div>
+          <div class="field">
+            <label for="temperingStatus">템퍼링 실시 유무</label>
+            <select id="temperingStatus"><option value="">미입력</option><option value="미실시">미실시</option><option value="실시">실시</option></select>
+          </div>
+          <div class="field">
+            <label for="documentStatus">미작성/진행중/완료</label>
+            <select id="documentStatus"><option value="미작성">미작성</option><option value="진행중">진행중</option><option value="완료">완료</option></select>
+          </div>
+          <div class="field"><label for="controlPlanNumber">관리계획서번호</label><input id="controlPlanNumber" maxlength="150" placeholder="예: CO-A-001-01"></div>
+          <div class="field"><label for="manufacturingProcessNumber">제조공정도번호</label><input id="manufacturingProcessNumber" maxlength="150" placeholder="예: MP-A-001-01"></div>
+          <div class="field"><label for="inspectionStandardNumber">검사기준서번호</label><input id="inspectionStandardNumber" maxlength="150" placeholder="예: IS-A-001-01"></div>
+          <div class="field"><label for="workStandardNumber">작업표준서번호</label><input id="workStandardNumber" maxlength="150" placeholder="예: WS-A-001-01"></div>
+          <div class="field full"><label><input id="isActive" type="checkbox" checked> 사용 상태</label></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" type="button" onclick="closeModal()">취소</button>
+        <button class="btn btn-blue" type="button" onclick="saveRecord()">저장</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<div id="loadingOverlay" class="loading"><div id="loadingText" class="loading-box">처리 중입니다...</div></div>
 
 <script>
-
 "use strict";
 const SUPABASE_URL="https://enxtgbyslnryxvfpjdkc.supabase.co";
 const SUPABASE_KEY="sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
 const LOGIN_PAGE_URL="../index.html";
 const MAIN_PAGE_URL="main1.html";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-let currentProfile=null,allRows=[],visibleRows=[],selectedId=null,mode="view";
+
+let currentProfile=null,customers=[],allRows=[],visibleRows=[],selectedId=null,mode="view";
+
 function n(v){return String(v??"").trim()}
 function e(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function loading(show,text="처리 중입니다..."){document.getElementById("loadingText").textContent=text;document.getElementById("loadingOverlay").classList.toggle("show",!!show)}
+function loading(show,text="처리 중입니다..."){loadingText.textContent=text;loadingOverlay.classList.toggle("show",!!show)}
 function notice(text,type="info"){const x=document.getElementById("notice");x.textContent=text;x.className="notice show "+type}
 function clearNotice(){const x=document.getElementById("notice");x.textContent="";x.className="notice"}
-function guide(t){document.getElementById("guideText").textContent=t}
-function dbError(x){if(!x)return"알 수 없는 오류입니다.";if(x.code==="23505")return"같은 회사에 중복된 값이 있습니다.";if(x.code==="23503")return"다른 업무 데이터에서 사용 중이므로 삭제할 수 없습니다.";if(x.code==="42501")return"권한이 없습니다. RLS 정책을 확인해 주세요.";return x.message||String(x)}
+function guide(text){guideText.textContent=text}
+function dbError(x){
+  if(!x)return"알 수 없는 오류입니다.";
+  if(x.code==="23505")return"같은 회사에 중복된 관리계획서번호가 있습니다.";
+  if(x.code==="23503")return"다른 업무 데이터에서 사용 중이므로 삭제할 수 없습니다.";
+  if(x.code==="42501")return"권한이 없습니다. RLS 정책을 확인해 주세요.";
+  return x.message||String(x)
+}
 async function auth(){
- const {data:u,error:ue}=await sb.auth.getUser(); const user=u?.user;
- if(ue||!user){location.replace(LOGIN_PAGE_URL);return false}
- const {data:p,error:pe}=await sb.from("profiles").select("company_id,is_active").eq("user_id",user.id).single();
- if(pe||!p||p.is_active!==true||!p.company_id){await sb.auth.signOut({scope:"local"});location.replace(LOGIN_PAGE_URL);return false}
- currentProfile=p;document.documentElement.classList.remove("auth-pending");return true
+  const {data:u,error:ue}=await sb.auth.getUser();const user=u?.user;
+  if(ue||!user){location.replace(LOGIN_PAGE_URL);return false}
+  const {data:p,error:pe}=await sb.from("profiles").select("company_id,is_active").eq("user_id",user.id).single();
+  if(pe||!p||p.is_active!==true||!p.company_id){await sb.auth.signOut({scope:"local"});location.replace(LOGIN_PAGE_URL);return false}
+  currentProfile=p;document.documentElement.classList.remove("auth-pending");return true
 }
 function goMain(){location.href=MAIN_PAGE_URL}
 sb.auth.onAuthStateChange(ev=>{if(ev==="SIGNED_OUT")location.replace(LOGIN_PAGE_URL)});
 
-let customers=[];const fields=["registeredDate","customerId","itemNumber","itemName","isActive"];
-function setMode(m){mode=m;const ed=m==="new"||m==="edit";fields.forEach(id=>document.getElementById(id).disabled=!ed);btnSave.disabled=!ed;btnEdit.disabled=!selectedId||ed;btnDelete.disabled=!selectedId||ed;editorFrame.classList.toggle("show",ed||!!selectedId);modeBadge.textContent=m==="new"?"신규등록":m==="edit"?"수정중":selectedId?"선택됨":"대기";modeBadge.className="mode-badge"+(m==="new"?" new":m==="edit"?" edit":"")}
-function clearForm(){selectedId=null;editForm.reset();registeredDate.value=new Date().toISOString().slice(0,10);isActive.checked=true}
-function fill(r){registeredDate.value=r.registered_date||"";customerId.value=r.customer_system_id||"";itemNumber.value=r.item_number||"";itemName.value=r.item_name||"";isActive.checked=r.is_active!==false}
 async function loadCustomers(){
- const previousSearchCustomer=n(searchCustomerId.value);
- const previousEditorCustomer=n(customerId.value);
- const {data,error}=await sb.from("customers").select("customer_system_id,company_number,customer_name,is_active").eq("company_id",currentProfile.company_id).order("company_number");
- if(error)throw error;
- customers=data||[];
- const activeCustomers=customers.filter(x=>x.is_active!==false&&n(x.customer_name));
- customerId.innerHTML='<option value="">고객사 선택</option>'+activeCustomers.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.company_number)} · ${e(x.customer_name)}</option>`).join("");
- searchCustomerId.innerHTML='<option value="">전체</option>'+activeCustomers.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.customer_name)}</option>`).join("");
- if(activeCustomers.some(x=>x.customer_system_id===previousSearchCustomer))searchCustomerId.value=previousSearchCustomer;
- if(activeCustomers.some(x=>x.customer_system_id===previousEditorCustomer))customerId.value=previousEditorCustomer;
+  const prevSearch=n(searchCustomerId.value),prevEdit=n(customerId.value);
+  const {data,error}=await sb.from("customers")
+    .select("customer_system_id,company_number,customer_name,is_active")
+    .eq("company_id",currentProfile.company_id).order("company_number");
+  if(error)throw error;
+  customers=data||[];
+  const active=customers.filter(x=>x.is_active!==false&&n(x.customer_name));
+  searchCustomerId.innerHTML='<option value="">전체</option>'+active.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.customer_name)}</option>`).join("");
+  customerId.innerHTML='<option value="">고객사 선택</option>'+active.map(x=>`<option value="${e(x.customer_system_id)}">${e(x.company_number)} · ${e(x.customer_name)}</option>`).join("");
+  if(active.some(x=>x.customer_system_id===prevSearch))searchCustomerId.value=prevSearch;
+  if(active.some(x=>x.customer_system_id===prevEdit))customerId.value=prevEdit;
 }
 function updateSearchItemNames(){
- const customer=n(searchCustomerId.value);
- const names=[...new Set(allRows.filter(r=>!customer||r.customer_system_id===customer).map(r=>n(r.item_name)).filter(Boolean))]
-   .sort((a,b)=>a.localeCompare(b,"ko",{numeric:true,sensitivity:"base"}));
- const previous=n(searchItemName.value);
- searchItemName.innerHTML='<option value="">전체</option>'+names.map(name=>`<option value="${e(name)}">${e(name)}</option>`).join("");
- searchItemName.value=names.includes(previous)?previous:"";
+  const customer=n(searchCustomerId.value),prev=n(searchItemName.value);
+  const names=[...new Set(allRows.filter(r=>!customer||r.customer_system_id===customer).map(r=>n(r.item_name)).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,"ko",{numeric:true,sensitivity:"base"}));
+  searchItemName.innerHTML='<option value="">전체</option>'+names.map(v=>`<option value="${e(v)}">${e(v)}</option>`).join("");
+  if(names.includes(prev))searchItemName.value=prev;
 }
 async function loadRows(){
- loading(true,"아이템정보를 불러오는 중입니다...");
- clearNotice();
- await loadCustomers();
- const {data,error}=await sb.from("items")
-  .select("item_system_id,customer_system_id,registered_date,item_name,item_number,is_active")
-  .eq("company_id",currentProfile.company_id)
-  .order("registered_date",{ascending:true,nullsFirst:false})
-  .order("item_name",{ascending:true})
-  .order("item_number",{ascending:true});
- loading(false);
- if(error){allRows=[];visibleRows=[];render();return notice("조회 실패: "+dbError(error),"error")}
- allRows=(data||[]).map(r=>{const c=customers.find(x=>x.customer_system_id===r.customer_system_id)||{};return {...r,company_number:c.company_number||"",customer_name:c.customer_name||""}});
- updateSearchItemNames();
- apply();
- clearForm();
- setMode("view");
- guide("아이템정보 "+allRows.length+"건을 등록일 오름차순으로 불러왔습니다.");
+  loading(true,"아이템정보를 불러오는 중입니다...");clearNotice();
+  try{
+    await loadCustomers();
+    const {data,error}=await sb.from("items")
+      .select("item_system_id,customer_system_id,registered_date,item_name,item_number,tempering_status,control_plan_number,manufacturing_process_number,inspection_standard_number,work_standard_number,document_status,is_active")
+      .eq("company_id",currentProfile.company_id)
+      .order("registered_date",{ascending:true,nullsFirst:false})
+      .order("item_name",{ascending:true}).order("item_number",{ascending:true});
+    if(error)throw error;
+    allRows=(data||[]).map(r=>{const c=customers.find(x=>x.customer_system_id===r.customer_system_id)||{};return {...r,company_number:c.company_number||"",customer_name:c.customer_name||""}});
+    updateSearchItemNames();apply();clearSelection();
+    guide("아이템정보 "+allRows.length+"건을 등록일 오름차순으로 불러왔습니다.");
+  }catch(error){
+    allRows=[];visibleRows=[];render();notice("조회 실패: "+dbError(error),"error");
+  }finally{loading(false)}
 }
 function apply(){
- const customer=n(searchCustomerId.value),itemName=n(searchItemName.value),itemNumber=n(searchItemNumber.value).toLowerCase();
- visibleRows=allRows.filter(r=>(!customer||r.customer_system_id===customer)&&(!itemName||n(r.item_name)===itemName)&&(!itemNumber||String(r.item_number||"").toLowerCase().includes(itemNumber)));
- visibleRows.sort((a,b)=>{
-  const dateCompare=String(a.registered_date||"9999-12-31").localeCompare(String(b.registered_date||"9999-12-31"));
-  if(dateCompare!==0)return dateCompare;
-  const customerCompare=String(a.company_number||"").localeCompare(String(b.company_number||""),"ko",{numeric:true,sensitivity:"base"});
-  if(customerCompare!==0)return customerCompare;
-  const nameCompare=String(a.item_name||"").localeCompare(String(b.item_name||""),"ko",{numeric:true,sensitivity:"base"});
-  if(nameCompare!==0)return nameCompare;
-  return String(a.item_number||"").localeCompare(String(b.item_number||""),"ko",{numeric:true,sensitivity:"base"});
- });
- selectedId=null;
- render();
- setMode("view");
+  const customer=n(searchCustomerId.value),itemName=n(searchItemName.value),itemNumber=n(searchItemNumber.value).toLowerCase();
+  visibleRows=allRows.filter(r=>
+    (!customer||r.customer_system_id===customer)&&
+    (!itemName||n(r.item_name)===itemName)&&
+    (!itemNumber||n(r.item_number).toLowerCase().includes(itemNumber))
+  );
+  visibleRows.sort((a,b)=>{
+    const d=n(a.registered_date||"9999-12-31").localeCompare(n(b.registered_date||"9999-12-31"));if(d)return d;
+    const c=n(a.company_number).localeCompare(n(b.company_number),"ko",{numeric:true});if(c)return c;
+    const i=n(a.item_name).localeCompare(n(b.item_name),"ko",{numeric:true});if(i)return i;
+    return n(a.control_plan_number).localeCompare(n(b.control_plan_number),"ko",{numeric:true});
+  });
+  clearSelection();render();
 }
-async function searchRows(){await loadRows();guide("조회조건에 맞는 아이템 "+visibleRows.length+"건을 등록일 오름차순으로 표시합니다.");notice("아이템 조회가 완료되었습니다. 조회 건수: "+visibleRows.length+"건","success")}
-function resetSearch(){searchCustomerId.value="";updateSearchItemNames();searchItemName.value="";searchItemNumber.value="";apply();guide("조회조건을 초기화했습니다.");notice("조회조건을 초기화했습니다. 전체 "+visibleRows.length+"건을 표시합니다.","success")}
-function render(){tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`<tr data-id="${e(r.item_system_id)}" onclick="selectRow('${e(r.item_system_id)}')"><td>${i+1}</td><td>${e(r.registered_date)}</td><td>${e(r.company_number)}</td><td>${e(r.customer_name)}</td><td>${e(r.item_number)}</td><td>${e(r.item_name)}</td><td>${r.is_active?"사용":"중지"}</td></tr>`).join(""):'<tr><td class="empty" colspan="7">표시할 아이템이 없습니다.</td></tr>';totalCount.textContent=visibleRows.length+"건";countLabel.textContent="총 "+visibleRows.length+"건"}
-function selectRow(id){const r=allRows.find(x=>x.item_system_id===id);if(!r)return;selectedId=id;fill(r);document.querySelectorAll("#tableBody tr").forEach(x=>x.classList.toggle("selected",x.dataset.id===id));setMode("view");guide("선택한 아이템을 수정하거나 삭제할 수 있습니다.")}
-function startNew(){clearForm();setMode("new");customerId.focus();guide("신규 아이템정보를 입력한 후 저장 버튼을 누르세요.")}
-function startEdit(){if(!selectedId)return notice("수정할 아이템을 선택해 주세요.","error");setMode("edit");guide("수정할 내용을 입력한 후 저장 버튼을 누르세요.")}
-async function saveRecord(){if(mode!=="new"&&mode!=="edit")return notice("등록 또는 수정 버튼을 먼저 눌러 주세요.","error");const selectedCustomer=customers.find(x=>x.customer_system_id===customerId.value&&x.is_active!==false&&n(x.customer_name));const p={company_id:currentProfile.company_id,registered_date:registeredDate.value||null,customer_system_id:selectedCustomer?.customer_system_id||null,item_number:n(itemNumber.value),item_name:n(itemName.value),is_active:isActive.checked};if(!selectedCustomer)return notice("고객사명이 등록된 고객사를 반드시 선택해 주세요. 고객사명이 없으면 신규 등록할 수 없습니다.","error");if(!p.item_number||!p.item_name)return notice("품번과 품명을 입력해 주세요.","error");loading(true,"저장 중입니다...");const res=mode==="new"?await sb.from("items").insert(p):await sb.from("items").update(p).eq("item_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(res.error)return notice("저장 실패: "+dbError(res.error),"error");await loadRows();notice(mode==="new"?"아이템 신규 등록이 완료되었습니다.":"아이템 수정 및 저장이 완료되었습니다.","success")}
-async function deleteSelected(){if(!selectedId)return notice("삭제할 아이템을 선택해 주세요.","error");if(!confirm("선택한 아이템을 삭제하시겠습니까?"))return;loading(true,"삭제 중입니다...");const {error}=await sb.from("items").delete().eq("item_system_id",selectedId).eq("company_id",currentProfile.company_id);loading(false);if(error)return notice("삭제 실패: "+dbError(error),"error");await loadRows();notice("아이템 삭제가 완료되었습니다.","success")}
-function savePdf(){if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");notice("조회된 "+visibleRows.length+"건을 PDF 저장용 화면으로 변환했습니다.","success");setTimeout(()=>window.print(),100)}
-async function init(){try{if(await auth()){setMode("view");await loadRows()}}catch(x){document.documentElement.classList.remove("auth-pending");notice("화면 초기화 오류: "+dbError(x),"error")}}
-searchCustomerId.addEventListener("change",()=>{updateSearchItemNames();apply();guide("선택한 고객사에 연결된 품명 목록을 표시했습니다.");});
+function clearSelection(){selectedId=null;btnEdit.disabled=true;btnDelete.disabled=true}
+async function searchRows(){await loadRows();notice("아이템 조회가 완료되었습니다. 조회 건수: "+visibleRows.length+"건","success")}
+function resetSearch(){searchCustomerId.value="";updateSearchItemNames();searchItemName.value="";searchItemNumber.value="";apply();notice("조회조건을 초기화했습니다.","success")}
+function render(){
+  tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`
+    <tr data-id="${e(r.item_system_id)}" onclick="selectRow('${e(r.item_system_id)}')">
+      <td>${i+1}</td><td>${e(r.registered_date||"")}</td><td>${e(r.company_number)}</td><td>${e(r.customer_name)}</td>
+      <td title="${e(r.item_name)}">${e(r.item_name)}</td><td title="${e(r.item_number)}">${e(r.item_number)}</td>
+      <td>${e(r.tempering_status||"미입력")}</td><td>${e(r.control_plan_number||"")}</td>
+      <td>${e(r.manufacturing_process_number||"")}</td><td>${e(r.inspection_standard_number||"")}</td>
+      <td>${e(r.work_standard_number||"")}</td>
+      <td><span class="status-chip ${e(r.document_status||"미작성")}">${e(r.document_status||"미작성")}</span></td>
+      <td>${r.is_active!==false?"사용":"중지"}</td>
+    </tr>`).join(""):'<tr><td class="empty" colspan="13">표시할 아이템이 없습니다.</td></tr>';
+  countLabel.textContent="총 "+visibleRows.length+"건";
+}
+function selectRow(id){
+  selectedId=id;btnEdit.disabled=false;btnDelete.disabled=false;
+  document.querySelectorAll("#tableBody tr").forEach(x=>x.classList.toggle("selected",x.dataset.id===id));
+  guide("선택한 아이템을 수정하거나 삭제할 수 있습니다.");
+}
+function clearForm(){
+  editForm.reset();registeredDate.value=new Date().toISOString().slice(0,10);
+  temperingStatus.value="";documentStatus.value="미작성";isActive.checked=true;
+}
+function fillForm(r){
+  registeredDate.value=r.registered_date||"";
+  customerId.value=r.customer_system_id||"";
+  itemName.value=r.item_name||"";itemNumber.value=r.item_number||"";
+  temperingStatus.value=r.tempering_status||"";
+  controlPlanNumber.value=r.control_plan_number||"";
+  manufacturingProcessNumber.value=r.manufacturing_process_number||"";
+  inspectionStandardNumber.value=r.inspection_standard_number||"";
+  workStandardNumber.value=r.work_standard_number||"";
+  documentStatus.value=r.document_status||"미작성";
+  isActive.checked=r.is_active!==false;
+}
+function openModal(){itemModal.classList.add("show");document.body.style.overflow="hidden"}
+function closeModal(){itemModal.classList.remove("show");document.body.style.overflow=""}
+function startNew(){mode="new";clearForm();modalTitle.textContent="아이템 정보 등록";openModal();setTimeout(()=>customerId.focus(),50)}
+function startEdit(){
+  if(!selectedId)return notice("수정할 아이템을 선택해 주세요.","error");
+  const r=allRows.find(x=>x.item_system_id===selectedId);if(!r)return;
+  mode="edit";fillForm(r);modalTitle.textContent="아이템 정보 수정";openModal();
+}
+async function saveRecord(){
+  const selectedCustomer=customers.find(x=>x.customer_system_id===customerId.value&&x.is_active!==false);
+  const payload={
+    company_id:currentProfile.company_id,
+    registered_date:registeredDate.value||null,
+    customer_system_id:selectedCustomer?.customer_system_id||null,
+    item_name:n(itemName.value),item_number:n(itemNumber.value),
+    tempering_status:n(temperingStatus.value)||null,
+    control_plan_number:n(controlPlanNumber.value)||null,
+    manufacturing_process_number:n(manufacturingProcessNumber.value)||null,
+    inspection_standard_number:n(inspectionStandardNumber.value)||null,
+    work_standard_number:n(workStandardNumber.value)||null,
+    document_status:n(documentStatus.value)||"미작성",
+    is_active:isActive.checked
+  };
+  if(!selectedCustomer)return notice("고객사를 선택해 주세요.","error");
+  if(!payload.item_name||!payload.item_number)return notice("품명과 품번을 입력해 주세요.","error");
+  loading(true,"저장 중입니다...");
+  const res=mode==="new"
+    ?await sb.from("items").insert(payload)
+    :await sb.from("items").update(payload).eq("item_system_id",selectedId).eq("company_id",currentProfile.company_id);
+  loading(false);
+  if(res.error)return notice("저장 실패: "+dbError(res.error),"error");
+  closeModal();await loadRows();notice(mode==="new"?"아이템 신규 등록이 완료되었습니다.":"아이템 수정이 완료되었습니다.","success");
+}
+async function deleteSelected(){
+  if(!selectedId)return notice("삭제할 아이템을 선택해 주세요.","error");
+  if(!confirm("선택한 아이템을 삭제하시겠습니까?"))return;
+  loading(true,"삭제 중입니다...");
+  const {error}=await sb.from("items").delete().eq("item_system_id",selectedId).eq("company_id",currentProfile.company_id);
+  loading(false);
+  if(error)return notice("삭제 실패: "+dbError(error),"error");
+  await loadRows();notice("아이템 삭제가 완료되었습니다.","success");
+}
+function savePdf(){
+  if(!visibleRows.length)return notice("PDF로 저장할 데이터가 없습니다.","error");
+  setTimeout(()=>window.print(),80);
+}
+itemModal.addEventListener("click",ev=>{if(ev.target===itemModal)closeModal()});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&itemModal.classList.contains("show"))closeModal()});
+searchCustomerId.addEventListener("change",()=>{updateSearchItemNames();apply()});
+async function init(){try{if(await auth())await loadRows()}catch(error){document.documentElement.classList.remove("auth-pending");notice("화면 초기화 오류: "+dbError(error),"error")}}
 addEventListener("load",init);
-
 </script>
 </body>
 </html>
