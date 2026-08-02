@@ -40,9 +40,9 @@
     .list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
     .list-title{margin:0;color:#0e3f9d;font-size:16px}
     .count-label{color:#475569;font-size:12px;font-weight:700}
-    .table-wrap{width:100%;max-height:620px;overflow:auto;border:1px solid #cbd5e1;background:#fff}
-    table{width:100%;min-width:1760px;border-collapse:collapse;table-layout:fixed;font-size:12px}
-    th,td{padding:7px 6px;border-right:1px solid #d8dee8;border-bottom:1px solid #d8dee8;text-align:center;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .table-wrap{width:100%;overflow-x:hidden;overflow-y:visible;border:1px solid #cbd5e1;background:#fff}
+    table{width:100%;min-width:0;border-collapse:collapse;table-layout:fixed;font-size:11px}
+    th,td{padding:6px 4px;border-right:1px solid #d8dee8;border-bottom:1px solid #d8dee8;text-align:center;vertical-align:middle;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.25}
     thead th{position:sticky;top:0;z-index:3;background:#1e5bd7;color:#fff;font-weight:800}
     tbody tr{cursor:pointer}
     tbody tr:hover{background:#f5f8fd}
@@ -73,11 +73,17 @@
     .status-chip.미작성{background:#eef2f7;color:#475569}
     .status-chip.진행중{background:#fff7dd;color:#a16207}
     .status-chip.완료{background:#eaf8ef;color:#08783e}
+
+    .pagination{display:flex;align-items:center;justify-content:center;gap:5px;padding-top:9px;flex-wrap:wrap}
+    .page-btn{min-width:32px;height:30px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;font-size:12px;font-weight:800}
+    .page-btn.active{border-color:var(--blue);background:var(--blue);color:#fff}
+    .page-btn:disabled{opacity:.4;cursor:not-allowed}
+    .page-info{margin-left:7px;color:#64748b;font-size:12px;font-weight:700}
     .print-title{display:none}
     @page{size:A4 landscape;margin:7mm}
     @media print{
       html,body{background:#fff!important;color:#000!important}
-      .page{padding:0}.title-frame,.search-frame,.action-frame,.notice,.loading,.modal-backdrop,.list-head{display:none!important}
+      .page{padding:0}.title-frame,.search-frame,.action-frame,.notice,.loading,.modal-backdrop,.list-head,.pagination{display:none!important}
       .print-title{display:block!important;margin:0 0 8px;text-align:center;font-size:17px}
       .list-frame{padding:0;border:0;box-shadow:none}.table-wrap{max-height:none;overflow:visible;border:1px solid #000}
       table{min-width:0!important;width:100%!important;font-size:7.5pt!important}
@@ -91,7 +97,7 @@
       .page{padding:6px}.title-area h1{font-size:19px}.file-name{display:block;margin:2px 0 0}
       .search-frame{grid-template-columns:1fr}.search-buttons{grid-column:auto;justify-content:stretch}
       .search-buttons .btn{flex:1}.modal-grid{grid-template-columns:1fr}.modal-grid .full{grid-column:auto}
-      .action-buttons{display:grid;grid-template-columns:repeat(3,1fr)}.action-buttons .btn{width:100%}
+      .action-buttons{display:grid;grid-template-columns:repeat(3,1fr)}.action-buttons .btn{width:100%} table{font-size:9px} th,td{padding:5px 2px}
     }
   </style>
 </head>
@@ -136,9 +142,9 @@
     <div class="table-wrap">
       <table>
         <colgroup>
-          <col style="width:50px"><col style="width:95px"><col style="width:105px"><col style="width:145px">
-          <col style="width:150px"><col style="width:155px"><col style="width:105px"><col style="width:150px">
-          <col style="width:160px"><col style="width:150px"><col style="width:150px"><col style="width:90px"><col style="width:70px">
+          <col style="width:3.5%"><col style="width:6.5%"><col style="width:7%"><col style="width:8%">
+          <col style="width:10%"><col style="width:10%"><col style="width:6.5%"><col style="width:9%">
+          <col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:7%"><col style="width:4.5%">
         </colgroup>
         <thead><tr>
           <th>번호</th><th>등록일</th><th>고객관리번호</th><th>고객사</th><th>품명</th><th>품번</th>
@@ -148,6 +154,7 @@
         <tbody id="tableBody"><tr><td class="empty" colspan="13">데이터를 불러오는 중입니다.</td></tr></tbody>
       </table>
     </div>
+    <div id="pagination" class="pagination" aria-label="페이지 이동"></div>
   </section>
 </main>
 
@@ -197,7 +204,7 @@ const LOGIN_PAGE_URL="../index.html";
 const MAIN_PAGE_URL="main1.html";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 
-let currentProfile=null,customers=[],allRows=[],visibleRows=[],selectedId=null,mode="view";
+let currentProfile=null,customers=[],allRows=[],visibleRows=[],selectedId=null,mode="view",currentPage=1;const PAGE_SIZE=10;
 
 function n(v){return String(v??"").trim()}
 function e(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -272,15 +279,20 @@ function apply(){
     const i=n(a.item_name).localeCompare(n(b.item_name),"ko",{numeric:true});if(i)return i;
     return n(a.control_plan_number).localeCompare(n(b.control_plan_number),"ko",{numeric:true});
   });
-  clearSelection();render();
+  currentPage=1;clearSelection();render();
 }
 function clearSelection(){selectedId=null;btnEdit.disabled=true;btnDelete.disabled=true}
 async function searchRows(){await loadRows();notice("아이템 조회가 완료되었습니다. 조회 건수: "+visibleRows.length+"건","success")}
 function resetSearch(){searchCustomerId.value="";updateSearchItemNames();searchItemName.value="";searchItemNumber.value="";apply();notice("조회조건을 초기화했습니다.","success")}
 function render(){
-  tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`
+  const totalPages=Math.max(1,Math.ceil(visibleRows.length/PAGE_SIZE));
+  if(currentPage>totalPages)currentPage=totalPages;
+  const start=(currentPage-1)*PAGE_SIZE;
+  const pageRows=visibleRows.slice(start,start+PAGE_SIZE);
+
+  tableBody.innerHTML=pageRows.length?pageRows.map((r,index)=>`
     <tr data-id="${e(r.item_system_id)}" onclick="selectRow('${e(r.item_system_id)}')">
-      <td>${i+1}</td><td>${e(r.registered_date||"")}</td><td>${e(r.company_number)}</td><td>${e(r.customer_name)}</td>
+      <td>${start+index+1}</td><td>${e(r.registered_date||"")}</td><td>${e(r.company_number)}</td><td>${e(r.customer_name)}</td>
       <td title="${e(r.item_name)}">${e(r.item_name)}</td><td title="${e(r.item_number)}">${e(r.item_number)}</td>
       <td>${e(r.tempering_status||"미입력")}</td><td>${e(r.control_plan_number||"")}</td>
       <td>${e(r.manufacturing_process_number||"")}</td><td>${e(r.inspection_standard_number||"")}</td>
@@ -288,7 +300,35 @@ function render(){
       <td><span class="status-chip ${e(r.document_status||"미작성")}">${e(r.document_status||"미작성")}</span></td>
       <td>${r.is_active!==false?"사용":"중지"}</td>
     </tr>`).join(""):'<tr><td class="empty" colspan="13">표시할 아이템이 없습니다.</td></tr>';
-  countLabel.textContent="총 "+visibleRows.length+"건";
+
+  countLabel.textContent="총 "+visibleRows.length+"건 · "+currentPage+"/"+totalPages+"페이지";
+  renderPagination(totalPages);
+}
+function renderPagination(totalPages){
+  if(!visibleRows.length){pagination.innerHTML="";return}
+  const buttons=[];
+  buttons.push(`<button class="page-btn" type="button" onclick="changePage(1)" ${currentPage===1?"disabled":""}>≪</button>`);
+  buttons.push(`<button class="page-btn" type="button" onclick="changePage(${currentPage-1})" ${currentPage===1?"disabled":""}>‹</button>`);
+
+  const startPage=Math.max(1,currentPage-2);
+  const endPage=Math.min(totalPages,startPage+4);
+  const adjustedStart=Math.max(1,endPage-4);
+
+  for(let page=adjustedStart;page<=endPage;page++){
+    buttons.push(`<button class="page-btn ${page===currentPage?"active":""}" type="button" onclick="changePage(${page})">${page}</button>`);
+  }
+
+  buttons.push(`<button class="page-btn" type="button" onclick="changePage(${currentPage+1})" ${currentPage===totalPages?"disabled":""}>›</button>`);
+  buttons.push(`<button class="page-btn" type="button" onclick="changePage(${totalPages})" ${currentPage===totalPages?"disabled":""}>≫</button>`);
+  buttons.push(`<span class="page-info">페이지당 10건</span>`);
+  pagination.innerHTML=buttons.join("");
+}
+function changePage(page){
+  const totalPages=Math.max(1,Math.ceil(visibleRows.length/PAGE_SIZE));
+  currentPage=Math.min(Math.max(1,page),totalPages);
+  clearSelection();
+  render();
+  document.querySelector(".list-frame")?.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function selectRow(id){
   selectedId=id;btnEdit.disabled=false;btnDelete.disabled=false;
