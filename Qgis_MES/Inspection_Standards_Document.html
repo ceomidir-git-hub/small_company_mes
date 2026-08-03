@@ -5,6 +5,8 @@
 
 <!DOCTYPE html>
 
+<!DOCTYPE html>
+
 <html class="auth-pending" lang="ko">
 <head>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta charset="utf-8"/>
@@ -727,6 +729,47 @@ body.form-busy{overflow:hidden}
 @media print{
   .search-pagination{display:none!important}
 }
+</style><style>
+body.search-modal-open{overflow:hidden!important}
+.search-result-modal[hidden]{display:none!important}
+.search-result-modal{
+  position:fixed;inset:0;z-index:12000;display:flex;
+  align-items:flex-start;justify-content:center;
+  padding:6vh 12px 20px;background:rgba(18,25,34,.48);
+  backdrop-filter:blur(1px);
+}
+.search-result-dialog{
+  width:min(210mm,calc(100vw - 24px));
+  max-height:88vh;overflow:auto;border-radius:7px;
+  box-shadow:0 14px 42px rgba(0,0,0,.32);
+}
+.search-result-modal .search-result-panel{
+  width:100%!important;max-width:none!important;margin:0!important;
+  border-radius:7px;background:#fff;
+}
+.search-result-modal .search-result-head{
+  position:sticky;top:0;z-index:5;min-height:40px;
+  padding:7px 10px;background:#f4f6f9;
+}
+.search-result-head-actions{display:flex;align-items:center;gap:10px}
+.search-popup-close{
+  min-width:48px;height:27px;padding:0 9px;
+  border:1px solid #8f98a4;border-radius:4px;
+  background:#fff;color:#222;font-size:10.5px;font-weight:700;cursor:pointer;
+}
+.search-popup-close:hover{background:#e9edf2}
+.search-result-modal .search-result-scroll{
+  max-height:56vh!important;overflow:auto!important;
+}
+.search-result-modal .search-pagination{
+  position:sticky;bottom:0;z-index:4;
+}
+@media(max-width:600px){
+  .search-result-modal{align-items:flex-start;padding:10px 6px}
+  .search-result-dialog{width:calc(100vw - 12px);max-height:95vh}
+  .search-result-modal .search-result-panel table{min-width:720px}
+}
+@media print{.search-result-modal{display:none!important}}
 </style></head>
 <body>
 <section aria-label="검사기준서 조회 및 작업" class="inspection-toolbar no-print">
@@ -757,12 +800,11 @@ body.form-busy{overflow:hidden}
 </section>
 <div aria-live="polite" class="screen-notice no-print" id="screenNotice" role="status">
   로그인 회사의 검사기준서만 조회됩니다.
-</div>
-<section class="search-result-panel no-print" hidden="" id="searchResultPanel">
+</div><div aria-labelledby="searchResultPopupTitle" aria-modal="true" class="search-result-modal no-print" hidden="hidden" id="searchResultModal" role="dialog"><div class="search-result-dialog"><section class="search-result-panel no-print" hidden="" id="searchResultPanel">
 <div class="search-result-head">
-<strong>조회 결과</strong>
-<span id="searchResultCount">0건</span>
-</div>
+<strong id="searchResultPopupTitle">조회 결과</strong>
+
+<div class="search-result-head-actions"><span id="searchResultCount">0건</span><button aria-label="조회 결과 닫기" class="search-popup-close" id="closeSearchPopup" type="button">닫기</button></div></div>
 <div class="search-result-scroll">
 <table>
 <thead>
@@ -782,7 +824,8 @@ body.form-busy{overflow:hidden}
 <button aria-label="이전 5건" id="resultPrevPage" type="button">이전</button>
 <span id="resultPageInfo">1 / 1</span>
 <button aria-label="다음 5건" id="resultNextPage" type="button">다음</button>
-</div></section>
+</div></section></div></div>
+
 <div class="page">
 <div class="form-frame">
 <form autocomplete="off" id="inspectionStandardForm"><input data-db-field="inspection_standard_system_id" data-db-table="inspection_standard_documents" id="formDocumentId" name="inspection_standard_system_id" type="hidden"/><input data-db-field="company_id" data-db-table="inspection_standard_documents" id="formCompanyId" name="company_id" type="hidden"/><table class="form">
@@ -864,6 +907,8 @@ body.form-busy{overflow:hidden}
 
   const form = document.getElementById("inspectionStandardForm");
   const notice = document.getElementById("screenNotice");
+  const searchResultModal = document.getElementById("searchResultModal");
+  const closeSearchPopupButton = document.getElementById("closeSearchPopup");
   const resultPanel = document.getElementById("searchResultPanel");
   const resultBody = document.getElementById("searchResultBody");
   const resultCount = document.getElementById("searchResultCount");
@@ -909,7 +954,10 @@ body.form-busy{overflow:hidden}
   let currentRevisionNumbers = [];
   let searchResults = [];
   const RESULT_PAGE_SIZE = 5;
+  const INACTIVITY_LIMIT_MS = 20 * 60 * 1000;
   let searchPage = 1;
+  let inactivityTimer = null;
+  let inactivityLogoutRunning = false;
 
   let customers = [];
   let items = [];
@@ -972,6 +1020,67 @@ body.form-busy{overflow:hidden}
       return "검사기준서 이미지 저장소를 확인해 주세요.";
     }
     return error.message || error.details || error.hint || String(error);
+  }
+
+  function openSearchPopup() {
+    if (!searchResults.length) return;
+    searchResultModal.hidden = false;
+    document.body.classList.add("search-modal-open");
+    window.setTimeout(() => {
+      const checkedRadio = resultBody.querySelector(
+        'input[name="inspection_standard_result"]:checked'
+      );
+      const firstRadio = resultBody.querySelector(
+        'input[name="inspection_standard_result"]'
+      );
+      (checkedRadio || firstRadio || closeSearchPopupButton)?.focus();
+    }, 0);
+  }
+
+  function closeSearchPopup() {
+    searchResultModal.hidden = true;
+    document.body.classList.remove("search-modal-open");
+  }
+
+  async function logoutForInactivity() {
+    if (inactivityLogoutRunning) return;
+    inactivityLogoutRunning = true;
+    try {
+      sessionStorage.setItem(
+        "mes_logout_message",
+        "20분 동안 사용이 없어 자동 로그아웃되었습니다."
+      );
+      await sb.auth.signOut({ scope: "local" });
+    } catch (error) {
+      console.warn("자동 로그아웃 처리 중 오류:", error);
+    } finally {
+      window.location.replace(LOGIN_PAGE_URL);
+    }
+  }
+
+  function resetInactivityTimer() {
+    if (inactivityLogoutRunning) return;
+    if (inactivityTimer) window.clearTimeout(inactivityTimer);
+    inactivityTimer = window.setTimeout(logoutForInactivity, INACTIVITY_LIMIT_MS);
+  }
+
+  function startInactivityWatch() {
+    [
+      "pointerdown","keydown","touchstart","input",
+      "change","wheel","scroll"
+    ].forEach(eventName => {
+      window.addEventListener(
+        eventName,
+        resetInactivityTimer,
+        { passive: true, capture: true }
+      );
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) resetInactivityTimer();
+    });
+
+    resetInactivityTimer();
   }
 
   function setNotice(message, type = "info") {
@@ -1386,6 +1495,7 @@ body.form-busy{overflow:hidden}
   }
 
   function startNew() {
+    closeSearchPopup();
     clearFormData({ keepSearch: true });
     formEstablishedDate.value = localDateText();
     syncAutomaticDates();
@@ -1413,6 +1523,7 @@ body.form-busy{overflow:hidden}
   }
 
   function resetScreen() {
+    closeSearchPopup();
     clearFormData({ keepSearch: false });
     setMode("view");
     setNotice("조회조건과 입력화면을 초기화했습니다.", "success");
@@ -1780,6 +1891,8 @@ body.form-busy{overflow:hidden}
     if (!searchResults.length) {
       resultBody.innerHTML = "";
       resultPanel.hidden = true;
+      searchResultModal.hidden = true;
+      document.body.classList.remove("search-modal-open");
       resultPageInfo.textContent = "0 / 0";
       resultPrevPage.disabled = true;
       resultNextPage.disabled = true;
@@ -1892,6 +2005,7 @@ body.form-busy{overflow:hidden}
         `검사기준서 ${rows.length}건이 조회되었습니다. 라디오버튼으로 문서를 선택해 주세요.`,
         "success"
       );
+      openSearchPopup();
     } catch (error) {
       console.error(error);
       renderSearchResults([]);
@@ -2192,12 +2306,27 @@ body.form-busy{overflow:hidden}
     choose?.addEventListener("click", reopen);
   });
 
-  resultBody.addEventListener("change", event => {
+  resultBody.addEventListener("change", async event => {
     const radio = event.target.closest(
       'input[type="radio"][name="inspection_standard_result"]'
     );
     if (!radio) return;
-    loadDocument(radio.value);
+
+    await loadDocument(radio.value);
+    closeSearchPopup();
+    setNotice("선택한 검사기준서를 조회했습니다.", "success");
+  });
+
+  closeSearchPopupButton.addEventListener("click", closeSearchPopup);
+
+  searchResultModal.addEventListener("click", event => {
+    if (event.target === searchResultModal) closeSearchPopup();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !searchResultModal.hidden) {
+      closeSearchPopup();
+    }
   });
 
   resultPrevPage.addEventListener("click", () => {
@@ -2255,6 +2384,7 @@ body.form-busy{overflow:hidden}
       if (!allowed) return;
 
       await loadReferenceData();
+      startInactivityWatch();
       clearFormData({ keepSearch: false });
       setMode("view");
       updateAllHintStates();
