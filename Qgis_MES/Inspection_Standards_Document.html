@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!DOCTYPE html>
 
+<!DOCTYPE html>
+
 <html class="auth-pending" lang="ko">
 <head>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta charset="utf-8"/>
@@ -539,9 +541,68 @@ body.form-busy{overflow:hidden}
   }
   .sketch-status{display:none!important}
 }
+</style><style>
+/* ============================================================
+   제정일자 자동 결재일·PDF 출력 보완
+   ============================================================ */
+.approval-lower-cell{
+  height:5mm !important;
+  min-height:5mm !important;
+  padding:1px 2px !important;
+  text-align:center !important;
+  vertical-align:middle !important;
+}
+.approval-date-text{
+  display:inline-block;
+  width:100%;
+  color:#000;
+  font-size:7.1pt;
+  font-weight:700;
+  line-height:1.1;
+  white-space:nowrap;
+  letter-spacing:-0.02em;
+}
+.auto-date-control{
+  font-size:7.1pt !important;
+  letter-spacing:-0.03em;
+  padding:1px 2px !important;
+  text-align:center !important;
+}
+.print-value{
+  display:none;
+}
+@media print{
+  #inspectionStandardForm .db-control:not(.approval-select){
+    display:none !important;
+  }
+  #inspectionStandardForm .print-value{
+    display:inline-flex !important;
+    width:100%;
+    min-height:14px;
+    align-items:center;
+    justify-content:center;
+    color:#000;
+    background:transparent !important;
+    border:0 !important;
+    padding:0 1px;
+    font:inherit;
+    font-weight:inherit;
+    line-height:1.15;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  #inspectionStandardForm .print-value:empty{
+    min-height:14px;
+  }
+  #inspectionStandardForm input[type="date"]{
+    color:transparent !important;
+  }
+  .approval-date-text{
+    font-size:7.1pt !important;
+  }
+}
 </style></head>
 <body>
-
 <section aria-label="검사기준서 조회 및 작업" class="inspection-toolbar no-print">
 <div class="search-conditions">
 <div class="search-field">
@@ -600,7 +661,7 @@ body.form-busy{overflow:hidden}
 </colgroup>
 <tr><td colspan="12" rowspan="2" style="font-size:17.0pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-top:1px solid #000;border-left:1px solid #000">검 사 기 준 서</td><td colspan="2" rowspan="3" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:pre-wrap;border-top:1px solid #000">결<br/>재</td><td colspan="3" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-top:1px solid #000">담당</td><td colspan="2" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-top:1px solid #000">검토</td><td colspan="1" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-top:1px solid #000;border-right:1px solid #000">승인</td></tr>
 <tr><td class="db-cell" colspan="3" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap"><div class="approval-entry" data-approval-state="empty"><button class="approval-choose no-print" type="button">이름 선택</button><select class="no-print db-control approval-select" data-approval-stage="PREPARER" data-db-field="employee_system_id" data-db-table="inspection_standard_approvals" id="formPreparer" name="preparer_employee_system_id" value=""><option value="">이름 선택</option></select><img alt="담당 확인" class="stamp-img approval-signature" crossorigin="anonymous" referrerpolicy="no-referrer" title="클릭하면 결재자를 다시 선택할 수 있습니다."/></div></td><td class="approval-review-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap"> </td><td class="db-cell" colspan="1" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-right:1px solid #000"><div class="approval-entry" data-approval-state="empty"><button class="approval-choose no-print" type="button">이름 선택</button><select class="no-print db-control approval-select" data-approval-stage="APPROVER" data-db-field="employee_system_id" data-db-table="inspection_standard_approvals" id="formApprover" name="approver_employee_system_id" value=""><option value="">이름 선택</option></select><img alt="승인 확인" class="stamp-img approval-signature" crossorigin="anonymous" referrerpolicy="no-referrer" title="클릭하면 결재자를 다시 선택할 수 있습니다."/></div></td></tr>
-<tr><td colspan="12" style="font-size:10.2pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-left:1px solid #000">INSPECTION STANDARD SHEET</td><td aria-label="담당 결재 하단" class="approval-lower-cell" colspan="3"></td><td class="approval-lower-cell" colspan="2" style="height:7px;padding:0"> </td><td aria-label="승인 결재 하단" class="approval-lower-cell" colspan="1" style="font-size:10.2pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-right:1px solid #000;height:7px;padding:0"></td></tr>
+<tr><td colspan="12" style="font-size:10.2pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-left:1px solid #000">INSPECTION STANDARD SHEET</td><td aria-label="담당 결재 하단" class="approval-lower-cell" colspan="3"><span class="approval-date-text" data-db-field="approval_date" data-db-table="inspection_standard_approvals" id="preparerApprovalDate"></span></td><td class="approval-lower-cell" colspan="2" style="height:7px;padding:0"> </td><td aria-label="승인 결재 하단" class="approval-lower-cell" colspan="1" style="font-size:10.2pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;border-right:1px solid #000;height:7px;padding:0"><span class="approval-date-text" data-db-field="approval_date" data-db-table="inspection_standard_approvals" id="approverApprovalDate"></span></td></tr>
 <tr><td colspan="20" style="font-size:10.2pt;font-weight:700;text-align:left;vertical-align:middle;white-space:nowrap;border-color:#ffffff;border-bottom:1px solid #000;border-left:1px solid #000;border-right:1px solid #000"> </td></tr>
 <tr><td colspan="3" style="font-size:10.2pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;background:#dce6f1;border-left:1px solid #000">문서번호:</td><td class="db-auto-cell" colspan="5" style="font-size:10.2pt;font-weight:700;text-align:left;vertical-align:middle;white-space:nowrap;background:#dce6f1"><input class="db-auto db-control" data-db-field="document_number" data-db-table="inspection_standard_documents" id="formDocumentNumber" name="document_number" readonly="readonly" title="고객명 → 품명 → 품번 선택 후 system_edit_item.html에서 자동 적용" type="text" value=""/></td><td colspan="2" style="font-size:10.2pt;font-weight:700;text-align:right;vertical-align:middle;white-space:nowrap;background:#dce6f1">제정일자:</td><td class="db-cell" colspan="7" style="font-size:10.2pt;font-weight:700;text-align:left;vertical-align:middle;white-space:nowrap;background:#dce6f1"><input class="db-control" data-db-field="established_date" data-db-table="inspection_standard_documents" id="formEstablishedDate" name="established_date" type="date" value=""/></td><td colspan="3" style="font-size:10.2pt;font-weight:700;text-align:right;vertical-align:middle;white-space:nowrap;background:#dce6f1;border-bottom:1px solid #000;border-right:1px solid #000">PAGE 1/1</td></tr>
 <tr><td colspan="20" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;border-color:#ffffff;border-bottom:1px solid #000;border-top:1px solid #000;border-left:1px solid #000;border-right:1px solid #000"> </td></tr>
@@ -637,7 +698,7 @@ body.form-busy{overflow:hidden}
 <tr><td class="" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000;border-left:1px solid #000">4</td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><input class="db-control" data-db-field="revision_date" data-db-table="inspection_standard_revisions" data-row-index="4" name="revision_4_revision_date" type="date" value=""/></td><td class="db-cell" colspan="6" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><input class="db-control" data-db-field="revision_reason" data-db-table="inspection_standard_revisions" data-row-index="4" maxlength="50" name="revision_4_revision_reason" placeholder="개정사유 입력 (최대 50자)" type="text" value=""/></td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><select class="db-control" data-db-field="confirmed_by_employee_system_id" data-db-table="inspection_standard_revisions" data-row-index="4" name="revision_4_confirmed_by_employee_system_id" value=""><option value="">확인자 선택</option></select></td><td colspan="3" rowspan="2" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt">A급</td><td colspan="5" rowspan="2" style="font-size:7.6pt;font-weight:400;text-align:center;vertical-align:middle;white-space:pre-wrap;height:22.94pt;border-right:1px solid #000">제품의 성능, 기능상, 구조상 치명적인 결함이 있다고 판단되는 경우.</td></tr>
 <tr><td class="" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000;border-left:1px solid #000">3</td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><input class="db-control" data-db-field="revision_date" data-db-table="inspection_standard_revisions" data-row-index="3" name="revision_3_revision_date" type="date" value=""/></td><td class="db-cell" colspan="6" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><input class="db-control" data-db-field="revision_reason" data-db-table="inspection_standard_revisions" data-row-index="3" maxlength="50" name="revision_3_revision_reason" placeholder="개정사유 입력 (최대 50자)" type="text" value=""/></td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><select class="db-control" data-db-field="confirmed_by_employee_system_id" data-db-table="inspection_standard_revisions" data-row-index="3" name="revision_3_confirmed_by_employee_system_id" value=""><option value="">확인자 선택</option></select></td></tr>
 <tr><td class="" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000;border-left:1px solid #000">2</td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><input class="db-control" data-db-field="revision_date" data-db-table="inspection_standard_revisions" data-row-index="2" name="revision_2_revision_date" type="date" value=""/></td><td class="db-cell" colspan="6" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><input class="db-control" data-db-field="revision_reason" data-db-table="inspection_standard_revisions" data-row-index="2" maxlength="50" name="revision_2_revision_reason" placeholder="개정사유 입력 (최대 50자)" type="text" value=""/></td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><select class="db-control" data-db-field="confirmed_by_employee_system_id" data-db-table="inspection_standard_revisions" data-row-index="2" name="revision_2_confirmed_by_employee_system_id" value=""><option value="">확인자 선택</option></select></td><td colspan="3" rowspan="2" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt">B급</td><td colspan="5" rowspan="2" style="font-size:7.6pt;font-weight:400;text-align:center;vertical-align:middle;white-space:pre-wrap;height:22.94pt;border-right:1px solid #000">A급 이외로써 제품으로서의<br/>기능을 손상하는 것</td></tr>
-<tr><td class="" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border-left:1px solid #000">1</td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt"><input class="db-control" data-db-field="revision_date" data-db-table="inspection_standard_revisions" data-row-index="1" name="revision_1_revision_date" type="date" value=""/></td><td class="" colspan="6" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt">신규등록</td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><select class="db-control" data-db-field="confirmed_by_employee_system_id" data-db-table="inspection_standard_revisions" data-row-index="1" name="revision_1_confirmed_by_employee_system_id" value=""><option value="">확인자 선택</option></select></td></tr>
+<tr><td class="" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border-left:1px solid #000">1</td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt"><input class="db-control db-auto auto-date-control" data-db-field="revision_date" data-db-table="inspection_standard_revisions" data-row-index="1" name="revision_1_revision_date" placeholder="" readonly="readonly" tabindex="-1" type="text" value=""/></td><td class="" colspan="6" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt">신규등록</td><td class="db-cell" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border:1px solid #000"><select class="db-control" data-db-field="confirmed_by_employee_system_id" data-db-table="inspection_standard_revisions" data-row-index="1" name="revision_1_confirmed_by_employee_system_id" value=""><option value="">확인자 선택</option></select></td></tr>
 <tr><td colspan="2" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;background:#dddddd;height:22.94pt;border-left:1px solid #000">번호</td><td colspan="2" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;background:#dddddd;height:22.94pt">일자</td><td colspan="6" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;background:#dddddd;height:22.94pt">개정 사유</td><td colspan="2" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;background:#dddddd;height:22.94pt">확인</td><td colspan="3" style="font-size:9.3pt;font-weight:700;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt">C급</td><td colspan="5" style="font-size:7.6pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:22.94pt;border-right:1px solid #000">A급, B급 어느 쪽에도 속하지 않는것</td></tr>
 <tr><td colspan="9" style="font-size:9.3pt;font-weight:400;text-align:left;vertical-align:middle;white-space:nowrap;height:18.59pt;border-right:1px solid #fff;border-bottom:1px solid #000;border-left:1px solid #000">QP06-QI611-F001</td><td class="" colspan="2" style="font-size:9.3pt;font-weight:400;text-align:center;vertical-align:middle;white-space:nowrap;height:18.59pt;border-left:1px solid #fff;border-right:1px solid #fff;border-bottom:1px solid #fff;border-bottom:1px solid #000">QGIS</td><td colspan="9" style="font-size:9.3pt;font-weight:400;text-align:right;vertical-align:middle;white-space:nowrap;height:18.59pt;border-bottom:1px solid #000;border-right:1px solid #000">A4 (210mmx297mm)</td></tr>
 </table></form>
@@ -692,6 +753,9 @@ body.form-busy{overflow:hidden}
   const formCompanyId = document.getElementById("formCompanyId");
   const formDocumentNumber = document.getElementById("formDocumentNumber");
   const formEstablishedDate = document.getElementById("formEstablishedDate");
+  const preparerApprovalDate = document.getElementById("preparerApprovalDate");
+  const approverApprovalDate = document.getElementById("approverApprovalDate");
+  const revision1Date = document.querySelector('[name="revision_1_revision_date"]');
   const formCustomerId = document.getElementById("formCustomerId");
   const formItemName = document.getElementById("formItemName");
   const formItemId = document.getElementById("formItemId");
@@ -791,6 +855,47 @@ body.form-busy{overflow:hidden}
     document.body.classList.remove("form-busy");
   }
 
+  function syncAutomaticDates() {
+    const establishedDate = normalize(formEstablishedDate.value);
+
+    preparerApprovalDate.textContent = establishedDate;
+    approverApprovalDate.textContent = establishedDate;
+
+    if (revision1Date) {
+      revision1Date.value = establishedDate;
+      revision1Date.readOnly = true;
+      revision1Date.disabled = true;
+    }
+  }
+
+  function printTextForControl(control) {
+    const fieldName = normalize(control.name);
+    const value = normalize(control.value);
+
+    if (!value) return "";
+
+    if (control.tagName === "SELECT") {
+      if (fieldName.endsWith("_confirmed_by_employee_system_id")) {
+        return normalize(employeeMap.get(value)?.employee_name);
+      }
+      return normalize(control.options[control.selectedIndex]?.text);
+    }
+
+    return value;
+  }
+
+  function preparePrintValues() {
+    form.querySelectorAll(".print-value").forEach(element => element.remove());
+
+    form.querySelectorAll(".db-control:not(.approval-select)").forEach(control => {
+      const span = document.createElement("span");
+      span.className = "print-value";
+      span.textContent = printTextForControl(control);
+      span.setAttribute("aria-hidden", "true");
+      control.insertAdjacentElement("afterend", span);
+    });
+  }
+
   function setMode(nextMode) {
     mode = nextMode;
     const editing = mode === "new" || mode === "edit";
@@ -801,6 +906,11 @@ body.form-busy{overflow:hidden}
 
     formDocumentNumber.disabled = false;
     formDocumentNumber.readOnly = true;
+
+    if (revision1Date) {
+      revision1Date.disabled = true;
+      revision1Date.readOnly = true;
+    }
 
     btnNew.disabled = editing;
     btnSearch.disabled = editing;
@@ -945,7 +1055,7 @@ body.form-busy{overflow:hidden}
       activeEmployees.forEach(row => {
         select.add(
           new Option(
-            [row.employee_code, row.employee_name].filter(Boolean).join(" · "),
+            normalize(row.employee_name),
             row.employee_system_id
           )
         );
@@ -1104,6 +1214,7 @@ body.form-busy{overflow:hidden}
     formCompanyId.value = currentProfile?.company_id || "";
     formDocumentNumber.value = "";
     formEstablishedDate.value = "";
+    syncAutomaticDates();
 
     formCustomerId.value = "";
     updateFormItemNames();
@@ -1129,8 +1240,7 @@ body.form-busy{overflow:hidden}
   function startNew() {
     clearFormData({ keepSearch: true });
     formEstablishedDate.value = localDateText();
-    const firstRevisionDate = document.querySelector('[name="revision_1_revision_date"]');
-    if (firstRevisionDate) firstRevisionDate.value = localDateText();
+    syncAutomaticDates();
 
     setMode("new");
     formCustomerId.focus();
@@ -1184,15 +1294,19 @@ body.form-busy{overflow:hidden}
       );
 
       const hasAny = [
-        importanceCode, itemCodeId, specification,
-        measurementMethod, inspectionQuantity, remarks
+        importanceCode,
+        itemCodeId,
+        specification,
+        measurementMethod,
+        inspectionQuantity,
+        remarks
       ].some(Boolean);
 
       if (!hasAny) continue;
 
-      if (!importanceCode || !itemCodeId || !specification || !measurementMethod || !inspectionQuantity) {
+      if (!importanceCode || !itemCodeId) {
         throw new Error(
-          `검사 상세 NO.${order}의 중요도·검사항목·규격·사용계측기·검사수량을 모두 입력해 주세요.`
+          `검사 상세 NO.${order}의 중요도와 검사항목을 선택해 주세요.`
         );
       }
 
@@ -1200,9 +1314,9 @@ body.form-busy{overflow:hidden}
         display_order: order,
         importance_code: importanceCode,
         inspection_item_code_system_id: itemCodeId,
-        specification,
-        measurement_method: measurementMethod,
-        inspection_quantity: inspectionQuantity,
+        specification: specification || null,
+        measurement_method: measurementMethod || null,
+        inspection_quantity: inspectionQuantity || null,
         remarks: remarks || null,
         is_active: true
       });
@@ -1211,35 +1325,52 @@ body.form-busy{overflow:hidden}
     if (!rows.length) {
       throw new Error("검사 상세항목을 한 줄 이상 입력해 주세요.");
     }
+
     return rows;
   }
 
   function collectRevisionRows() {
     const rows = [];
+    const establishedDate = normalize(formEstablishedDate.value);
 
     for (let number = 1; number <= 4; number += 1) {
-      const date = normalize(
-        document.querySelector(`[name="revision_${number}_revision_date"]`)?.value
+      const dateControl = document.querySelector(
+        `[name="revision_${number}_revision_date"]`
       );
       const reasonControl = document.querySelector(
         `[name="revision_${number}_revision_reason"]`
       );
-      const reason = number === 1 ? "신규등록" : normalize(reasonControl?.value);
-      const confirmer = normalize(
-        document.querySelector(
-          `[name="revision_${number}_confirmed_by_employee_system_id"]`
-        )?.value
+      const confirmerControl = document.querySelector(
+        `[name="revision_${number}_confirmed_by_employee_system_id"]`
       );
 
-      const hasAny = Boolean(date || confirmer || (number > 1 && reason));
-      if (!hasAny && number > 1) continue;
+      const date = number === 1
+        ? establishedDate
+        : normalize(dateControl?.value);
+      const reason = number === 1
+        ? "신규등록"
+        : normalize(reasonControl?.value);
+      const confirmer = normalize(confirmerControl?.value);
 
-      if (!date || !reason || !confirmer) {
-        throw new Error(`개정이력 ${number}번의 일자·개정사유·확인을 모두 입력해 주세요.`);
+      if (number === 1) {
+        if (!establishedDate || !confirmer) {
+          throw new Error("신규등록 확인자를 선택해 주세요.");
+        }
+      } else {
+        const hasAny = Boolean(date || reason || confirmer);
+        if (!hasAny) continue;
+
+        if (!date || !reason || !confirmer) {
+          throw new Error(
+            `개정이력 ${number}번은 일자·개정사유·확인을 모두 입력해 주세요.`
+          );
+        }
       }
 
       if (reason.length > 50) {
-        throw new Error(`개정이력 ${number}번의 개정사유는 50자 이하로 입력해 주세요.`);
+        throw new Error(
+          `개정이력 ${number}번의 개정사유는 50자 이하로 입력해 주세요.`
+        );
       }
 
       rows.push({
@@ -1413,13 +1544,15 @@ body.form-busy{overflow:hidden}
           company_id: currentProfile.company_id,
           inspection_standard_system_id: documentId,
           approval_stage: "PREPARER",
-          employee_system_id: preparerId
+          employee_system_id: preparerId,
+          approval_date: establishedDate
         },
         {
           company_id: currentProfile.company_id,
           inspection_standard_system_id: documentId,
           approval_stage: "APPROVER",
-          employee_system_id: approverId
+          employee_system_id: approverId,
+          approval_date: establishedDate
         }
       ];
 
@@ -1620,7 +1753,7 @@ body.form-busy{overflow:hidden}
           .order("display_order", { ascending: true }),
 
         sb.from(APPROVAL_TABLE)
-          .select("approval_stage,employee_system_id")
+          .select("approval_stage,employee_system_id,approval_date")
           .eq("company_id", currentProfile.company_id)
           .eq("inspection_standard_system_id", documentId),
 
@@ -1646,6 +1779,7 @@ body.form-busy{overflow:hidden}
       formCompanyId.value = currentProfile.company_id;
       formDocumentNumber.value = currentDocument.document_number || "";
       formEstablishedDate.value = currentDocument.established_date || "";
+      syncAutomaticDates();
 
       const item = itemMap.get(currentDocument.item_system_id);
       formCustomerId.value = currentDocument.customer_system_id || "";
@@ -1837,6 +1971,7 @@ body.form-busy{overflow:hidden}
     ].filter(Boolean).join("-");
 
     if (fileTitle) document.title = fileTitle;
+    preparePrintValues();
     window.print();
     window.setTimeout(() => {
       document.title = originalTitle;
@@ -1854,7 +1989,10 @@ body.form-busy{overflow:hidden}
   });
 
   formItemId.addEventListener("change", applySelectedItem);
+  formEstablishedDate.addEventListener("change", syncAutomaticDates);
+  formEstablishedDate.addEventListener("input", syncAutomaticDates);
   formSketchFile.addEventListener("change", previewSketchFile);
+  window.addEventListener("beforeprint", preparePrintValues);
 
   [formPreparer, formApprover].forEach(select => {
     select.addEventListener("change", async () => {
