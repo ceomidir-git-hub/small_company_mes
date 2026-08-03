@@ -3,6 +3,8 @@
 
 <!DOCTYPE html>
 
+<!DOCTYPE html>
+
 <html class="auth-pending" lang="ko">
 <head>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta charset="utf-8"/>
@@ -601,6 +603,130 @@ body.form-busy{overflow:hidden}
     font-size:7.1pt !important;
   }
 }
+</style><style>
+/* ============================================================
+   조회 목록 5건·라디오 선택·프레임 폭·입력 안내색 보완
+   ============================================================ */
+:root{
+  --inspection-page-width:210mm;
+  --empty-control-color:#aeb5bd;
+  --empty-placeholder-color:#b8bec6;
+}
+
+/* 상단 조회/알림/결과 프레임을 하단 검사기준서 흰색 페이지와 같은 폭으로 맞춤 */
+.inspection-toolbar,
+.screen-notice,
+.search-result-panel,
+.page{
+  width:min(var(--inspection-page-width),calc(100vw - 16px)) !important;
+  max-width:var(--inspection-page-width);
+}
+
+/* 하단 검사기준서의 내부 여백과 상단 조회 입력부의 좌우 기준을 맞춤 */
+.inspection-toolbar{
+  padding-left:7mm !important;
+  padding-right:7mm !important;
+}
+
+/* 빈 입력칸의 안내문만 희미하게 표시하고 실제 저장값은 검정색 유지 */
+.search-field input::placeholder,
+#inspectionStandardForm input.db-control::placeholder{
+  color:var(--empty-placeholder-color) !important;
+  opacity:1;
+  font-weight:500;
+}
+.search-field input.is-empty,
+.search-field select.is-empty,
+#inspectionStandardForm .db-control.is-empty{
+  color:var(--empty-control-color) !important;
+  font-weight:500 !important;
+}
+.search-field input:not(.is-empty),
+.search-field select:not(.is-empty),
+#inspectionStandardForm .db-control:not(.is-empty){
+  color:#111 !important;
+}
+#inspectionStandardForm .db-control.is-empty:disabled{
+  color:var(--empty-control-color) !important;
+}
+
+/* 조회 결과는 한 페이지에 5건 */
+.search-result-scroll{
+  max-height:none !important;
+  overflow-x:auto;
+  overflow-y:hidden;
+}
+.search-result-panel th:nth-child(1){width:7%}
+.search-result-panel th:nth-child(2){width:6%}
+.search-result-panel th:nth-child(3){width:18%}
+.search-result-panel th:nth-child(4){width:18%}
+.search-result-panel th:nth-child(5){width:19%}
+.search-result-panel th:nth-child(6){width:18%}
+.search-result-panel th:nth-child(7){width:14%}
+
+.result-radio{
+  width:15px;
+  height:15px;
+  margin:0;
+  cursor:pointer;
+  vertical-align:middle;
+}
+.search-result-panel tbody tr{
+  cursor:default !important;
+}
+.search-result-panel tbody tr.radio-selected{
+  background:#e4efff;
+}
+.search-result-panel tbody tr:hover{
+  background:#f5f8fc;
+}
+.search-result-panel tbody tr.radio-selected:hover{
+  background:#e4efff;
+}
+
+.search-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:34px;
+  padding:4px 8px;
+  border-top:1px solid #d3d7dd;
+  background:#f7f8fa;
+}
+.search-pagination button{
+  min-width:52px;
+  height:25px;
+  padding:0 8px;
+  border:1px solid #9da5af;
+  border-radius:3px;
+  background:#fff;
+  color:#222;
+  font-size:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.search-pagination button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+.search-pagination span{
+  min-width:64px;
+  text-align:center;
+  color:#3b4654;
+  font-size:10.5px;
+  font-weight:700;
+}
+
+@media(max-width:900px){
+  .inspection-toolbar{
+    padding-left:7px !important;
+    padding-right:7px !important;
+  }
+}
+@media print{
+  .search-pagination{display:none!important}
+}
 </style></head>
 <body>
 <section aria-label="검사기준서 조회 및 작업" class="inspection-toolbar no-print">
@@ -640,7 +766,7 @@ body.form-busy{overflow:hidden}
 <div class="search-result-scroll">
 <table>
 <thead>
-<tr>
+<tr><th>선택</th>
 <th>NO</th>
 <th>고객사</th>
 <th>품명</th>
@@ -652,7 +778,11 @@ body.form-busy{overflow:hidden}
 <tbody id="searchResultBody"></tbody>
 </table>
 </div>
-</section>
+<div class="search-pagination" id="searchPagination">
+<button aria-label="이전 5건" id="resultPrevPage" type="button">이전</button>
+<span id="resultPageInfo">1 / 1</span>
+<button aria-label="다음 5건" id="resultNextPage" type="button">다음</button>
+</div></section>
 <div class="page">
 <div class="form-frame">
 <form autocomplete="off" id="inspectionStandardForm"><input data-db-field="inspection_standard_system_id" data-db-table="inspection_standard_documents" id="formDocumentId" name="inspection_standard_system_id" type="hidden"/><input data-db-field="company_id" data-db-table="inspection_standard_documents" id="formCompanyId" name="company_id" type="hidden"/><table class="form">
@@ -737,6 +867,9 @@ body.form-busy{overflow:hidden}
   const resultPanel = document.getElementById("searchResultPanel");
   const resultBody = document.getElementById("searchResultBody");
   const resultCount = document.getElementById("searchResultCount");
+  const resultPrevPage = document.getElementById("resultPrevPage");
+  const resultNextPage = document.getElementById("resultNextPage");
+  const resultPageInfo = document.getElementById("resultPageInfo");
 
   const searchCustomerId = document.getElementById("searchCustomerId");
   const searchItemName = document.getElementById("searchItemName");
@@ -775,6 +908,8 @@ body.form-busy{overflow:hidden}
   let currentDetailOrders = [];
   let currentRevisionNumbers = [];
   let searchResults = [];
+  const RESULT_PAGE_SIZE = 5;
+  let searchPage = 1;
 
   let customers = [];
   let items = [];
@@ -855,6 +990,17 @@ body.form-busy{overflow:hidden}
     document.body.classList.remove("form-busy");
   }
 
+  function updateControlHintState(control) {
+    if (!control || !control.matches("input,select")) return;
+    control.classList.toggle("is-empty", !normalize(control.value));
+  }
+
+  function updateAllHintStates(root = document) {
+    root.querySelectorAll(
+      ".search-field input,.search-field select,#inspectionStandardForm .db-control"
+    ).forEach(updateControlHintState);
+  }
+
   function syncAutomaticDates() {
     const establishedDate = normalize(formEstablishedDate.value);
 
@@ -922,6 +1068,8 @@ body.form-busy{overflow:hidden}
     document.querySelectorAll(".approval-signature").forEach(image => {
       image.style.cursor = editing ? "pointer" : "default";
     });
+
+    updateAllHintStates();
   }
 
   function clearOptions(select, placeholder) {
@@ -1622,25 +1770,54 @@ body.form-busy{overflow:hidden}
   }
 
   function renderSearchResults(rows) {
-    searchResults = rows || [];
+    if (rows !== searchResults) {
+      searchResults = rows || [];
+      searchPage = 1;
+    }
+
     resultCount.textContent = searchResults.length + "건";
 
     if (!searchResults.length) {
       resultBody.innerHTML = "";
       resultPanel.hidden = true;
+      resultPageInfo.textContent = "0 / 0";
+      resultPrevPage.disabled = true;
+      resultNextPage.disabled = true;
       return;
     }
 
-    resultBody.innerHTML = searchResults.map((documentRow, index) => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(searchResults.length / RESULT_PAGE_SIZE)
+    );
+    searchPage = Math.min(Math.max(searchPage, 1), totalPages);
+
+    const startIndex = (searchPage - 1) * RESULT_PAGE_SIZE;
+    const pageRows = searchResults.slice(
+      startIndex,
+      startIndex + RESULT_PAGE_SIZE
+    );
+
+    resultBody.innerHTML = pageRows.map((documentRow, pageIndex) => {
       const item = itemMap.get(documentRow.item_system_id) || {};
       const customer = customerMap.get(documentRow.customer_system_id) || {};
-      const selectedClass =
-        documentRow.inspection_standard_system_id === selectedDocumentId ? "selected" : "";
+      const isSelected =
+        documentRow.inspection_standard_system_id === selectedDocumentId;
 
       return `
-        <tr class="${selectedClass}"
+        <tr class="${isSelected ? "radio-selected" : ""}"
             data-document-id="${escapeHtml(documentRow.inspection_standard_system_id)}">
-          <td>${index + 1}</td>
+          <td>
+            <input
+              class="result-radio"
+              type="radio"
+              name="inspection_standard_result"
+              value="${escapeHtml(documentRow.inspection_standard_system_id)}"
+              aria-label="${startIndex + pageIndex + 1}번 검사기준서 선택"
+              ${isSelected ? "checked" : ""}
+            >
+          </td>
+          <td>${startIndex + pageIndex + 1}</td>
           <td>${escapeHtml(customer.customer_name || "")}</td>
           <td>${escapeHtml(item.item_name || "")}</td>
           <td>${escapeHtml(item.item_number || "")}</td>
@@ -1650,6 +1827,9 @@ body.form-busy{overflow:hidden}
       `;
     }).join("");
 
+    resultPageInfo.textContent = `${searchPage} / ${totalPages}`;
+    resultPrevPage.disabled = searchPage <= 1;
+    resultNextPage.disabled = searchPage >= totalPages;
     resultPanel.hidden = false;
   }
 
@@ -1698,6 +1878,9 @@ body.form-busy{overflow:hidden}
       if (error) throw error;
 
       const rows = data || [];
+
+      clearFormData({ keepSearch: true });
+      setMode("view");
       renderSearchResults(rows);
 
       if (!rows.length) {
@@ -1705,15 +1888,10 @@ body.form-busy{overflow:hidden}
         return;
       }
 
-      if (rows.length === 1) {
-        await loadDocument(rows[0].inspection_standard_system_id);
-        setNotice("검사기준서 1건을 조회했습니다.", "success");
-      } else {
-        setNotice(
-          `검사기준서 ${rows.length}건이 조회되었습니다. 아래 목록에서 문서를 선택해 주세요.`,
-          "success"
-        );
-      }
+      setNotice(
+        `검사기준서 ${rows.length}건이 조회되었습니다. 라디오버튼으로 문서를 선택해 주세요.`,
+        "success"
+      );
     } catch (error) {
       console.error(error);
       renderSearchResults([]);
@@ -1841,6 +2019,7 @@ body.form-busy{overflow:hidden}
 
       setMode("view");
       renderSearchResults(searchResults);
+      updateAllHintStates();
     } catch (error) {
       console.error(error);
       setNotice("문서 불러오기 실패: " + dbMessage(error), "error");
@@ -2013,11 +2192,45 @@ body.form-busy{overflow:hidden}
     choose?.addEventListener("click", reopen);
   });
 
-  resultBody.addEventListener("click", event => {
-    const row = event.target.closest("tr[data-document-id]");
-    if (!row) return;
-    loadDocument(row.dataset.documentId);
+  resultBody.addEventListener("change", event => {
+    const radio = event.target.closest(
+      'input[type="radio"][name="inspection_standard_result"]'
+    );
+    if (!radio) return;
+    loadDocument(radio.value);
   });
+
+  resultPrevPage.addEventListener("click", () => {
+    if (searchPage <= 1) return;
+    searchPage -= 1;
+    renderSearchResults(searchResults);
+  });
+
+  resultNextPage.addEventListener("click", () => {
+    const totalPages = Math.max(
+      1,
+      Math.ceil(searchResults.length / RESULT_PAGE_SIZE)
+    );
+    if (searchPage >= totalPages) return;
+    searchPage += 1;
+    renderSearchResults(searchResults);
+  });
+
+  document.addEventListener("input", event => {
+    if (event.target.matches(
+      ".search-field input,.search-field select,#inspectionStandardForm .db-control"
+    )) {
+      updateControlHintState(event.target);
+    }
+  }, true);
+
+  document.addEventListener("change", event => {
+    if (event.target.matches(
+      ".search-field input,.search-field select,#inspectionStandardForm .db-control"
+    )) {
+      updateControlHintState(event.target);
+    }
+  }, true);
 
   [searchItemName, searchItemNumber].forEach(input => {
     input.addEventListener("keydown", event => {
@@ -2044,6 +2257,7 @@ body.form-busy{overflow:hidden}
       await loadReferenceData();
       clearFormData({ keepSearch: false });
       setMode("view");
+      updateAllHintStates();
       document.documentElement.classList.remove("auth-pending");
       setNotice(
         "고객사·품명·품번을 단독 또는 복합으로 조회할 수 있습니다. 최초 작성은 등록 버튼을 누르세요.",
