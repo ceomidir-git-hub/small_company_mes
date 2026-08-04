@@ -1,8 +1,11 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 
-<html lang="ko"><head><meta charset="utf-8"/>
+<!DOCTYPE html>
+
+<html class="auth-pending" lang="ko"><head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Work Standards Document</title>
+<title>작업표준서</title>
 <style>
 @page { size: A4 landscape; margin: 0; }
 * { box-sizing: border-box; }
@@ -78,6 +81,10 @@ body{padding-top:0;}
 .cell:hover{outline:none;}
 .cell.form-field{background:var(--input-bg)!important;}
 .cell.readonly-field{background:var(--input-bg-readonly)!important;}
+.cell.readonly-field,.cell.readonly-field .form-control{cursor:pointer;}
+.cell.readonly-field:hover{outline:1.5px solid #6b8fd6;outline-offset:-2px;}
+.cell.readonly-field .form-control:focus{box-shadow:inset 0 0 0 2px rgba(57,105,190,.35);}
+
 .form-control{
   width:100%;height:100%;min-width:0;min-height:0;margin:0;padding:.35mm .55mm;
   border:0;background:transparent;color:#000;font:inherit;font-size:inherit;font-weight:inherit;
@@ -125,6 +132,16 @@ textarea.form-control{white-space:pre-wrap;}
 
 .fixed-template-cell{background:#fff!important;cursor:default;}
 .fixed-template-cell span{width:100%;text-align:center;font-weight:400;}
+
+html.auth-pending body{visibility:hidden;}
+.cell{cursor:default;user-select:auto;}
+.toolbar button:disabled{opacity:.45;cursor:not-allowed;}
+.status-line.loading{color:#6a4b00;background:#fff6d6;border-color:#d9bd4d;}
+@media print{
+  .form-field,.readonly-field,.image-field{background:#fff!important;}
+  .form-control,.signature-select,input,select,textarea{background:#fff!important;box-shadow:none!important;}
+  select{appearance:none;-webkit-appearance:none;}
+}
 </style></head>
 <body><div class="toolbar" id="workStandardToolbar">
 <div class="group">
@@ -144,7 +161,7 @@ textarea.form-control{white-space:pre-wrap;}
 <div aria-label="작업표준서 입력폼" class="page" id="workStandardForm" role="form">
 <div class="sheet">
 <div class="cell" id="cell1" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:0.000mm;width:26.987mm;height:8.608mm;"><span>관리번호</span></div><div class="cell form-field readonly-field" id="cell2" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:26.987mm;top:0.000mm;width:44.979mm;height:8.608mm;"><input aria-readonly="true" class="form-control" id="work_standard_number" maxlength="100" name="work_standard_number" placeholder="품목 선택 시 자동" readonly="readonly" type="text"/></div><div class="cell" id="cell3" style="font-size:18.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:71.967mm;top:0.000mm;width:95.250mm;height:25.823mm;"><span>작업표준서</span></div><div class="cell" id="cell4" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:167.217mm;top:0.000mm;width:17.992mm;height:8.608mm;"><span>구  분</span></div><div class="cell" id="cell5" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:185.208mm;top:0.000mm;width:26.987mm;height:8.608mm;"><span>년-월-일</span></div><div class="cell" id="cell6" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:212.196mm;top:0.000mm;width:26.987mm;height:8.608mm;"><span>개정사유</span></div><div class="cell" id="cell7" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:239.183mm;top:0.000mm;width:17.992mm;height:8.608mm;"><span>작성</span></div><div class="cell" id="cell8" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:257.175mm;top:0.000mm;width:17.992mm;height:8.608mm;"><span>승인</span></div><div class="cell" id="cell9" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:8.608mm;width:26.987mm;height:8.608mm;"><span>고객사</span></div><div class="cell form-field readonly-field" id="cell10" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:26.987mm;top:8.608mm;width:44.979mm;height:8.608mm;"><input aria-readonly="true" class="form-control" id="customer_name" maxlength="100" name="customer_name" placeholder="품목 선택 시 자동" readonly="readonly" type="text"/></div><div class="cell" id="cell11" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:167.217mm;top:8.608mm;width:17.992mm;height:8.608mm;"><span>제  정</span></div><div class="cell form-field" id="cell12" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:185.208mm;top:8.608mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="establishment_date" name="establishment_date" type="date"/></div><div class="cell form-field" id="cell13" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:212.196mm;top:8.608mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="establishment_reason" maxlength="100" name="establishment_reason" type="text"/></div><div class="cell form-field signature-field" id="cell14" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:239.183mm;top:8.608mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="establishment_preparer_employee_id" name="establishment_preparer_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell form-field signature-field" id="cell16" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:257.175mm;top:8.608mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="establishment_approver_employee_id" name="establishment_approver_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell" id="cell17" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:17.216mm;width:26.987mm;height:8.608mm;"><span>품    명</span></div><div class="cell form-field readonly-field" id="cell18" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:26.987mm;top:17.216mm;width:44.979mm;height:8.608mm;"><input aria-readonly="true" class="form-control" id="item_name" maxlength="100" name="item_name" placeholder="품목 선택 시 자동" readonly="readonly" type="text"/></div><div class="cell" id="cell19" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:167.217mm;top:17.216mm;width:8.996mm;height:25.823mm;"><span>개<br/>정</span></div><div class="cell" id="cell20" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:17.216mm;width:8.996mm;height:8.608mm;"><span>1</span></div><div class="cell form-field" id="cell21" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:185.208mm;top:17.216mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="revision_1_date" name="revision_1_date" type="date"/></div><div class="cell form-field" id="cell22" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:212.196mm;top:17.216mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="revision_1_reason" maxlength="100" name="revision_1_reason" type="text"/></div><div class="cell form-field signature-field" id="cell23" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:239.183mm;top:17.216mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="revision_1_preparer_employee_id" name="revision_1_preparer_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell form-field signature-field" id="cell24" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:257.175mm;top:17.216mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="revision_1_approver_employee_id" name="revision_1_approver_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell" id="cell25" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:25.823mm;width:26.987mm;height:8.608mm;"><span>품    번</span></div><div class="cell form-field readonly-field" id="cell26" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:26.987mm;top:25.823mm;width:44.979mm;height:8.608mm;"><input aria-readonly="true" class="form-control" id="item_number" maxlength="100" name="item_number" placeholder="품목 선택 시 자동" readonly="readonly" type="text"/></div><div class="cell" id="cell27" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:71.967mm;top:25.823mm;width:17.992mm;height:8.608mm;"><span>공정명</span></div><div class="cell form-field" id="cell28" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:25.823mm;width:29.633mm;height:8.608mm;"><input class="form-control" id="process_name" maxlength="70" name="process_name" type="text" value="고주파작업"/></div><div class="cell" id="cell29" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:25.823mm;width:17.992mm;height:8.608mm;"><span>설비명</span></div><div class="cell form-field" id="cell30" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:137.583mm;top:25.823mm;width:29.633mm;height:8.608mm;"><select class="form-control" id="equipment_system_id" name="equipment_system_id"><option value="">설비명 선택</option></select></div><div class="cell" id="cell31" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:25.823mm;width:8.996mm;height:8.608mm;"><span>2</span></div><div class="cell form-field" id="cell32" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:185.208mm;top:25.823mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="revision_2_date" name="revision_2_date" type="date"/></div><div class="cell form-field" id="cell33" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:212.196mm;top:25.823mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="revision_2_reason" maxlength="100" name="revision_2_reason" type="text"/></div><div class="cell form-field signature-field" id="cell34" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:239.183mm;top:25.823mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="revision_2_preparer_employee_id" name="revision_2_preparer_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell form-field signature-field" id="cell35" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:257.175mm;top:25.823mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="revision_2_approver_employee_id" name="revision_2_approver_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell" id="cell36" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:34.431mm;width:26.987mm;height:8.608mm;"><span>EO No.</span></div><div class="cell form-field" id="cell37" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:26.987mm;top:34.431mm;width:44.979mm;height:8.608mm;"><input class="form-control" id="eo_number" maxlength="70" name="eo_number" type="text"/></div><div class="cell" id="cell38" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:71.967mm;top:34.431mm;width:17.992mm;height:8.608mm;"><span>공정NO</span></div><div class="cell form-field" id="cell39" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:34.431mm;width:29.633mm;height:8.608mm;"><input class="form-control" id="process_number" maxlength="30" name="process_number" type="text" value="10번"/></div><div class="cell" id="cell40" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:34.431mm;width:17.992mm;height:8.608mm;"><span>설비NO</span></div><div class="cell form-field readonly-field" id="cell41" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:137.583mm;top:34.431mm;width:29.633mm;height:8.608mm;"><input aria-readonly="true" class="form-control" id="equipment_number" maxlength="100" name="equipment_number" placeholder="설비 선택 시 자동" readonly="readonly" type="text"/></div><div class="cell" id="cell42" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:34.431mm;width:8.996mm;height:8.608mm;"><span>3</span></div><div class="cell form-field" id="cell43" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:185.208mm;top:34.431mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="revision_3_date" name="revision_3_date" type="date"/></div><div class="cell form-field" id="cell44" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:212.196mm;top:34.431mm;width:26.987mm;height:8.608mm;"><input class="form-control" id="revision_3_reason" maxlength="100" name="revision_3_reason" type="text"/></div><div class="cell form-field signature-field" id="cell45" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:239.183mm;top:34.431mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="revision_3_preparer_employee_id" name="revision_3_preparer_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell form-field signature-field" id="cell46" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:257.175mm;top:34.431mm;width:17.992mm;height:8.608mm;"><select class="signature-select" id="revision_3_approver_employee_id" name="revision_3_approver_employee_id"><option value="">이름 선택</option></select><img alt="선택된 사인 이미지" class="signature-image" title="클릭하면 이름을 다시 선택합니다."/></div><div class="cell" id="cell47" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:43.039mm;width:98.954mm;height:5.962mm;"><span>작업순서 / 약도</span></div><div class="cell" id="cell48" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:98.954mm;top:43.039mm;width:95.250mm;height:5.962mm;"><span>작업시 주의사항</span></div><div class="cell" id="cell49" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:194.204mm;top:43.039mm;width:80.962mm;height:5.962mm;"><span>이상발생시 조치사항</span></div><div class="cell form-field" id="cell50" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:49.001mm;width:98.954mm;height:5.962mm;"><textarea class="form-control" id="work_sequence_1" maxlength="150" name="work_sequence_1">[작업순서]</textarea></div><div class="cell form-field" id="cell51" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:98.954mm;top:49.001mm;width:95.250mm;height:5.962mm;"><textarea class="form-control" id="caution_1" maxlength="150" name="caution_1">1. 코일에 냉각수 통수(흐름)을 확인한다.</textarea></div><div class="cell form-field" id="cell52" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:194.204mm;top:49.001mm;width:80.962mm;height:5.962mm;"><textarea class="form-control" id="abnormal_action_1" maxlength="150" name="abnormal_action_1">1. 설비 이상 발생시 비상 정지</textarea></div><div class="cell form-field" id="cell53" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:54.963mm;width:98.954mm;height:5.962mm;"><textarea class="form-control" id="work_sequence_2" maxlength="150" name="work_sequence_2">1. D-16 코일을 셋팅한다.</textarea></div><div class="cell form-field" id="cell54" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:98.954mm;top:54.963mm;width:95.250mm;height:5.962mm;"><textarea class="form-control" id="caution_2" maxlength="150" name="caution_2">2. 제품,코일의 간격(1.0mm)을 확인한다.</textarea></div><div class="cell form-field" id="cell55" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:194.204mm;top:54.963mm;width:80.962mm;height:5.962mm;"><textarea class="form-control" id="abnormal_action_2" maxlength="150" name="abnormal_action_2">2. 품질 이상 발생시 제품 격리</textarea></div><div class="cell form-field" id="cell56" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:60.925mm;width:98.954mm;height:5.962mm;"><textarea class="form-control" id="work_sequence_3" maxlength="150" name="work_sequence_3">2. 제품을 치구 센터에 고정한다.</textarea></div><div class="cell form-field" id="cell57" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:98.954mm;top:60.925mm;width:95.250mm;height:5.962mm;"><textarea class="form-control" id="caution_3" maxlength="150" name="caution_3">3. 작업시 제품의 외관 형상이 변형(용해)확인한다.</textarea></div><div class="cell form-field" id="cell58" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:194.204mm;top:60.925mm;width:80.962mm;height:5.962mm;"><textarea class="form-control" id="abnormal_action_3" maxlength="150" name="abnormal_action_3">3. 이상 발생 처리 절차도 준수</textarea></div><div class="cell form-field" id="cell59" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:66.887mm;width:98.954mm;height:5.962mm;"><textarea class="form-control" id="work_sequence_4" maxlength="150" name="work_sequence_4">3. 작업 조건값을 셋팅한다.</textarea></div><div class="cell form-field" id="cell306" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:98.954mm;top:66.887mm;width:95.250mm;height:5.962mm;"><textarea class="form-control" id="caution_4" maxlength="150" name="caution_4"></textarea></div><div class="cell form-field" id="cell307" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:194.204mm;top:66.887mm;width:80.962mm;height:5.962mm;"><textarea class="form-control" id="abnormal_action_4" maxlength="150" name="abnormal_action_4"></textarea></div><div class="cell form-field" id="cell60" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:72.849mm;width:98.954mm;height:5.962mm;"><textarea class="form-control" id="work_sequence_5" maxlength="150" name="work_sequence_5">4. 냉각수 압력을 조정한다.</textarea></div><div class="cell form-field" id="cell308" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:98.954mm;top:72.849mm;width:95.250mm;height:5.962mm;"><textarea class="form-control" id="caution_5" maxlength="150" name="caution_5"></textarea></div><div class="cell form-field" id="cell309" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:194.204mm;top:72.849mm;width:80.962mm;height:5.962mm;"><textarea class="form-control" id="abnormal_action_5" maxlength="150" name="abnormal_action_5"></textarea></div><div class="cell form-field" id="cell61" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:78.811mm;width:98.954mm;height:5.962mm;"><textarea class="form-control" id="work_sequence_6" maxlength="150" name="work_sequence_6">5. 작업 실시</textarea></div><div class="cell form-field" id="cell310" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:98.954mm;top:78.811mm;width:95.250mm;height:5.962mm;"><textarea class="form-control" id="caution_6" maxlength="150" name="caution_6"></textarea></div><div class="cell form-field" id="cell311" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:194.204mm;top:78.811mm;width:80.962mm;height:5.962mm;"><textarea class="form-control" id="abnormal_action_6" maxlength="150" name="abnormal_action_6"></textarea></div><div class="cell" id="cell62" style="font-size:12.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#DAE3F3;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:84.773mm;width:148.431mm;height:6.756mm;"><span>조건관리표준</span></div><div class="cell" id="cell63" style="font-size:12.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#DAE3F3;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:84.773mm;width:126.735mm;height:6.756mm;"><span>완성품 검사기준</span></div><div class="cell" id="cell64" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:91.528mm;width:8.996mm;height:5.962mm;"><span>NO</span></div><div class="cell" id="cell65" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:91.528mm;width:26.987mm;height:5.962mm;"><span>관리항목</span></div><div class="cell" id="cell66" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:91.528mm;width:26.987mm;height:5.962mm;"><span>규격</span></div><div class="cell" id="cell67" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:91.528mm;width:26.987mm;height:5.962mm;"><span>측정기구</span></div><div class="cell" id="cell68" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:91.528mm;width:29.633mm;height:5.962mm;"><span>검사주기</span></div><div class="cell" id="cell69" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:91.528mm;width:28.840mm;height:5.962mm;"><span>비고</span></div><div class="cell" id="cell70" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:91.528mm;width:27.781mm;height:5.962mm;"><span>점검항목</span></div><div class="cell" id="cell71" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:91.528mm;width:26.987mm;height:5.962mm;"><span>관리기준</span></div><div class="cell" id="cell72" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:91.528mm;width:26.987mm;height:5.962mm;"><span>측정기구</span></div><div class="cell" id="cell73" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:91.528mm;width:17.992mm;height:5.962mm;"><span>1회/일</span></div><div class="cell" id="cell74" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:91.528mm;width:26.987mm;height:5.962mm;"><span>비고</span></div><div class="cell" id="cell75" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:97.490mm;width:8.996mm;height:5.962mm;"><span>1</span></div><div class="cell fixed-template-cell" id="cell76" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:97.490mm;width:26.987mm;height:5.962mm;"><span data-fixed-field="condition_1_control_item">전압(V)</span></div><div class="cell form-field" id="cell77" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:97.490mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_1_specification" maxlength="100" name="condition_1_specification" type="text" value="13±2V"/></div><div class="cell form-field" id="cell78" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:97.490mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_1_measuring_instrument" maxlength="100" name="condition_1_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell79" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:97.490mm;width:29.633mm;height:5.962mm;"><input class="form-control" id="condition_1_inspection_cycle" maxlength="100" name="condition_1_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell80" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:97.490mm;width:28.840mm;height:5.962mm;"><input class="form-control" id="condition_1_remarks" maxlength="100" name="condition_1_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell81" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:97.490mm;width:27.781mm;height:5.962mm;"><input class="form-control" id="finished_1_inspection_item" maxlength="100" name="finished_1_inspection_item" type="text" value="외관"/></div><div class="cell form-field" id="cell82" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:97.490mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_1_management_standard" maxlength="100" name="finished_1_management_standard" type="text" value="이물질 찍힘"/></div><div class="cell form-field" id="cell83" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:97.490mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_1_measuring_instrument" maxlength="100" name="finished_1_measuring_instrument" type="text" value="육안"/></div><div class="cell form-field" id="cell84" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:97.490mm;width:17.992mm;height:5.962mm;"><input class="form-control" id="finished_1_inspection_frequency" maxlength="100" name="finished_1_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell85" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:97.490mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_1_remarks" maxlength="100" name="finished_1_remarks" type="text"/></div><div class="cell" id="cell86" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:103.452mm;width:8.996mm;height:5.962mm;"><span>2</span></div><div class="cell fixed-template-cell" id="cell87" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:103.452mm;width:26.987mm;height:5.962mm;"><span data-fixed-field="condition_2_control_item">전류(A)</span></div><div class="cell form-field" id="cell88" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:103.452mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_2_specification" maxlength="100" name="condition_2_specification" type="text" value="6±2.5A"/></div><div class="cell form-field" id="cell89" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:103.452mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_2_measuring_instrument" maxlength="100" name="condition_2_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell90" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:103.452mm;width:29.633mm;height:5.962mm;"><input class="form-control" id="condition_2_inspection_cycle" maxlength="100" name="condition_2_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell91" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:103.452mm;width:28.840mm;height:5.962mm;"><input class="form-control" id="condition_2_remarks" maxlength="100" name="condition_2_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell92" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:103.452mm;width:27.781mm;height:5.962mm;"><input class="form-control" id="finished_2_inspection_item" maxlength="100" name="finished_2_inspection_item" type="text" value="표면경도"/></div><div class="cell form-field" id="cell93" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:103.452mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_2_management_standard" maxlength="100" name="finished_2_management_standard" type="text" value="HRC 52~59"/></div><div class="cell form-field" id="cell94" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:103.452mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_2_measuring_instrument" maxlength="100" name="finished_2_measuring_instrument" type="text" value="경도계"/></div><div class="cell form-field" id="cell95" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:103.452mm;width:17.992mm;height:5.962mm;"><input class="form-control" id="finished_2_inspection_frequency" maxlength="100" name="finished_2_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell96" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:103.452mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_2_remarks" maxlength="100" name="finished_2_remarks" type="text"/></div><div class="cell" id="cell97" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:109.414mm;width:8.996mm;height:5.962mm;"><span>3</span></div><div class="cell fixed-template-cell" id="cell98" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:109.414mm;width:26.987mm;height:5.962mm;"><span data-fixed-field="condition_3_control_item">출력(Kw)</span></div><div class="cell form-field" id="cell99" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:109.414mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_3_specification" maxlength="100" name="condition_3_specification" type="text" value="1.25KW"/></div><div class="cell form-field" id="cell100" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:109.414mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_3_measuring_instrument" maxlength="100" name="condition_3_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell101" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:109.414mm;width:29.633mm;height:5.962mm;"><input class="form-control" id="condition_3_inspection_cycle" maxlength="100" name="condition_3_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell102" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:109.414mm;width:28.840mm;height:5.962mm;"><input class="form-control" id="condition_3_remarks" maxlength="100" name="condition_3_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell103" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:109.414mm;width:27.781mm;height:5.962mm;"><input class="form-control" id="finished_3_inspection_item" maxlength="100" name="finished_3_inspection_item" type="text" value="경화깊이"/></div><div class="cell form-field" id="cell104" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:109.414mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_3_management_standard" maxlength="100" name="finished_3_management_standard" type="text" value="1~3mm"/></div><div class="cell form-field" id="cell105" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:109.414mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_3_measuring_instrument" maxlength="100" name="finished_3_measuring_instrument" type="text" value="현미경"/></div><div class="cell form-field" id="cell106" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:109.414mm;width:17.992mm;height:5.962mm;"><input class="form-control" id="finished_3_inspection_frequency" maxlength="100" name="finished_3_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell107" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:109.414mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_3_remarks" maxlength="100" name="finished_3_remarks" type="text"/></div><div class="cell" id="cell108" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:115.376mm;width:8.996mm;height:5.962mm;"><span>4</span></div><div class="cell fixed-template-cell" id="cell109" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:115.376mm;width:26.987mm;height:5.962mm;"><span data-fixed-field="condition_4_control_item">주파수(kHz)</span></div><div class="cell form-field" id="cell110" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:115.376mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_4_specification" maxlength="100" name="condition_4_specification" type="text" value="120"/></div><div class="cell form-field" id="cell111" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:115.376mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_4_measuring_instrument" maxlength="100" name="condition_4_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell112" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:115.376mm;width:29.633mm;height:5.962mm;"><input class="form-control" id="condition_4_inspection_cycle" maxlength="100" name="condition_4_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell113" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:115.376mm;width:28.840mm;height:5.962mm;"><input class="form-control" id="condition_4_remarks" maxlength="100" name="condition_4_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell114" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:115.376mm;width:27.781mm;height:5.962mm;"><input class="form-control" id="finished_4_inspection_item" maxlength="100" name="finished_4_inspection_item" type="text" value="전장"/></div><div class="cell form-field" id="cell115" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:115.376mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_4_management_standard" maxlength="100" name="finished_4_management_standard" type="text" value="외관"/></div><div class="cell form-field" id="cell116" style="font-size:10.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:115.376mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_4_measuring_instrument" maxlength="100" name="finished_4_measuring_instrument" type="text" value="버니어캘리퍼스"/></div><div class="cell form-field" id="cell117" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:115.376mm;width:17.992mm;height:5.962mm;"><input class="form-control" id="finished_4_inspection_frequency" maxlength="100" name="finished_4_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell118" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:115.376mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_4_remarks" maxlength="100" name="finished_4_remarks" type="text"/></div><div class="cell" id="cell119" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:121.338mm;width:8.996mm;height:5.962mm;"><span>5</span></div><div class="cell fixed-template-cell" id="cell120" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:121.338mm;width:26.987mm;height:5.962mm;"><span data-fixed-field="condition_5_control_item">냉각수압(bar)</span></div><div class="cell form-field" id="cell121" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:121.338mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_5_specification" maxlength="100" name="condition_5_specification" type="text" value="1.4"/></div><div class="cell form-field" id="cell122" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:121.338mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_5_measuring_instrument" maxlength="100" name="condition_5_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell123" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:121.338mm;width:29.633mm;height:5.962mm;"><input class="form-control" id="condition_5_inspection_cycle" maxlength="100" name="condition_5_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell124" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:121.338mm;width:28.840mm;height:5.962mm;"><input class="form-control" id="condition_5_remarks" maxlength="100" name="condition_5_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell125" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:121.338mm;width:27.781mm;height:5.962mm;"><input class="form-control" id="finished_5_inspection_item" maxlength="100" name="finished_5_inspection_item" type="text"/></div><div class="cell form-field" id="cell126" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:121.338mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_5_management_standard" maxlength="100" name="finished_5_management_standard" type="text"/></div><div class="cell form-field" id="cell127" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:121.338mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_5_measuring_instrument" maxlength="100" name="finished_5_measuring_instrument" type="text"/></div><div class="cell form-field" id="cell128" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:121.338mm;width:17.992mm;height:5.962mm;"><input class="form-control" id="finished_5_inspection_frequency" maxlength="100" name="finished_5_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell129" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:121.338mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_5_remarks" maxlength="100" name="finished_5_remarks" type="text"/></div><div class="cell" id="cell130" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:127.300mm;width:8.996mm;height:12.700mm;"><span>6</span></div><div class="cell fixed-template-cell" id="cell131" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:127.300mm;width:26.987mm;height:12.700mm;"><span data-fixed-field="condition_6_control_item">냉각수온도(℃)</span></div><div class="cell form-field" id="cell132" style="font-size:8.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:127.300mm;width:26.987mm;height:12.700mm;"><textarea class="form-control" id="condition_6_specification" maxlength="100" name="condition_6_specification">11~12월 : 20±10℃
-그외 : 30±10℃</textarea></div><div class="cell form-field" id="cell133" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="condition_6_measuring_instrument" maxlength="100" name="condition_6_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell134" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:127.300mm;width:29.633mm;height:12.700mm;"><input class="form-control" id="condition_6_inspection_cycle" maxlength="100" name="condition_6_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell135" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:127.300mm;width:28.840mm;height:12.700mm;"><input class="form-control" id="condition_6_remarks" maxlength="100" name="condition_6_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell136" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:127.300mm;width:27.781mm;height:12.700mm;"><input class="form-control" id="finished_6_inspection_item" maxlength="100" name="finished_6_inspection_item" type="text"/></div><div class="cell form-field" id="cell137" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="finished_6_management_standard" maxlength="100" name="finished_6_management_standard" type="text"/></div><div class="cell form-field" id="cell138" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="finished_6_measuring_instrument" maxlength="100" name="finished_6_measuring_instrument" type="text"/></div><div class="cell form-field" id="cell139" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:127.300mm;width:17.992mm;height:12.700mm;"><input class="form-control" id="finished_6_inspection_frequency" maxlength="100" name="finished_6_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell140" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="finished_6_remarks" maxlength="100" name="finished_6_remarks" type="text"/></div><div class="cell" id="cell141" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:140.000mm;width:8.996mm;height:5.962mm;"><span>7</span></div><div class="cell fixed-template-cell" id="cell142" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:140.000mm;width:26.987mm;height:5.962mm;"><span data-fixed-field="condition_7_control_item">냉각시간(sec)</span></div><div class="cell form-field" id="cell143" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_7_specification" maxlength="100" name="condition_7_specification" type="text" value="20±0.5"/></div><div class="cell form-field" id="cell144" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_7_measuring_instrument" maxlength="100" name="condition_7_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell145" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:140.000mm;width:29.633mm;height:5.962mm;"><input class="form-control" id="condition_7_inspection_cycle" maxlength="100" name="condition_7_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell146" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:140.000mm;width:28.840mm;height:5.962mm;"><input class="form-control" id="condition_7_remarks" maxlength="100" name="condition_7_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell147" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:140.000mm;width:27.781mm;height:5.962mm;"><input class="form-control" id="finished_7_inspection_item" maxlength="100" name="finished_7_inspection_item" type="text"/></div><div class="cell form-field" id="cell148" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_7_management_standard" maxlength="100" name="finished_7_management_standard" type="text"/></div><div class="cell form-field" id="cell149" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_7_measuring_instrument" maxlength="100" name="finished_7_measuring_instrument" type="text"/></div><div class="cell form-field" id="cell150" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:140.000mm;width:17.992mm;height:5.962mm;"><input class="form-control" id="finished_7_inspection_frequency" maxlength="100" name="finished_7_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell151" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_7_remarks" maxlength="100" name="finished_7_remarks" type="text"/></div><div class="cell" id="cell152" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:145.962mm;width:91.722mm;height:5.962mm;"><span>특이사항</span></div><div class="cell" id="cell312" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:91.722mm;top:145.962mm;width:91.722mm;height:5.962mm;"><span>이미지 1</span></div><div class="cell" id="cell313" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:183.444mm;top:145.962mm;width:91.723mm;height:5.962mm;"><span>이미지 2</span></div><div class="cell form-field" id="cell314" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:flex-start;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:151.924mm;width:91.722mm;height:29.933mm;"><textarea class="form-control" id="special_notes" maxlength="1000" name="special_notes"></textarea></div><div class="cell form-field image-field" id="cell315" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:91.722mm;top:151.924mm;width:91.722mm;height:29.933mm;"><div class="image-uploader" data-field="image_1_file"><input accept="image/*" id="image_1_file" name="image_1_file" type="file"/><button type="button">이미지 1 선택</button><img alt="이미지 1 선택 미리보기" title="클릭하면 이미지를 다시 선택합니다."/></div></div><div class="cell form-field image-field" id="cell316" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:183.444mm;top:151.924mm;width:91.723mm;height:29.933mm;"><div class="image-uploader" data-field="image_2_file"><input accept="image/*" id="image_2_file" name="image_2_file" type="file"/><button type="button">이미지 2 선택</button><img alt="이미지 2 선택 미리보기" title="클릭하면 이미지를 다시 선택합니다."/></div></div><div class="cell" id="cell303" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #FFFFFF;border-left:0.25mm solid #FFFFFF;border-right:0.25mm solid #FFFFFF;left:0.000mm;top:181.857mm;width:128.587mm;height:5.962mm;"><span>QP01-QG180-F001</span></div><div class="cell" id="cell304" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #FFFFFF;border-left:0.25mm solid #FFFFFF;border-right:0.25mm solid #FFFFFF;left:128.588mm;top:181.857mm;width:19.844mm;height:5.962mm;"><span>QGIS</span></div><div class="cell" id="cell305" style="font-size:11.0pt;font-weight:400;text-align:right;justify-content:flex-end;align-items:center;background:#fff;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #FFFFFF;border-left:0.25mm solid #FFFFFF;border-right:0.25mm solid #FFFFFF;left:148.431mm;top:181.857mm;width:126.735mm;height:5.962mm;"><span>A4 (210mmx297mm)</span></div>
+그외 : 30±10℃</textarea></div><div class="cell form-field" id="cell133" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="condition_6_measuring_instrument" maxlength="100" name="condition_6_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell134" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:127.300mm;width:29.633mm;height:12.700mm;"><input class="form-control" id="condition_6_inspection_cycle" maxlength="100" name="condition_6_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell135" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:127.300mm;width:28.840mm;height:12.700mm;"><input class="form-control" id="condition_6_remarks" maxlength="100" name="condition_6_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell136" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:127.300mm;width:27.781mm;height:12.700mm;"><input class="form-control" id="finished_6_inspection_item" maxlength="100" name="finished_6_inspection_item" type="text"/></div><div class="cell form-field" id="cell137" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="finished_6_management_standard" maxlength="100" name="finished_6_management_standard" type="text"/></div><div class="cell form-field" id="cell138" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="finished_6_measuring_instrument" maxlength="100" name="finished_6_measuring_instrument" type="text"/></div><div class="cell form-field" id="cell139" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:127.300mm;width:17.992mm;height:12.700mm;"><input class="form-control" id="finished_6_inspection_frequency" maxlength="100" name="finished_6_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell140" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:127.300mm;width:26.987mm;height:12.700mm;"><input class="form-control" id="finished_6_remarks" maxlength="100" name="finished_6_remarks" type="text"/></div><div class="cell" id="cell141" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:140.000mm;width:8.996mm;height:5.962mm;"><span>7</span></div><div class="cell fixed-template-cell" id="cell142" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:8.996mm;top:140.000mm;width:26.987mm;height:5.962mm;"><span data-fixed-field="condition_7_control_item">냉각시간(sec)</span></div><div class="cell form-field" id="cell143" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:35.983mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_7_specification" maxlength="100" name="condition_7_specification" type="text" value="20±0.5"/></div><div class="cell form-field" id="cell144" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:62.971mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="condition_7_measuring_instrument" maxlength="100" name="condition_7_measuring_instrument" type="text" value="설비게이지"/></div><div class="cell form-field" id="cell145" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:89.958mm;top:140.000mm;width:29.633mm;height:5.962mm;"><input class="form-control" id="condition_7_inspection_cycle" maxlength="100" name="condition_7_inspection_cycle" type="text" value="1회/일"/></div><div class="cell form-field" id="cell146" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:119.592mm;top:140.000mm;width:28.840mm;height:5.962mm;"><input class="form-control" id="condition_7_remarks" maxlength="100" name="condition_7_remarks" type="text" value="일일설비점검표"/></div><div class="cell form-field" id="cell147" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:148.431mm;top:140.000mm;width:27.781mm;height:5.962mm;"><input class="form-control" id="finished_7_inspection_item" maxlength="100" name="finished_7_inspection_item" type="text"/></div><div class="cell form-field" id="cell148" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:176.213mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_7_management_standard" maxlength="100" name="finished_7_management_standard" type="text"/></div><div class="cell form-field" id="cell149" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:203.200mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_7_measuring_instrument" maxlength="100" name="finished_7_measuring_instrument" type="text"/></div><div class="cell form-field" id="cell150" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:230.188mm;top:140.000mm;width:17.992mm;height:5.962mm;"><input class="form-control" id="finished_7_inspection_frequency" maxlength="100" name="finished_7_inspection_frequency" type="text" value="1회/일"/></div><div class="cell form-field" id="cell151" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:248.179mm;top:140.000mm;width:26.987mm;height:5.962mm;"><input class="form-control" id="finished_7_remarks" maxlength="100" name="finished_7_remarks" type="text"/></div><div class="cell" id="cell152" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:145.962mm;width:91.722mm;height:5.962mm;"><span>특이사항</span></div><div class="cell" id="cell312" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:91.722mm;top:145.962mm;width:91.722mm;height:5.962mm;"><span>이미지 1</span></div><div class="cell" id="cell313" style="font-size:11.0pt;font-weight:700;text-align:center;justify-content:center;align-items:center;background:#F2F2F2;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:183.444mm;top:145.962mm;width:91.723mm;height:5.962mm;"><span>이미지 2</span></div><div class="cell form-field" id="cell314" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:flex-start;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:0.000mm;top:151.924mm;width:91.722mm;height:29.933mm;"><textarea class="form-control" id="special_notes" maxlength="1000" name="special_notes"></textarea></div><div class="cell form-field image-field" id="cell315" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:91.722mm;top:151.924mm;width:91.722mm;height:29.933mm;"><div class="image-uploader" data-field="image_1_file" data-slot="1"><input accept="image/*" id="image_1_file" name="image_1_file" type="file"/><button type="button">이미지 1 선택</button><img alt="이미지 1 선택 미리보기" title="클릭하면 이미지를 다시 선택합니다."/></div></div><div class="cell form-field image-field" id="cell316" style="font-size:11.0pt;font-weight:400;text-align:center;justify-content:center;align-items:center;background:#FFFFFF;white-space:normal;border-top:0.25mm solid #000;border-bottom:0.25mm solid #000;border-left:0.25mm solid #000;border-right:0.25mm solid #000;left:183.444mm;top:151.924mm;width:91.723mm;height:29.933mm;"><div class="image-uploader" data-field="image_2_file" data-slot="2"><input accept="image/*" id="image_2_file" name="image_2_file" type="file"/><button type="button">이미지 2 선택</button><img alt="이미지 2 선택 미리보기" title="클릭하면 이미지를 다시 선택합니다."/></div></div><div class="cell" id="cell303" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #FFFFFF;border-left:0.25mm solid #FFFFFF;border-right:0.25mm solid #FFFFFF;left:0.000mm;top:181.857mm;width:128.587mm;height:5.962mm;"><span>QP01-QG180-F001</span></div><div class="cell" id="cell304" style="font-size:11.0pt;font-weight:400;text-align:left;justify-content:flex-start;align-items:center;background:#FFFFFF;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #FFFFFF;border-left:0.25mm solid #FFFFFF;border-right:0.25mm solid #FFFFFF;left:128.588mm;top:181.857mm;width:19.844mm;height:5.962mm;"><span>QGIS</span></div><div class="cell" id="cell305" style="font-size:11.0pt;font-weight:400;text-align:right;justify-content:flex-end;align-items:center;background:#fff;white-space:nowrap;border-top:0.25mm solid #000;border-bottom:0.25mm solid #FFFFFF;border-left:0.25mm solid #FFFFFF;border-right:0.25mm solid #FFFFFF;left:148.431mm;top:181.857mm;width:126.735mm;height:5.962mm;"><span>A4 (210mmx297mm)</span></div>
 <div class="img-overlay"></div>
 </div>
 <input id="work_standard_system_id" name="work_standard_system_id" type="hidden"/><input id="item_system_id" name="item_system_id" type="hidden"/><input id="company_id" name="company_id" type="hidden"/><input id="image_1_storage_path" name="image_1_storage_path" type="hidden"/><input id="image_2_storage_path" name="image_2_storage_path" type="hidden"/></div>
@@ -152,241 +169,807 @@ textarea.form-control{white-space:pre-wrap;}
 <div aria-labelledby="itemModalTitle" aria-modal="true" class="modal" role="dialog">
 <h2 id="itemModalTitle">품목 선택</h2>
 <table>
-<thead><tr><th>고객사</th><th>품명</th><th>품번</th><th>관리번호</th></tr></thead>
-<tbody id="itemModalBody"><tr><td class="empty" colspan="4">연결된 품목 데이터가 없습니다.</td></tr></tbody>
+<thead><tr><th>고객사</th><th>품명</th><th>품번</th><th>관리번호</th><th>저장상태</th></tr></thead>
+<tbody id="itemModalBody"><tr><td class="empty" colspan="5">연결된 품목 데이터가 없습니다.</td></tr></tbody>
 </table>
 <div class="modal-actions"><button id="btnCloseItemModal" type="button">닫기</button></div>
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+"use strict";
 (() => {
-  'use strict';
-  const SUPABASE_URL='https://enxtgbyslnryxvfpjdkc.supabase.co';
-  const SUPABASE_KEY='sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD';
-  const LOGIN_PAGE_URL='../index.html';
-  const IMAGE_BUCKET='work-standard-images';
-  const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-  const $=id=>document.getElementById(id);
-  const formRoot=$('workStandardForm');
-  const statusLine=$('statusLine');
-  const CONDITION_CODES=['VOLTAGE','CURRENT','OUTPUT_KW','FREQUENCY_KHZ','COOLANT_PRESSURE','COOLANT_TEMPERATURE','COOLING_TIME'];
-  let companyId='';
-  let itemPurpose='new';
-  let items=[];
-  let equipment=[];
-  let employees=[];
-  let defaults=null;
-  let editing=true;
+  const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+  const LOGIN_PAGE_URL = "../index.html";
+  const SIGNATURE_BUCKET = "employee_signatures";
+  const IMAGE_BUCKET = "work_standard_images";
+  const SIGNED_URL_SECONDS = 60 * 60;
+  const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+  const CONDITION_CODES = Object.freeze([
+    "VOLTAGE","CURRENT","OUTPUT_KW","FREQUENCY_KHZ",
+    "COOLANT_PRESSURE","COOLANT_TEMPERATURE","COOLING_TIME"
+  ]);
+  const SECTION_MAP = Object.freeze({
+    WORK_SEQUENCE: "work_sequence",
+    CAUTION: "caution",
+    ABNORMAL_ACTION: "abnormal_action"
+  });
 
-  function msg(text,type=''){
-    statusLine.textContent=text||'';
-    statusLine.className='status-line'+(text?' show':'')+(type?' '+type:'');
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+  const $ = id => document.getElementById(id);
+  const formRoot = $("workStandardForm");
+  const statusLine = $("statusLine");
+  const itemModal = $("itemModal");
+  const employeeMap = new Map();
+  const itemMap = new Map();
+  const documentByItem = new Map();
+  const signedUrlCache = new Map();
+
+  let currentProfile = null;
+  let currentMode = "view";
+  let modalMode = "select";
+  let selectedWorkStandardId = "";
+  let sourceDefaultSystemId = "";
+  let defaultSnapshot = null;
+  let loadedSnapshot = null;
+  let referenceItems = [];
+  let referenceEquipment = [];
+  let referenceEmployees = [];
+
+  function normalize(value) { return String(value ?? "").trim(); }
+  function value(name) {
+    const control = formRoot.querySelector(`[name="${CSS.escape(name)}"]`);
+    return control ? control.value : "";
   }
-  function val(id){return ($(id)?.value||'').trim();}
-  function setVal(id,value){if($(id)) $(id).value=value??'';}
-  function pick(row,names,fallback=''){for(const n of names){if(row&&row[n]!=null&&row[n]!=='') return row[n];}return fallback;}
-  function setBusy(flag){document.querySelectorAll('.toolbar button').forEach(b=>b.disabled=flag);if(!flag&&$('btnSave'))$('btnSave').disabled=!editing;}
-  function cleanFileName(name){return String(name||'image').replace(/[^0-9A-Za-z가-힣._-]/g,'_');}
-  function setEditable(flag){
-    editing=flag;
-    formRoot.querySelectorAll('input,select,textarea').forEach(el=>{
-      if(el.type==='hidden'||el.type==='file'||el.readOnly) return;
-      el.disabled=!flag;
+  function setValue(name, nextValue) {
+    const control = formRoot.querySelector(`[name="${CSS.escape(name)}"]`);
+    if (!control) return;
+    control.value = nextValue ?? "";
+  }
+  function setNotice(text, type = "") {
+    statusLine.textContent = text || "";
+    statusLine.className = "status-line" + (text ? " show" : "") + (type ? " " + type : "");
+  }
+  function dbMessage(error) {
+    if (!error) return "알 수 없는 오류입니다.";
+    if (error.code === "42501") return "권한이 없습니다. 로그인 회사와 권한등급을 확인해 주세요.";
+    if (error.code === "23505") return "같은 품목의 작업표준서가 이미 존재합니다.";
+    return error.message || error.details || error.hint || String(error);
+  }
+  function hasWritePermission() {
+    return currentProfile && ["admin", "user"].includes(currentProfile.access_role);
+  }
+  function isAdmin() { return currentProfile?.access_role === "admin"; }
+  function uuid() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === "x" ? r : (r & 3) | 8).toString(16);
     });
-    document.querySelectorAll('.image-uploader button').forEach(b=>b.disabled=!flag);
-    $('btnSave').disabled=!flag;
-    msg(flag?'수정 가능한 상태입니다.':'조회 상태입니다. 수정 버튼을 누르면 입력할 수 있습니다.');
   }
 
-  async function getCompany(){
-    const {data:{user},error}=await db.auth.getUser();
-    if(error||!user){location.replace(LOGIN_PAGE_URL);throw new Error('로그인이 필요합니다.');}
-    const {data,error:pe}=await db.from('profiles').select('company_id').eq('user_id',user.id).single();
-    if(pe||!data?.company_id) throw new Error('로그인 회사 정보를 확인할 수 없습니다.');
-    companyId=data.company_id;
-    setVal('company_id',companyId);
+  async function signedUrl(bucket, path) {
+    const cleanPath = normalize(path);
+    if (!cleanPath) return "";
+    const key = `${bucket}:${cleanPath}`;
+    if (signedUrlCache.has(key)) return signedUrlCache.get(key);
+    const { data, error } = await sb.storage.from(bucket).createSignedUrl(cleanPath, SIGNED_URL_SECONDS);
+    if (error || !data?.signedUrl) return "";
+    signedUrlCache.set(key, data.signedUrl);
+    return data.signedUrl;
   }
 
-  async function resolveSignature(row){
-    const raw=pick(row,['signature_storage_path','signature_path','signature_url','signature_storage_url','signature_data_url']);
-    if(!raw) return '';
-    if(/^data:|^https?:/i.test(raw)) return raw;
-    const normalized=String(raw).replace(/^\/+/, '');
-    let bucket='employee-signatures', path=normalized;
-    if(normalized.includes('/')){
-      const first=normalized.split('/')[0];
-      if(['employee-signatures','employee_signatures','signatures','employee-signature'].includes(first)){
-        bucket=first; path=normalized.split('/').slice(1).join('/');
+  function allEditableControls() {
+    return Array.from(formRoot.querySelectorAll("input,select,textarea"))
+      .filter(control => control.type !== "hidden");
+  }
+  function setMode(mode) {
+    currentMode = mode;
+    const editable = mode === "new" || mode === "edit";
+    allEditableControls().forEach(control => {
+      if (control.readOnly) return;
+      control.disabled = !editable;
+    });
+    $("btnSelectItem").disabled = mode !== "new";
+    $("btnEdit").disabled = !selectedWorkStandardId || !hasWritePermission();
+    $("btnSave").disabled = !editable || !hasWritePermission();
+    $("btnDelete").disabled = !selectedWorkStandardId || !isAdmin();
+    $("btnNew").disabled = !hasWritePermission();
+  }
+
+  function captureFormState() {
+    const state = {};
+    formRoot.querySelectorAll("input,select,textarea").forEach(control => {
+      if (!control.name || control.type === "file") return;
+      state[control.name] = control.value;
+    });
+    return state;
+  }
+  function applyFormState(state) {
+    if (!state) return;
+    Object.entries(state).forEach(([name, nextValue]) => setValue(name, nextValue));
+    updateEquipmentNumber();
+    void updateAllSignatures();
+    void showStoredImages();
+  }
+
+  function clearSignatureImages() {
+    document.querySelectorAll(".signature-field").forEach(entry => {
+      entry.classList.remove("has-signature");
+      const image = entry.querySelector(".signature-image");
+      image?.removeAttribute("src");
+    });
+  }
+  function clearImagePreview(slot) {
+    const box = document.querySelector(`.image-uploader[data-slot="${slot}"]`);
+    if (!box) return;
+    box.classList.remove("has-image");
+    box.querySelector("img")?.removeAttribute("src");
+    const input = box.querySelector("input[type=file]");
+    if (input) input.value = "";
+  }
+
+  function blankIdentity() {
+    ["work_standard_number","customer_name","item_name","item_number",
+     "equipment_number","item_system_id","work_standard_system_id",
+     "image_1_storage_path","image_2_storage_path"].forEach(name => setValue(name, ""));
+    setValue("equipment_system_id", "");
+    selectedWorkStandardId = "";
+  }
+
+  function resetRevisionFields() {
+    const prefixes = ["establishment", "revision_1", "revision_2", "revision_3"];
+    prefixes.forEach(prefix => {
+      setValue(`${prefix}_date`, "");
+      setValue(`${prefix}_reason`, "");
+      setValue(`${prefix}_preparer_employee_id`, "");
+      setValue(`${prefix}_approver_employee_id`, "");
+    });
+  }
+
+  function applyDefaultSnapshot() {
+    blankIdentity();
+    resetRevisionFields();
+    clearSignatureImages();
+    clearImagePreview(1);
+    clearImagePreview(2);
+    setValue("eo_number", "");
+    setValue("special_notes", "");
+    setValue("process_name", defaultSnapshot?.document?.default_process_name || "고주파작업");
+    setValue("process_number", defaultSnapshot?.document?.default_process_number || "10번");
+    sourceDefaultSystemId = defaultSnapshot?.document?.work_standard_default_system_id || "";
+
+    Object.values(SECTION_MAP).forEach(prefix => {
+      for (let order = 1; order <= 6; order += 1) setValue(`${prefix}_${order}`, "");
+    });
+    (defaultSnapshot?.instructions || []).forEach(row => {
+      const prefix = SECTION_MAP[row.section_code];
+      if (prefix) setValue(`${prefix}_${row.display_order}`, row.instruction_text || "");
+    });
+
+    for (let order = 1; order <= 7; order += 1) {
+      ["specification","measuring_instrument","inspection_cycle","remarks"]
+        .forEach(field => setValue(`condition_${order}_${field}`, ""));
+      setValue(`finished_${order}_inspection_item`, "");
+      setValue(`finished_${order}_management_standard`, "");
+      setValue(`finished_${order}_measuring_instrument`, "");
+      setValue(`finished_${order}_inspection_frequency`, "1회/일");
+      setValue(`finished_${order}_remarks`, "");
+    }
+    (defaultSnapshot?.conditions || []).forEach(row => {
+      const order = Number(row.display_order);
+      setValue(`condition_${order}_specification`, row.specification || "");
+      setValue(`condition_${order}_measuring_instrument`, row.measuring_instrument || "");
+      setValue(`condition_${order}_inspection_cycle`, row.inspection_cycle || "");
+      setValue(`condition_${order}_remarks`, row.remarks || "");
+    });
+    (defaultSnapshot?.finished || []).forEach(row => {
+      const order = Number(row.display_order);
+      setValue(`finished_${order}_inspection_item`, row.inspection_item || "");
+      setValue(`finished_${order}_management_standard`, row.management_standard || "");
+      setValue(`finished_${order}_measuring_instrument`, row.measuring_instrument || "");
+      setValue(`finished_${order}_inspection_frequency`, row.inspection_frequency || "1회/일");
+      setValue(`finished_${order}_remarks`, row.remarks || "");
+    });
+    loadedSnapshot = captureFormState();
+    setMode("new");
+    setNotice("신규 작업표준서입니다. 품목과 설비를 선택한 후 옅은 노란색 칸을 입력해 주세요.");
+  }
+
+  function selectItem(row, loadExisting = false) {
+    if (!loadExisting && documentByItem.has(row.item_system_id)) {
+      closeItemModal();
+      void loadDocumentByItem(row.item_system_id);
+      setNotice("이미 저장된 작업표준서입니다. 조회 후 수정 버튼을 사용해 주세요.", "error");
+      return;
+    }
+    setValue("item_system_id", row.item_system_id);
+    setValue("customer_name", row.customer_name || "");
+    setValue("item_name", row.item_name || "");
+    setValue("item_number", row.item_number || "");
+    setValue("work_standard_number", row.work_standard_number || "");
+    closeItemModal();
+    if (loadExisting) {
+      void loadDocumentByItem(row.item_system_id);
+    } else {
+      setNotice("고객사·품명·품번·관리번호를 불러왔습니다.", "success");
+    }
+  }
+
+  function renderItemRows() {
+    const tbody = $("itemModalBody");
+    const keyword = normalize($("itemKeyword").value).toLowerCase();
+    const source = modalMode === "query"
+      ? referenceItems.filter(row => documentByItem.has(row.item_system_id))
+      : referenceItems;
+    const rows = source.filter(row => {
+      if (!keyword) return true;
+      return [row.customer_name,row.item_name,row.item_number,row.work_standard_number]
+        .some(text => normalize(text).toLowerCase().includes(keyword));
+    });
+    tbody.innerHTML = "";
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">조회되는 품목이 없습니다.</td></tr>';
+      return;
+    }
+    rows.forEach(row => {
+      const tr = document.createElement("tr");
+      const values = [row.customer_name,row.item_name,row.item_number,row.work_standard_number,
+        documentByItem.has(row.item_system_id) ? "저장됨" : "미등록"];
+      values.forEach(text => {
+        const td = document.createElement("td");
+        td.textContent = text || "";
+        tr.appendChild(td);
+      });
+      tr.addEventListener("click", () => selectItem(row, modalMode === "query"));
+      tbody.appendChild(tr);
+    });
+  }
+  function openItemModal(mode) {
+    modalMode = mode;
+    $("itemModalTitle").textContent = mode === "query" ? "저장된 작업표준서 조회" : "품목 선택";
+    renderItemRows();
+    itemModal.classList.add("open");
+    itemModal.setAttribute("aria-hidden", "false");
+  }
+  function closeItemModal() {
+    itemModal.classList.remove("open");
+    itemModal.setAttribute("aria-hidden", "true");
+  }
+
+  function updateEquipmentNumber() {
+    const select = $("equipment_system_id");
+    const option = select?.options[select.selectedIndex];
+    setValue("equipment_number", option?.dataset.number || "");
+  }
+
+  async function showSignature(select) {
+    const entry = select.closest(".signature-field");
+    const image = entry?.querySelector(".signature-image");
+    if (!entry || !image) return;
+    const employee = employeeMap.get(select.value);
+    if (!employee?.signedUrl) {
+      image.removeAttribute("src");
+      entry.classList.remove("has-signature");
+      return;
+    }
+    image.src = employee.signedUrl;
+    image.alt = `${employee.employee_name} 사인`;
+    entry.classList.add("has-signature");
+  }
+  async function updateAllSignatures() {
+    await Promise.all(Array.from(document.querySelectorAll(".signature-select")).map(showSignature));
+  }
+
+  async function showStoredImage(slot, path) {
+    const box = document.querySelector(`.image-uploader[data-slot="${slot}"]`);
+    const image = box?.querySelector("img");
+    if (!box || !image) return;
+    const url = await signedUrl(IMAGE_BUCKET, path);
+    if (!url) {
+      box.classList.remove("has-image");
+      image.removeAttribute("src");
+      return;
+    }
+    image.src = url;
+    box.classList.add("has-image");
+  }
+  async function showStoredImages() {
+    await Promise.all([
+      showStoredImage(1, value("image_1_storage_path")),
+      showStoredImage(2, value("image_2_storage_path"))
+    ]);
+  }
+
+  function previewImage(slot) {
+    const box = document.querySelector(`.image-uploader[data-slot="${slot}"]`);
+    const input = box?.querySelector("input[type=file]");
+    const image = box?.querySelector("img");
+    const file = input?.files?.[0];
+    if (!box || !input || !image) return;
+    if (!file) {
+      void showStoredImage(slot, value(`image_${slot}_storage_path`));
+      return;
+    }
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+      input.value = "";
+      setNotice("이미지는 JPG, PNG, WEBP 파일만 선택할 수 있습니다.", "error");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      input.value = "";
+      setNotice("이미지는 10MB 이하만 선택할 수 있습니다.", "error");
+      return;
+    }
+    image.src = URL.createObjectURL(file);
+    box.classList.add("has-image");
+  }
+
+  async function uploadImage(slot, workStandardId) {
+    const box = document.querySelector(`.image-uploader[data-slot="${slot}"]`);
+    const input = box?.querySelector("input[type=file]");
+    const file = input?.files?.[0];
+    if (!file) return value(`image_${slot}_storage_path`);
+    const extension = (file.name.split(".").pop() || "png").toLowerCase();
+    const path = `${currentProfile.company_id}/${workStandardId}/image_${slot}_${uuid()}.${extension}`;
+    const { error } = await sb.storage.from(IMAGE_BUCKET).upload(path, file, {
+      cacheControl: "3600", upsert: false, contentType: file.type
+    });
+    if (error) throw error;
+    return path;
+  }
+
+  function collectRevisions() {
+    const definitions = [
+      [0,"establishment"],[1,"revision_1"],[2,"revision_2"],[3,"revision_3"]
+    ];
+    return definitions.map(([revision_number,prefix]) => ({
+      revision_number,
+      revision_date: value(`${prefix}_date`),
+      revision_reason: value(`${prefix}_reason`),
+      preparer_employee_system_id: value(`${prefix}_preparer_employee_id`),
+      approver_employee_system_id: value(`${prefix}_approver_employee_id`)
+    }));
+  }
+  function collectInstructions() {
+    const rows = [];
+    Object.entries(SECTION_MAP).forEach(([section_code,prefix]) => {
+      for (let display_order = 1; display_order <= 6; display_order += 1) {
+        rows.push({ section_code, display_order, instruction_text: value(`${prefix}_${display_order}`) });
       }
-    }
-    for(const b of [bucket,'employee-signatures','employee_signatures','signatures']){
-      const {data}=await db.storage.from(b).createSignedUrl(path,3600);
-      if(data?.signedUrl) return data.signedUrl;
-    }
-    return '';
+    });
+    return rows;
   }
-
-  async function loadMasters(){
-    const [ir,cr,er,emr]=await Promise.all([
-      db.from('items').select('*').eq('company_id',companyId).order('created_at',{ascending:false}),
-      db.from('customers').select('*').eq('company_id',companyId),
-      db.from('equipment').select('*').eq('company_id',companyId).order('equipment_number'),
-      db.from('employees').select('*').eq('company_id',companyId)
-    ]);
-    if(ir.error) throw ir.error; if(cr.error) throw cr.error; if(er.error) throw er.error; if(emr.error) throw emr.error;
-    const customers=new Map((cr.data||[]).map(r=>[pick(r,['customer_system_id','id']),pick(r,['customer_name','name'])]));
-    items=(ir.data||[]).map(r=>({
-      ...r,
-      item_system_id:pick(r,['item_system_id','id']),
-      customer_name:customers.get(pick(r,['customer_system_id']))||pick(r,['customer_name']),
-      item_name:pick(r,['item_name','product_name']),
-      item_number:pick(r,['item_number','part_number','product_number']),
-      work_standard_number:pick(r,['work_standard_number'])
-    }));
-    equipment=(er.data||[]).map(r=>({...r,
-      equipment_system_id:pick(r,['equipment_system_id','id']),
-      equipment_name:pick(r,['equipment_name','name']),
-      equipment_number:pick(r,['equipment_number','number'])
-    }));
-    employees=[];
-    for(const r of emr.data||[]){employees.push({...r,
-      employee_system_id:pick(r,['employee_system_id','id']),
-      employee_name:pick(r,['employee_name','name','employee_full_name']),
-      signature_url:await resolveSignature(r)
-    });}
-    populateItems(); populateEquipment(); populateEmployees();
+  function collectConditions() {
+    return CONDITION_CODES.map((condition_code,index) => {
+      const display_order = index + 1;
+      return {
+        condition_code,
+        display_order,
+        specification: value(`condition_${display_order}_specification`),
+        measuring_instrument: value(`condition_${display_order}_measuring_instrument`),
+        inspection_cycle: value(`condition_${display_order}_inspection_cycle`),
+        remarks: value(`condition_${display_order}_remarks`)
+      };
+    });
   }
-
-  function populateItems(){renderItemRows();}
-  function populateEquipment(){
-    const sel=$('equipment_system_id'), current=sel.value;
-    sel.innerHTML='<option value="">설비명 선택</option>';
-    equipment.forEach(r=>{const o=document.createElement('option');o.value=r.equipment_system_id;o.textContent=r.equipment_name||'';o.dataset.number=r.equipment_number||'';sel.appendChild(o);});
-    sel.value=current;
-  }
-  function populateEmployees(){
-    document.querySelectorAll('.signature-select').forEach(sel=>{
-      const current=sel.value; sel.innerHTML='<option value="">이름 선택</option>';
-      employees.forEach(r=>{const o=document.createElement('option');o.value=r.employee_system_id;o.textContent=r.employee_name||'';o.dataset.signatureUrl=r.signature_url||'';sel.appendChild(o);});
-      sel.value=current;
+  function collectFinished() {
+    return Array.from({length:7},(_,index) => {
+      const display_order = index + 1;
+      return {
+        display_order,
+        inspection_item: value(`finished_${display_order}_inspection_item`),
+        management_standard: value(`finished_${display_order}_management_standard`),
+        measuring_instrument: value(`finished_${display_order}_measuring_instrument`),
+        inspection_frequency: value(`finished_${display_order}_inspection_frequency`) || "1회/일",
+        remarks: value(`finished_${display_order}_remarks`)
+      };
     });
   }
 
-  async function loadDefaults(){
-    const {data:d,error}=await db.from('work_standard_defaults').select('*').eq('company_id',companyId).eq('is_active',true).maybeSingle();
-    if(error) throw error;
-    if(!d){defaults=null;return;}
-    const [a,b,c]=await Promise.all([
-      db.from('work_standard_default_instructions').select('*').eq('work_standard_default_system_id',d.work_standard_default_system_id).eq('is_active',true).order('display_order'),
-      db.from('work_standard_default_conditions').select('*').eq('work_standard_default_system_id',d.work_standard_default_system_id).eq('is_active',true).order('display_order'),
-      db.from('work_standard_default_finished_inspections').select('*').eq('work_standard_default_system_id',d.work_standard_default_system_id).eq('is_active',true).order('display_order')
+  function validateBeforeSave() {
+    if (!hasWritePermission()) throw new Error("저장 권한이 없습니다.");
+    if (!["new","edit"].includes(currentMode)) throw new Error("신규등록 또는 수정 버튼을 먼저 눌러 주세요.");
+    if (!normalize(value("item_system_id"))) throw new Error("품목을 선택해 주세요.");
+    if (!normalize(value("work_standard_number"))) throw new Error("선택한 품목에 작업표준서 관리번호가 없습니다. 아이템관리를 확인해 주세요.");
+    if (!normalize(value("equipment_system_id"))) throw new Error("설비명을 선택해 주세요.");
+    if (!normalize(value("process_name"))) throw new Error("공정명을 입력해 주세요.");
+    if (!normalize(value("process_number"))) throw new Error("공정NO를 입력해 주세요.");
+  }
+
+  async function saveDocument() {
+    try {
+      validateBeforeSave();
+      setNotice("작업표준서와 이미지를 저장하는 중입니다.", "loading");
+      const workStandardId = selectedWorkStandardId || normalize(value("work_standard_system_id")) || uuid();
+      const image1Path = await uploadImage(1, workStandardId);
+      const image2Path = await uploadImage(2, workStandardId);
+
+      const documentPayload = {
+        work_standard_system_id: workStandardId,
+        item_system_id: value("item_system_id"),
+        equipment_system_id: value("equipment_system_id"),
+        source_default_system_id: sourceDefaultSystemId,
+        eo_number: value("eo_number"),
+        process_name: value("process_name"),
+        process_number: value("process_number"),
+        special_notes: value("special_notes"),
+        image_1_storage_path: image1Path,
+        image_2_storage_path: image2Path
+      };
+
+      const { data, error } = await sb.rpc("save_work_standard_document", {
+        p_document: documentPayload,
+        p_revisions: collectRevisions(),
+        p_instructions: collectInstructions(),
+        p_conditions: collectConditions(),
+        p_finished_inspections: collectFinished()
+      });
+      if (error) throw error;
+      selectedWorkStandardId = data;
+      setValue("work_standard_system_id", data);
+      setValue("image_1_storage_path", image1Path);
+      setValue("image_2_storage_path", image2Path);
+      await refreshDocumentIndex();
+      await loadDocumentByItem(value("item_system_id"));
+      setNotice("작업표준서가 저장되었습니다.", "success");
+    } catch (error) {
+      setNotice("저장 실패: " + dbMessage(error), "error");
+    }
+  }
+
+  function revisionPrefix(number) {
+    return number === 0 ? "establishment" : `revision_${number}`;
+  }
+
+  async function loadDocumentByItem(itemSystemId) {
+    try {
+      setNotice("작업표준서를 불러오는 중입니다.", "loading");
+      const { data: documentRow, error: documentError } = await sb
+        .from("work_standard_document_list")
+        .select("*")
+        .eq("company_id", currentProfile.company_id)
+        .eq("item_system_id", itemSystemId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (documentError) throw documentError;
+      if (!documentRow) {
+        const item = itemMap.get(itemSystemId);
+        applyDefaultSnapshot();
+        if (item) selectItem(item, false);
+        setNotice("저장된 작업표준서가 없습니다. 신규등록으로 작성해 주세요.");
+        return;
+      }
+
+      selectedWorkStandardId = documentRow.work_standard_system_id;
+      sourceDefaultSystemId = documentRow.source_default_system_id || "";
+      setValue("work_standard_system_id", selectedWorkStandardId);
+      setValue("company_id", currentProfile.company_id);
+      setValue("item_system_id", documentRow.item_system_id);
+      setValue("customer_name", documentRow.customer_name || "");
+      setValue("item_name", documentRow.item_name || "");
+      setValue("item_number", documentRow.item_number || "");
+      setValue("work_standard_number", documentRow.work_standard_number || "");
+      setValue("equipment_system_id", documentRow.equipment_system_id || "");
+      setValue("equipment_number", documentRow.equipment_number || "");
+      setValue("eo_number", documentRow.eo_number || "");
+      setValue("process_name", documentRow.process_name || "");
+      setValue("process_number", documentRow.process_number || "");
+      setValue("special_notes", documentRow.special_notes || "");
+      setValue("image_1_storage_path", documentRow.image_1_storage_path || "");
+      setValue("image_2_storage_path", documentRow.image_2_storage_path || "");
+      resetRevisionFields();
+      clearSignatureImages();
+      clearImagePreview(1);
+      clearImagePreview(2);
+
+      const [revisionsResult,instructionsResult,conditionsResult,finishedResult] = await Promise.all([
+        sb.from("work_standard_revisions").select("*")
+          .eq("company_id",currentProfile.company_id)
+          .eq("work_standard_system_id",selectedWorkStandardId)
+          .order("revision_number"),
+        sb.from("work_standard_instructions").select("*")
+          .eq("company_id",currentProfile.company_id)
+          .eq("work_standard_system_id",selectedWorkStandardId)
+          .order("section_code").order("display_order"),
+        sb.from("work_standard_conditions").select("*")
+          .eq("company_id",currentProfile.company_id)
+          .eq("work_standard_system_id",selectedWorkStandardId)
+          .order("display_order"),
+        sb.from("work_standard_finished_inspections").select("*")
+          .eq("company_id",currentProfile.company_id)
+          .eq("work_standard_system_id",selectedWorkStandardId)
+          .order("display_order")
+      ]);
+      [revisionsResult,instructionsResult,conditionsResult,finishedResult].forEach(result => {
+        if (result.error) throw result.error;
+      });
+
+      Object.values(SECTION_MAP).forEach(prefix => {
+        for (let order = 1; order <= 6; order += 1) setValue(`${prefix}_${order}`, "");
+      });
+      for (let order = 1; order <= 7; order += 1) {
+        ["specification","measuring_instrument","inspection_cycle","remarks"]
+          .forEach(field => setValue(`condition_${order}_${field}`, ""));
+        setValue(`finished_${order}_inspection_item`, "");
+        setValue(`finished_${order}_management_standard`, "");
+        setValue(`finished_${order}_measuring_instrument`, "");
+        setValue(`finished_${order}_inspection_frequency`, "1회/일");
+        setValue(`finished_${order}_remarks`, "");
+      }
+
+      (revisionsResult.data || []).forEach(row => {
+        const prefix = revisionPrefix(Number(row.revision_number));
+        setValue(`${prefix}_date`, row.revision_date || "");
+        setValue(`${prefix}_reason`, row.revision_reason || "");
+        setValue(`${prefix}_preparer_employee_id`, row.preparer_employee_system_id || "");
+        setValue(`${prefix}_approver_employee_id`, row.approver_employee_system_id || "");
+      });
+      (instructionsResult.data || []).forEach(row => {
+        const prefix = SECTION_MAP[row.section_code];
+        if (prefix) setValue(`${prefix}_${row.display_order}`, row.instruction_text || "");
+      });
+      (conditionsResult.data || []).forEach(row => {
+        const order = Number(row.display_order);
+        setValue(`condition_${order}_specification`, row.specification || "");
+        setValue(`condition_${order}_measuring_instrument`, row.measuring_instrument || "");
+        setValue(`condition_${order}_inspection_cycle`, row.inspection_cycle || "");
+        setValue(`condition_${order}_remarks`, row.remarks || "");
+      });
+      (finishedResult.data || []).forEach(row => {
+        const order = Number(row.display_order);
+        setValue(`finished_${order}_inspection_item`, row.inspection_item || "");
+        setValue(`finished_${order}_management_standard`, row.management_standard || "");
+        setValue(`finished_${order}_measuring_instrument`, row.measuring_instrument || "");
+        setValue(`finished_${order}_inspection_frequency`, row.inspection_frequency || "1회/일");
+        setValue(`finished_${order}_remarks`, row.remarks || "");
+      });
+
+      await updateAllSignatures();
+      await showStoredImages();
+      loadedSnapshot = captureFormState();
+      setMode("view");
+      setNotice("작업표준서를 불러왔습니다.", "success");
+    } catch (error) {
+      setNotice("조회 실패: " + dbMessage(error), "error");
+    }
+  }
+
+  async function removeDocument() {
+    if (!selectedWorkStandardId) return setNotice("삭제할 작업표준서를 먼저 조회해 주세요.", "error");
+    if (!isAdmin()) return setNotice("삭제는 관리자만 가능합니다.", "error");
+    if (!confirm("현재 작업표준서를 사용중지 처리하시겠습니까?")) return;
+    const { data, error } = await sb.rpc("delete_work_standard_document", {
+      p_work_standard_system_id: selectedWorkStandardId
+    });
+    if (error || data !== true) {
+      setNotice("삭제 실패: " + dbMessage(error || new Error("삭제 대상을 찾지 못했습니다.")), "error");
+      return;
+    }
+    await refreshDocumentIndex();
+    applyDefaultSnapshot();
+    setNotice("작업표준서가 사용중지 처리되었습니다.", "success");
+  }
+
+  async function loadProfile() {
+    const { data: userData, error: userError } = await sb.auth.getUser();
+    if (userError || !userData?.user) {
+      window.location.replace(LOGIN_PAGE_URL);
+      return false;
+    }
+    const { data, error } = await sb.from("profiles")
+      .select("user_id,company_id,access_role,login_enabled,is_active")
+      .eq("user_id",userData.user.id)
+      .maybeSingle();
+    if (error || !data?.company_id || data.login_enabled === false || data.is_active === false) {
+      window.location.replace(LOGIN_PAGE_URL);
+      return false;
+    }
+    currentProfile = data;
+    setValue("company_id", data.company_id);
+    return true;
+  }
+
+  async function loadItems() {
+    const [customersResult,itemsResult] = await Promise.all([
+      sb.from("customers").select("customer_system_id,company_number,customer_name,is_active")
+        .eq("company_id",currentProfile.company_id).eq("is_active",true)
+        .order("company_number"),
+      sb.from("items").select("item_system_id,customer_system_id,item_name,item_number,work_standard_number,is_active")
+        .eq("company_id",currentProfile.company_id).eq("is_active",true)
+        .order("item_name").order("item_number")
     ]);
-    if(a.error) throw a.error;if(b.error) throw b.error;if(c.error) throw c.error;
-    defaults={header:d,instructions:a.data||[],conditions:b.data||[],finished:c.data||[]};
+    if (customersResult.error) throw customersResult.error;
+    if (itemsResult.error) throw itemsResult.error;
+    const customerMap = new Map((customersResult.data || []).map(row => [row.customer_system_id,row]));
+    referenceItems = (itemsResult.data || []).map(row => ({
+      ...row,
+      company_number: customerMap.get(row.customer_system_id)?.company_number || "",
+      customer_name: customerMap.get(row.customer_system_id)?.customer_name || ""
+    }));
+    itemMap.clear();
+    referenceItems.forEach(row => itemMap.set(row.item_system_id,row));
   }
 
-  function clearSignatures(){document.querySelectorAll('.signature-field').forEach(box=>{box.classList.remove('has-signature');const img=box.querySelector('.signature-image');img?.removeAttribute('src');});}
-  function clearImages(){document.querySelectorAll('.image-uploader').forEach(box=>{box.classList.remove('has-image');box.querySelector('img')?.removeAttribute('src');const f=box.querySelector('input[type=file]');if(f)f.value='';});}
-  function blankForm(){
-    formRoot.querySelectorAll('input,select,textarea').forEach(el=>{if(el.type==='file')el.value='';else if(!el.readOnly)el.value='';});
-    ['work_standard_system_id','item_system_id','image_1_storage_path','image_2_storage_path','work_standard_number','customer_name','item_name','item_number','equipment_number'].forEach(id=>setVal(id,''));
-    setVal('company_id',companyId); clearSignatures();clearImages();
-  }
-  function applyDefaults(){
-    blankForm();
-    setVal('process_name',defaults?.header?.default_process_name||'고주파작업');
-    setVal('process_number',defaults?.header?.default_process_number||'10번');
-    for(let i=1;i<=7;i++) setVal(`finished_${i}_inspection_frequency`,'1회/일');
-    const secMap={WORK_SEQUENCE:'work_sequence',CAUTION:'caution',ABNORMAL_ACTION:'abnormal_action'};
-    (defaults?.instructions||[]).forEach(r=>setVal(`${secMap[r.section_code]}_${r.display_order}`,r.instruction_text));
-    (defaults?.conditions||[]).forEach(r=>{const i=r.display_order;setVal(`condition_${i}_specification`,r.specification);setVal(`condition_${i}_measuring_instrument`,r.measuring_instrument);setVal(`condition_${i}_inspection_cycle`,r.inspection_cycle);setVal(`condition_${i}_remarks`,r.remarks);});
-    (defaults?.finished||[]).forEach(r=>{const i=r.display_order;setVal(`finished_${i}_inspection_item`,r.inspection_item);setVal(`finished_${i}_management_standard`,r.management_standard);setVal(`finished_${i}_measuring_instrument`,r.measuring_instrument);setVal(`finished_${i}_inspection_frequency`,r.inspection_frequency||'1회/일');setVal(`finished_${i}_remarks`,r.remarks);});
-    setEditable(true);msg('신규 작업표준서입니다. 기본값을 불러왔습니다.','success');
+  async function loadEquipment() {
+    const { data, error } = await sb.from("equipment")
+      .select("equipment_system_id,equipment_number,equipment_name,process_name,is_active")
+      .eq("company_id",currentProfile.company_id).eq("is_active",true)
+      .order("equipment_number");
+    if (error) throw error;
+    referenceEquipment = data || [];
+    const select = $("equipment_system_id");
+    select.innerHTML = '<option value="">설비명 선택</option>';
+    referenceEquipment.forEach(row => {
+      const option = new Option(row.equipment_name || "", row.equipment_system_id);
+      option.dataset.number = row.equipment_number || "";
+      option.dataset.processName = row.process_name || "";
+      select.add(option);
+    });
   }
 
-  function renderItemRows(){
-    const tbody=$('itemModalBody'), key=(val('itemKeyword')).toLowerCase();
-    const rows=items.filter(r=>!key||[r.customer_name,r.item_name,r.item_number,r.work_standard_number].some(v=>String(v||'').toLowerCase().includes(key)));
-    tbody.innerHTML='';
-    if(!rows.length){tbody.innerHTML='<tr><td colspan="4" class="empty">선택할 품목 데이터가 없습니다.</td></tr>';return;}
-    rows.forEach(r=>{const tr=document.createElement('tr');[r.customer_name,r.item_name,r.item_number,r.work_standard_number].forEach(v=>{const td=document.createElement('td');td.textContent=v||'';tr.appendChild(td);});tr.onclick=()=>selectItem(r);tbody.appendChild(tr);});
-  }
-  function openItems(purpose){itemPurpose=purpose;$('itemModal').classList.add('open');$('itemModal').setAttribute('aria-hidden','false');renderItemRows();}
-  function closeItems(){$('itemModal').classList.remove('open');$('itemModal').setAttribute('aria-hidden','true');}
-  async function selectItem(r){
-    setVal('item_system_id',r.item_system_id);setVal('customer_name',r.customer_name);setVal('item_name',r.item_name);setVal('item_number',r.item_number);setVal('work_standard_number',r.work_standard_number);closeItems();
-    if(itemPurpose==='search') await loadDocumentByItem(r.item_system_id); else msg('품목 정보를 불러왔습니다.','success');
-  }
-
-  function setSignature(selectId,employeeId){
-    const sel=$(selectId); if(!sel)return; sel.value=employeeId||'';const box=sel.closest('.signature-field'),img=box.querySelector('.signature-image'),opt=sel.options[sel.selectedIndex];const url=opt?.dataset.signatureUrl||'';
-    if(sel.value&&url){img.src=url;box.classList.add('has-signature');}else{img.removeAttribute('src');box.classList.remove('has-signature');}
-  }
-  async function showStoredImage(slot,path){
-    setVal(`image_${slot}_storage_path`,path||'');const box=$(`image_${slot}_file`)?.closest('.image-uploader');if(!box)return;
-    if(!path){box.classList.remove('has-image');box.querySelector('img')?.removeAttribute('src');return;}
-    const {data}=await db.storage.from(IMAGE_BUCKET).createSignedUrl(path,3600);if(data?.signedUrl){box.querySelector('img').src=data.signedUrl;box.classList.add('has-image');}
-  }
-
-  async function loadDocumentByItem(itemId){
-    setBusy(true);msg('작업표준서를 조회하고 있습니다.');
-    try{
-      const {data:doc,error}=await db.from('work_standard_documents').select('*').eq('company_id',companyId).eq('item_system_id',itemId).eq('is_active',true).maybeSingle();
-      if(error) throw error;
-      if(!doc){applyDefaults();const r=items.find(x=>x.item_system_id===itemId);if(r)selectItemNoLoad(r);msg('등록된 작업표준서가 없습니다. 신규 입력 상태로 전환했습니다.','error');return;}
-      const [rv,ins,con,fin]=await Promise.all([
-        db.from('work_standard_revisions').select('*').eq('work_standard_system_id',doc.work_standard_system_id).eq('is_active',true),
-        db.from('work_standard_instructions').select('*').eq('work_standard_system_id',doc.work_standard_system_id).eq('is_active',true),
-        db.from('work_standard_conditions').select('*').eq('work_standard_system_id',doc.work_standard_system_id).eq('is_active',true),
-        db.from('work_standard_finished_inspections').select('*').eq('work_standard_system_id',doc.work_standard_system_id).eq('is_active',true)
-      ]);[rv,ins,con,fin].forEach(x=>{if(x.error)throw x.error;});
-      blankForm();const r=items.find(x=>x.item_system_id===itemId);if(r)selectItemNoLoad(r);
-      setVal('work_standard_system_id',doc.work_standard_system_id);setVal('equipment_system_id',doc.equipment_system_id);setVal('eo_number',doc.eo_number);setVal('process_name',doc.process_name);setVal('process_number',doc.process_number);setVal('special_notes',doc.special_notes);
-      $('equipment_system_id').dispatchEvent(new Event('change'));
-      (rv.data||[]).forEach(x=>{const p=x.revision_number===0?'establishment':`revision_${x.revision_number}`;setVal(`${p}_date`,x.revision_date);setVal(`${p}_reason`,x.revision_reason);setSignature(`${p}_preparer_employee_id`,x.preparer_employee_system_id);setSignature(`${p}_approver_employee_id`,x.approver_employee_system_id);});
-      const secMap={WORK_SEQUENCE:'work_sequence',CAUTION:'caution',ABNORMAL_ACTION:'abnormal_action'};(ins.data||[]).forEach(x=>setVal(`${secMap[x.section_code]}_${x.display_order}`,x.instruction_text));
-      (con.data||[]).forEach(x=>{const i=x.display_order;setVal(`condition_${i}_specification`,x.specification);setVal(`condition_${i}_measuring_instrument`,x.measuring_instrument);setVal(`condition_${i}_inspection_cycle`,x.inspection_cycle);setVal(`condition_${i}_remarks`,x.remarks);});
-      for(let i=1;i<=7;i++)setVal(`finished_${i}_inspection_frequency`,'1회/일');
-      (fin.data||[]).forEach(x=>{const i=x.display_order;setVal(`finished_${i}_inspection_item`,x.inspection_item);setVal(`finished_${i}_management_standard`,x.management_standard);setVal(`finished_${i}_measuring_instrument`,x.measuring_instrument);setVal(`finished_${i}_inspection_frequency`,x.inspection_frequency);setVal(`finished_${i}_remarks`,x.remarks);});
-      await Promise.all([showStoredImage(1,doc.image_1_storage_path),showStoredImage(2,doc.image_2_storage_path)]);
-      setEditable(false);msg('작업표준서를 조회했습니다.','success');
-    }catch(e){msg(e.message||String(e),'error');}finally{setBusy(false);}
-  }
-  function selectItemNoLoad(r){setVal('item_system_id',r.item_system_id);setVal('customer_name',r.customer_name);setVal('item_name',r.item_name);setVal('item_number',r.item_number);setVal('work_standard_number',r.work_standard_number);}
-
-  async function upload(slot){
-    const input=$(`image_${slot}_file`),file=input?.files?.[0];if(!file)return val(`image_${slot}_storage_path`);
-    if(file.size>5*1024*1024)throw new Error(`이미지 ${slot}는 5MB 이하만 가능합니다.`);
-    const path=`${companyId}/${val('item_system_id')}/${Date.now()}_${slot}_${cleanFileName(file.name)}`;
-    const {error}=await db.storage.from(IMAGE_BUCKET).upload(path,file,{upsert:false,contentType:file.type});if(error)throw error;return path;
-  }
-  function payload(image1,image2){
-    const revisions=[];[['establishment',0],['revision_1',1],['revision_2',2],['revision_3',3]].forEach(([p,n])=>revisions.push({revision_number:n,revision_date:val(`${p}_date`),revision_reason:val(`${p}_reason`),preparer_employee_system_id:val(`${p}_preparer_employee_id`),approver_employee_system_id:val(`${p}_approver_employee_id`)}));
-    const instructions=[];[['work_sequence','WORK_SEQUENCE'],['caution','CAUTION'],['abnormal_action','ABNORMAL_ACTION']].forEach(([p,c])=>{for(let i=1;i<=6;i++)instructions.push({section_code:c,display_order:i,instruction_text:val(`${p}_${i}`)});});
-    const conditions=CONDITION_CODES.map((code,idx)=>{const i=idx+1;return{condition_code:code,display_order:i,specification:val(`condition_${i}_specification`),measuring_instrument:val(`condition_${i}_measuring_instrument`),inspection_cycle:val(`condition_${i}_inspection_cycle`),remarks:val(`condition_${i}_remarks`)}});
-    const finished_inspections=[];for(let i=1;i<=7;i++)finished_inspections.push({display_order:i,inspection_item:val(`finished_${i}_inspection_item`),management_standard:val(`finished_${i}_management_standard`),measuring_instrument:val(`finished_${i}_measuring_instrument`),inspection_frequency:val(`finished_${i}_inspection_frequency`)||'1회/일',remarks:val(`finished_${i}_remarks`)});
-    return{item_system_id:val('item_system_id'),equipment_system_id:val('equipment_system_id'),eo_number:val('eo_number'),process_name:val('process_name'),process_number:val('process_number'),special_notes:val('special_notes'),image_1_storage_path:image1,image_2_storage_path:image2,revisions,instructions,conditions,finished_inspections};
-  }
-  async function save(){
-    if(!editing){msg('수정 버튼을 먼저 눌러 주세요.','error');return;}if(!val('item_system_id')){msg('품목을 먼저 선택해 주세요.','error');return;}if(!val('work_standard_number')){msg('선택한 품목에 작업표준서 관리번호가 없습니다. 품목관리에서 먼저 등록해 주세요.','error');return;}
-    setBusy(true);msg('저장하고 있습니다.');
-    try{const [i1,i2]=await Promise.all([upload(1),upload(2)]);const {data,error}=await db.rpc('save_work_standard',{p_payload:payload(i1,i2)});if(error)throw error;setVal('work_standard_system_id',data);setVal('image_1_storage_path',i1);setVal('image_2_storage_path',i2);setEditable(false);msg('작업표준서 저장이 완료되었습니다.','success');}
-    catch(e){msg(e.message||String(e),'error');}finally{setBusy(false);}
-  }
-  async function remove(){
-    const id=val('work_standard_system_id');if(!id){msg('삭제할 작업표준서를 먼저 조회해 주세요.','error');return;}if(!confirm('현재 작업표준서를 삭제하시겠습니까?'))return;
-    setBusy(true);try{const {data,error}=await db.rpc('delete_work_standard',{p_work_standard_system_id:id});if(error)throw error;if(!data)throw new Error('삭제 대상이 없거나 권한이 없습니다.');applyDefaults();msg('작업표준서를 삭제했습니다.','success');}catch(e){msg(e.message||String(e),'error');}finally{setBusy(false);}
+  async function loadEmployees() {
+    const { data, error } = await sb.from("employees")
+      .select("employee_system_id,employee_code,employee_name,signature_storage_path,is_active")
+      .eq("company_id",currentProfile.company_id).eq("is_active",true)
+      .order("employee_code");
+    if (error) throw error;
+    referenceEmployees = data || [];
+    employeeMap.clear();
+    const companyPrefix = `${currentProfile.company_id}/`;
+    await Promise.all(referenceEmployees.map(async row => {
+      let signed = "";
+      const path = normalize(row.signature_storage_path);
+      if (path && path.startsWith(companyPrefix)) signed = await signedUrl(SIGNATURE_BUCKET,path);
+      employeeMap.set(row.employee_system_id,{...row,signedUrl:signed});
+    }));
+    document.querySelectorAll(".signature-select").forEach(select => {
+      const current = select.value;
+      select.innerHTML = '<option value="">이름 선택</option>';
+      referenceEmployees.forEach(row => select.add(new Option(row.employee_name || row.employee_code || "",row.employee_system_id)));
+      select.value = current;
+    });
   }
 
-  $('equipment_system_id').addEventListener('change',function(){const o=this.options[this.selectedIndex];setVal('equipment_number',o?.dataset.number||'');});
-  document.querySelectorAll('.signature-select').forEach(sel=>sel.addEventListener('change',()=>setSignature(sel.id,sel.value)));
-  document.querySelectorAll('.signature-image').forEach(img=>img.addEventListener('click',()=>{const box=img.closest('.signature-field'),sel=box.querySelector('select');box.classList.remove('has-signature');sel.focus();try{sel.showPicker?.();}catch(_){}}));
-  document.querySelectorAll('.image-uploader').forEach(box=>{const f=box.querySelector('input[type=file]'),b=box.querySelector('button'),img=box.querySelector('img');b.onclick=()=>f.click();img.onclick=()=>f.click();f.onchange=()=>{const x=f.files?.[0];if(!x)return;const reader=new FileReader();reader.onload=e=>{img.src=e.target.result;box.classList.add('has-image');};reader.readAsDataURL(x);};});
-  $('btnSelectItem').onclick=()=>openItems('new');$('btnSearch').onclick=()=>openItems('search');$('btnCloseItemModal').onclick=closeItems;$('itemModal').onclick=e=>{if(e.target===$('itemModal'))closeItems();};$('itemKeyword').oninput=renderItemRows;
-  $('btnEdit').onclick=()=>{if(!val('work_standard_system_id'))msg('신규 입력 상태입니다.','error');else setEditable(true);};$('btnSave').onclick=save;$('btnNew').onclick=applyDefaults;$('btnReset').onclick=applyDefaults;$('btnDelete').onclick=remove;$('btnPdf').onclick=()=>window.print();
+  async function loadDefaults() {
+    const { data: defaultRow, error } = await sb.from("work_standard_defaults")
+      .select("*").eq("company_id",currentProfile.company_id).eq("is_active",true).maybeSingle();
+    if (error) throw error;
+    if (!defaultRow) {
+      defaultSnapshot = {
+        document:{default_process_name:"고주파작업",default_process_number:"10번",work_standard_default_system_id:""},
+        instructions:[],conditions:[],finished:[]
+      };
+      return;
+    }
+    const [instructions,conditions,finished] = await Promise.all([
+      sb.from("work_standard_default_instructions").select("*")
+        .eq("company_id",currentProfile.company_id)
+        .eq("work_standard_default_system_id",defaultRow.work_standard_default_system_id)
+        .eq("is_active",true).order("section_code").order("display_order"),
+      sb.from("work_standard_default_conditions").select("*")
+        .eq("company_id",currentProfile.company_id)
+        .eq("work_standard_default_system_id",defaultRow.work_standard_default_system_id)
+        .eq("is_active",true).order("display_order"),
+      sb.from("work_standard_default_finished_inspections").select("*")
+        .eq("company_id",currentProfile.company_id)
+        .eq("work_standard_default_system_id",defaultRow.work_standard_default_system_id)
+        .eq("is_active",true).order("display_order")
+    ]);
+    [instructions,conditions,finished].forEach(result => { if (result.error) throw result.error; });
+    defaultSnapshot = { document:defaultRow, instructions:instructions.data||[], conditions:conditions.data||[], finished:finished.data||[] };
+  }
 
-  (async()=>{setBusy(true);try{await getCompany();await Promise.all([loadMasters(),loadDefaults()]);applyDefaults();msg('DB 연결이 완료되었습니다. 신규 작업표준서 입력 상태입니다.','success');}catch(e){msg(e.message||String(e),'error');}finally{setBusy(false);}})();
+  async function refreshDocumentIndex() {
+    const { data, error } = await sb.from("work_standard_document_list")
+      .select("work_standard_system_id,item_system_id,updated_at")
+      .eq("company_id",currentProfile.company_id).eq("is_active",true);
+    if (error) throw error;
+    documentByItem.clear();
+    (data || []).forEach(row => documentByItem.set(row.item_system_id,row));
+  }
+
+  function attachEvents() {
+    const openItemSelectorFromAutoField = () => openItemModal("select");
+    ["work_standard_number","customer_name","item_name","item_number"].forEach(id => {
+      const input = $(id);
+      if (!input) return;
+      input.title = "클릭하면 품목 선택창이 열립니다.";
+      input.setAttribute("role", "button");
+      input.setAttribute("aria-haspopup", "dialog");
+      input.addEventListener("click", event => {
+        event.preventDefault();
+        openItemSelectorFromAutoField();
+      });
+      input.addEventListener("keydown", event => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        openItemSelectorFromAutoField();
+      });
+      const cell = input.closest(".readonly-field");
+      cell?.addEventListener("click", event => {
+        if (event.target === input) return;
+        openItemSelectorFromAutoField();
+      });
+    });
+
+    $("btnSelectItem").addEventListener("click",() => openItemModal("select"));
+    $("btnSearch").addEventListener("click",() => openItemModal("query"));
+    $("btnCloseItemModal").addEventListener("click",closeItemModal);
+    itemModal.addEventListener("click",event => { if (event.target === itemModal) closeItemModal(); });
+    $("itemKeyword").addEventListener("input",renderItemRows);
+    $("equipment_system_id").addEventListener("change",updateEquipmentNumber);
+
+    document.querySelectorAll(".signature-select").forEach(select => {
+      select.addEventListener("change",() => void showSignature(select));
+    });
+    document.querySelectorAll(".signature-image").forEach(image => {
+      image.addEventListener("click",() => {
+        if (!["new","edit"].includes(currentMode)) return;
+        const entry = image.closest(".signature-field");
+        entry.classList.remove("has-signature");
+        const select = entry.querySelector(".signature-select");
+        select.focus();
+        try { select.showPicker?.(); } catch (_) {}
+      });
+    });
+    document.querySelectorAll(".image-uploader").forEach(box => {
+      const slot = Number(box.dataset.slot);
+      const input = box.querySelector("input[type=file]");
+      box.querySelector("button")?.addEventListener("click",() => input.click());
+      box.querySelector("img")?.addEventListener("click",() => {
+        if (["new","edit"].includes(currentMode)) input.click();
+      });
+      input.addEventListener("change",() => previewImage(slot));
+    });
+
+    $("btnNew").addEventListener("click",applyDefaultSnapshot);
+    $("btnEdit").addEventListener("click",() => {
+      if (!selectedWorkStandardId) return setNotice("수정할 작업표준서를 먼저 조회해 주세요.","error");
+      if (!hasWritePermission()) return setNotice("수정 권한이 없습니다.","error");
+      setMode("edit");
+      setNotice("수정할 내용을 입력한 후 저장 버튼을 누르세요.");
+    });
+    $("btnSave").addEventListener("click",() => void saveDocument());
+    $("btnDelete").addEventListener("click",() => void removeDocument());
+    $("btnReset").addEventListener("click",() => {
+      if (currentMode === "edit" && loadedSnapshot) {
+        applyFormState(loadedSnapshot);
+        setNotice("조회 당시 값으로 초기화했습니다.");
+      } else {
+        applyDefaultSnapshot();
+      }
+    });
+    $("btnPdf").addEventListener("click",() => {
+      const oldTitle = document.title;
+      const parts = [value("customer_name"),value("item_name"),value("item_number")].map(normalize).filter(Boolean);
+      document.title = `작업표준서_${parts.join("-") || "미선택"}`;
+      window.print();
+      window.setTimeout(() => { document.title = oldTitle; }, 500);
+    });
+  }
+
+  async function init() {
+    try {
+      setNotice("로그인과 작업표준서 DB를 확인하는 중입니다.","loading");
+      attachEvents();
+      if (!await loadProfile()) return;
+      await Promise.all([loadItems(),loadEquipment(),loadEmployees(),loadDefaults()]);
+      await refreshDocumentIndex();
+      applyDefaultSnapshot();
+      document.documentElement.classList.remove("auth-pending");
+      setNotice(`작업표준서 DB 연결 완료 · 품목 ${referenceItems.length}건 · 설비 ${referenceEquipment.length}건 · 사원 ${referenceEmployees.length}건`,"success");
+    } catch (error) {
+      document.documentElement.classList.remove("auth-pending");
+      setMode("view");
+      setNotice("초기화 실패: " + dbMessage(error),"error");
+    }
+  }
+
+  window.addEventListener("load",init);
 })();
 </script>
 </body></html>
