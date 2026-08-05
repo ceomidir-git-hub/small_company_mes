@@ -334,7 +334,7 @@
 
   @media print{
     body{background:#fff;padding:0;}
-    .toolbar,.status-line,.modal-backdrop{display:none!important;}
+    .toolbar,.modal-backdrop{display:none!important;}
     .sheet{box-shadow:none;width:100%;max-width:none;margin:0;padding:8mm;page-break-after:always;}
     .sheet:last-of-type{page-break-after:auto;}
     table.flow{font-size:11px;}
@@ -435,34 +435,6 @@
   .toolbar button.danger{color:#b42318;}
   .toolbar button.active{background:#fff1cc;border-color:#b8860b;color:#7a5200;}
   .toolbar button:disabled{opacity:.45;cursor:not-allowed;}
-
-  .status-line{
-    position:fixed;
-    top:54px;
-    right:24px;
-    z-index:1600;
-    width:340px;
-    max-width:calc(100% - 32px);
-    min-height:48px;
-    padding:12px 14px;
-    display:flex;
-    align-items:center;
-    border:1px solid #cbd5e1;
-    border-radius:8px;
-    background:#fff;
-    box-shadow:0 8px 24px rgba(0,0,0,.18);
-    color:#344054;
-    font-size:12px;
-    line-height:1.35;
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-8px);
-    transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
-    pointer-events:none;
-  }
-  .status-line.show{opacity:1;visibility:visible;transform:translateY(0);}
-  .status-line.success{color:#05603a;border-color:#9ed6bd;background:#f0fff7;}
-  .status-line.error{color:#b42318;border-color:#f0aaa4;background:#fff5f4;}
 
   .modal-backdrop{
     display:none;
@@ -577,7 +549,6 @@
 
   html.auth-pending body{visibility:hidden;}
   .toolbar button:disabled,.toolbar select:disabled{opacity:.48;cursor:not-allowed;}
-  .status-line.loading{color:#6a4b00;border-color:#d9bd4d;background:#fff9e6;}
 
   /* 조회 프레임과 첫 번째 제조공정도 양식 사이 간격 */
   .first-sheet{
@@ -633,7 +604,6 @@
 <button id="btnPdf" type="button">PDF 저장</button>
 </div>
 </div>
-<div class="status-line" id="statusLine" role="status"></div>
 <div aria-hidden="true" class="modal-backdrop" id="searchResultModal">
 <div aria-labelledby="searchResultTitle" aria-modal="true" class="modal" role="dialog">
 <h2 id="searchResultTitle" tabindex="-1">제조공정도 조회 결과</h2>
@@ -921,15 +891,8 @@
     return message || fallback;
   }
 
-  function setNotice(message, type, persist){
-    const line = document.getElementById("statusLine");
-    if(!line) return;
-    window.clearTimeout(noticeTimer);
-    line.textContent = message;
-    line.className = "status-line show" + (type ? " " + type : "");
-    if(!persist){
-      noticeTimer = window.setTimeout(function(){ line.className = "status-line"; }, 4500);
-    }
+  function setNotice(){
+    /* 화면을 가리는 알림 문장은 표시하지 않는다. */
   }
 
   function setBusy(enabled, message){
