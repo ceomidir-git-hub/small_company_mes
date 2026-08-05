@@ -175,6 +175,125 @@ textarea.form-control{
   line-height:1.28!important;
 }
 
+
+/* 2026-08-05 개선: 실제 입력 셀만 노란색, 초기 기본문자는 희미하게 */
+:root{
+  --entry-bg:#fff9cf;
+  --entry-line:#d8c36e;
+  --initial-text:#aaa589;
+  --thin-line:.12mm;
+  --normal-line:.25mm;
+}
+.cell.form-field,
+.cell.readonly-field,
+.cell.image-field{
+  background:#fff!important;
+  box-shadow:none!important;
+}
+.cell.user-entry-cell{
+  background:var(--entry-bg)!important;
+  box-shadow:inset 0 0 0 .16mm rgba(179,151,38,.20)!important;
+}
+.cell.user-entry-cell:focus-within{
+  background:#fff5ae!important;
+  box-shadow:inset 0 0 0 .42mm #c89f00!important;
+  z-index:60;
+}
+.cell.readonly-field{
+  background:#fff!important;
+}
+.form-control,
+.signature-select{
+  color:#111!important;
+  -webkit-text-fill-color:#111;
+  opacity:1!important;
+}
+.form-control::placeholder{
+  color:#b7b39f!important;
+  opacity:.55!important;
+  font-weight:500!important;
+}
+.form-control.initial-default,
+.signature-select.initial-default{
+  color:var(--initial-text)!important;
+  -webkit-text-fill-color:var(--initial-text)!important;
+  font-weight:500!important;
+}
+.form-control.empty-value,
+.signature-select.empty-value{
+  color:#b7b39f!important;
+  -webkit-text-fill-color:#b7b39f!important;
+  font-weight:500!important;
+}
+.form-control:disabled,
+.signature-select:disabled{
+  opacity:1!important;
+}
+
+/* 조회 팝업: 고객사 → 품명 → 품번 → 관리번호 개별/복합 조건 */
+.query-filter-panel{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(120px,1fr)) auto;
+  gap:8px;
+  align-items:end;
+  margin:0 0 12px;
+  padding:10px;
+  border:1px solid #d0d5dd;
+  border-radius:7px;
+  background:#f8fafc;
+}
+.query-filter-panel[hidden]{display:none!important;}
+.query-filter-panel label{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:11px;
+  font-weight:700;
+  color:#344054;
+}
+.query-filter-panel input{
+  width:100%;
+  height:32px;
+  padding:0 8px;
+  border:1px solid #98a2b3;
+  border-radius:4px;
+  background:#fff;
+  color:#101828;
+  font:inherit;
+}
+.query-filter-panel input::placeholder{color:#98a2b3;opacity:.72;}
+.query-filter-panel button{
+  height:32px;
+  padding:0 10px;
+  border:1px solid #98a2b3;
+  border-radius:4px;
+  background:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* 지정 영역의 안쪽 선은 가는선, 외곽과 큰 구분선은 기존 굵기 유지 */
+.thin-grid-cell{
+  border-top-width:var(--thin-line)!important;
+  border-bottom-width:var(--thin-line)!important;
+  border-left-width:var(--thin-line)!important;
+  border-right-width:var(--thin-line)!important;
+}
+.grid-edge-left{border-left-width:var(--normal-line)!important;}
+.grid-edge-right{border-right-width:var(--normal-line)!important;}
+.grid-edge-top{border-top-width:var(--normal-line)!important;}
+.grid-edge-bottom{border-bottom-width:var(--normal-line)!important;}
+.grid-section-left{border-left-width:var(--normal-line)!important;}
+.grid-section-right{border-right-width:var(--normal-line)!important;}
+
+@media(max-width:900px){
+  .query-filter-panel{grid-template-columns:1fr 1fr;}
+  .query-filter-panel button{grid-column:1/-1;}
+}
+@media print{
+  .cell.user-entry-cell{background:#fff!important;box-shadow:none!important;}
+}
+
 </style></head>
 <body><div class="toolbar" id="workStandardToolbar">
 <div class="group">
@@ -201,6 +320,13 @@ textarea.form-control{
 <div aria-hidden="true" class="modal-backdrop" id="itemModal">
 <div aria-labelledby="itemModalTitle" aria-modal="true" class="modal" role="dialog">
 <h2 id="itemModalTitle">품목 선택</h2>
+<div class="query-filter-panel" id="queryFilterPanel" hidden>
+  <label>고객사<input id="queryCustomer" type="search" placeholder="고객사 입력" autocomplete="off"/></label>
+  <label>품명<input id="queryItemName" type="search" placeholder="품명 입력" autocomplete="off"/></label>
+  <label>품번<input id="queryItemNumber" type="search" placeholder="품번 입력" autocomplete="off"/></label>
+  <label>관리번호<input id="queryWorkStandardNumber" type="search" placeholder="관리번호 입력" autocomplete="off"/></label>
+  <button id="btnClearQueryFilters" type="button">조건 지우기</button>
+</div>
 <table>
 <thead><tr><th>고객사</th><th>품명</th><th>품번</th><th>관리번호</th><th>저장상태</th></tr></thead>
 <tbody id="itemModalBody"><tr><td class="empty" colspan="5">연결된 품목 데이터가 없습니다.</td></tr></tbody>
@@ -216,7 +342,7 @@ textarea.form-control{
   const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
   const LOGIN_PAGE_URL = "../index.html";
   const SIGNATURE_BUCKET = "employee_signatures";
-  const IMAGE_BUCKET = "work_standard_images";
+  const IMAGE_BUCKET = "work-standard-images";
   const SIGNED_URL_SECONDS = 60 * 60;
   const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
   const CONDITION_CODES = Object.freeze([
@@ -270,7 +396,11 @@ textarea.form-control{
     if (!error) return "알 수 없는 오류입니다.";
     if (error.code === "42501") return "권한이 없습니다. 로그인 회사와 권한등급을 확인해 주세요.";
     if (error.code === "23505") return "같은 품목의 작업표준서가 이미 존재합니다.";
-    return error.message || error.details || error.hint || String(error);
+    const message = error.message || error.details || error.hint || String(error);
+    if (/bucket not found/i.test(message)) {
+      return `Storage 버킷 '${IMAGE_BUCKET}'을 찾을 수 없습니다. 제공한 Storage 보정 SQL을 먼저 실행해 주세요.`;
+    }
+    return message;
   }
   function hasWritePermission() {
     return currentProfile && ["admin", "user"].includes(currentProfile.access_role);
@@ -299,6 +429,67 @@ textarea.form-control{
     return Array.from(formRoot.querySelectorAll("input,select,textarea"))
       .filter(control => control.type !== "hidden");
   }
+  function addClasses(ids, ...classes) {
+    ids.forEach(id => document.getElementById(id)?.classList.add(...classes));
+  }
+
+  function applyVisualStructure() {
+    formRoot.querySelectorAll(".cell.form-field").forEach(cell => {
+      const control = cell.querySelector("input:not([type=hidden]),select,textarea");
+      if ((control && !control.readOnly) || cell.classList.contains("image-field")) {
+        cell.classList.add("user-entry-cell");
+      }
+    });
+
+    const workRows = [
+      "cell50","cell51","cell52","cell53","cell54","cell55",
+      "cell56","cell57","cell58","cell59","cell306","cell307",
+      "cell60","cell308","cell309","cell61","cell310","cell311"
+    ];
+    addClasses(workRows, "thin-grid-cell");
+    addClasses(["cell50","cell53","cell56","cell59","cell60","cell61"], "grid-edge-left", "grid-section-right");
+    addClasses(["cell51","cell54","cell57","cell306","cell308","cell310"], "grid-section-left", "grid-section-right");
+    addClasses(["cell52","cell55","cell58","cell307","cell309","cell311"], "grid-section-left", "grid-edge-right");
+    addClasses(["cell61","cell310","cell311"], "grid-edge-bottom");
+
+    const conditionGrid = Array.from({length:88}, (_,index) => `cell${64 + index}`);
+    addClasses(conditionGrid, "thin-grid-cell");
+    addClasses(["cell64","cell65","cell66","cell67","cell68","cell69","cell70","cell71","cell72","cell73","cell74"], "grid-edge-top");
+    addClasses(["cell141","cell142","cell143","cell144","cell145","cell146","cell147","cell148","cell149","cell150","cell151"], "grid-edge-bottom");
+    addClasses(["cell64","cell75","cell86","cell97","cell108","cell119","cell130","cell141"], "grid-edge-left");
+    addClasses(["cell74","cell85","cell96","cell107","cell118","cell129","cell140","cell151"], "grid-edge-right");
+    addClasses(["cell69","cell80","cell91","cell102","cell113","cell124","cell135","cell146"], "grid-section-right");
+    addClasses(["cell70","cell81","cell92","cell103","cell114","cell125","cell136","cell147"], "grid-section-left");
+  }
+
+  function updateControlTone(control, userChanged = false) {
+    if (!control || control.type === "file" || control.type === "hidden") return;
+    if (userChanged) {
+      delete control.dataset.initialValue;
+      control.classList.remove("initial-default");
+    }
+    const current = normalize(control.value);
+    const initial = control.dataset.initialValue;
+    control.classList.toggle("initial-default", initial !== undefined && current !== "" && current === initial);
+    control.classList.toggle("empty-value", current === "");
+  }
+
+  function markDefaultValuesAsInitial() {
+    formRoot.querySelectorAll(".user-entry-cell input,.user-entry-cell select,.user-entry-cell textarea").forEach(control => {
+      if (control.type === "file" || control.type === "hidden") return;
+      control.dataset.initialValue = normalize(control.value);
+      updateControlTone(control, false);
+    });
+  }
+
+  function clearInitialValueStyles() {
+    formRoot.querySelectorAll("input,select,textarea").forEach(control => {
+      delete control.dataset.initialValue;
+      control.classList.remove("initial-default");
+      updateControlTone(control, false);
+    });
+  }
+
   function setMode(mode) {
     currentMode = mode;
     const editable = mode === "new" || mode === "edit";
@@ -324,6 +515,7 @@ textarea.form-control{
   function applyFormState(state) {
     if (!state) return;
     Object.entries(state).forEach(([name, nextValue]) => setValue(name, nextValue));
+    clearInitialValueStyles();
     updateEquipmentNumber();
     void updateAllSignatures();
     void showStoredImages();
@@ -407,6 +599,7 @@ textarea.form-control{
       setValue(`finished_${order}_inspection_frequency`, row.inspection_frequency || "1회/일");
       setValue(`finished_${order}_remarks`, row.remarks || "");
     });
+    markDefaultValuesAsInitial();
     loadedSnapshot = captureFormState();
     setMode("new");
     setNotice("신규 작업표준서입니다. 품목과 설비를 선택한 후 옅은 노란색 칸을 입력해 주세요.");
@@ -432,17 +625,47 @@ textarea.form-control{
     }
   }
 
+  function queryFilterValues() {
+    return {
+      customer_name: normalize($("queryCustomer")?.value).toLowerCase(),
+      item_name: normalize($("queryItemName")?.value).toLowerCase(),
+      item_number: normalize($("queryItemNumber")?.value).toLowerCase(),
+      work_standard_number: normalize($("queryWorkStandardNumber")?.value).toLowerCase()
+    };
+  }
+
+  function sortedItems(rows) {
+    const compare = (a,b) => normalize(a).localeCompare(normalize(b), "ko-KR", {numeric:true, sensitivity:"base"});
+    return [...rows].sort((a,b) =>
+      compare(a.customer_name,b.customer_name) ||
+      compare(a.item_name,b.item_name) ||
+      compare(a.item_number,b.item_number) ||
+      compare(a.work_standard_number,b.work_standard_number)
+    );
+  }
+
   function renderItemRows() {
     const tbody = $("itemModalBody");
-    const keyword = normalize($("itemKeyword").value).toLowerCase();
+    const generalKeyword = normalize($("itemKeyword").value).toLowerCase();
+    const filters = queryFilterValues();
     const source = modalMode === "query"
       ? referenceItems.filter(row => documentByItem.has(row.item_system_id))
       : referenceItems;
-    const rows = source.filter(row => {
-      if (!keyword) return true;
-      return [row.customer_name,row.item_name,row.item_number,row.work_standard_number]
-        .some(text => normalize(text).toLowerCase().includes(keyword));
-    });
+
+    const rows = sortedItems(source.filter(row => {
+      const values = {
+        customer_name: normalize(row.customer_name).toLowerCase(),
+        item_name: normalize(row.item_name).toLowerCase(),
+        item_number: normalize(row.item_number).toLowerCase(),
+        work_standard_number: normalize(row.work_standard_number).toLowerCase()
+      };
+      if (modalMode === "query") {
+        return Object.entries(filters).every(([field,filter]) => !filter || values[field].includes(filter));
+      }
+      if (!generalKeyword) return true;
+      return Object.values(values).some(text => text.includes(generalKeyword));
+    }));
+
     tbody.innerHTML = "";
     if (!rows.length) {
       tbody.innerHTML = '<tr><td colspan="5" class="empty">조회되는 품목이 없습니다.</td></tr>';
@@ -450,8 +673,13 @@ textarea.form-control{
     }
     rows.forEach(row => {
       const tr = document.createElement("tr");
-      const values = [row.customer_name,row.item_name,row.item_number,row.work_standard_number,
-        documentByItem.has(row.item_system_id) ? "저장됨" : "미등록"];
+      const values = [
+        row.customer_name,
+        row.item_name,
+        row.item_number,
+        row.work_standard_number,
+        documentByItem.has(row.item_system_id) ? "저장됨" : "미등록"
+      ];
       values.forEach(text => {
         const td = document.createElement("td");
         td.textContent = text || "";
@@ -461,12 +689,19 @@ textarea.form-control{
       tbody.appendChild(tr);
     });
   }
+
   function openItemModal(mode) {
     modalMode = mode;
-    $("itemModalTitle").textContent = mode === "query" ? "저장된 작업표준서 조회" : "품목 선택";
+    const isQuery = mode === "query";
+    $("itemModalTitle").textContent = isQuery ? "저장된 작업표준서 조회" : "품목 선택";
+    $("queryFilterPanel").hidden = !isQuery;
     renderItemRows();
     itemModal.classList.add("open");
     itemModal.setAttribute("aria-hidden", "false");
+    window.setTimeout(() => {
+      if (isQuery) $("queryCustomer")?.focus();
+      else $("itemKeyword")?.focus();
+    }, 0);
   }
   function closeItemModal() {
     itemModal.classList.remove("open");
@@ -765,6 +1000,7 @@ textarea.form-control{
         setValue(`finished_${order}_remarks`, row.remarks || "");
       });
 
+      clearInitialValueStyles();
       await updateAllSignatures();
       await showStoredImages();
       loadedSnapshot = captureFormState();
@@ -938,7 +1174,23 @@ textarea.form-control{
     $("btnCloseItemModal").addEventListener("click",closeItemModal);
     itemModal.addEventListener("click",event => { if (event.target === itemModal) closeItemModal(); });
     $("itemKeyword").addEventListener("input",renderItemRows);
+    ["queryCustomer","queryItemName","queryItemNumber","queryWorkStandardNumber"].forEach(id => {
+      $(id)?.addEventListener("input", renderItemRows);
+    });
+    $("btnClearQueryFilters")?.addEventListener("click", () => {
+      ["queryCustomer","queryItemName","queryItemNumber","queryWorkStandardNumber"].forEach(id => { if ($(id)) $(id).value = ""; });
+      renderItemRows();
+      $("queryCustomer")?.focus();
+    });
     $("equipment_system_id").addEventListener("change",updateEquipmentNumber);
+
+    formRoot.querySelectorAll("input,select,textarea").forEach(control => {
+      if (control.type === "file" || control.type === "hidden") return;
+      const markChanged = () => updateControlTone(control, true);
+      control.addEventListener("input", markChanged);
+      control.addEventListener("change", markChanged);
+      updateControlTone(control, false);
+    });
 
     document.querySelectorAll(".signature-select").forEach(select => {
       select.addEventListener("change",() => void showSignature(select));
@@ -992,6 +1244,7 @@ textarea.form-control{
   async function init() {
     try {
       setNotice("로그인과 작업표준서 DB를 확인하는 중입니다.","loading");
+      applyVisualStructure();
       attachEvents();
       if (!await loadProfile()) return;
       await Promise.all([loadItems(),loadEquipment(),loadEmployees(),loadDefaults()]);
