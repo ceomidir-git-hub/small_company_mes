@@ -767,6 +767,17 @@ body.pdf-capture-mode .value-highlight-mark{
   background:transparent!important;
 }
 
+/* 고정 기준: QP01 하단 행은 위쪽 선만 검정색 유지 */
+/* 내부 구분선, 맨 왼쪽, 맨 오른쪽, 하단 전체는 항상 흰색 */
+#workStandardForm #cell303,
+#workStandardForm #cell304,
+#workStandardForm #cell305{
+  border-top:.12mm solid #000!important;
+  border-bottom:.12mm solid #fff!important;
+  border-left:.12mm solid #fff!important;
+  border-right:.12mm solid #fff!important;
+}
+
 </style></head>
 <body><div class="toolbar" id="workStandardToolbar">
 <div class="group toolbar-cascade-group" aria-label="작업표준서 연동 조회 조건">
