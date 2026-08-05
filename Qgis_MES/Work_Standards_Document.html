@@ -1315,7 +1315,9 @@ body.pdf-capture-mode .value-highlight-mark{
 
   function initializeToolbarCascade() {
     toolbarSelectedItemId = "";
-    const source = savedReferenceItems();
+    // 상단 선택 영역은 신규등록에서도 사용할 수 있도록
+    // 현재 회사의 활성 품목 전체를 기준으로 표시한다.
+    const source = referenceItems;
     fillSelect("toolbarCustomerSelect", "고객사명 선택", customerOptions(source));
     fillSelect("toolbarItemNameSelect", "품명 선택", []);
     fillSelect("toolbarItemNumberSelect", "품번 선택", []);
@@ -1328,7 +1330,7 @@ body.pdf-capture-mode .value-highlight-mark{
 
   function toolbarCustomerChanged() {
     toolbarSelectedItemId = "";
-    const source = savedReferenceItems();
+    const source = referenceItems;
     const customerId = $("toolbarCustomerSelect")?.value || "";
     fillSelect("toolbarItemNameSelect", "품명 선택", []);
     fillSelect("toolbarItemNumberSelect", "품번 선택", []);
@@ -1342,7 +1344,7 @@ body.pdf-capture-mode .value-highlight-mark{
 
   function toolbarItemNameChanged() {
     toolbarSelectedItemId = "";
-    const source = savedReferenceItems();
+    const source = referenceItems;
     const customerId = $("toolbarCustomerSelect")?.value || "";
     const itemName = $("toolbarItemNameSelect")?.value || "";
     fillSelect("toolbarItemNumberSelect", "품번 선택", []);
@@ -1355,7 +1357,7 @@ body.pdf-capture-mode .value-highlight-mark{
 
   function toolbarItemNumberChanged() {
     toolbarSelectedItemId = "";
-    const source = savedReferenceItems();
+    const source = referenceItems;
     const customerId = $("toolbarCustomerSelect")?.value || "";
     const itemName = $("toolbarItemNameSelect")?.value || "";
     const itemNumber = $("toolbarItemNumberSelect")?.value || "";
