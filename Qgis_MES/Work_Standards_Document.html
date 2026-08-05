@@ -1412,33 +1412,65 @@ body.pdf-capture-mode .form-identity-select{
     updateAllValueHighlights();
   }
 
+  function forceSelectDisplay(select, selectedValue) {
+    if (!select) return;
+    const nextValue = normalize(selectedValue);
+    select.value = nextValue;
+    select.classList.remove("empty-value", "initial-default");
+    delete select.dataset.initialValue;
+    updateControlTone(select, true);
+
+    // Chrome에서 change 이벤트 안에서 option을 다시 구성한 직후 선택 문자가
+    // 한 프레임 늦게 표시되는 현상을 방지한다.
+    window.requestAnimationFrame(() => {
+      if (!select.isConnected) return;
+      select.value = nextValue;
+      select.classList.remove("empty-value", "initial-default");
+      updateValueHighlight(select);
+    });
+  }
+
   function commitFormIdentitySelection(row, { automatic = false, silent = false } = {}) {
+    const managementSelect = $("formManagementSelect");
     clearCanonicalItemIdentity();
+
     if (!row?.item_system_id) {
-      $("formManagementSelect").value = "";
+      forceSelectDisplay(managementSelect, "");
       if (!silent) setNotice("선택한 품목 정보를 찾을 수 없습니다.", "error");
       updateAllValueHighlights();
       return false;
     }
     if (!normalize(row.work_standard_number)) {
-      $("formManagementSelect").value = "";
+      forceSelectDisplay(managementSelect, "");
       if (!silent) setNotice("선택한 품목에 작업표준서 관리번호가 없습니다. 아이템관리를 확인해 주세요.", "error");
       updateAllValueHighlights();
       return false;
     }
     if (currentMode === "new" && documentByItem.has(row.item_system_id)) {
-      $("formManagementSelect").value = "";
+      forceSelectDisplay(managementSelect, "");
       if (!silent) setNotice("이미 작업표준서가 등록된 품목입니다. 상단 조회 후 수정 버튼을 사용해 주세요.", "error");
       updateAllValueHighlights();
       return false;
     }
-    syncFormIdentityFromItem(row);
+
+    // 신규등록 중 사용자가 이미 선택한 고객사·품명·품번 목록을 다시 만들지 않는다.
+    // 목록을 재생성하면 change 이벤트 처리 중 관리번호 표시가 늦어질 수 있으므로,
+    // 선택한 option은 그대로 유지하고 저장용 내부 키만 즉시 확정한다.
+    setValue("item_system_id", row.item_system_id);
+    setValue("customer_name", row.customer_name || "");
+    setValue("item_name", row.item_name || "");
+    setValue("item_number", row.item_number || "");
+    setValue("work_standard_number", row.work_standard_number || "");
+    forceSelectDisplay(managementSelect, row.item_system_id);
+    updateFormIdentityEnabledState();
+    updateAllValueHighlights();
+
     loadedSnapshot = captureFormState();
     if (!silent) {
       setNotice(
         automatic
           ? `관리번호 ${row.work_standard_number}을(를) 자동으로 반영했습니다. 나머지 내용을 입력한 후 저장해 주세요.`
-          : "신규등록할 품목을 양식에 반영했습니다. 나머지 내용을 입력한 후 저장해 주세요.",
+          : `관리번호 ${row.work_standard_number}을(를) 양식에 반영했습니다. 나머지 내용을 입력한 후 저장해 주세요.`,
         "success"
       );
     }
