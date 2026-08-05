@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="ko">
+<html class="auth-pending" lang="ko">
 <head>
 <meta charset="utf-8"/>
 <title>제조공정도</title>
@@ -578,6 +578,10 @@
     .photo-placeholder{color:#111!important;}
     .edit-mode .photo-field:hover::after{display:none!important;}
   }
+
+  html.auth-pending body{visibility:hidden;}
+  .toolbar button:disabled,.toolbar select:disabled{opacity:.48;cursor:not-allowed;}
+  .status-line.loading{color:#6a4b00;border-color:#d9bd4d;background:#fff9e6;}
 </style>
 </head>
 <body>
@@ -822,77 +826,100 @@
 </table>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   "use strict";
 
-  /*
-    입력폼 확정용 로컬 테스트 구조입니다.
-    실제 DB 연결 시에는 아래 매핑을 그대로 사용합니다.
-    - 기본정보: company_id, customer_system_id, item_system_id
-    - 상세정보: field_no, field_type, text_value, image_path
-    - 사진 번호: 2,7,12,17,22,27,32,37,42,47,52,57,62,67,72
-  */
+  const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+  const LOGIN_PAGE_URL = "../index.html";
+  const IMAGE_BUCKET = "manufacturing-process-images";
+  const SIGNED_URL_SECONDS = 60 * 60;
+  const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+  const PHOTO_FIELD_NUMBERS = Object.freeze([2,7,12,17,22,27,32,37,42,47,52,57,62,67,72]);
+  const ALLOWED_IMAGE_TYPES = Object.freeze(["image/jpeg","image/png","image/webp"]);
+  const COMPANY_NAMES = Object.freeze({
+    "17f2ff71-20db-49ff-b682-279989776817":"큐지스",
+    "8926eb68-aad3-4355-a51a-628a18757f71":"금성열처리",
+    "547df2c3-cdf0-40f6-8ec9-868bcb72f946":"아이템티"
+  });
 
-  var STORAGE_INDEX = "mes_manufacturing_process_diagram_form_index_v1";
-  var KEY_PREFIX = "mes_manufacturing_process_diagram_form_v1_";
-  var PHOTO_FIELD_NUMBERS = [2,7,12,17,22,27,32,37,42,47,52,57,62,67,72];
+  if(!window.supabase){
+    window.alert("Supabase 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.");
+    return;
+  }
 
-  var textFields = Array.prototype.slice.call(document.querySelectorAll('[data-field-type="text"]'));
-  var photoFields = Array.prototype.slice.call(document.querySelectorAll('[data-field-type="image"]'));
-  var metaFields = Array.prototype.slice.call(document.querySelectorAll('[data-meta-key]'));
-  var currentStorageKey = "";
-  var editMode = false;
-  var noticeTimer = null;
-  var loadedSnapshot = null;
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+
+  const textFields = Array.from(document.querySelectorAll('[data-field-type="text"]'));
+  const photoFields = Array.from(document.querySelectorAll('[data-field-type="image"]'));
+  const metaFields = Array.from(document.querySelectorAll('[data-meta-key]'));
+  const customerSelect = document.getElementById("toolbarCustomerSelect");
+  const itemNameSelect = document.getElementById("toolbarItemNameSelect");
+  const itemNumberSelect = document.getElementById("toolbarItemNumberSelect");
+
+  let currentProfile = null;
+  let currentMode = "view"; // view | new
+  let currentDocumentId = "";
+  let currentItemSystemId = "";
+  let editMode = false;
+  let busy = false;
+  let noticeTimer = null;
+  let loadedSnapshot = null;
+  let customers = [];
+  let items = [];
+  let documents = [];
+
+  const customerMap = new Map();
+  const itemMap = new Map();
+  const pendingPhotoFiles = new Map();
+  const previewObjectUrls = new Map();
 
   function normalize(value){ return String(value == null ? "" : value).trim(); }
-  function compareText(a,b){ return normalize(a).localeCompare(normalize(b), "ko-KR", {numeric:true, sensitivity:"base"}); }
-  function uniqueSorted(values){ return Array.from(new Set(values.map(normalize).filter(Boolean))).sort(compareText); }
+  function compareText(a,b){ return normalize(a).localeCompare(normalize(b), "ko-KR", {numeric:true,sensitivity:"base"}); }
+  function cloneData(value){ return JSON.parse(JSON.stringify(value)); }
+  function fieldNumber(cell){ return Number(cell.getAttribute("data-field-no")); }
+  function isAdmin(){ return currentProfile && currentProfile.access_role === "admin"; }
+  function canEdit(){ return currentProfile && ["admin","user"].includes(currentProfile.access_role); }
+  function canPdf(){ return currentProfile && currentProfile.access_role !== "viewer"; }
 
-  function setNotice(message, type){
-    var line = document.getElementById("statusLine");
+  function errorMessage(error, fallback){
+    const message = normalize(error && (error.message || error.error_description || error.details));
+    return message || fallback;
+  }
+
+  function setNotice(message, type, persist){
+    const line = document.getElementById("statusLine");
     if(!line) return;
     window.clearTimeout(noticeTimer);
     line.textContent = message;
     line.className = "status-line show" + (type ? " " + type : "");
-    noticeTimer = window.setTimeout(function(){ line.className = "status-line"; }, 4000);
+    if(!persist){
+      noticeTimer = window.setTimeout(function(){ line.className = "status-line"; }, 4500);
+    }
   }
 
-  function metaGroup(key){
-    return Array.prototype.slice.call(document.querySelectorAll('[data-meta-key="' + key + '"]'));
+  function setBusy(enabled, message){
+    busy = Boolean(enabled);
+    if(message) setNotice(message, "loading", true);
+    updateButtonStates();
   }
 
+  function redirectToLogin(){ window.location.replace(LOGIN_PAGE_URL); }
+
+  function metaGroup(key){ return Array.from(document.querySelectorAll('[data-meta-key="' + key + '"]')); }
   function getMetaValue(key){
-    var first = metaGroup(key)[0];
+    const first = metaGroup(key)[0];
     return normalize(first ? first.innerText : "");
   }
-
   function setMetaValue(key, value){
     metaGroup(key).forEach(function(cell){ cell.textContent = normalize(value); });
   }
-
-  function syncMetaFrom(source){
-    var key = source.getAttribute("data-meta-key");
-    if(!key) return;
-    var value = source.innerText;
-    metaGroup(key).forEach(function(cell){
-      if(cell !== source) cell.textContent = value;
-    });
-  }
-
-  function getIdentityFromForm(){
-    return {
-      companyName:getMetaValue("companyName"),
-      customerName:getMetaValue("customerName"),
-      itemName:getMetaValue("itemName"),
-      itemNumber:getMetaValue("itemNumber")
-    };
-  }
-
-  function makeStorageKey(identity){
-    if(!identity.customerName || !identity.itemName || !identity.itemNumber) return "";
-    return KEY_PREFIX + encodeURIComponent(identity.customerName) + "__" + encodeURIComponent(identity.itemName) + "__" + encodeURIComponent(identity.itemNumber);
+  function currentCompanyName(){
+    return currentProfile ? (COMPANY_NAMES[currentProfile.company_id] || "") : "";
   }
 
   function photoElements(cell){
@@ -903,8 +930,18 @@
     };
   }
 
-  function clearPhoto(cell){
-    var parts = photoElements(cell);
+  function revokePreviewUrl(fieldNo){
+    const oldUrl = previewObjectUrls.get(fieldNo);
+    if(oldUrl){
+      URL.revokeObjectURL(oldUrl);
+      previewObjectUrls.delete(fieldNo);
+    }
+  }
+
+  function clearPhotoDisplay(cell, clearStoredPath){
+    const no = fieldNumber(cell);
+    const parts = photoElements(cell);
+    revokePreviewUrl(no);
     if(parts.image){
       parts.image.removeAttribute("src");
       parts.image.hidden = true;
@@ -912,371 +949,692 @@
     }
     if(parts.placeholder) parts.placeholder.hidden = false;
     if(parts.input) parts.input.value = "";
+    if(clearStoredPath !== false) cell.dataset.imagePath = "";
   }
 
-  function setPhoto(cell, src, fileName){
-    var parts = photoElements(cell);
-    if(!parts.image || !parts.placeholder) return;
-    if(!src){ clearPhoto(cell); return; }
-    parts.image.src = src;
-    parts.image.hidden = false;
-    parts.image.dataset.fileName = fileName || "";
-    parts.placeholder.hidden = true;
+  function setPhotoDisplay(cell, src, fileName, imagePath, objectUrl){
+    const no = fieldNumber(cell);
+    const parts = photoElements(cell);
+    revokePreviewUrl(no);
+    if(!src){
+      clearPhotoDisplay(cell, imagePath == null);
+      if(imagePath != null) cell.dataset.imagePath = imagePath || "";
+      return;
+    }
+    if(objectUrl) previewObjectUrls.set(no, src);
+    if(parts.image){
+      parts.image.src = src;
+      parts.image.hidden = false;
+      parts.image.dataset.fileName = fileName || "";
+    }
+    if(parts.placeholder) parts.placeholder.hidden = true;
+    if(parts.input) parts.input.value = "";
+    cell.dataset.imagePath = imagePath || "";
+  }
+
+  function clearPendingPhotos(){
+    pendingPhotoFiles.clear();
+    Array.from(previewObjectUrls.keys()).forEach(revokePreviewUrl);
   }
 
   function clearForm(){
-    setMetaValue("companyName", "");
+    clearPendingPhotos();
+    setMetaValue("companyName", currentCompanyName());
     setMetaValue("customerName", "");
     setMetaValue("itemName", "");
     setMetaValue("itemNumber", "");
     textFields.forEach(function(cell){ cell.textContent = ""; });
-    photoFields.forEach(clearPhoto);
+    photoFields.forEach(function(cell){ clearPhotoDisplay(cell, true); });
   }
 
-  function captureForm(){
-    var values = [];
+  function captureValues(){
+    const values = [];
     textFields.forEach(function(cell){
       values.push({
-        field_no:Number(cell.getAttribute("data-field-no")),
-        field_type:"text",
+        field_no:fieldNumber(cell),
         text_value:normalize(cell.innerText),
-        image_path:null,
-        image_preview_data:null,
-        image_file_name:null
+        image_path:null
       });
     });
     photoFields.forEach(function(cell){
-      var parts = photoElements(cell);
-      var src = parts.image && !parts.image.hidden ? (parts.image.getAttribute("src") || "") : "";
       values.push({
-        field_no:Number(cell.getAttribute("data-field-no")),
-        field_type:"image",
+        field_no:fieldNumber(cell),
         text_value:null,
-        image_path:null,
-        image_preview_data:src,
-        image_file_name:parts.image ? (parts.image.dataset.fileName || "") : ""
+        image_path:normalize(cell.dataset.imagePath) || null
       });
     });
     values.sort(function(a,b){ return a.field_no - b.field_no; });
+    return values;
+  }
+
+  function captureSnapshot(){
     return {
-      version:1,
-      identity:getIdentityFromForm(),
-      values:values,
-      updated_at:new Date().toISOString()
+      documentId:currentDocumentId,
+      itemSystemId:currentItemSystemId,
+      identity:{
+        companyName:getMetaValue("companyName"),
+        customerName:getMetaValue("customerName"),
+        itemName:getMetaValue("itemName"),
+        itemNumber:getMetaValue("itemNumber")
+      },
+      values:captureValues()
     };
   }
 
-  function cloneData(value){ return JSON.parse(JSON.stringify(value)); }
+  async function signedUrlForPath(path){
+    if(!path) return "";
+    const result = await sb.storage.from(IMAGE_BUCKET).createSignedUrl(path, SIGNED_URL_SECONDS);
+    if(result.error) throw result.error;
+    return result.data && result.data.signedUrl ? result.data.signedUrl : "";
+  }
 
-  function applyForm(record){
-    if(!record || !record.identity || !Array.isArray(record.values)) return false;
-    setMetaValue("companyName", record.identity.companyName || "");
-    setMetaValue("customerName", record.identity.customerName || "");
-    setMetaValue("itemName", record.identity.itemName || "");
-    setMetaValue("itemNumber", record.identity.itemNumber || "");
+  async function applySnapshot(snapshot){
+    if(!snapshot || !Array.isArray(snapshot.values)) return;
+    clearPendingPhotos();
+    setMetaValue("companyName", snapshot.identity.companyName || currentCompanyName());
+    setMetaValue("customerName", snapshot.identity.customerName || "");
+    setMetaValue("itemName", snapshot.identity.itemName || "");
+    setMetaValue("itemNumber", snapshot.identity.itemNumber || "");
 
-    var byNumber = {};
-    record.values.forEach(function(value){ byNumber[Number(value.field_no)] = value; });
+    const byNo = new Map(snapshot.values.map(function(row){ return [Number(row.field_no), row]; }));
     textFields.forEach(function(cell){
-      var value = byNumber[Number(cell.getAttribute("data-field-no"))];
-      cell.textContent = value && value.field_type === "text" ? (value.text_value || "") : "";
+      const row = byNo.get(fieldNumber(cell));
+      cell.textContent = row ? normalize(row.text_value) : "";
     });
     photoFields.forEach(function(cell){
-      var value = byNumber[Number(cell.getAttribute("data-field-no"))];
-      setPhoto(cell, value && value.field_type === "image" ? (value.image_preview_data || "") : "", value ? value.image_file_name : "");
+      const row = byNo.get(fieldNumber(cell));
+      clearPhotoDisplay(cell, true);
+      cell.dataset.imagePath = row && row.image_path ? row.image_path : "";
     });
-    loadedSnapshot = cloneData(captureForm());
-    currentStorageKey = record.storageKey || makeStorageKey(record.identity);
-    setEditMode(false);
-    return true;
+
+    const token = snapshot.documentId || "new";
+    await Promise.all(photoFields.map(async function(cell){
+      const row = byNo.get(fieldNumber(cell));
+      const path = row && row.image_path ? row.image_path : "";
+      if(!path) return;
+      try{
+        const url = await signedUrlForPath(path);
+        if((currentDocumentId || "new") !== token) return;
+        setPhotoDisplay(cell, url, path.split("/").pop() || "", path, false);
+      }catch(error){
+        console.error("공정 사진 조회 실패:", path, error);
+      }
+    }));
   }
 
   function setEditMode(enabled){
     editMode = Boolean(enabled);
     document.body.classList.toggle("edit-mode", editMode);
-    metaFields.forEach(function(cell){
-      var key = cell.getAttribute("data-meta-key");
-      cell.setAttribute("contenteditable", editMode && key !== "companyName" ? "true" : "false");
-    });
+    metaFields.forEach(function(cell){ cell.setAttribute("contenteditable", "false"); });
     textFields.forEach(function(cell){ cell.setAttribute("contenteditable", editMode ? "true" : "false"); });
     photoFields.forEach(function(cell){
-      var parts = photoElements(cell);
+      const parts = photoElements(cell);
       cell.tabIndex = editMode ? 0 : -1;
       if(parts.input) parts.input.disabled = !editMode;
     });
-    var button = document.getElementById("btnEdit");
+    const button = document.getElementById("btnEdit");
     button.classList.toggle("active", editMode);
     button.textContent = editMode ? "수정 완료" : "수정";
+    updateButtonStates();
   }
 
-  function parseIndex(){
-    try{
-      var value = JSON.parse(localStorage.getItem(STORAGE_INDEX) || "[]");
-      return Array.isArray(value) ? value : [];
-    }catch(error){ return []; }
+  function updateButtonStates(){
+    const inEntryMode = editMode || currentMode === "new";
+    document.getElementById("btnSearch").disabled = busy || inEntryMode;
+    document.getElementById("btnEdit").disabled = busy || !canEdit() || (!currentDocumentId && currentMode !== "new");
+    document.getElementById("btnSave").disabled = busy || !editMode || (currentMode === "new" ? !isAdmin() : !canEdit());
+    document.getElementById("btnNew").disabled = busy || !isAdmin() || inEntryMode;
+    document.getElementById("btnReset").disabled = busy;
+    document.getElementById("btnDelete").disabled = busy || !isAdmin() || !currentDocumentId || inEntryMode;
+    document.getElementById("btnPdf").disabled = busy || !canPdf();
+    [customerSelect,itemNameSelect,itemNumberSelect].forEach(function(select){ select.disabled = busy; });
+    if(!busy){
+      itemNameSelect.disabled = !customerSelect.value;
+      itemNumberSelect.disabled = !customerSelect.value || !itemNameSelect.value;
+    }
   }
 
-  function writeIndex(key){
-    var index = parseIndex();
-    if(index.indexOf(key) === -1) index.push(key);
-    localStorage.setItem(STORAGE_INDEX, JSON.stringify(index));
-  }
-
-  function removeFromIndex(key){
-    var index = parseIndex().filter(function(item){ return item !== key; });
-    localStorage.setItem(STORAGE_INDEX, JSON.stringify(index));
-  }
-
-  function readRecord(key){
-    try{
-      var parsed = JSON.parse(localStorage.getItem(key) || "null");
-      if(!parsed || !parsed.identity || !Array.isArray(parsed.values)) return null;
-      parsed.storageKey = key;
-      return parsed;
-    }catch(error){ return null; }
-  }
-
-  function savedRecords(){
-    return parseIndex().map(readRecord).filter(Boolean);
-  }
-
-  function fillSelect(id, placeholder, options, selectedValue){
-    var select = document.getElementById(id);
+  function fillSelect(select, placeholder, options, selectedValue){
     select.innerHTML = "";
     select.add(new Option(placeholder, ""));
-    options.forEach(function(value){ select.add(new Option(value, value)); });
-    select.value = options.indexOf(selectedValue) >= 0 ? selectedValue : "";
+    options.forEach(function(option){ select.add(new Option(option.label, option.value)); });
+    select.value = options.some(function(option){ return option.value === selectedValue; }) ? selectedValue : "";
   }
 
-  function toolbarFilters(){
+  function sourceRowsForToolbar(){
+    if(currentMode === "new"){
+      return items.filter(function(item){ return item.is_active === true; }).map(function(item){
+        const customer = customerMap.get(item.customer_system_id);
+        return {
+          customerSystemId:item.customer_system_id,
+          customerName:customer ? customer.customer_name : "",
+          itemName:item.item_name,
+          itemNumber:item.item_number,
+          itemSystemId:item.item_system_id
+        };
+      });
+    }
+    return documents.slice();
+  }
+
+  function rebuildToolbarOptions(options){
+    const preserve = options || {};
+    const rows = sourceRowsForToolbar();
+    const selectedCustomer = preserve.customerSystemId != null ? preserve.customerSystemId : customerSelect.value;
+    const selectedName = preserve.itemName != null ? preserve.itemName : itemNameSelect.value;
+    const selectedItem = preserve.itemSystemId != null ? preserve.itemSystemId : itemNumberSelect.value;
+
+    const customerOptions = Array.from(new Map(rows.filter(function(row){ return row.customerSystemId && row.customerName; }).map(function(row){
+      return [row.customerSystemId,{value:row.customerSystemId,label:row.customerName}];
+    })).values()).sort(function(a,b){ return compareText(a.label,b.label); });
+    fillSelect(customerSelect,"고객사명 선택",customerOptions,selectedCustomer || "");
+
+    const customerId = customerSelect.value;
+    const nameOptions = Array.from(new Set(rows.filter(function(row){ return !customerId || row.customerSystemId === customerId; }).map(function(row){ return normalize(row.itemName); }).filter(Boolean)))
+      .sort(compareText).map(function(name){ return {value:name,label:name}; });
+    fillSelect(itemNameSelect,"품명 선택",nameOptions,selectedName || "");
+
+    const itemName = itemNameSelect.value;
+    const numberOptions = rows.filter(function(row){
+      return (!customerId || row.customerSystemId === customerId) && (!itemName || row.itemName === itemName);
+    }).sort(function(a,b){ return compareText(a.itemNumber,b.itemNumber); }).map(function(row){
+      return {value:row.itemSystemId,label:row.itemNumber};
+    });
+    fillSelect(itemNumberSelect,"품번 선택",numberOptions,selectedItem || "");
+    updateButtonStates();
+  }
+
+  function selectedToolbarIdentity(){
+    const itemId = itemNumberSelect.value;
+    const item = itemMap.get(itemId);
+    const customer = item ? customerMap.get(item.customer_system_id) : customerMap.get(customerSelect.value);
     return {
-      customerName:document.getElementById("toolbarCustomerSelect").value,
-      itemName:document.getElementById("toolbarItemNameSelect").value,
-      itemNumber:document.getElementById("toolbarItemNumberSelect").value
+      customerSystemId:customer ? customer.customer_system_id : customerSelect.value,
+      customerName:customer ? customer.customer_name : "",
+      itemName:item ? item.item_name : itemNameSelect.value,
+      itemNumber:item ? item.item_number : "",
+      itemSystemId:item ? item.item_system_id : itemId
     };
   }
 
-  function recordMatches(record, filters, ignored){
-    if(ignored !== "customerName" && filters.customerName && record.identity.customerName !== filters.customerName) return false;
-    if(ignored !== "itemName" && filters.itemName && record.identity.itemName !== filters.itemName) return false;
-    if(ignored !== "itemNumber" && filters.itemNumber && record.identity.itemNumber !== filters.itemNumber) return false;
+  function applyNewIdentityFromToolbar(){
+    if(currentMode !== "new") return;
+    const identity = selectedToolbarIdentity();
+    currentItemSystemId = identity.itemSystemId || "";
+    setMetaValue("companyName", currentCompanyName());
+    setMetaValue("customerName", identity.customerName || "");
+    setMetaValue("itemName", identity.itemName || "");
+    setMetaValue("itemNumber", identity.itemNumber || "");
+  }
+
+  async function verifySession(){
+    const userResult = await sb.auth.getUser();
+    const user = userResult.data && userResult.data.user;
+    if(userResult.error || !user){ redirectToLogin(); return false; }
+
+    const profileResult = await sb.from("profiles")
+      .select("company_id,is_active,login_enabled,access_role")
+      .eq("user_id",user.id)
+      .single();
+
+    const profile = profileResult.data;
+    const validRole = profile && ["admin","user","viewer"].includes(profile.access_role);
+    if(profileResult.error || !profile || profile.is_active !== true || profile.login_enabled !== true || !validRole){
+      console.error("프로필 권한 확인 실패:", profileResult.error);
+      await sb.auth.signOut({scope:"local"});
+      redirectToLogin();
+      return false;
+    }
+    currentProfile = profile;
     return true;
   }
 
-  function rebuildToolbarOptions(){
-    var records = savedRecords();
-    var selected = toolbarFilters();
-    var customerSource = records.filter(function(row){ return recordMatches(row, selected, "customerName"); });
-    var itemNameSource = records.filter(function(row){ return recordMatches(row, selected, "itemName"); });
-    var itemNumberSource = records.filter(function(row){ return recordMatches(row, selected, "itemNumber"); });
-    fillSelect("toolbarCustomerSelect", "고객사명 선택", uniqueSorted(customerSource.map(function(row){ return row.identity.customerName; })), selected.customerName);
-    fillSelect("toolbarItemNameSelect", "품명 선택", uniqueSorted(itemNameSource.map(function(row){ return row.identity.itemName; })), selected.itemName);
-    fillSelect("toolbarItemNumberSelect", "품번 선택", uniqueSorted(itemNumberSource.map(function(row){ return row.identity.itemNumber; })), selected.itemNumber);
+  async function loadReferenceData(){
+    const companyId = currentProfile.company_id;
+    const results = await Promise.all([
+      sb.from("customers")
+        .select("company_id,customer_system_id,customer_name")
+        .eq("company_id",companyId),
+      sb.from("items")
+        .select("company_id,item_system_id,customer_system_id,item_name,item_number,is_active")
+        .eq("company_id",companyId)
+    ]);
+    if(results[0].error) throw results[0].error;
+    if(results[1].error) throw results[1].error;
+
+    customers = results[0].data || [];
+    items = results[1].data || [];
+    customerMap.clear();
+    itemMap.clear();
+    customers.forEach(function(row){ customerMap.set(row.customer_system_id,row); });
+    items.forEach(function(row){ itemMap.set(row.item_system_id,row); });
   }
 
-  function clearToolbarSelections(){
-    ["toolbarCustomerSelect","toolbarItemNameSelect","toolbarItemNumberSelect"].forEach(function(id){ document.getElementById(id).value = ""; });
-    rebuildToolbarOptions();
+  async function loadDocumentIndex(){
+    const result = await sb.from("manufacturing_process_diagrams")
+      .select("manufacturing_process_system_id,company_id,customer_system_id,item_system_id,is_active,created_at,updated_at")
+      .eq("company_id",currentProfile.company_id)
+      .eq("is_active",true)
+      .order("created_at",{ascending:false});
+    if(result.error) throw result.error;
+
+    documents = (result.data || []).map(function(row){
+      const customer = customerMap.get(row.customer_system_id);
+      const item = itemMap.get(row.item_system_id);
+      return {
+        documentId:row.manufacturing_process_system_id,
+        customerSystemId:row.customer_system_id,
+        customerName:customer ? customer.customer_name : "",
+        itemSystemId:row.item_system_id,
+        itemName:item ? item.item_name : "",
+        itemNumber:item ? item.item_number : "",
+        createdAt:row.created_at,
+        updatedAt:row.updated_at
+      };
+    }).filter(function(row){ return row.customerName && row.itemName && row.itemNumber; });
   }
 
-  function matchedRecords(){
-    var filters = toolbarFilters();
-    return savedRecords().filter(function(record){ return recordMatches(record, filters, ""); }).sort(function(a,b){
-      return compareText(a.identity.customerName,b.identity.customerName) ||
-        compareText(a.identity.itemName,b.identity.itemName) ||
-        compareText(a.identity.itemNumber,b.identity.itemNumber);
+  async function loadDocument(record){
+    if(!record) return;
+    setBusy(true,"제조공정도를 불러오는 중입니다.");
+    try{
+      const result = await sb.from("manufacturing_process_values")
+        .select("field_no,field_type,text_value,image_path,is_active")
+        .eq("company_id",currentProfile.company_id)
+        .eq("manufacturing_process_system_id",record.documentId)
+        .eq("is_active",true)
+        .order("field_no",{ascending:true});
+      if(result.error) throw result.error;
+
+      const byNo = new Map((result.data || []).map(function(row){ return [Number(row.field_no),row]; }));
+      const values = Array.from({length:75},function(_,index){
+        const no = index + 1;
+        const row = byNo.get(no);
+        return {
+          field_no:no,
+          text_value:PHOTO_FIELD_NUMBERS.includes(no) ? null : (row ? normalize(row.text_value) : ""),
+          image_path:PHOTO_FIELD_NUMBERS.includes(no) ? (row && row.image_path ? row.image_path : null) : null
+        };
+      });
+
+      currentMode = "view";
+      currentDocumentId = record.documentId;
+      currentItemSystemId = record.itemSystemId;
+      const snapshot = {
+        documentId:record.documentId,
+        itemSystemId:record.itemSystemId,
+        identity:{
+          companyName:currentCompanyName(),
+          customerName:record.customerName,
+          itemName:record.itemName,
+          itemNumber:record.itemNumber
+        },
+        values:values
+      };
+      loadedSnapshot = cloneData(snapshot);
+      await applySnapshot(snapshot);
+      setEditMode(false);
+      rebuildToolbarOptions({
+        customerSystemId:record.customerSystemId,
+        itemName:record.itemName,
+        itemSystemId:record.itemSystemId
+      });
+      const count = result.data ? result.data.length : 0;
+      setNotice(count === 75 ? "제조공정도를 불러왔습니다." : "제조공정도를 불러왔지만 NO1~NO75 상세행 수가 " + count + "개입니다.", count === 75 ? "success" : "error");
+    }catch(error){
+      console.error(error);
+      setNotice(errorMessage(error,"제조공정도를 불러오지 못했습니다."),"error");
+    }finally{
+      setBusy(false);
+    }
+  }
+
+  function matchingDocuments(){
+    const customerId = customerSelect.value;
+    const itemName = itemNameSelect.value;
+    const itemId = itemNumberSelect.value;
+    return documents.filter(function(row){
+      if(customerId && row.customerSystemId !== customerId) return false;
+      if(itemName && row.itemName !== itemName) return false;
+      if(itemId && row.itemSystemId !== itemId) return false;
+      return true;
+    }).sort(function(a,b){
+      return compareText(a.customerName,b.customerName) || compareText(a.itemName,b.itemName) || compareText(a.itemNumber,b.itemNumber);
     });
   }
 
   function closeSearchResultModal(){
-    var modal = document.getElementById("searchResultModal");
+    const modal = document.getElementById("searchResultModal");
     modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
-  }
-
-  function chooseRecord(record){
-    closeSearchResultModal();
-    if(applyForm(record)){
-      clearToolbarSelections();
-      setNotice("선택한 제조공정도를 불러왔습니다.", "success");
-    }
+    modal.setAttribute("aria-hidden","true");
   }
 
   function openSearchResultModal(records){
-    var modal = document.getElementById("searchResultModal");
-    var body = document.getElementById("searchResultBody");
+    const modal = document.getElementById("searchResultModal");
+    const body = document.getElementById("searchResultBody");
     body.innerHTML = "";
     records.forEach(function(record){
-      var tr = document.createElement("tr");
+      const tr = document.createElement("tr");
       tr.tabIndex = 0;
-      [record.identity.customerName, record.identity.itemName, record.identity.itemNumber].forEach(function(value){
-        var td = document.createElement("td");
+      [record.customerName,record.itemName,record.itemNumber].forEach(function(value){
+        const td = document.createElement("td");
         td.textContent = value || "-";
         tr.appendChild(td);
       });
-      function select(){ chooseRecord(record); }
-      tr.addEventListener("click", select);
-      tr.addEventListener("keydown", function(event){
+      const choose = function(){ closeSearchResultModal(); loadDocument(record); };
+      tr.addEventListener("click",choose);
+      tr.addEventListener("keydown",function(event){
         if(event.key === "Enter" || event.key === " "){
           event.preventDefault();
-          select();
+          choose();
         }
       });
       body.appendChild(tr);
     });
     document.getElementById("searchResultSummary").textContent = "조회 결과 " + records.length + "건입니다. 불러올 제조공정도를 선택해 주세요.";
     modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
+    modal.setAttribute("aria-hidden","false");
   }
 
-  metaFields.forEach(function(cell){
-    cell.addEventListener("input", function(){ syncMetaFrom(cell); });
-    cell.addEventListener("blur", function(){
-      cell.textContent = normalize(cell.innerText);
-      syncMetaFrom(cell);
-    });
-  });
+  function validateSelectedFile(file){
+    if(!ALLOWED_IMAGE_TYPES.includes(file.type)) throw new Error("JPG, PNG, WEBP 사진만 등록할 수 있습니다.");
+    if(file.size > MAX_IMAGE_BYTES) throw new Error("공정 사진은 파일당 5MB 이하만 등록할 수 있습니다.");
+  }
+
+  function safeFileExtension(file){
+    if(file.type === "image/png") return "png";
+    if(file.type === "image/webp") return "webp";
+    return "jpg";
+  }
+
+  function randomToken(){
+    if(window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+    return Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
+  }
+
+  async function uploadPendingPhotos(documentId, values){
+    const uploaded = [];
+    const valueMap = new Map(values.map(function(row){ return [Number(row.field_no),row]; }));
+    const entries = Array.from(pendingPhotoFiles.entries()).sort(function(a,b){ return a[0]-b[0]; });
+    for(const entry of entries){
+      const no = entry[0];
+      const file = entry[1];
+      validateSelectedFile(file);
+      const oldPath = valueMap.get(no) ? valueMap.get(no).image_path : null;
+      const path = currentProfile.company_id + "/" + documentId + "/NO" + String(no).padStart(2,"0") + "/" + Date.now() + "_" + randomToken() + "." + safeFileExtension(file);
+      const uploadResult = await sb.storage.from(IMAGE_BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+      if(uploadResult.error) throw uploadResult.error;
+      valueMap.get(no).image_path = path;
+      uploaded.push({fieldNo:no,newPath:path,oldPath:oldPath});
+    }
+    return uploaded;
+  }
+
+  async function removeStoragePaths(paths){
+    const unique = Array.from(new Set(paths.filter(Boolean)));
+    if(unique.length === 0) return;
+    const result = await sb.storage.from(IMAGE_BUCKET).remove(unique);
+    if(result.error) throw result.error;
+  }
+
+  async function saveNewDocument(){
+    if(!isAdmin()) throw new Error("신규등록은 관리자만 가능합니다.");
+    if(!currentItemSystemId) throw new Error("상단에서 고객사명, 품명, 품번을 순서대로 선택해 주세요.");
+
+    const item = itemMap.get(currentItemSystemId);
+    if(!item || item.is_active !== true) throw new Error("사용 가능한 품목을 선택해 주세요.");
+
+    const values = captureValues();
+    let documentId = "";
+    let uploaded = [];
+    try{
+      const createResult = await sb.rpc("create_manufacturing_process_diagram",{
+        p_item_system_id:currentItemSystemId,
+        p_values:values
+      });
+      if(createResult.error) throw createResult.error;
+      documentId = createResult.data;
+      if(!documentId) throw new Error("제조공정도 내부 ID가 반환되지 않았습니다.");
+
+      uploaded = await uploadPendingPhotos(documentId,values);
+      if(uploaded.length > 0){
+        const updateResult = await sb.rpc("update_manufacturing_process_diagram",{
+          p_manufacturing_process_system_id:documentId,
+          p_values:values
+        });
+        if(updateResult.error) throw updateResult.error;
+      }
+      return documentId;
+    }catch(error){
+      try{ await removeStoragePaths(uploaded.map(function(row){ return row.newPath; })); }catch(cleanupError){ console.error("신규 사진 정리 실패:",cleanupError); }
+      if(documentId){
+        try{ await sb.rpc("delete_manufacturing_process_diagram",{p_manufacturing_process_system_id:documentId}); }catch(cleanupError){ console.error("신규 문서 정리 실패:",cleanupError); }
+      }
+      throw error;
+    }
+  }
+
+  async function saveExistingDocument(){
+    if(!canEdit()) throw new Error("수정 권한이 없습니다.");
+    if(!currentDocumentId) throw new Error("수정할 제조공정도를 먼저 조회해 주세요.");
+
+    const values = captureValues();
+    let uploaded = [];
+    try{
+      uploaded = await uploadPendingPhotos(currentDocumentId,values);
+      const updateResult = await sb.rpc("update_manufacturing_process_diagram",{
+        p_manufacturing_process_system_id:currentDocumentId,
+        p_values:values
+      });
+      if(updateResult.error) throw updateResult.error;
+      const oldPaths = uploaded.map(function(row){ return row.oldPath; }).filter(Boolean);
+      try{ await removeStoragePaths(oldPaths); }catch(removeError){ console.error("교체 전 사진 삭제 실패:",removeError); }
+      return currentDocumentId;
+    }catch(error){
+      try{ await removeStoragePaths(uploaded.map(function(row){ return row.newPath; })); }catch(cleanupError){ console.error("업로드 사진 정리 실패:",cleanupError); }
+      throw error;
+    }
+  }
+
+  async function saveCurrentDocument(){
+    if(!editMode){ setNotice("신규등록 또는 수정 상태에서 저장해 주세요.","error"); return; }
+    setBusy(true,"제조공정도를 저장하는 중입니다.");
+    try{
+      const savedId = currentMode === "new" ? await saveNewDocument() : await saveExistingDocument();
+      clearPendingPhotos();
+      await loadReferenceData();
+      await loadDocumentIndex();
+      const record = documents.find(function(row){ return row.documentId === savedId; });
+      if(!record) throw new Error("저장된 제조공정도를 조회 목록에서 찾지 못했습니다.");
+      await loadDocument(record);
+      setNotice("제조공정도가 Supabase DB에 저장되었습니다.","success");
+    }catch(error){
+      console.error(error);
+      setNotice(errorMessage(error,"제조공정도 저장에 실패했습니다."),"error");
+    }finally{
+      setBusy(false);
+    }
+  }
+
+  async function deleteCurrentDocument(){
+    if(!isAdmin()){ setNotice("삭제는 관리자만 가능합니다.","error"); return; }
+    if(!currentDocumentId){ setNotice("삭제할 제조공정도를 먼저 조회해 주세요.","error"); return; }
+    if(!window.confirm("현재 조회한 제조공정도를 삭제하시겠습니까?")) return;
+
+    setBusy(true,"제조공정도를 삭제하는 중입니다.");
+    try{
+      const valuesResult = await sb.from("manufacturing_process_values")
+        .select("image_path")
+        .eq("company_id",currentProfile.company_id)
+        .eq("manufacturing_process_system_id",currentDocumentId)
+        .not("image_path","is",null);
+      if(valuesResult.error) throw valuesResult.error;
+      await removeStoragePaths((valuesResult.data || []).map(function(row){ return row.image_path; }));
+
+      const deleteResult = await sb.rpc("delete_manufacturing_process_diagram",{
+        p_manufacturing_process_system_id:currentDocumentId
+      });
+      if(deleteResult.error) throw deleteResult.error;
+      if(deleteResult.data !== true) throw new Error("삭제할 제조공정도를 찾지 못했습니다.");
+
+      currentDocumentId = "";
+      currentItemSystemId = "";
+      currentMode = "view";
+      loadedSnapshot = null;
+      clearForm();
+      setEditMode(false);
+      await loadDocumentIndex();
+      rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
+      setNotice("제조공정도가 삭제되었습니다.","success");
+    }catch(error){
+      console.error(error);
+      setNotice(errorMessage(error,"제조공정도 삭제에 실패했습니다."),"error");
+    }finally{
+      setBusy(false);
+    }
+  }
 
   photoFields.forEach(function(cell){
-    var parts = photoElements(cell);
-    function openPicker(){
-      if(editMode && parts.input) parts.input.click();
-    }
-    cell.addEventListener("click", function(event){
-      if(event.target !== parts.input) openPicker();
-    });
-    cell.addEventListener("keydown", function(event){
+    const parts = photoElements(cell);
+    if(parts.input) parts.input.accept = ".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
+    function openPicker(){ if(editMode && parts.input) parts.input.click(); }
+    cell.addEventListener("click",function(event){ if(event.target !== parts.input) openPicker(); });
+    cell.addEventListener("keydown",function(event){
       if(editMode && (event.key === "Enter" || event.key === " ")){
         event.preventDefault();
         openPicker();
       }
     });
     if(parts.input){
-      parts.input.addEventListener("change", function(){
-        var file = parts.input.files && parts.input.files[0];
+      parts.input.addEventListener("change",function(){
+        const file = parts.input.files && parts.input.files[0];
         if(!file) return;
-        if(file.type.indexOf("image/") !== 0){
-          setNotice("이미지 파일만 선택할 수 있습니다.", "error");
+        try{
+          validateSelectedFile(file);
+          const no = fieldNumber(cell);
+          pendingPhotoFiles.set(no,file);
+          const objectUrl = URL.createObjectURL(file);
+          setPhotoDisplay(cell,objectUrl,file.name,cell.dataset.imagePath || "",true);
+          setNotice("NO" + no + " 공정 사진을 선택했습니다. 저장 버튼을 눌러 DB에 저장해 주세요.","success");
+        }catch(error){
           parts.input.value = "";
-          return;
+          setNotice(errorMessage(error,"공정 사진을 선택하지 못했습니다."),"error");
         }
-        var reader = new FileReader();
-        reader.onload = function(){ setPhoto(cell, String(reader.result || ""), file.name); };
-        reader.onerror = function(){ setNotice("공정 사진을 읽지 못했습니다.", "error"); };
-        reader.readAsDataURL(file);
       });
     }
   });
 
-  document.getElementById("btnSearch").addEventListener("click", function(){
-    var filters = toolbarFilters();
-    if(!filters.customerName && !filters.itemName && !filters.itemNumber){
-      setNotice("고객사명, 품명, 품번 중 하나 이상을 선택해 주세요.", "error");
-      return;
-    }
-    var records = matchedRecords();
-    if(records.length === 0) setNotice("선택한 조건에 해당하는 제조공정도가 없습니다.", "error");
-    else if(records.length === 1) chooseRecord(records[0]);
-    else openSearchResultModal(records);
+  textFields.forEach(function(cell){
+    cell.addEventListener("blur",function(){ cell.textContent = normalize(cell.innerText); });
+    cell.addEventListener("paste",function(event){
+      if(!editMode) return;
+      event.preventDefault();
+      const text = (event.clipboardData || window.clipboardData).getData("text");
+      document.execCommand("insertText",false,text);
+    });
   });
 
-  document.getElementById("btnEdit").addEventListener("click", function(){
+  customerSelect.addEventListener("change",function(){
+    rebuildToolbarOptions({customerSystemId:customerSelect.value,itemName:"",itemSystemId:""});
+    applyNewIdentityFromToolbar();
+  });
+  itemNameSelect.addEventListener("change",function(){
+    rebuildToolbarOptions({customerSystemId:customerSelect.value,itemName:itemNameSelect.value,itemSystemId:""});
+    applyNewIdentityFromToolbar();
+  });
+  itemNumberSelect.addEventListener("change",applyNewIdentityFromToolbar);
+
+  document.getElementById("btnSearch").addEventListener("click",function(){
+    if(!customerSelect.value){ setNotice("고객사명을 먼저 선택해 주세요.","error"); return; }
+    const rows = matchingDocuments();
+    if(rows.length === 0) setNotice("선택한 조건에 해당하는 제조공정도가 없습니다.","error");
+    else if(rows.length === 1) loadDocument(rows[0]);
+    else openSearchResultModal(rows);
+  });
+
+  document.getElementById("btnEdit").addEventListener("click",function(){
+    if(currentMode !== "new" && !currentDocumentId){ setNotice("수정할 제조공정도를 먼저 조회해 주세요.","error"); return; }
+    if(!canEdit()){ setNotice("수정 권한이 없습니다.","error"); return; }
     setEditMode(!editMode);
-    setNotice(editMode ? "수정할 항목과 공정 사진을 입력해 주세요." : "수정 입력을 종료했습니다.");
+    setNotice(editMode ? "수정할 문자와 공정 사진을 입력해 주세요." : "수정 입력을 종료했습니다.");
   });
 
-  document.getElementById("btnSave").addEventListener("click", function(){
-    var identity = getIdentityFromForm();
-    if(!identity.customerName || !identity.itemName || !identity.itemNumber){
-      setNotice("고객사명·품명·품번을 모두 입력해 주세요.", "error");
-      return;
-    }
+  document.getElementById("btnSave").addEventListener("click",saveCurrentDocument);
 
-    var newKey = makeStorageKey(identity);
-    var duplicateExists = Boolean(localStorage.getItem(newKey));
-    if(!currentStorageKey && duplicateExists){
-      setNotice("동일한 고객사·품명·품번의 제조공정도가 이미 존재합니다. 기존 제조공정도를 조회하여 수정해 주세요.", "error");
-      return;
-    }
-    if(currentStorageKey && currentStorageKey !== newKey && duplicateExists){
-      setNotice("변경한 고객사·품명·품번 조합의 제조공정도가 이미 존재합니다. 중복 등록할 수 없습니다.", "error");
-      return;
-    }
-
-    var record = captureForm();
-    try{
-      localStorage.setItem(newKey, JSON.stringify(record));
-      writeIndex(newKey);
-      if(currentStorageKey && currentStorageKey !== newKey){
-        localStorage.removeItem(currentStorageKey);
-        removeFromIndex(currentStorageKey);
-      }
-    }catch(error){
-      setNotice("사진 용량 때문에 브라우저 임시 저장에 실패했습니다. 입력폼 확정 후 Supabase Storage 연결이 필요합니다.", "error");
-      return;
-    }
-    currentStorageKey = newKey;
-    loadedSnapshot = cloneData(record);
-    setEditMode(false);
-    rebuildToolbarOptions();
-    setNotice("입력폼 테스트 데이터가 저장되었습니다.", "success");
-  });
-
-  document.getElementById("btnNew").addEventListener("click", function(){
-    currentStorageKey = "";
+  document.getElementById("btnNew").addEventListener("click",function(){
+    if(!isAdmin()){ setNotice("신규등록은 관리자만 가능합니다.","error"); return; }
+    currentMode = "new";
+    currentDocumentId = "";
+    currentItemSystemId = "";
+    loadedSnapshot = null;
     clearForm();
-    loadedSnapshot = cloneData(captureForm());
-    clearToolbarSelections();
+    rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
     setEditMode(true);
-    setNotice("신규등록 상태입니다. 고객사명·품명·품번과 NO1~NO75 내용을 입력해 주세요.", "success");
+    setNotice("신규등록 상태입니다. 고객사명, 품명, 품번을 순서대로 선택한 후 NO1~NO75를 입력해 주세요.","success");
   });
 
-  document.getElementById("btnReset").addEventListener("click", function(){
-    if(loadedSnapshot) applyForm(cloneData(loadedSnapshot));
-    else clearForm();
-    clearToolbarSelections();
-    setEditMode(false);
-    setNotice("마지막으로 불러오거나 저장한 상태로 초기화했습니다.");
+  document.getElementById("btnReset").addEventListener("click",async function(){
+    try{
+      if(loadedSnapshot && currentDocumentId){
+        await applySnapshot(cloneData(loadedSnapshot));
+        currentMode = "view";
+        setEditMode(false);
+        const record = documents.find(function(row){ return row.documentId === currentDocumentId; });
+        if(record) rebuildToolbarOptions({customerSystemId:record.customerSystemId,itemName:record.itemName,itemSystemId:record.itemSystemId});
+        setNotice("마지막으로 조회하거나 저장한 상태로 초기화했습니다.");
+      }else{
+        currentMode = "view";
+        currentDocumentId = "";
+        currentItemSystemId = "";
+        loadedSnapshot = null;
+        clearForm();
+        setEditMode(false);
+        rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
+        setNotice("입력폼을 초기화했습니다.");
+      }
+    }catch(error){ setNotice(errorMessage(error,"초기화에 실패했습니다."),"error"); }
   });
 
-  document.getElementById("btnDelete").addEventListener("click", function(){
-    if(!currentStorageKey || !localStorage.getItem(currentStorageKey)){
-      setNotice("삭제할 제조공정도를 먼저 조회해 주세요.", "error");
-      return;
+  document.getElementById("btnDelete").addEventListener("click",deleteCurrentDocument);
+  document.getElementById("btnPdf").addEventListener("click",function(){
+    if(!canPdf()){ setNotice("조회자는 PDF 저장을 사용할 수 없습니다.","error"); return; }
+    window.print();
+  });
+  document.getElementById("btnCloseSearchResult").addEventListener("click",closeSearchResultModal);
+  document.getElementById("searchResultModal").addEventListener("click",function(event){ if(event.target === event.currentTarget) closeSearchResultModal(); });
+  document.addEventListener("keydown",function(event){ if(event.key === "Escape") closeSearchResultModal(); });
+
+  async function initialize(){
+    setBusy(true,"로그인 및 제조공정도 DB 연결을 확인하는 중입니다.");
+    try{
+      const verified = await verifySession();
+      if(!verified) return;
+      await loadReferenceData();
+      await loadDocumentIndex();
+      currentMode = "view";
+      clearForm();
+      setEditMode(false);
+      rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
+
+      const mappedNumbers = textFields.concat(photoFields).map(fieldNumber).sort(function(a,b){ return a-b; });
+      const expectedNumbers = Array.from({length:75},function(_,index){ return index + 1; });
+      const mappedPhotos = photoFields.map(fieldNumber).sort(function(a,b){ return a-b; });
+      if(JSON.stringify(mappedNumbers) !== JSON.stringify(expectedNumbers) || JSON.stringify(mappedPhotos) !== JSON.stringify(PHOTO_FIELD_NUMBERS)){
+        throw new Error("NO1~NO75 또는 사진 15개 입력 매핑이 올바르지 않습니다.");
+      }
+      document.documentElement.classList.remove("auth-pending");
+      setNotice("Supabase DB 연결이 완료되었습니다. 조회 가능한 제조공정도 " + documents.length + "건입니다.","success");
+    }catch(error){
+      console.error(error);
+      document.documentElement.classList.remove("auth-pending");
+      setNotice(errorMessage(error,"Supabase DB 연결에 실패했습니다. SQL 설치 상태를 확인해 주세요."),"error",true);
+    }finally{
+      setBusy(false);
     }
-    if(!window.confirm("현재 조회한 제조공정도를 삭제하시겠습니까?")) return;
-    localStorage.removeItem(currentStorageKey);
-    removeFromIndex(currentStorageKey);
-    currentStorageKey = "";
-    clearForm();
-    loadedSnapshot = cloneData(captureForm());
-    clearToolbarSelections();
-    setEditMode(false);
-    setNotice("제조공정도가 삭제되었습니다.", "success");
-  });
-
-  document.getElementById("btnPdf").addEventListener("click", function(){ window.print(); });
-  document.getElementById("btnCloseSearchResult").addEventListener("click", closeSearchResultModal);
-  document.getElementById("searchResultModal").addEventListener("click", function(event){
-    if(event.target === event.currentTarget) closeSearchResultModal();
-  });
-  document.addEventListener("keydown", function(event){ if(event.key === "Escape") closeSearchResultModal(); });
-  ["toolbarCustomerSelect","toolbarItemNameSelect","toolbarItemNumberSelect"].forEach(function(id){
-    document.getElementById(id).addEventListener("change", rebuildToolbarOptions);
-  });
-
-  // Structural verification for the fixed SQL mapping.
-  var mappedNumbers = textFields.concat(photoFields).map(function(cell){ return Number(cell.getAttribute("data-field-no")); }).sort(function(a,b){ return a-b; });
-  var expectedNumbers = Array.from({length:75}, function(_,index){ return index + 1; });
-  var mappedPhotos = photoFields.map(function(cell){ return Number(cell.getAttribute("data-field-no")); }).sort(function(a,b){ return a-b; });
-  if(JSON.stringify(mappedNumbers) !== JSON.stringify(expectedNumbers) || JSON.stringify(mappedPhotos) !== JSON.stringify(PHOTO_FIELD_NUMBERS)){
-    setNotice("NO1~NO75 입력 매핑을 확인해 주세요.", "error");
   }
 
-  clearForm();
-  loadedSnapshot = cloneData(captureForm());
-  setEditMode(false);
-  rebuildToolbarOptions();
+  initialize();
 })();
-</script></body>
+</script>
+</body>
 </html>
