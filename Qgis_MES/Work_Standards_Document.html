@@ -429,7 +429,6 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
 
 @media(max-width:900px){
   .toolbar-query-group{grid-template-columns:repeat(2,minmax(120px,1fr));flex-basis:100%;}
-  .toolbar-select-button{grid-column:1/-1;justify-self:start;}
   .status-line{top:12px;right:12px;}
 }
 @media(max-width:520px){
@@ -738,7 +737,6 @@ body.pdf-capture-mode .image-select-button{display:none!important;}
 @media(max-width:600px){
   .toolbar-cascade-group{display:grid!important;grid-template-columns:1fr 1fr;}
   .toolbar-cascade-step{width:100%;min-width:0;}
-  .toolbar-select-button{grid-column:1/-1;justify-self:start;}
 }
 @media print{
   .value-highlight-mark{background:rgba(255,244,158,.72)!important;}
@@ -785,7 +783,7 @@ body.pdf-capture-mode .value-highlight-mark{
 <label class="toolbar-cascade-step" id="toolbarItemNameStep"><span>품명</span><select aria-label="품명 선택" id="toolbarItemNameSelect" disabled><option value="">품명 선택</option></select></label>
 <label class="toolbar-cascade-step" id="toolbarItemNumberStep"><span>품번</span><select aria-label="품번 선택" id="toolbarItemNumberSelect" disabled><option value="">품번 선택</option></select></label>
 <label class="toolbar-cascade-step" id="toolbarManagementStep"><span>관리번호</span><select aria-label="관리번호 선택" id="toolbarManagementSelect" disabled><option value="">관리번호 선택</option></select></label>
-<button class="primary toolbar-select-button" id="btnSelectItem" type="button">품목 선택</button>
+
 </div>
 <div class="group">
 <button id="btnSearch" type="button">조회</button>
@@ -804,19 +802,6 @@ body.pdf-capture-mode .value-highlight-mark{
 <div class="img-overlay"></div>
 </div>
 <input id="work_standard_system_id" name="work_standard_system_id" type="hidden"/><input id="item_system_id" name="item_system_id" type="hidden"/><input id="company_id" name="company_id" type="hidden"/><input id="image_1_storage_path" name="image_1_storage_path" type="hidden"/><input id="image_2_storage_path" name="image_2_storage_path" type="hidden"/></div>
-<div aria-hidden="true" class="modal-backdrop" id="itemModal">
-<div aria-labelledby="itemModalTitle" aria-modal="true" class="modal cascade-modal" role="dialog">
-<h2 id="itemModalTitle" tabindex="-1">품목 선택</h2>
-<div class="modal-cascade-grid" aria-label="품목 연동 선택">
-<label class="modal-cascade-step"><span>고객사명</span><select id="modalCustomerSelect" aria-label="팝업 고객사명 선택"><option value="">고객사명 선택</option></select></label>
-<label class="modal-cascade-step"><span>품명</span><select id="modalItemNameSelect" aria-label="팝업 품명 선택" disabled><option value="">품명 선택</option></select></label>
-<label class="modal-cascade-step"><span>품번</span><select id="modalItemNumberSelect" aria-label="팝업 품번 선택" disabled><option value="">품번 선택</option></select></label>
-<label class="modal-cascade-step"><span>관리번호</span><select id="modalManagementSelect" aria-label="팝업 관리번호 선택" disabled><option value="">관리번호 선택</option></select></label>
-</div>
-<div class="cascade-selection-summary" id="itemModalSummary" hidden></div>
-<div class="modal-actions"><button class="primary" id="btnConfirmItemSelection" type="button" disabled>선택</button><button id="btnCloseItemModal" type="button">닫기</button></div>
-</div>
-</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -846,7 +831,6 @@ body.pdf-capture-mode .value-highlight-mark{
   const $ = id => document.getElementById(id);
   const formRoot = $("workStandardForm");
   const statusLine = $("statusLine");
-  const itemModal = $("itemModal");
   const employeeMap = new Map();
   const itemMap = new Map();
   const documentByItem = new Map();
@@ -855,11 +839,9 @@ body.pdf-capture-mode .value-highlight-mark{
 
   let noticeTimer = null;
   let toolbarSelectedItemId = "";
-  let modalSelectedItemId = "";
 
   let currentProfile = null;
   let currentMode = "view";
-  let modalMode = "select";
   let selectedWorkStandardId = "";
   let sourceDefaultSystemId = "";
   let defaultSnapshot = null;
@@ -1092,7 +1074,6 @@ body.pdf-capture-mode .value-highlight-mark{
       if (control.readOnly) return;
       control.disabled = !editable;
     });
-    $("btnSelectItem").disabled = mode !== "new";
     $("btnEdit").disabled = !selectedWorkStandardId || !hasWritePermission();
     $("btnSave").disabled = !editable || !hasWritePermission();
     $("btnDelete").disabled = !selectedWorkStandardId || !isAdmin();
@@ -1227,23 +1208,64 @@ body.pdf-capture-mode .value-highlight-mark{
     setNotice("신규 작업표준서입니다. 품목과 설비를 선택한 후 옅은 노란색 칸을 입력해 주세요.");
   }
 
-  function selectItem(row, loadExisting = false) {
-    if (!loadExisting && documentByItem.has(row.item_system_id)) {
-      closeItemModal();
-      void loadDocumentByItem(row.item_system_id);
-      setNotice("이미 저장된 작업표준서입니다. 조회 후 수정 버튼을 사용해 주세요.", "error");
-      return;
+  function applyItemIdentity(row) {
+    if (!row?.item_system_id) {
+      setNotice("선택한 품목 정보를 찾을 수 없습니다.", "error");
+      return false;
     }
     setValue("item_system_id", row.item_system_id);
     setValue("customer_name", row.customer_name || "");
     setValue("item_name", row.item_name || "");
     setValue("item_number", row.item_number || "");
     setValue("work_standard_number", row.work_standard_number || "");
-    closeItemModal();
-    if (loadExisting) {
-      void loadDocumentByItem(row.item_system_id);
+    updateAllValueHighlights();
+    return true;
+  }
+
+  function selectedToolbarItem() {
+    if (!toolbarSelectedItemId) return null;
+    return itemMap.get(toolbarSelectedItemId) ||
+      referenceItems.find(row => row.item_system_id === toolbarSelectedItemId) || null;
+  }
+
+  function applyToolbarItemToNewForm(showSuccess = true) {
+    if (currentMode !== "new") return false;
+    const row = selectedToolbarItem();
+    if (!row) return false;
+    if (documentByItem.has(row.item_system_id)) {
+      setNotice("이미 작업표준서가 등록된 품목입니다. 조회 후 수정 버튼을 사용해 주세요.", "error");
+      return false;
+    }
+    if (!normalize(row.work_standard_number)) {
+      setNotice("선택한 품목에 작업표준서 관리번호가 없습니다. 아이템관리를 확인해 주세요.", "error");
+      return false;
+    }
+    if (!applyItemIdentity(row)) return false;
+    loadedSnapshot = captureFormState();
+    if (showSuccess) {
+      setNotice("선택한 고객사·품명·품번·관리번호를 양식에 반영했습니다.", "success");
+    }
+    return true;
+  }
+
+  function startNewRegistration() {
+    if (!hasWritePermission()) {
+      setNotice("신규등록 권한이 없습니다.", "error");
+      return;
+    }
+    const row = selectedToolbarItem();
+    if (row && documentByItem.has(row.item_system_id)) {
+      setNotice("이미 작업표준서가 등록된 품목입니다. 조회 후 수정 버튼을 사용해 주세요.", "error");
+      return;
+    }
+    applyDefaultSnapshot();
+    if (row) {
+      applyToolbarItemToNewForm(false);
+      if (normalize(value("item_system_id"))) {
+        setNotice("신규 작업표준서 양식에 선택한 품목을 반영했습니다.", "success");
+      }
     } else {
-      setNotice("고객사·품명·품번·관리번호를 불러왔습니다.", "success");
+      setNotice("신규 작업표준서입니다. 상단에서 고객사명 → 품명 → 품번 → 관리번호를 선택해 주세요.");
     }
   }
 
@@ -1370,6 +1392,9 @@ body.pdf-capture-mode .value-highlight-mark{
 
   function toolbarManagementChanged() {
     toolbarSelectedItemId = $("toolbarManagementSelect")?.value || "";
+    if (toolbarSelectedItemId && currentMode === "new") {
+      applyToolbarItemToNewForm(true);
+    }
   }
 
   function querySelectedWorkStandard() {
@@ -1380,120 +1405,10 @@ body.pdf-capture-mode .value-highlight-mark{
     if (!itemName) return setNotice("품명을 선택해 주세요.", "error");
     if (!itemNumber) return setNotice("품번을 선택해 주세요.", "error");
     if (!toolbarSelectedItemId) return setNotice("관리번호를 선택해 주세요.", "error");
+    if (!documentByItem.has(toolbarSelectedItemId)) {
+      return setNotice("선택한 품목에는 저장된 작업표준서가 없습니다. 신규등록 버튼을 사용해 주세요.", "error");
+    }
     void loadDocumentByItem(toolbarSelectedItemId);
-  }
-
-  function modalSourceItems() {
-    return modalMode === "query" ? savedReferenceItems() : referenceItems;
-  }
-
-  function updateModalSummary() {
-    const source = modalSourceItems();
-    const customerId = $("modalCustomerSelect")?.value || "";
-    const itemName = $("modalItemNameSelect")?.value || "";
-    const itemNumber = $("modalItemNumberSelect")?.value || "";
-    const selected = source.find(row => row.item_system_id === modalSelectedItemId);
-    const customer = source.find(row => row.customer_system_id === customerId);
-    const parts = [
-      customer?.customer_name || customer?.company_number || "",
-      itemName,
-      itemNumber,
-      selected?.work_standard_number || ""
-    ].filter(Boolean);
-    const summary = $("itemModalSummary");
-    summary.hidden = parts.length === 0;
-    summary.textContent = parts.join("  ›  ");
-  }
-
-  function initializeModalCascade() {
-    modalSelectedItemId = "";
-    const source = modalSourceItems();
-    fillSelect("modalCustomerSelect", "고객사명 선택", customerOptions(source));
-    fillSelect("modalItemNameSelect", "품명 선택", []);
-    fillSelect("modalItemNumberSelect", "품번 선택", []);
-    fillSelect("modalManagementSelect", "관리번호 선택", []);
-    setSelectEnabled("modalCustomerSelect", true);
-    setSelectEnabled("modalItemNameSelect", false);
-    setSelectEnabled("modalItemNumberSelect", false);
-    setSelectEnabled("modalManagementSelect", false);
-    $("btnConfirmItemSelection").disabled = true;
-    updateModalSummary();
-  }
-
-  function modalCustomerChanged() {
-    modalSelectedItemId = "";
-    const source = modalSourceItems();
-    const customerId = $("modalCustomerSelect")?.value || "";
-    fillSelect("modalItemNameSelect", "품명 선택", []);
-    fillSelect("modalItemNumberSelect", "품번 선택", []);
-    fillSelect("modalManagementSelect", "관리번호 선택", []);
-    setSelectEnabled("modalItemNameSelect", Boolean(customerId));
-    setSelectEnabled("modalItemNumberSelect", false);
-    setSelectEnabled("modalManagementSelect", false);
-    $("btnConfirmItemSelection").disabled = true;
-    if (customerId) {
-      fillSelect("modalItemNameSelect", "품명 선택", itemNameOptions(source, customerId));
-    }
-    updateModalSummary();
-  }
-
-  function modalItemNameChanged() {
-    modalSelectedItemId = "";
-    const source = modalSourceItems();
-    const customerId = $("modalCustomerSelect")?.value || "";
-    const itemName = $("modalItemNameSelect")?.value || "";
-    fillSelect("modalItemNumberSelect", "품번 선택", []);
-    fillSelect("modalManagementSelect", "관리번호 선택", []);
-    setSelectEnabled("modalItemNumberSelect", Boolean(customerId && itemName));
-    setSelectEnabled("modalManagementSelect", false);
-    $("btnConfirmItemSelection").disabled = true;
-    if (customerId && itemName) {
-      fillSelect("modalItemNumberSelect", "품번 선택", itemNumberOptions(source, customerId, itemName));
-    }
-    updateModalSummary();
-  }
-
-  function modalItemNumberChanged() {
-    modalSelectedItemId = "";
-    const source = modalSourceItems();
-    const customerId = $("modalCustomerSelect")?.value || "";
-    const itemName = $("modalItemNameSelect")?.value || "";
-    const itemNumber = $("modalItemNumberSelect")?.value || "";
-    fillSelect("modalManagementSelect", "관리번호 선택", []);
-    setSelectEnabled("modalManagementSelect", Boolean(customerId && itemName && itemNumber));
-    $("btnConfirmItemSelection").disabled = true;
-    if (customerId && itemName && itemNumber) {
-      fillSelect("modalManagementSelect", "관리번호 선택",
-        managementOptions(source, customerId, itemName, itemNumber));
-    }
-    updateModalSummary();
-  }
-
-  function modalManagementChanged() {
-    modalSelectedItemId = $("modalManagementSelect")?.value || "";
-    $("btnConfirmItemSelection").disabled = !modalSelectedItemId;
-    updateModalSummary();
-  }
-
-  function confirmModalItemSelection() {
-    if (!modalSelectedItemId) return;
-    const row = modalSourceItems().find(item => item.item_system_id === modalSelectedItemId);
-    if (!row) return setNotice("선택한 품목을 찾을 수 없습니다.", "error");
-    selectItem(row, modalMode === "query");
-  }
-
-  function openItemModal(mode) {
-    modalMode = mode;
-    $("itemModalTitle").textContent = mode === "query" ? "저장된 작업표준서 조회" : "품목 선택";
-    $("btnConfirmItemSelection").textContent = mode === "query" ? "조회" : "선택";
-    initializeModalCascade();
-    itemModal.classList.add("open");
-    itemModal.setAttribute("aria-hidden", "false");
-    window.setTimeout(() => $("itemModalTitle")?.focus?.(), 0);
-  }
-  function closeItemModal() {
-    itemModal.classList.remove("open");
-    itemModal.setAttribute("aria-hidden", "true");
   }
 
   function updateEquipmentNumber() {
@@ -1702,10 +1617,8 @@ body.pdf-capture-mode .value-highlight-mark{
         .maybeSingle();
       if (documentError) throw documentError;
       if (!documentRow) {
-        const item = itemMap.get(itemSystemId);
         applyDefaultSnapshot();
-        if (item) selectItem(item, false);
-        setNotice("저장된 작업표준서가 없습니다. 신규등록으로 작성해 주세요.");
+        setNotice("저장된 작업표준서가 없습니다. 신규등록 버튼을 사용해 주세요.", "error");
         return;
       }
 
@@ -2043,42 +1956,19 @@ body.pdf-capture-mode .value-highlight-mark{
 
 
   function attachEvents() {
-    const openItemSelectorFromAutoField = () => openItemModal("select");
     ["work_standard_number","customer_name","item_name","item_number"].forEach(id => {
       const input = $(id);
       if (!input) return;
-      input.title = "클릭하면 품목 선택창이 열립니다.";
-      input.setAttribute("role", "button");
-      input.setAttribute("aria-haspopup", "dialog");
-      input.addEventListener("click", event => {
-        event.preventDefault();
-        openItemSelectorFromAutoField();
-      });
-      input.addEventListener("keydown", event => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        openItemSelectorFromAutoField();
-      });
-      const cell = input.closest(".readonly-field");
-      cell?.addEventListener("click", event => {
-        if (event.target === input) return;
-        openItemSelectorFromAutoField();
-      });
+      input.title = "상단의 고객사명 → 품명 → 품번 → 관리번호 선택값이 자동 반영됩니다.";
+      input.removeAttribute("role");
+      input.removeAttribute("aria-haspopup");
     });
 
-    $("btnSelectItem").addEventListener("click",() => openItemModal("select"));
     $("btnSearch").addEventListener("click",querySelectedWorkStandard);
-    $("btnCloseItemModal").addEventListener("click",closeItemModal);
-    $("btnConfirmItemSelection").addEventListener("click",confirmModalItemSelection);
-    itemModal.addEventListener("click",event => { if (event.target === itemModal) closeItemModal(); });
     $("toolbarCustomerSelect").addEventListener("change",toolbarCustomerChanged);
     $("toolbarItemNameSelect").addEventListener("change",toolbarItemNameChanged);
     $("toolbarItemNumberSelect").addEventListener("change",toolbarItemNumberChanged);
     $("toolbarManagementSelect").addEventListener("change",toolbarManagementChanged);
-    $("modalCustomerSelect").addEventListener("change",modalCustomerChanged);
-    $("modalItemNameSelect").addEventListener("change",modalItemNameChanged);
-    $("modalItemNumberSelect").addEventListener("change",modalItemNumberChanged);
-    $("modalManagementSelect").addEventListener("change",modalManagementChanged);
     $("equipment_system_id").addEventListener("change",updateEquipmentNumber);
 
     formRoot.querySelectorAll("input,select,textarea").forEach(control => {
@@ -2119,7 +2009,7 @@ body.pdf-capture-mode .value-highlight-mark{
       input.addEventListener("change",() => previewImage(slot));
     });
 
-    $("btnNew").addEventListener("click",applyDefaultSnapshot);
+    $("btnNew").addEventListener("click",startNewRegistration);
     $("btnEdit").addEventListener("click",() => {
       if (!selectedWorkStandardId) return setNotice("수정할 작업표준서를 먼저 조회해 주세요.","error");
       if (!hasWritePermission()) return setNotice("수정 권한이 없습니다.","error");
