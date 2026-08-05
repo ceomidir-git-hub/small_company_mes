@@ -1320,12 +1320,16 @@ body.pdf-capture-mode .form-identity-select{
       .map(row => row.item_number));
   }
 
-  function managementOptions(source, customerId, itemName, itemNumber) {
+  function matchingIdentityItems(source, customerId, itemName, itemNumber) {
     return source.filter(row =>
       row.customer_system_id === customerId &&
-      normalize(row.item_name) === itemName &&
-      normalize(row.item_number) === itemNumber
-    ).sort((a,b) => compareText(a.work_standard_number,b.work_standard_number))
+      normalize(row.item_name) === normalize(itemName) &&
+      normalize(row.item_number) === normalize(itemNumber)
+    ).sort((a,b) => compareText(a.work_standard_number,b.work_standard_number));
+  }
+
+  function managementOptions(source, customerId, itemName, itemNumber) {
+    return matchingIdentityItems(source, customerId, itemName, itemNumber)
       .map(row => ({
         value: row.item_system_id,
         label: row.work_standard_number || "관리번호 없음"
@@ -1408,48 +1412,78 @@ body.pdf-capture-mode .form-identity-select{
     updateAllValueHighlights();
   }
 
+  function commitFormIdentitySelection(row, { automatic = false, silent = false } = {}) {
+    clearCanonicalItemIdentity();
+    if (!row?.item_system_id) {
+      $("formManagementSelect").value = "";
+      if (!silent) setNotice("선택한 품목 정보를 찾을 수 없습니다.", "error");
+      updateAllValueHighlights();
+      return false;
+    }
+    if (!normalize(row.work_standard_number)) {
+      $("formManagementSelect").value = "";
+      if (!silent) setNotice("선택한 품목에 작업표준서 관리번호가 없습니다. 아이템관리를 확인해 주세요.", "error");
+      updateAllValueHighlights();
+      return false;
+    }
+    if (currentMode === "new" && documentByItem.has(row.item_system_id)) {
+      $("formManagementSelect").value = "";
+      if (!silent) setNotice("이미 작업표준서가 등록된 품목입니다. 상단 조회 후 수정 버튼을 사용해 주세요.", "error");
+      updateAllValueHighlights();
+      return false;
+    }
+    syncFormIdentityFromItem(row);
+    loadedSnapshot = captureFormState();
+    if (!silent) {
+      setNotice(
+        automatic
+          ? `관리번호 ${row.work_standard_number}을(를) 자동으로 반영했습니다. 나머지 내용을 입력한 후 저장해 주세요.`
+          : "신규등록할 품목을 양식에 반영했습니다. 나머지 내용을 입력한 후 저장해 주세요.",
+        "success"
+      );
+    }
+    return true;
+  }
+
   function formItemNumberChanged() {
     clearCanonicalItemIdentity();
     const customerId = $("formCustomerSelect")?.value || "";
     const itemName = $("formItemNameSelect")?.value || "";
     const itemNumber = $("formItemNumberSelect")?.value || "";
+    const matches = customerId && itemName && itemNumber
+      ? matchingIdentityItems(referenceItems, customerId, itemName, itemNumber)
+      : [];
+
     fillSelect("formManagementSelect", "관리번호 선택",
-      customerId && itemName && itemNumber
-        ? managementOptions(referenceItems, customerId, itemName, itemNumber)
-        : []);
+      matches.map(row => ({
+        value: row.item_system_id,
+        label: row.work_standard_number || "관리번호 없음"
+      })));
     updateFormIdentityEnabledState();
+
+    if (matches.length === 1) {
+      $("formManagementSelect").value = matches[0].item_system_id;
+      commitFormIdentitySelection(matches[0], { automatic: true });
+      return;
+    }
+
+    if (customerId && itemName && itemNumber && matches.length === 0) {
+      setNotice("선택한 고객사·품명·품번에 연결된 관리번호가 없습니다. 아이템관리를 확인해 주세요.", "error");
+    } else if (matches.length > 1) {
+      setNotice("같은 고객사·품명·품번에 관리번호가 여러 개입니다. 관리번호를 선택해 주세요.");
+    }
     updateAllValueHighlights();
   }
 
   function formManagementChanged() {
-    clearCanonicalItemIdentity();
     const itemId = $("formManagementSelect")?.value || "";
     if (!itemId) {
+      clearCanonicalItemIdentity();
       updateAllValueHighlights();
       return;
     }
     const row = itemMap.get(itemId) || referenceItems.find(item => item.item_system_id === itemId);
-    if (!row) {
-      $("formManagementSelect").value = "";
-      setNotice("선택한 품목 정보를 찾을 수 없습니다.", "error");
-      updateAllValueHighlights();
-      return;
-    }
-    if (!normalize(row.work_standard_number)) {
-      $("formManagementSelect").value = "";
-      setNotice("선택한 품목에 작업표준서 관리번호가 없습니다. 아이템관리를 확인해 주세요.", "error");
-      updateAllValueHighlights();
-      return;
-    }
-    if (documentByItem.has(row.item_system_id)) {
-      $("formManagementSelect").value = "";
-      setNotice("이미 작업표준서가 등록된 품목입니다. 상단 조회 후 수정 버튼을 사용해 주세요.", "error");
-      updateAllValueHighlights();
-      return;
-    }
-    syncFormIdentityFromItem(row);
-    loadedSnapshot = captureFormState();
-    setNotice("신규등록할 품목을 양식에 반영했습니다. 나머지 내용을 입력한 후 저장해 주세요.", "success");
+    commitFormIdentitySelection(row);
   }
 
 
@@ -1657,9 +1691,43 @@ body.pdf-capture-mode .form-identity-select{
     });
   }
 
+  function resolveFormIdentityForSave() {
+    const currentItemId = normalize(value("item_system_id"));
+    if (currentItemId) {
+      const currentRow = itemMap.get(currentItemId) || referenceItems.find(row => row.item_system_id === currentItemId);
+      if (currentRow) return currentRow;
+    }
+
+    const customerId = $("formCustomerSelect")?.value || "";
+    const itemName = $("formItemNameSelect")?.value || "";
+    const itemNumber = $("formItemNumberSelect")?.value || "";
+    const managementItemId = $("formManagementSelect")?.value || "";
+
+    let row = managementItemId
+      ? (itemMap.get(managementItemId) || referenceItems.find(item => item.item_system_id === managementItemId))
+      : null;
+
+    if (!row && customerId && itemName && itemNumber) {
+      const matches = matchingIdentityItems(referenceItems, customerId, itemName, itemNumber);
+      if (matches.length === 1) {
+        row = matches[0];
+        $("formManagementSelect").value = row.item_system_id;
+      } else if (matches.length > 1) {
+        throw new Error("관리번호를 선택해 주세요.");
+      }
+    }
+
+    if (!row) throw new Error("고객사·품명·품번을 순서대로 선택해 주세요.");
+    if (!commitFormIdentitySelection(row, { automatic: true, silent: true })) {
+      throw new Error("선택한 품목을 저장 대상으로 확정할 수 없습니다.");
+    }
+    return row;
+  }
+
   function validateBeforeSave() {
     if (!hasWritePermission()) throw new Error("저장 권한이 없습니다.");
     if (!["new","edit"].includes(currentMode)) throw new Error("신규등록 또는 수정 버튼을 먼저 눌러 주세요.");
+    if (currentMode === "new") resolveFormIdentityForSave();
     if (!normalize(value("item_system_id"))) throw new Error("품목을 선택해 주세요.");
     if (!normalize(value("work_standard_number"))) throw new Error("선택한 품목에 작업표준서 관리번호가 없습니다. 아이템관리를 확인해 주세요.");
     if (!normalize(value("equipment_system_id"))) throw new Error("설비명을 선택해 주세요.");
