@@ -1198,28 +1198,29 @@
       sb.from("customers")
         .select("customer_system_id,company_number,customer_name,is_active")
         .eq("company_id",companyId)
-        .eq("is_active",true)
         .order("company_number",{ascending:true}),
       sb.from("items")
         .select("item_system_id,customer_system_id,item_name,item_number,is_active")
         .eq("company_id",companyId)
-        .eq("is_active",true)
         .order("item_name",{ascending:true})
         .order("item_number",{ascending:true})
     ]);
     if(results[0].error) throw new Error("고객사 DB 조회 실패: " + errorMessage(results[0].error,"customers 조회 오류"));
     if(results[1].error) throw new Error("품목 DB 조회 실패: " + errorMessage(results[1].error,"items 조회 오류"));
 
-    customers = results[0].data || [];
-    items = results[1].data || [];
+    /* 기존 DATA 중 is_active가 NULL인 행도 사용 가능하도록 하고,
+       명확하게 false인 행만 제외한다. */
+    customers = (results[0].data || []).filter(function(row){
+      return row && row.customer_system_id && normalize(row.customer_name) && row.is_active !== false;
+    });
+    items = (results[1].data || []).filter(function(row){
+      return row && row.item_system_id && row.customer_system_id && normalize(row.item_name) && normalize(row.item_number) && row.is_active !== false;
+    });
+
     customerMap.clear();
     itemMap.clear();
-    customers.forEach(function(row){
-      if(row.customer_system_id) customerMap.set(row.customer_system_id,row);
-    });
-    items.forEach(function(row){
-      if(row.item_system_id) itemMap.set(row.item_system_id,row);
-    });
+    customers.forEach(function(row){ customerMap.set(row.customer_system_id,row); });
+    items.forEach(function(row){ itemMap.set(row.item_system_id,row); });
   }
 
   async function loadDocumentIndex(){
@@ -1393,7 +1394,7 @@
     if(!currentItemSystemId) throw new Error("상단에서 고객사명, 품명, 품번을 순서대로 선택해 주세요.");
 
     const item = itemMap.get(currentItemSystemId);
-    if(!item || item.is_active !== true) throw new Error("사용 가능한 품목을 선택해 주세요.");
+    if(!item || item.is_active === false) throw new Error("사용 가능한 품목을 선택해 주세요.");
 
     const values = captureValues();
     let documentId = "";
@@ -1546,14 +1547,57 @@
   });
 
   customerSelect.addEventListener("change",function(){
+    currentItemSystemId = "";
     rebuildToolbarOptions({customerSystemId:customerSelect.value,itemName:"",itemSystemId:""});
     applyNewIdentityFromToolbar();
+
+    if(currentMode === "new"){
+      if(!customerSelect.value){
+        setNotice("고객사명을 선택해 주세요.","error");
+        return;
+      }
+      if(itemNameSelect.options.length <= 1){
+        setNotice("선택한 고객사에 등록된 품명이 없습니다. 아이템관리를 확인해 주세요.","error",true);
+        return;
+      }
+      setNotice("고객사를 선택했습니다. 다음으로 품명을 선택해 주세요.","success");
+      window.setTimeout(function(){ itemNameSelect.focus(); },0);
+    }
   });
+
   itemNameSelect.addEventListener("change",function(){
+    currentItemSystemId = "";
     rebuildToolbarOptions({customerSystemId:customerSelect.value,itemName:itemNameSelect.value,itemSystemId:""});
     applyNewIdentityFromToolbar();
+
+    if(currentMode === "new"){
+      if(!itemNameSelect.value){
+        setNotice("품명을 선택해 주세요.","error");
+        return;
+      }
+      if(itemNumberSelect.options.length <= 1){
+        setNotice("선택한 고객사·품명에 등록된 품번이 없습니다. 아이템관리를 확인해 주세요.","error",true);
+        return;
+      }
+      setNotice("품명을 선택했습니다. 다음으로 품번을 선택해 주세요.","success");
+      window.setTimeout(function(){ itemNumberSelect.focus(); },0);
+    }
   });
-  itemNumberSelect.addEventListener("change",applyNewIdentityFromToolbar);
+
+  itemNumberSelect.addEventListener("change",function(){
+    applyNewIdentityFromToolbar();
+    if(currentMode !== "new") return;
+
+    if(!itemNumberSelect.value){
+      setNotice("품번을 선택해 주세요.","error");
+      return;
+    }
+    setNotice("고객사명·품명·품번 선택이 완료되었습니다. 제조공정도 양식에 DATA와 공정 사진을 입력해 주세요.","success",true);
+    const firstField = textFields[0];
+    if(firstField){
+      window.setTimeout(function(){ firstField.focus(); },0);
+    }
+  });
 
   document.getElementById("btnSearch").addEventListener("click",function(){
     if(!customerSelect.value){ setNotice("고객사명을 먼저 선택해 주세요.","error"); return; }
@@ -1601,6 +1645,9 @@
       setNotice(errorMessage(error,"고객사와 품목 DB를 불러오지 못했습니다."),"error",true);
     }finally{
       setBusy(false);
+      if(currentMode === "new"){
+        window.setTimeout(function(){ customerSelect.focus(); },0);
+      }
     }
   });
 
