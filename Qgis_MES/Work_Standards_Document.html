@@ -440,14 +440,128 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
   .status-line,.image-delete-button{display:none!important;}
 }
 
+
+/* 단계별 연동 조회: 고객사 → 품명 → 품번 → 관리번호 */
+.toolbar-cascade-group{
+  display:flex!important;
+  align-items:flex-end!important;
+  gap:6px!important;
+  flex:1 1 auto;
+  min-width:0;
+}
+.toolbar-cascade-step{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  width:210px;
+  min-width:150px;
+  color:#444;
+  font-size:10px;
+  font-weight:400;
+  line-height:1;
+}
+.toolbar-cascade-step[hidden]{display:none!important;}
+.toolbar-cascade-step span{font-weight:400;}
+.toolbar-cascade-step select{
+  width:100%;
+  height:30px;
+  padding:0 8px;
+  border:1px solid #aeb4bc;
+  border-radius:5px;
+  background:#fff;
+  color:#111;
+  font-size:12px;
+  font-weight:400;
+}
+.toolbar-cascade-step select:disabled{background:#f4f4f4;color:#aaa;}
+.cascade-modal{width:min(560px,100%);}
+.cascade-modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:9px 10px;
+  margin-bottom:8px;
+  border:1px solid #d0d5dd;
+  border-radius:6px;
+  background:#f8fafc;
+}
+.cascade-step-title{font-size:13px;font-weight:400;color:#1d2939;}
+.cascade-back-button{
+  height:28px;
+  padding:0 10px;
+  border:1px solid #98a2b3;
+  border-radius:4px;
+  background:#fff;
+  color:#344054;
+  font-size:11px;
+  font-weight:400;
+  cursor:pointer;
+}
+.cascade-selection-summary{
+  margin:0 0 8px;
+  padding:8px 10px;
+  border-radius:5px;
+  background:#fffbe6;
+  color:#555;
+  font-size:11px;
+  font-weight:400;
+}
+.cascade-selection-summary[hidden]{display:none!important;}
+.cascade-option-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-height:150px;
+  max-height:52vh;
+  overflow:auto;
+  padding:2px;
+}
+.cascade-option-button{
+  width:100%;
+  min-height:38px;
+  padding:8px 11px;
+  border:1px solid #c7ccd3;
+  border-radius:5px;
+  background:#fff;
+  color:#111;
+  text-align:left;
+  font-size:12px;
+  font-weight:400;
+  cursor:pointer;
+}
+.cascade-option-button:hover,
+.cascade-option-button:focus-visible{border-color:#7b9bd0;background:#fffbea;outline:none;}
+.cascade-option-button .option-sub{
+  display:block;
+  margin-top:3px;
+  color:#777;
+  font-size:10px;
+  font-weight:400;
+}
+.cascade-empty{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:150px;
+  color:#667085;
+  font-size:12px;
+  font-weight:400;
+}
+@media(max-width:900px){
+  .toolbar-cascade-group{flex-wrap:wrap;flex-basis:100%;}
+  .toolbar-cascade-step{width:calc(50% - 4px);}
+}
+@media(max-width:520px){
+  .toolbar-cascade-step{width:100%;}
+}
 </style></head>
 <body><div class="toolbar" id="workStandardToolbar">
-<div class="group toolbar-query-group" aria-label="작업표준서 조회 조건">
-<label class="toolbar-filter"><span>고객사</span><input aria-label="고객사 조회" id="toolbarCustomer" placeholder="고객사" type="search" autocomplete="off"/></label>
-<label class="toolbar-filter"><span>품명</span><input aria-label="품명 조회" id="toolbarItemName" placeholder="품명" type="search" autocomplete="off"/></label>
-<label class="toolbar-filter"><span>품번</span><input aria-label="품번 조회" id="toolbarItemNumber" placeholder="품번" type="search" autocomplete="off"/></label>
-<label class="toolbar-filter"><span>관리번호</span><input aria-label="관리번호 조회" id="toolbarWorkStandardNumber" placeholder="관리번호" type="search" autocomplete="off"/></label>
-<input id="itemKeyword" type="hidden" value=""/>
+<div class="group toolbar-cascade-group" aria-label="작업표준서 단계별 조회 조건">
+<label class="toolbar-cascade-step" id="toolbarCustomerStep"><span>1. 고객사</span><select aria-label="고객사 선택" id="toolbarCustomerSelect"><option value="">고객사 선택</option></select></label>
+<label class="toolbar-cascade-step" id="toolbarItemNameStep" hidden><span>2. 품명</span><select aria-label="품명 선택" id="toolbarItemNameSelect"><option value="">품명 선택</option></select></label>
+<label class="toolbar-cascade-step" id="toolbarItemNumberStep" hidden><span>3. 품번</span><select aria-label="품번 선택" id="toolbarItemNumberSelect"><option value="">품번 선택</option></select></label>
+<label class="toolbar-cascade-step" id="toolbarManagementStep" hidden><span>4. 관리번호</span><select aria-label="관리번호 선택" id="toolbarManagementSelect"><option value="">관리번호 선택</option></select></label>
 <button class="primary toolbar-select-button" id="btnSelectItem" type="button">품목 선택</button>
 </div>
 <div class="group">
@@ -468,19 +582,14 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
 </div>
 <input id="work_standard_system_id" name="work_standard_system_id" type="hidden"/><input id="item_system_id" name="item_system_id" type="hidden"/><input id="company_id" name="company_id" type="hidden"/><input id="image_1_storage_path" name="image_1_storage_path" type="hidden"/><input id="image_2_storage_path" name="image_2_storage_path" type="hidden"/></div>
 <div aria-hidden="true" class="modal-backdrop" id="itemModal">
-<div aria-labelledby="itemModalTitle" aria-modal="true" class="modal" role="dialog">
-<h2 id="itemModalTitle">품목 선택</h2>
-<div class="query-filter-panel" id="queryFilterPanel" hidden>
-  <label>고객사<input id="queryCustomer" type="search" placeholder="고객사 입력" autocomplete="off"/></label>
-  <label>품명<input id="queryItemName" type="search" placeholder="품명 입력" autocomplete="off"/></label>
-  <label>품번<input id="queryItemNumber" type="search" placeholder="품번 입력" autocomplete="off"/></label>
-  <label>관리번호<input id="queryWorkStandardNumber" type="search" placeholder="관리번호 입력" autocomplete="off"/></label>
-  <button id="btnClearQueryFilters" type="button">조건 지우기</button>
+<div aria-labelledby="itemModalTitle" aria-modal="true" class="modal cascade-modal" role="dialog">
+<h2 id="itemModalTitle" tabindex="-1">품목 선택</h2>
+<div class="cascade-modal-header">
+  <div class="cascade-step-title" id="itemModalStepTitle">1. 고객사를 선택하세요.</div>
+  <button class="cascade-back-button" id="btnModalBack" type="button" hidden>이전 단계</button>
 </div>
-<table>
-<thead><tr><th>고객사</th><th>품명</th><th>품번</th><th>관리번호</th><th>저장상태</th></tr></thead>
-<tbody id="itemModalBody"><tr><td class="empty" colspan="5">연결된 품목 데이터가 없습니다.</td></tr></tbody>
-</table>
+<div class="cascade-selection-summary" id="itemModalSummary" hidden></div>
+<div class="cascade-option-list" id="itemModalOptions" role="listbox" aria-label="선택 목록"></div>
 <div class="modal-actions"><button id="btnCloseItemModal" type="button">닫기</button></div>
 </div>
 </div>
@@ -519,6 +628,8 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
   const pendingImageDeletions = new Map();
 
   let noticeTimer = null;
+  let toolbarSelectedItemId = "";
+  let modalCascadeState = { customerId: "", itemName: "", itemNumber: "" };
 
   let currentProfile = null;
   let currentMode = "view";
@@ -814,77 +925,250 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     }
   }
 
-  function queryFilterValues() {
-    return {
-      customer_name: normalize($("toolbarCustomer")?.value).toLowerCase(),
-      item_name: normalize($("toolbarItemName")?.value).toLowerCase(),
-      item_number: normalize($("toolbarItemNumber")?.value).toLowerCase(),
-      work_standard_number: normalize($("toolbarWorkStandardNumber")?.value).toLowerCase()
-    };
+  function compareText(a, b) {
+    return normalize(a).localeCompare(normalize(b), "ko-KR", { numeric: true, sensitivity: "base" });
   }
 
-  function sortedItems(rows) {
-    const compare = (a,b) => normalize(a).localeCompare(normalize(b), "ko-KR", {numeric:true, sensitivity:"base"});
-    return [...rows].sort((a,b) =>
-      compare(a.customer_name,b.customer_name) ||
-      compare(a.item_name,b.item_name) ||
-      compare(a.item_number,b.item_number) ||
-      compare(a.work_standard_number,b.work_standard_number)
-    );
+  function uniqueSorted(values) {
+    return [...new Set(values.map(normalize).filter(Boolean))].sort(compareText);
   }
 
-  function renderItemRows() {
-    const tbody = $("itemModalBody");
-    const filters = queryFilterValues();
-    const source = modalMode === "query"
-      ? referenceItems.filter(row => documentByItem.has(row.item_system_id))
-      : referenceItems;
+  function savedReferenceItems() {
+    return referenceItems.filter(row => documentByItem.has(row.item_system_id));
+  }
 
-    const rows = sortedItems(source.filter(row => {
-      const values = {
-        customer_name: normalize(row.customer_name).toLowerCase(),
-        item_name: normalize(row.item_name).toLowerCase(),
-        item_number: normalize(row.item_number).toLowerCase(),
-        work_standard_number: normalize(row.work_standard_number).toLowerCase()
-      };
-      return Object.entries(filters).every(([field,filter]) => !filter || values[field].includes(filter));
+  function setStepVisible(id, visible) {
+    const element = $(id);
+    if (element) element.hidden = !visible;
+  }
+
+  function fillSelect(selectId, placeholder, options) {
+    const select = $(selectId);
+    if (!select) return;
+    select.innerHTML = "";
+    select.add(new Option(placeholder, ""));
+    options.forEach(option => {
+      if (typeof option === "string") {
+        select.add(new Option(option, option));
+      } else {
+        select.add(new Option(option.label, option.value));
+      }
+    });
+    select.value = "";
+  }
+
+  function initializeToolbarCascade() {
+    toolbarSelectedItemId = "";
+    const source = savedReferenceItems();
+    const customers = [...new Map(source.map(row => [row.customer_system_id, {
+      value: row.customer_system_id,
+      label: row.customer_name || row.company_number || "미등록 고객사"
+    }])).values()].sort((a,b) => compareText(a.label,b.label));
+    fillSelect("toolbarCustomerSelect", "고객사 선택", customers);
+    fillSelect("toolbarItemNameSelect", "품명 선택", []);
+    fillSelect("toolbarItemNumberSelect", "품번 선택", []);
+    fillSelect("toolbarManagementSelect", "관리번호 선택", []);
+    setStepVisible("toolbarItemNameStep", false);
+    setStepVisible("toolbarItemNumberStep", false);
+    setStepVisible("toolbarManagementStep", false);
+  }
+
+  function toolbarCustomerChanged() {
+    toolbarSelectedItemId = "";
+    const customerId = $("toolbarCustomerSelect")?.value || "";
+    fillSelect("toolbarItemNameSelect", "품명 선택", []);
+    fillSelect("toolbarItemNumberSelect", "품번 선택", []);
+    fillSelect("toolbarManagementSelect", "관리번호 선택", []);
+    setStepVisible("toolbarItemNameStep", Boolean(customerId));
+    setStepVisible("toolbarItemNumberStep", false);
+    setStepVisible("toolbarManagementStep", false);
+    if (!customerId) return;
+    const names = uniqueSorted(savedReferenceItems()
+      .filter(row => row.customer_system_id === customerId)
+      .map(row => row.item_name));
+    fillSelect("toolbarItemNameSelect", "품명 선택", names);
+  }
+
+  function toolbarItemNameChanged() {
+    toolbarSelectedItemId = "";
+    const customerId = $("toolbarCustomerSelect")?.value || "";
+    const itemName = $("toolbarItemNameSelect")?.value || "";
+    fillSelect("toolbarItemNumberSelect", "품번 선택", []);
+    fillSelect("toolbarManagementSelect", "관리번호 선택", []);
+    setStepVisible("toolbarItemNumberStep", Boolean(customerId && itemName));
+    setStepVisible("toolbarManagementStep", false);
+    if (!customerId || !itemName) return;
+    const numbers = uniqueSorted(savedReferenceItems()
+      .filter(row => row.customer_system_id === customerId && normalize(row.item_name) === itemName)
+      .map(row => row.item_number));
+    fillSelect("toolbarItemNumberSelect", "품번 선택", numbers);
+  }
+
+  function toolbarItemNumberChanged() {
+    toolbarSelectedItemId = "";
+    const customerId = $("toolbarCustomerSelect")?.value || "";
+    const itemName = $("toolbarItemNameSelect")?.value || "";
+    const itemNumber = $("toolbarItemNumberSelect")?.value || "";
+    fillSelect("toolbarManagementSelect", "관리번호 선택", []);
+    setStepVisible("toolbarManagementStep", Boolean(customerId && itemName && itemNumber));
+    if (!customerId || !itemName || !itemNumber) return;
+    const matches = savedReferenceItems().filter(row =>
+      row.customer_system_id === customerId &&
+      normalize(row.item_name) === itemName &&
+      normalize(row.item_number) === itemNumber
+    ).sort((a,b) => compareText(a.work_standard_number,b.work_standard_number));
+    const options = matches.map(row => ({
+      value: row.item_system_id,
+      label: row.work_standard_number || "관리번호 없음"
     }));
+    fillSelect("toolbarManagementSelect", "관리번호 선택", options);
+    if (matches.length === 1) {
+      $("toolbarManagementSelect").value = matches[0].item_system_id;
+      toolbarSelectedItemId = matches[0].item_system_id;
+    }
+  }
 
-    tbody.innerHTML = "";
-    if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">조회되는 품목이 없습니다.</td></tr>';
+  function toolbarManagementChanged() {
+    toolbarSelectedItemId = $("toolbarManagementSelect")?.value || "";
+  }
+
+  function querySelectedWorkStandard() {
+    const customerId = $("toolbarCustomerSelect")?.value || "";
+    const itemName = $("toolbarItemNameSelect")?.value || "";
+    const itemNumber = $("toolbarItemNumberSelect")?.value || "";
+    if (!customerId) return setNotice("고객사를 먼저 선택해 주세요.", "error");
+    if (!itemName) return setNotice("품명을 선택해 주세요.", "error");
+    if (!itemNumber) return setNotice("품번을 선택해 주세요.", "error");
+    if (!toolbarSelectedItemId) return setNotice("관리번호를 선택해 주세요.", "error");
+    void loadDocumentByItem(toolbarSelectedItemId);
+  }
+
+  function modalSourceItems() {
+    return modalMode === "query" ? savedReferenceItems() : referenceItems;
+  }
+
+  function modalSummaryParts() {
+    const parts = [];
+    if (modalCascadeState.customerId) {
+      const row = modalSourceItems().find(item => item.customer_system_id === modalCascadeState.customerId);
+      if (row) parts.push(row.customer_name || row.company_number || "고객사");
+    }
+    if (modalCascadeState.itemName) parts.push(modalCascadeState.itemName);
+    if (modalCascadeState.itemNumber) parts.push(modalCascadeState.itemNumber);
+    return parts;
+  }
+
+  function addModalOption(label, onClick, subText = "") {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cascade-option-button";
+    button.textContent = label || "미입력";
+    if (subText) {
+      const sub = document.createElement("span");
+      sub.className = "option-sub";
+      sub.textContent = subText;
+      button.appendChild(sub);
+    }
+    button.addEventListener("click", onClick);
+    $("itemModalOptions").appendChild(button);
+  }
+
+  function renderModalCascade() {
+    const source = modalSourceItems();
+    const options = $("itemModalOptions");
+    const summary = $("itemModalSummary");
+    const back = $("btnModalBack");
+    options.innerHTML = "";
+
+    const summaryParts = modalSummaryParts();
+    summary.hidden = summaryParts.length === 0;
+    summary.textContent = summaryParts.join("  ›  ");
+    back.hidden = summaryParts.length === 0;
+
+    if (!source.length) {
+      $("itemModalStepTitle").textContent = modalMode === "query"
+        ? "저장된 작업표준서가 없습니다."
+        : "연결된 품목 데이터가 없습니다.";
+      options.innerHTML = '<div class="cascade-empty">선택할 데이터가 없습니다.</div>';
       return;
     }
-    rows.forEach(row => {
-      const tr = document.createElement("tr");
-      const values = [
-        row.customer_name,
-        row.item_name,
-        row.item_number,
-        row.work_standard_number,
-        documentByItem.has(row.item_system_id) ? "저장됨" : "미등록"
-      ];
-      values.forEach(text => {
-        const td = document.createElement("td");
-        td.textContent = text || "";
-        tr.appendChild(td);
-      });
-      tr.addEventListener("click", () => selectItem(row, modalMode === "query"));
-      tbody.appendChild(tr);
-    });
+
+    if (!modalCascadeState.customerId) {
+      $("itemModalStepTitle").textContent = "1. 고객사를 선택하세요.";
+      const customers = [...new Map(source.map(row => [row.customer_system_id, row])).values()]
+        .sort((a,b) => compareText(a.customer_name,b.customer_name));
+      customers.forEach(row => addModalOption(
+        row.customer_name || row.company_number || "미등록 고객사",
+        () => {
+          modalCascadeState.customerId = row.customer_system_id;
+          modalCascadeState.itemName = "";
+          modalCascadeState.itemNumber = "";
+          renderModalCascade();
+        }
+      ));
+      return;
+    }
+
+    const customerRows = source.filter(row => row.customer_system_id === modalCascadeState.customerId);
+    if (!modalCascadeState.itemName) {
+      $("itemModalStepTitle").textContent = "2. 품명을 선택하세요.";
+      uniqueSorted(customerRows.map(row => row.item_name)).forEach(name => addModalOption(name, () => {
+        modalCascadeState.itemName = name;
+        modalCascadeState.itemNumber = "";
+        renderModalCascade();
+      }));
+      return;
+    }
+
+    const nameRows = customerRows.filter(row => normalize(row.item_name) === modalCascadeState.itemName);
+    if (!modalCascadeState.itemNumber) {
+      $("itemModalStepTitle").textContent = "3. 품번을 선택하세요.";
+      uniqueSorted(nameRows.map(row => row.item_number)).forEach(number => addModalOption(number, () => {
+        modalCascadeState.itemNumber = number;
+        const matches = nameRows.filter(row => normalize(row.item_number) === number)
+          .sort((a,b) => compareText(a.work_standard_number,b.work_standard_number));
+        if (matches.length === 1) {
+          selectItem(matches[0], modalMode === "query");
+          return;
+        }
+        renderModalCascade();
+      }));
+      return;
+    }
+
+    const numberRows = nameRows.filter(row => normalize(row.item_number) === modalCascadeState.itemNumber)
+      .sort((a,b) => compareText(a.work_standard_number,b.work_standard_number));
+    $("itemModalStepTitle").textContent = "4. 관리번호를 선택하세요.";
+    if (!numberRows.length) {
+      options.innerHTML = '<div class="cascade-empty">해당 품번의 관리번호가 없습니다.</div>';
+      return;
+    }
+    numberRows.forEach(row => addModalOption(
+      row.work_standard_number || "관리번호 없음",
+      () => selectItem(row, modalMode === "query"),
+      modalMode === "query" ? "저장된 작업표준서" : "품목 선택"
+    ));
+  }
+
+  function modalBackStep() {
+    if (modalCascadeState.itemNumber) {
+      modalCascadeState.itemNumber = "";
+    } else if (modalCascadeState.itemName) {
+      modalCascadeState.itemName = "";
+    } else if (modalCascadeState.customerId) {
+      modalCascadeState.customerId = "";
+    }
+    renderModalCascade();
   }
 
   function openItemModal(mode) {
     modalMode = mode;
-    const isQuery = mode === "query";
-    $("itemModalTitle").textContent = isQuery ? "저장된 작업표준서 조회" : "품목 선택";
-    $("queryFilterPanel").hidden = true;
-    renderItemRows();
+    modalCascadeState = { customerId: "", itemName: "", itemNumber: "" };
+    $("itemModalTitle").textContent = mode === "query" ? "저장된 작업표준서 조회" : "품목 선택";
+    renderModalCascade();
     itemModal.classList.add("open");
     itemModal.setAttribute("aria-hidden", "false");
-    window.setTimeout(() => {
-      $("itemModalTitle")?.focus?.();
-    }, 0);
+    window.setTimeout(() => $("itemModalTitle")?.focus?.(), 0);
   }
   function closeItemModal() {
     itemModal.classList.remove("open");
@@ -1334,6 +1618,7 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     if (error) throw error;
     documentByItem.clear();
     (data || []).forEach(row => documentByItem.set(row.item_system_id,row));
+    initializeToolbarCascade();
   }
 
   function attachEvents() {
@@ -1361,20 +1646,14 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     });
 
     $("btnSelectItem").addEventListener("click",() => openItemModal("select"));
-    $("btnSearch").addEventListener("click",() => openItemModal("query"));
+    $("btnSearch").addEventListener("click",querySelectedWorkStandard);
     $("btnCloseItemModal").addEventListener("click",closeItemModal);
+    $("btnModalBack").addEventListener("click",modalBackStep);
     itemModal.addEventListener("click",event => { if (event.target === itemModal) closeItemModal(); });
-    ["toolbarCustomer","toolbarItemName","toolbarItemNumber","toolbarWorkStandardNumber"].forEach(id => {
-      $(id)?.addEventListener("input", () => { if (itemModal.classList.contains("open")) renderItemRows(); });
-    });
-    ["queryCustomer","queryItemName","queryItemNumber","queryWorkStandardNumber"].forEach(id => {
-      $(id)?.addEventListener("input", renderItemRows);
-    });
-    $("btnClearQueryFilters")?.addEventListener("click", () => {
-      ["toolbarCustomer","toolbarItemName","toolbarItemNumber","toolbarWorkStandardNumber"].forEach(id => { if ($(id)) $(id).value = ""; });
-      renderItemRows();
-      $("toolbarCustomer")?.focus();
-    });
+    $("toolbarCustomerSelect").addEventListener("change",toolbarCustomerChanged);
+    $("toolbarItemNameSelect").addEventListener("change",toolbarItemNameChanged);
+    $("toolbarItemNumberSelect").addEventListener("change",toolbarItemNumberChanged);
+    $("toolbarManagementSelect").addEventListener("change",toolbarManagementChanged);
     $("equipment_system_id").addEventListener("change",updateEquipmentNumber);
 
     formRoot.querySelectorAll("input,select,textarea").forEach(control => {
