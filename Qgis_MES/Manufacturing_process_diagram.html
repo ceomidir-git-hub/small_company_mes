@@ -1,10 +1,1282 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>제조공정도</title>
+<meta charset="utf-8"/>
+<title>제조공정도</title>
+<style>
+  :root{
+    --navy:#1b3a63;
+    --navy-dark:#12294a;
+    --line:#8a97a8;
+    --line-light:#d3d9e2;
+    --bg-head:#eef1f6;
+    --ctq:#c0392b;
+    --paper:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:"Malgun Gothic","Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+    background:#5d6b7d;
+    margin:0;
+    padding:24px 0 60px;
+    color:#1c2530;
+  }
+  .sheet{
+    width:1400px;
+    max-width:96vw;
+    margin:0 auto 32px;
+    background:var(--paper);
+    box-shadow:0 6px 24px rgba(0,0,0,.35);
+    padding:26px 30px 30px;
+  }
+  /* ---------- Title Bar ---------- */
+  .titlebar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--navy);
+    color:#fff;
+    padding:14px 22px;
+    margin-bottom:14px;
+  }
+  .titlebar h1{
+    font-size:26px;
+    letter-spacing:1px;
+    margin:0;
+    font-weight:800;
+  }
+  .titlebar .subtitle{
+    text-align:right;
+    line-height:1.5;
+  }
+  .titlebar .subtitle .doctype{
+    font-size:12px;
+    letter-spacing:2px;
+    color:#b9c6db;
+    font-weight:600;
+  }
+  .titlebar .subtitle .procname{
+    font-size:16px;
+    font-weight:700;
+  }
+  /* ---------- Meta / Header table ---------- */
+  table.meta{
+    width:100%;
+    border-collapse:collapse;
+    margin-bottom:16px;
+    font-size:13px;
+    border:1px solid var(--line);
+  }
+  table.meta td{
+    border:1px solid var(--line);
+    padding:7px 10px;
+  }
+  table.meta td.label{
+    background:var(--bg-head);
+    font-weight:700;
+    width:9%;
+    text-align:center;
+    color:var(--navy-dark);
+  }
+  table.meta td.value{
+    width:16%;
+  }
+
+  /* ---------- Doc control strip ---------- */
+  .docctrl{
+    display:flex;
+    gap:0;
+    border:1px solid var(--line);
+    margin-bottom:18px;
+    font-size:12px;
+  }
+  .docctrl div{
+    flex:1;
+    padding:6px 10px;
+    border-right:1px solid var(--line-light);
+  }
+  .docctrl div:last-child{border-right:none;}
+  .docctrl span.k{
+    display:block;
+    color:#5b6a7d;
+    font-size:10.5px;
+    letter-spacing:.5px;
+    margin-bottom:2px;
+  }
+  .docctrl span.v{font-weight:700;color:var(--navy-dark);}
+
+  /* ---------- Section header ---------- */
+  .section-title{
+    background:var(--navy);
+    color:#fff;
+    font-size:14px;
+    font-weight:700;
+    padding:8px 14px;
+    margin-top:22px;
+    margin-bottom:0;
+    letter-spacing:.3px;
+  }
+  .section-title .en{
+    font-weight:400;
+    font-size:12px;
+    color:#c3cee0;
+    margin-left:6px;
+  }
+
+  /* ---------- Control Plan Table ---------- */
+  table.cp{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    font-size:12px;
+  }
+  table.cp th, table.cp td{
+    border:1px solid var(--line);
+    padding:6px 7px;
+    vertical-align:top;
+  }
+  table.cp thead th{
+    background:var(--bg-head);
+    color:var(--navy-dark);
+    font-weight:700;
+    text-align:center;
+    font-size:11.5px;
+    line-height:1.35;
+  }
+  table.cp thead th .en{
+    display:block;
+    font-weight:400;
+    font-size:9.5px;
+    color:#6a7688;
+  }
+  table.cp col.c-no{width:4.4%;}
+  table.cp col.c-proc{width:11%;}
+  table.cp col.c-photo{width:9%;}
+  table.cp col.c-equip{width:12%;}
+  table.cp col.c-charprod{width:9%;}
+  table.cp col.c-charproc{width:9%;}
+  table.cp col.c-special{width:4.5%;}
+  table.cp col.c-spec{width:15%;}
+  table.cp col.c-method{width:14%;}
+  table.cp col.c-reaction{width:12.1%;}
+
+  td.center{text-align:center;vertical-align:middle;}
+  td.procno{
+    text-align:center;
+    font-weight:800;
+    color:var(--navy);
+    font-size:14px;
+    vertical-align:middle;
+  }
+  td.procname{
+    font-weight:700;
+    vertical-align:middle;
+  }
+  td.procname .sub{
+    display:block;
+    font-weight:400;
+    color:#5b6a7d;
+    font-size:10.5px;
+    margin-top:2px;
+  }
+  .photo-cell{
+    text-align:center;
+  }
+  .photo-cell img{
+    width:100%;
+    max-width:110px;
+    height:66px;
+    object-fit:cover;
+    border:1px solid #c7cfd9;
+  }
+  .ctq-mark{
+    text-align:center;
+    vertical-align:middle;
+    font-size:15px;
+    color:var(--ctq);
+    font-weight:800;
+  }
+  .tag{
+    display:inline-block;
+    font-size:9.5px;
+    font-weight:700;
+    padding:1px 5px;
+    border-radius:3px;
+    margin-right:3px;
+    margin-bottom:2px;
+  }
+  .tag-mes{background:#e4ecf7;color:#1b3a63;}
+  .tag-log{background:#f2eee0;color:#7a5c00;}
+  ul.plain{
+    margin:0;
+    padding-left:14px;
+  }
+  ul.plain li{margin-bottom:2px;}
+  .row-continued td{
+    color:#9aa5b3;
+    font-style:italic;
+    text-align:center;
+    vertical-align:middle;
+  }
+  .group-row td{
+    background:#f7f8fa;
+  }
+
+  /* ---------- Legend / Remark section ---------- */
+  table.remark{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+    margin-top:0;
+  }
+  table.remark th,table.remark td{
+    border:1px solid var(--line);
+    padding:8px 12px;
+    vertical-align:top;
+  }
+  table.remark th{
+    background:var(--bg-head);
+    color:var(--navy-dark);
+    text-align:left;
+    width:22%;
+    font-size:12.5px;
+  }
+  table.remark ul{margin:0;padding-left:16px;}
+  table.remark li{margin-bottom:3px;}
+
+  /* ---------- Sign-off ---------- */
+  table.signoff{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:18px;
+    font-size:12px;
+  }
+  table.signoff th,table.signoff td{
+    border:1px solid var(--line);
+    padding:8px;
+    text-align:center;
+  }
+  table.signoff th{
+    background:var(--bg-head);
+    color:var(--navy-dark);
+    width:12%;
+  }
+  table.signoff td{height:52px;width:13%;}
+
+  .footer-note{
+    margin-top:16px;
+    font-size:10.5px;
+    color:#6a7688;
+    border-top:1px solid var(--line-light);
+    padding-top:8px;
+    line-height:1.6;
+  }
+  .verify-flag{
+    display:inline-block;
+    background:#fdecea;
+    color:#a12f22;
+    border:1px solid #f3c4bd;
+    padding:1px 6px;
+    border-radius:3px;
+    font-size:10px;
+    font-weight:700;
+  }
+
+  /* ---------- Original flow-chart style grid table (공정명/도해/공정설명/검사항목/측정기기) ---------- */
+  table.flow{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    font-size:12.5px;
+    margin-bottom:4px;
+    border:1px solid var(--line);
+  }
+  table.flow th, table.flow td{
+    border:1px solid var(--line);
+    padding:9px 10px;
+    vertical-align:middle;
+    text-align:center;
+  }
+  table.flow thead th{
+    background:var(--bg-head);
+    color:#1c2530;
+    font-weight:700;
+    font-size:13px;
+  }
+  table.flow td.rowlabel, table.flow th.rowlabel{
+    background:var(--bg-head);
+    color:#1c2530;
+    font-weight:700;
+    width:9%;
+  }
+  table.flow td.blank{
+    background:#fbfbfc;
+  }
+  table.flow td.phototd{
+    padding:6px;
+  }
+  table.flow td.phototd img{
+    width:100%;
+    height:110px;
+    object-fit:cover;
+    display:block;
+    border:1px solid #c7cfd9;
+  }
+  table.flow td.photo-none{
+    color:#9aa5b3;
+    font-size:11px;
+  }
+  table.flow td.text-cell{
+    text-align:left;
+    line-height:1.5;
+  }
+
+  @media print{
+    body{background:#fff;padding:0;}
+    .toolbar,.status-line,.modal-backdrop{display:none!important;}
+    .sheet{box-shadow:none;width:100%;max-width:none;margin:0;padding:8mm;page-break-after:always;}
+    .sheet:last-of-type{page-break-after:auto;}
+    table.flow{font-size:11px;}
+    table.flow th, table.flow td{padding:6px 7px;}
+    table.flow td.phototd img{height:80px;}
+    table.flow tbody tr:first-child td:not(.rowlabel){height:80px;}
+    table.meta{font-size:12px;}
+    @page{size:A4 landscape;margin:6mm;}
+    .toolbar{display:none;}
+  }
+
+  /* ---------- Data-entry field highlight ---------- */
+  /* Every cell EXCEPT the row-label column (공정명/도해/공정설명/검사항목/측정기기) holds DATA */
+  .input-field{
+    background:#FFF9C4 !important;
+  }
+  .edit-mode .input-field{
+    outline:1px dashed #b8860b;
+    outline-offset:-2px;
+    cursor:text;
+  }
+  .input-field:focus{
+    outline:2px solid #1b3a63;
+    outline-offset:-2px;
+    background:#FFF3A0 !important;
+  }
+
+  /* ---------- Toolbar / 조회 프레임 ---------- */
+  .toolbar{
+    position:static;
+    width:1400px;
+    max-width:96vw;
+    margin:8px auto 0;
+    padding:6px 8px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:6px;
+    flex-wrap:nowrap;
+    background:#f7f7f7;
+    border:1px solid #b7b7b7;
+    border-radius:6px;
+    box-shadow:0 1px 5px rgba(0,0,0,.18);
+  }
+  .toolbar .group{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    flex-wrap:nowrap;
+  }
+  .toolbar-search-group{
+    flex:1 1 0;
+    min-width:0;
+  }
+  .toolbar-filter{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    flex:1 1 150px;
+    min-width:120px;
+    color:#444;
+    font-size:10px;
+    line-height:1;
+  }
+  .toolbar-filter span{font-weight:400;}
+  .toolbar-filter select{
+    width:100%;
+    height:30px;
+    padding:0 8px;
+    border:1px solid #aeb4bc;
+    border-radius:4px;
+    background:#fff;
+    color:#111;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:400;
+  }
+  .toolbar-filter select:disabled{
+    background:#f3f4f6;
+    color:#9ca3af;
+    cursor:not-allowed;
+  }
+  .toolbar button{
+    height:30px;
+    padding:0 9px;
+    border:1px solid #aaa;
+    border-radius:4px;
+    background:#fff;
+    color:#1c2530;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+    white-space:nowrap;
+    cursor:pointer;
+  }
+  .toolbar button:hover{border-color:#555;background:#f0f0f0;}
+  .toolbar button.primary{background:#eaf3ff;border-color:#7c9fc8;}
+  .toolbar button.danger{color:#b42318;}
+  .toolbar button.active{background:#fff1cc;border-color:#b8860b;color:#7a5200;}
+  .toolbar button:disabled{opacity:.45;cursor:not-allowed;}
+
+  .status-line{
+    position:fixed;
+    top:54px;
+    right:24px;
+    z-index:1600;
+    width:340px;
+    max-width:calc(100% - 32px);
+    min-height:48px;
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    background:#fff;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);
+    color:#344054;
+    font-size:12px;
+    line-height:1.35;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-8px);
+    transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
+    pointer-events:none;
+  }
+  .status-line.show{opacity:1;visibility:visible;transform:translateY(0);}
+  .status-line.success{color:#05603a;border-color:#9ed6bd;background:#f0fff7;}
+  .status-line.error{color:#b42318;border-color:#f0aaa4;background:#fff5f4;}
+
+  .modal-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:1200;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background:rgba(0,0,0,.52);
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    width:min(860px,100%);
+    max-height:82vh;
+    overflow:auto;
+    padding:16px;
+    border-radius:8px;
+    background:#fff;
+    box-shadow:0 15px 50px rgba(0,0,0,.35);
+  }
+  .modal h2{margin:0 0 8px;font-size:18px;}
+  .modal-summary{margin:0 0 10px;color:#475467;font-size:12px;}
+  .modal table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .modal th,.modal td{border:1px solid #ccc;padding:8px;font-size:12px;text-align:left;}
+  .modal th{background:#eef1f6;text-align:center;}
+  .modal tbody tr{cursor:pointer;}
+  .modal tbody tr:hover,.modal tbody tr:focus{background:#fff8c9;outline:none;}
+  .modal .empty{text-align:center;color:#667085;padding:24px;}
+  .modal-actions{display:flex;justify-content:flex-end;margin-top:10px;}
+  .modal-actions button{height:30px;padding:0 12px;border:1px solid #999;background:#fff;border-radius:4px;cursor:pointer;}
+
+  @media(max-width:1150px){
+    .toolbar{flex-wrap:wrap;}
+    .toolbar-search-group{flex-basis:100%;}
+    .toolbar > .group:last-child{flex-wrap:wrap;}
+  }
+  @media(max-width:640px){
+    .toolbar-search-group{display:grid!important;grid-template-columns:1fr 1fr;}
+    .toolbar-filter{min-width:0;}
+  }
+  @media(max-width:420px){
+    .toolbar-search-group{grid-template-columns:1fr;}
+  }
+
+  /* numbered-photo-row-height */
+  table.flow tbody tr:first-child td:not(.rowlabel){height:110px;}
+
+
+  /* ---------- Manufacturing Process Diagram input mapping ---------- */
+  td.value[data-field-role="meta"]:empty::before,
+  [data-field-type="text"]:empty::before{
+    content:attr(data-placeholder);
+    color:#111;
+    font-weight:400;
+    pointer-events:none;
+  }
+  td.value.company-field:empty::before{
+    color:#667085;
+  }
+  .edit-mode td.value[data-meta-key]:not(.company-field),
+  .edit-mode [data-field-type="text"]{
+    cursor:text;
+  }
+  .photo-field{
+    position:relative;
+    height:110px;
+    overflow:hidden;
+    cursor:default;
+  }
+  .photo-placeholder{
+    min-height:96px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:#111;
+    font-size:12.5px;
+    line-height:1.35;
+    user-select:none;
+  }
+  .process-photo-preview{
+    width:100%!important;
+    height:96px!important;
+    object-fit:contain!important;
+    display:block;
+    border:0!important;
+    background:#fff;
+  }
+  .process-photo-preview[hidden]{display:none!important;}
+  .process-photo-input{display:none!important;}
+  .edit-mode .photo-field{
+    cursor:pointer;
+    outline:1px dashed #b8860b;
+    outline-offset:-2px;
+  }
+  .edit-mode .photo-field:hover::after{
+    content:"사진 선택";
+    position:absolute;
+    right:7px;
+    bottom:7px;
+    padding:3px 7px;
+    border:1px solid #7c9fc8;
+    border-radius:4px;
+    background:rgba(255,255,255,.94);
+    color:#1b3a63;
+    font-size:10px;
+    font-weight:700;
+  }
+  @media print{
+    td.value[data-field-role="meta"]:empty::before,
+    [data-field-type="text"]:empty::before,
+    .photo-placeholder{color:#111!important;}
+    .edit-mode .photo-field:hover::after{display:none!important;}
+  }
+</style>
 </head>
 <body>
-</body>
+<div class="toolbar" id="manufacturingToolbar">
+<div aria-label="제조공정도 조회 조건" class="group toolbar-search-group">
+<label class="toolbar-filter"><span>고객사명</span><select aria-label="고객사명 선택" id="toolbarCustomerSelect"><option value="">고객사명 선택</option></select></label>
+<label class="toolbar-filter"><span>품명</span><select aria-label="품명 선택" id="toolbarItemNameSelect"><option value="">품명 선택</option></select></label>
+<label class="toolbar-filter"><span>품번</span><select aria-label="품번 선택" id="toolbarItemNumberSelect"><option value="">품번 선택</option></select></label>
+
+</div>
+<div class="group">
+<button id="btnSearch" type="button">조회</button>
+<button id="btnEdit" type="button">수정</button>
+<button class="primary" id="btnSave" type="button">저장</button>
+<button id="btnNew" type="button">신규등록</button>
+<button id="btnReset" type="button">초기화</button>
+<button class="danger" id="btnDelete" type="button">삭제</button>
+<button id="btnPdf" type="button">PDF 저장</button>
+</div>
+</div>
+<div class="status-line" id="statusLine" role="status"></div>
+<div aria-hidden="true" class="modal-backdrop" id="searchResultModal">
+<div aria-labelledby="searchResultTitle" aria-modal="true" class="modal" role="dialog">
+<h2 id="searchResultTitle" tabindex="-1">제조공정도 조회 결과</h2>
+<p class="modal-summary" id="searchResultSummary"></p>
+<table>
+<thead><tr><th>고객사명</th><th>품명</th><th>품번</th></tr></thead>
+<tbody id="searchResultBody"></tbody>
+</table>
+<div class="modal-actions"><button id="btnCloseSearchResult" type="button">닫기</button></div>
+</div>
+</div>
+<div class="sheet">
+<div class="titlebar">
+<h1>제조공정도</h1>
+<div class="subtitle">
+<div class="procname">고주파고주파 열처리 (Induction Hardening)  ·  1/2  전처리·소입 공정</div>
+</div>
+</div>
+<table class="meta">
+<tr>
+<td class="label">업체명</td><td class="value input-field company-field" contenteditable="false" data-field-role="meta" data-meta-key="companyName" data-placeholder="로그인 회사 자동표시"></td>
+<td class="label">고객사</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="customerName" data-placeholder="고객사명"></td>
+<td class="label">품명</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemName" data-placeholder="품명"></td>
+<td class="label">품번</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemNumber" data-placeholder="품번"></td>
+</tr>
+</table>
+<!-- ================= SECTION 1 ================= -->
+<div class="section-title">① 전처리 · 셋업 공정 <span class="en">Pre-Process · Set-up</span></div>
+<table class="flow">
+<colgroup>
+<col style="width:9%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/>
+</colgroup>
+<thead>
+<tr>
+<th class="rowlabel">공정명</th>
+<th class="process-field input-field" contenteditable="false" data-field-no="1" data-field-role="process-value" data-field-type="text" data-placeholder="NO1"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="6" data-field-role="process-value" data-field-type="text" data-placeholder="NO6"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="11" data-field-role="process-value" data-field-type="text" data-placeholder="NO11"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="16" data-field-role="process-value" data-field-type="text" data-placeholder="NO16"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rowlabel">도해</td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="2" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO2 [ 공정 사진 ]</div><img alt="NO2 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO2 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="7" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO7 [ 공정 사진 ]</div><img alt="NO7 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO7 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="12" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO12 [ 공정 사진 ]</div><img alt="NO12 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO12 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="blank phototd process-field input-field photo-field" contenteditable="false" data-field-no="17" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO17 [ 공정 사진 ]</div><img alt="NO17 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO17 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+</tr>
+<tr>
+<td class="rowlabel">공정 설명</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="3" data-field-role="process-value" data-field-type="text" data-placeholder="NO3"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="8" data-field-role="process-value" data-field-type="text" data-placeholder="NO8"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="13" data-field-role="process-value" data-field-type="text" data-placeholder="NO13"></td>
+<td class="blank process-field input-field" contenteditable="false" data-field-no="18" data-field-role="process-value" data-field-type="text" data-placeholder="NO18"></td>
+</tr>
+<tr>
+<td class="rowlabel">검사 항목</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="4" data-field-role="process-value" data-field-type="text" data-placeholder="NO4"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="9" data-field-role="process-value" data-field-type="text" data-placeholder="NO9"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="14" data-field-role="process-value" data-field-type="text" data-placeholder="NO14"></td>
+<td class="blank process-field input-field" contenteditable="false" data-field-no="19" data-field-role="process-value" data-field-type="text" data-placeholder="NO19"></td>
+</tr>
+<tr>
+<td class="rowlabel">측정 기기</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="5" data-field-role="process-value" data-field-type="text" data-placeholder="NO5"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="10" data-field-role="process-value" data-field-type="text" data-placeholder="NO10"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="15" data-field-role="process-value" data-field-type="text" data-placeholder="NO15"></td>
+<td class="blank process-field input-field" contenteditable="false" data-field-no="20" data-field-role="process-value" data-field-type="text" data-placeholder="NO20"></td>
+</tr>
+</tbody>
+</table>
+<!-- ================= SECTION 2 ================= -->
+<div class="section-title">② 가열 · 소입 공정 <span class="en">Induction Hardening</span></div>
+<table class="flow">
+<colgroup>
+<col style="width:9%;"/><col style="width:30.33%;"/><col style="width:30.33%;"/><col style="width:30.34%;"/>
+</colgroup>
+<thead>
+<tr>
+<th class="rowlabel">공정명</th>
+<th class="process-field input-field" contenteditable="false" data-field-no="21" data-field-role="process-value" data-field-type="text" data-placeholder="NO21"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="26" data-field-role="process-value" data-field-type="text" data-placeholder="NO26"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="31" data-field-role="process-value" data-field-type="text" data-placeholder="NO31"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rowlabel">도해</td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="22" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO22 [ 공정 사진 ]</div><img alt="NO22 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO22 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="27" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO27 [ 공정 사진 ]</div><img alt="NO27 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO27 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="blank phototd process-field input-field photo-field" contenteditable="false" data-field-no="32" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO32 [ 공정 사진 ]</div><img alt="NO32 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO32 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+</tr>
+<tr>
+<td class="rowlabel">공정 설명</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="23" data-field-role="process-value" data-field-type="text" data-placeholder="NO23"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="28" data-field-role="process-value" data-field-type="text" data-placeholder="NO28"></td>
+<td class="blank process-field input-field" contenteditable="false" data-field-no="33" data-field-role="process-value" data-field-type="text" data-placeholder="NO33"></td>
+</tr>
+<tr>
+<td class="rowlabel">검사 항목</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="24" data-field-role="process-value" data-field-type="text" data-placeholder="NO24"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="29" data-field-role="process-value" data-field-type="text" data-placeholder="NO29"></td>
+<td class="blank process-field input-field" contenteditable="false" data-field-no="34" data-field-role="process-value" data-field-type="text" data-placeholder="NO34"></td>
+</tr>
+<tr>
+<td class="rowlabel">측정 기기</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="25" data-field-role="process-value" data-field-type="text" data-placeholder="NO25"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="30" data-field-role="process-value" data-field-type="text" data-placeholder="NO30"></td>
+<td class="blank process-field input-field" contenteditable="false" data-field-no="35" data-field-role="process-value" data-field-type="text" data-placeholder="NO35"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sheet">
+<div class="titlebar">
+<h1>제조공정도</h1>
+<div class="subtitle">
+<div class="procname">고주파고주파 열처리 (Induction Hardening)  ·  2/2  템퍼링·검사·출하공정</div>
+</div>
+</div>
+<table class="meta">
+<tr>
+<td class="label">업체명</td><td class="value input-field company-field" contenteditable="false" data-field-role="meta" data-meta-key="companyName" data-placeholder="로그인 회사 자동표시"></td>
+<td class="label">고객사</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="customerName" data-placeholder="고객사명"></td>
+<td class="label">품명</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemName" data-placeholder="품명"></td>
+<td class="label">품번</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemNumber" data-placeholder="품번"></td>
+</tr>
+</table>
+<!-- ================= SECTION 3 ================= -->
+<div class="section-title">③ 템퍼링 · 검사 · 출하 공정 <span class="en">Tempering · Inspection · Delivery</span></div>
+<table class="flow">
+<colgroup>
+<col style="width:9%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/>
+</colgroup>
+<thead>
+<tr>
+<th class="rowlabel">공정명</th>
+<th class="process-field input-field" contenteditable="false" data-field-no="36" data-field-role="process-value" data-field-type="text" data-placeholder="NO36"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="41" data-field-role="process-value" data-field-type="text" data-placeholder="NO41"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="46" data-field-role="process-value" data-field-type="text" data-placeholder="NO46"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="51" data-field-role="process-value" data-field-type="text" data-placeholder="NO51"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rowlabel">도해</td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="37" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO37 [ 공정 사진 ]</div><img alt="NO37 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO37 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="42" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO42 [ 공정 사진 ]</div><img alt="NO42 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO42 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="47" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO47 [ 공정 사진 ]</div><img alt="NO47 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO47 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="52" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO52 [ 공정 사진 ]</div><img alt="NO52 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO52 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+</tr>
+<tr>
+<td class="rowlabel">공정 설명</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="38" data-field-role="process-value" data-field-type="text" data-placeholder="NO38"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="43" data-field-role="process-value" data-field-type="text" data-placeholder="NO43"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="48" data-field-role="process-value" data-field-type="text" data-placeholder="NO48"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="53" data-field-role="process-value" data-field-type="text" data-placeholder="NO53"></td>
+</tr>
+<tr>
+<td class="rowlabel">검사 항목</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="39" data-field-role="process-value" data-field-type="text" data-placeholder="NO39"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="44" data-field-role="process-value" data-field-type="text" data-placeholder="NO44"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="49" data-field-role="process-value" data-field-type="text" data-placeholder="NO49"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="54" data-field-role="process-value" data-field-type="text" data-placeholder="NO54"></td>
+</tr>
+<tr>
+<td class="rowlabel">측정 기기</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="40" data-field-role="process-value" data-field-type="text" data-placeholder="NO40"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="45" data-field-role="process-value" data-field-type="text" data-placeholder="NO45"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="50" data-field-role="process-value" data-field-type="text" data-placeholder="NO50"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="55" data-field-role="process-value" data-field-type="text" data-placeholder="NO55"></td>
+</tr>
+</tbody>
+</table>
+<!-- ================= REMARK ================= -->
+<div class="section-title">④ 비 고 <span class="en">Remark</span></div>
+<table class="flow">
+<colgroup>
+<col style="width:9%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/>
+</colgroup>
+<thead>
+<tr>
+<th class="rowlabel">공정명</th>
+<th class="process-field input-field" contenteditable="false" data-field-no="56" data-field-role="process-value" data-field-type="text" data-placeholder="NO56"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="61" data-field-role="process-value" data-field-type="text" data-placeholder="NO61"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="66" data-field-role="process-value" data-field-type="text" data-placeholder="NO66"></th>
+<th class="process-field input-field" contenteditable="false" data-field-no="71" data-field-role="process-value" data-field-type="text" data-placeholder="NO71"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rowlabel">도해</td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="57" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO57 [ 공정 사진 ]</div><img alt="NO57 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO57 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="62" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO62 [ 공정 사진 ]</div><img alt="NO62 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO62 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="67" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO67 [ 공정 사진 ]</div><img alt="NO67 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO67 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="72" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO72 [ 공정 사진 ]</div><img alt="NO72 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO72 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
+</tr>
+<tr>
+<td class="rowlabel">공정 설명</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="58" data-field-role="process-value" data-field-type="text" data-placeholder="NO58"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="63" data-field-role="process-value" data-field-type="text" data-placeholder="NO63"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="68" data-field-role="process-value" data-field-type="text" data-placeholder="NO68"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="73" data-field-role="process-value" data-field-type="text" data-placeholder="NO73"></td>
+</tr>
+<tr>
+<td class="rowlabel">검사 항목</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="59" data-field-role="process-value" data-field-type="text" data-placeholder="NO59"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="64" data-field-role="process-value" data-field-type="text" data-placeholder="NO64"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="69" data-field-role="process-value" data-field-type="text" data-placeholder="NO69"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="74" data-field-role="process-value" data-field-type="text" data-placeholder="NO74"></td>
+</tr>
+<tr>
+<td class="rowlabel">측정 기기</td>
+<td class="process-field input-field" contenteditable="false" data-field-no="60" data-field-role="process-value" data-field-type="text" data-placeholder="NO60"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="65" data-field-role="process-value" data-field-type="text" data-placeholder="NO65"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="70" data-field-role="process-value" data-field-type="text" data-placeholder="NO70"></td>
+<td class="process-field input-field" contenteditable="false" data-field-no="75" data-field-role="process-value" data-field-type="text" data-placeholder="NO75"></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /*
+    입력폼 확정용 로컬 테스트 구조입니다.
+    실제 DB 연결 시에는 아래 매핑을 그대로 사용합니다.
+    - 기본정보: company_id, customer_system_id, item_system_id
+    - 상세정보: field_no, field_type, text_value, image_path
+    - 사진 번호: 2,7,12,17,22,27,32,37,42,47,52,57,62,67,72
+  */
+
+  var STORAGE_INDEX = "mes_manufacturing_process_diagram_form_index_v1";
+  var KEY_PREFIX = "mes_manufacturing_process_diagram_form_v1_";
+  var PHOTO_FIELD_NUMBERS = [2,7,12,17,22,27,32,37,42,47,52,57,62,67,72];
+
+  var textFields = Array.prototype.slice.call(document.querySelectorAll('[data-field-type="text"]'));
+  var photoFields = Array.prototype.slice.call(document.querySelectorAll('[data-field-type="image"]'));
+  var metaFields = Array.prototype.slice.call(document.querySelectorAll('[data-meta-key]'));
+  var currentStorageKey = "";
+  var editMode = false;
+  var noticeTimer = null;
+  var loadedSnapshot = null;
+
+  function normalize(value){ return String(value == null ? "" : value).trim(); }
+  function compareText(a,b){ return normalize(a).localeCompare(normalize(b), "ko-KR", {numeric:true, sensitivity:"base"}); }
+  function uniqueSorted(values){ return Array.from(new Set(values.map(normalize).filter(Boolean))).sort(compareText); }
+
+  function setNotice(message, type){
+    var line = document.getElementById("statusLine");
+    if(!line) return;
+    window.clearTimeout(noticeTimer);
+    line.textContent = message;
+    line.className = "status-line show" + (type ? " " + type : "");
+    noticeTimer = window.setTimeout(function(){ line.className = "status-line"; }, 4000);
+  }
+
+  function metaGroup(key){
+    return Array.prototype.slice.call(document.querySelectorAll('[data-meta-key="' + key + '"]'));
+  }
+
+  function getMetaValue(key){
+    var first = metaGroup(key)[0];
+    return normalize(first ? first.innerText : "");
+  }
+
+  function setMetaValue(key, value){
+    metaGroup(key).forEach(function(cell){ cell.textContent = normalize(value); });
+  }
+
+  function syncMetaFrom(source){
+    var key = source.getAttribute("data-meta-key");
+    if(!key) return;
+    var value = source.innerText;
+    metaGroup(key).forEach(function(cell){
+      if(cell !== source) cell.textContent = value;
+    });
+  }
+
+  function getIdentityFromForm(){
+    return {
+      companyName:getMetaValue("companyName"),
+      customerName:getMetaValue("customerName"),
+      itemName:getMetaValue("itemName"),
+      itemNumber:getMetaValue("itemNumber")
+    };
+  }
+
+  function makeStorageKey(identity){
+    if(!identity.customerName || !identity.itemName || !identity.itemNumber) return "";
+    return KEY_PREFIX + encodeURIComponent(identity.customerName) + "__" + encodeURIComponent(identity.itemName) + "__" + encodeURIComponent(identity.itemNumber);
+  }
+
+  function photoElements(cell){
+    return {
+      placeholder:cell.querySelector(".photo-placeholder"),
+      image:cell.querySelector(".process-photo-preview"),
+      input:cell.querySelector(".process-photo-input")
+    };
+  }
+
+  function clearPhoto(cell){
+    var parts = photoElements(cell);
+    if(parts.image){
+      parts.image.removeAttribute("src");
+      parts.image.hidden = true;
+      parts.image.dataset.fileName = "";
+    }
+    if(parts.placeholder) parts.placeholder.hidden = false;
+    if(parts.input) parts.input.value = "";
+  }
+
+  function setPhoto(cell, src, fileName){
+    var parts = photoElements(cell);
+    if(!parts.image || !parts.placeholder) return;
+    if(!src){ clearPhoto(cell); return; }
+    parts.image.src = src;
+    parts.image.hidden = false;
+    parts.image.dataset.fileName = fileName || "";
+    parts.placeholder.hidden = true;
+  }
+
+  function clearForm(){
+    setMetaValue("companyName", "");
+    setMetaValue("customerName", "");
+    setMetaValue("itemName", "");
+    setMetaValue("itemNumber", "");
+    textFields.forEach(function(cell){ cell.textContent = ""; });
+    photoFields.forEach(clearPhoto);
+  }
+
+  function captureForm(){
+    var values = [];
+    textFields.forEach(function(cell){
+      values.push({
+        field_no:Number(cell.getAttribute("data-field-no")),
+        field_type:"text",
+        text_value:normalize(cell.innerText),
+        image_path:null,
+        image_preview_data:null,
+        image_file_name:null
+      });
+    });
+    photoFields.forEach(function(cell){
+      var parts = photoElements(cell);
+      var src = parts.image && !parts.image.hidden ? (parts.image.getAttribute("src") || "") : "";
+      values.push({
+        field_no:Number(cell.getAttribute("data-field-no")),
+        field_type:"image",
+        text_value:null,
+        image_path:null,
+        image_preview_data:src,
+        image_file_name:parts.image ? (parts.image.dataset.fileName || "") : ""
+      });
+    });
+    values.sort(function(a,b){ return a.field_no - b.field_no; });
+    return {
+      version:1,
+      identity:getIdentityFromForm(),
+      values:values,
+      updated_at:new Date().toISOString()
+    };
+  }
+
+  function cloneData(value){ return JSON.parse(JSON.stringify(value)); }
+
+  function applyForm(record){
+    if(!record || !record.identity || !Array.isArray(record.values)) return false;
+    setMetaValue("companyName", record.identity.companyName || "");
+    setMetaValue("customerName", record.identity.customerName || "");
+    setMetaValue("itemName", record.identity.itemName || "");
+    setMetaValue("itemNumber", record.identity.itemNumber || "");
+
+    var byNumber = {};
+    record.values.forEach(function(value){ byNumber[Number(value.field_no)] = value; });
+    textFields.forEach(function(cell){
+      var value = byNumber[Number(cell.getAttribute("data-field-no"))];
+      cell.textContent = value && value.field_type === "text" ? (value.text_value || "") : "";
+    });
+    photoFields.forEach(function(cell){
+      var value = byNumber[Number(cell.getAttribute("data-field-no"))];
+      setPhoto(cell, value && value.field_type === "image" ? (value.image_preview_data || "") : "", value ? value.image_file_name : "");
+    });
+    loadedSnapshot = cloneData(captureForm());
+    currentStorageKey = record.storageKey || makeStorageKey(record.identity);
+    setEditMode(false);
+    return true;
+  }
+
+  function setEditMode(enabled){
+    editMode = Boolean(enabled);
+    document.body.classList.toggle("edit-mode", editMode);
+    metaFields.forEach(function(cell){
+      var key = cell.getAttribute("data-meta-key");
+      cell.setAttribute("contenteditable", editMode && key !== "companyName" ? "true" : "false");
+    });
+    textFields.forEach(function(cell){ cell.setAttribute("contenteditable", editMode ? "true" : "false"); });
+    photoFields.forEach(function(cell){
+      var parts = photoElements(cell);
+      cell.tabIndex = editMode ? 0 : -1;
+      if(parts.input) parts.input.disabled = !editMode;
+    });
+    var button = document.getElementById("btnEdit");
+    button.classList.toggle("active", editMode);
+    button.textContent = editMode ? "수정 완료" : "수정";
+  }
+
+  function parseIndex(){
+    try{
+      var value = JSON.parse(localStorage.getItem(STORAGE_INDEX) || "[]");
+      return Array.isArray(value) ? value : [];
+    }catch(error){ return []; }
+  }
+
+  function writeIndex(key){
+    var index = parseIndex();
+    if(index.indexOf(key) === -1) index.push(key);
+    localStorage.setItem(STORAGE_INDEX, JSON.stringify(index));
+  }
+
+  function removeFromIndex(key){
+    var index = parseIndex().filter(function(item){ return item !== key; });
+    localStorage.setItem(STORAGE_INDEX, JSON.stringify(index));
+  }
+
+  function readRecord(key){
+    try{
+      var parsed = JSON.parse(localStorage.getItem(key) || "null");
+      if(!parsed || !parsed.identity || !Array.isArray(parsed.values)) return null;
+      parsed.storageKey = key;
+      return parsed;
+    }catch(error){ return null; }
+  }
+
+  function savedRecords(){
+    return parseIndex().map(readRecord).filter(Boolean);
+  }
+
+  function fillSelect(id, placeholder, options, selectedValue){
+    var select = document.getElementById(id);
+    select.innerHTML = "";
+    select.add(new Option(placeholder, ""));
+    options.forEach(function(value){ select.add(new Option(value, value)); });
+    select.value = options.indexOf(selectedValue) >= 0 ? selectedValue : "";
+  }
+
+  function toolbarFilters(){
+    return {
+      customerName:document.getElementById("toolbarCustomerSelect").value,
+      itemName:document.getElementById("toolbarItemNameSelect").value,
+      itemNumber:document.getElementById("toolbarItemNumberSelect").value
+    };
+  }
+
+  function recordMatches(record, filters, ignored){
+    if(ignored !== "customerName" && filters.customerName && record.identity.customerName !== filters.customerName) return false;
+    if(ignored !== "itemName" && filters.itemName && record.identity.itemName !== filters.itemName) return false;
+    if(ignored !== "itemNumber" && filters.itemNumber && record.identity.itemNumber !== filters.itemNumber) return false;
+    return true;
+  }
+
+  function rebuildToolbarOptions(){
+    var records = savedRecords();
+    var selected = toolbarFilters();
+    var customerSource = records.filter(function(row){ return recordMatches(row, selected, "customerName"); });
+    var itemNameSource = records.filter(function(row){ return recordMatches(row, selected, "itemName"); });
+    var itemNumberSource = records.filter(function(row){ return recordMatches(row, selected, "itemNumber"); });
+    fillSelect("toolbarCustomerSelect", "고객사명 선택", uniqueSorted(customerSource.map(function(row){ return row.identity.customerName; })), selected.customerName);
+    fillSelect("toolbarItemNameSelect", "품명 선택", uniqueSorted(itemNameSource.map(function(row){ return row.identity.itemName; })), selected.itemName);
+    fillSelect("toolbarItemNumberSelect", "품번 선택", uniqueSorted(itemNumberSource.map(function(row){ return row.identity.itemNumber; })), selected.itemNumber);
+  }
+
+  function clearToolbarSelections(){
+    ["toolbarCustomerSelect","toolbarItemNameSelect","toolbarItemNumberSelect"].forEach(function(id){ document.getElementById(id).value = ""; });
+    rebuildToolbarOptions();
+  }
+
+  function matchedRecords(){
+    var filters = toolbarFilters();
+    return savedRecords().filter(function(record){ return recordMatches(record, filters, ""); }).sort(function(a,b){
+      return compareText(a.identity.customerName,b.identity.customerName) ||
+        compareText(a.identity.itemName,b.identity.itemName) ||
+        compareText(a.identity.itemNumber,b.identity.itemNumber);
+    });
+  }
+
+  function closeSearchResultModal(){
+    var modal = document.getElementById("searchResultModal");
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+
+  function chooseRecord(record){
+    closeSearchResultModal();
+    if(applyForm(record)){
+      clearToolbarSelections();
+      setNotice("선택한 제조공정도를 불러왔습니다.", "success");
+    }
+  }
+
+  function openSearchResultModal(records){
+    var modal = document.getElementById("searchResultModal");
+    var body = document.getElementById("searchResultBody");
+    body.innerHTML = "";
+    records.forEach(function(record){
+      var tr = document.createElement("tr");
+      tr.tabIndex = 0;
+      [record.identity.customerName, record.identity.itemName, record.identity.itemNumber].forEach(function(value){
+        var td = document.createElement("td");
+        td.textContent = value || "-";
+        tr.appendChild(td);
+      });
+      function select(){ chooseRecord(record); }
+      tr.addEventListener("click", select);
+      tr.addEventListener("keydown", function(event){
+        if(event.key === "Enter" || event.key === " "){
+          event.preventDefault();
+          select();
+        }
+      });
+      body.appendChild(tr);
+    });
+    document.getElementById("searchResultSummary").textContent = "조회 결과 " + records.length + "건입니다. 불러올 제조공정도를 선택해 주세요.";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  metaFields.forEach(function(cell){
+    cell.addEventListener("input", function(){ syncMetaFrom(cell); });
+    cell.addEventListener("blur", function(){
+      cell.textContent = normalize(cell.innerText);
+      syncMetaFrom(cell);
+    });
+  });
+
+  photoFields.forEach(function(cell){
+    var parts = photoElements(cell);
+    function openPicker(){
+      if(editMode && parts.input) parts.input.click();
+    }
+    cell.addEventListener("click", function(event){
+      if(event.target !== parts.input) openPicker();
+    });
+    cell.addEventListener("keydown", function(event){
+      if(editMode && (event.key === "Enter" || event.key === " ")){
+        event.preventDefault();
+        openPicker();
+      }
+    });
+    if(parts.input){
+      parts.input.addEventListener("change", function(){
+        var file = parts.input.files && parts.input.files[0];
+        if(!file) return;
+        if(file.type.indexOf("image/") !== 0){
+          setNotice("이미지 파일만 선택할 수 있습니다.", "error");
+          parts.input.value = "";
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(){ setPhoto(cell, String(reader.result || ""), file.name); };
+        reader.onerror = function(){ setNotice("공정 사진을 읽지 못했습니다.", "error"); };
+        reader.readAsDataURL(file);
+      });
+    }
+  });
+
+  document.getElementById("btnSearch").addEventListener("click", function(){
+    var filters = toolbarFilters();
+    if(!filters.customerName && !filters.itemName && !filters.itemNumber){
+      setNotice("고객사명, 품명, 품번 중 하나 이상을 선택해 주세요.", "error");
+      return;
+    }
+    var records = matchedRecords();
+    if(records.length === 0) setNotice("선택한 조건에 해당하는 제조공정도가 없습니다.", "error");
+    else if(records.length === 1) chooseRecord(records[0]);
+    else openSearchResultModal(records);
+  });
+
+  document.getElementById("btnEdit").addEventListener("click", function(){
+    setEditMode(!editMode);
+    setNotice(editMode ? "수정할 항목과 공정 사진을 입력해 주세요." : "수정 입력을 종료했습니다.");
+  });
+
+  document.getElementById("btnSave").addEventListener("click", function(){
+    var identity = getIdentityFromForm();
+    if(!identity.customerName || !identity.itemName || !identity.itemNumber){
+      setNotice("고객사명·품명·품번을 모두 입력해 주세요.", "error");
+      return;
+    }
+
+    var newKey = makeStorageKey(identity);
+    var duplicateExists = Boolean(localStorage.getItem(newKey));
+    if(!currentStorageKey && duplicateExists){
+      setNotice("동일한 고객사·품명·품번의 제조공정도가 이미 존재합니다. 기존 제조공정도를 조회하여 수정해 주세요.", "error");
+      return;
+    }
+    if(currentStorageKey && currentStorageKey !== newKey && duplicateExists){
+      setNotice("변경한 고객사·품명·품번 조합의 제조공정도가 이미 존재합니다. 중복 등록할 수 없습니다.", "error");
+      return;
+    }
+
+    var record = captureForm();
+    try{
+      localStorage.setItem(newKey, JSON.stringify(record));
+      writeIndex(newKey);
+      if(currentStorageKey && currentStorageKey !== newKey){
+        localStorage.removeItem(currentStorageKey);
+        removeFromIndex(currentStorageKey);
+      }
+    }catch(error){
+      setNotice("사진 용량 때문에 브라우저 임시 저장에 실패했습니다. 입력폼 확정 후 Supabase Storage 연결이 필요합니다.", "error");
+      return;
+    }
+    currentStorageKey = newKey;
+    loadedSnapshot = cloneData(record);
+    setEditMode(false);
+    rebuildToolbarOptions();
+    setNotice("입력폼 테스트 데이터가 저장되었습니다.", "success");
+  });
+
+  document.getElementById("btnNew").addEventListener("click", function(){
+    currentStorageKey = "";
+    clearForm();
+    loadedSnapshot = cloneData(captureForm());
+    clearToolbarSelections();
+    setEditMode(true);
+    setNotice("신규등록 상태입니다. 고객사명·품명·품번과 NO1~NO75 내용을 입력해 주세요.", "success");
+  });
+
+  document.getElementById("btnReset").addEventListener("click", function(){
+    if(loadedSnapshot) applyForm(cloneData(loadedSnapshot));
+    else clearForm();
+    clearToolbarSelections();
+    setEditMode(false);
+    setNotice("마지막으로 불러오거나 저장한 상태로 초기화했습니다.");
+  });
+
+  document.getElementById("btnDelete").addEventListener("click", function(){
+    if(!currentStorageKey || !localStorage.getItem(currentStorageKey)){
+      setNotice("삭제할 제조공정도를 먼저 조회해 주세요.", "error");
+      return;
+    }
+    if(!window.confirm("현재 조회한 제조공정도를 삭제하시겠습니까?")) return;
+    localStorage.removeItem(currentStorageKey);
+    removeFromIndex(currentStorageKey);
+    currentStorageKey = "";
+    clearForm();
+    loadedSnapshot = cloneData(captureForm());
+    clearToolbarSelections();
+    setEditMode(false);
+    setNotice("제조공정도가 삭제되었습니다.", "success");
+  });
+
+  document.getElementById("btnPdf").addEventListener("click", function(){ window.print(); });
+  document.getElementById("btnCloseSearchResult").addEventListener("click", closeSearchResultModal);
+  document.getElementById("searchResultModal").addEventListener("click", function(event){
+    if(event.target === event.currentTarget) closeSearchResultModal();
+  });
+  document.addEventListener("keydown", function(event){ if(event.key === "Escape") closeSearchResultModal(); });
+  ["toolbarCustomerSelect","toolbarItemNameSelect","toolbarItemNumberSelect"].forEach(function(id){
+    document.getElementById(id).addEventListener("change", rebuildToolbarOptions);
+  });
+
+  // Structural verification for the fixed SQL mapping.
+  var mappedNumbers = textFields.concat(photoFields).map(function(cell){ return Number(cell.getAttribute("data-field-no")); }).sort(function(a,b){ return a-b; });
+  var expectedNumbers = Array.from({length:75}, function(_,index){ return index + 1; });
+  var mappedPhotos = photoFields.map(function(cell){ return Number(cell.getAttribute("data-field-no")); }).sort(function(a,b){ return a-b; });
+  if(JSON.stringify(mappedNumbers) !== JSON.stringify(expectedNumbers) || JSON.stringify(mappedPhotos) !== JSON.stringify(PHOTO_FIELD_NUMBERS)){
+    setNotice("NO1~NO75 입력 매핑을 확인해 주세요.", "error");
+  }
+
+  clearForm();
+  loadedSnapshot = cloneData(captureForm());
+  setEditMode(false);
+  rebuildToolbarOptions();
+})();
+</script></body>
 </html>
