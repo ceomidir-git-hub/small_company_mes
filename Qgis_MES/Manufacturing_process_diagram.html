@@ -1101,9 +1101,15 @@
     select.value = options.some(function(option){ return option.value === selectedValue; }) ? selectedValue : "";
   }
 
+  function activeReferenceItems(){
+    return items.filter(function(item){
+      return item && item.item_system_id && item.customer_system_id && item.is_active !== false;
+    });
+  }
+
   function sourceRowsForToolbar(){
     if(currentMode === "new"){
-      return items.filter(function(item){ return item.is_active === true; }).map(function(item){
+      return activeReferenceItems().map(function(item){
         const customer = customerMap.get(item.customer_system_id);
         return {
           customerSystemId:item.customer_system_id,
@@ -1112,6 +1118,8 @@
           itemNumber:item.item_number,
           itemSystemId:item.item_system_id
         };
+      }).filter(function(row){
+        return row.customerSystemId && row.customerName && row.itemSystemId;
       });
     }
     return documents.slice();
@@ -1124,19 +1132,34 @@
     const selectedName = preserve.itemName != null ? preserve.itemName : itemNameSelect.value;
     const selectedItem = preserve.itemSystemId != null ? preserve.itemSystemId : itemNumberSelect.value;
 
-    const customerOptions = Array.from(new Map(rows.filter(function(row){ return row.customerSystemId && row.customerName; }).map(function(row){
-      return [row.customerSystemId,{value:row.customerSystemId,label:row.customerName}];
+    /* 신규등록은 customers 테이블의 고객사를 직접 표시한다.
+       조회 상태는 실제 제조공정도가 등록된 고객사만 표시한다. */
+    const customerSource = currentMode === "new"
+      ? customers.map(function(row){
+          return {
+            customerSystemId:row.customer_system_id,
+            customerName:row.customer_name
+          };
+        })
+      : rows;
+
+    const customerOptions = Array.from(new Map(customerSource.filter(function(row){
+      return row.customerSystemId && normalize(row.customerName);
+    }).map(function(row){
+      return [row.customerSystemId,{value:row.customerSystemId,label:normalize(row.customerName)}];
     })).values()).sort(function(a,b){ return compareText(a.label,b.label); });
     fillSelect(customerSelect,"고객사명 선택",customerOptions,selectedCustomer || "");
 
     const customerId = customerSelect.value;
-    const nameOptions = Array.from(new Set(rows.filter(function(row){ return !customerId || row.customerSystemId === customerId; }).map(function(row){ return normalize(row.itemName); }).filter(Boolean)))
+    const nameOptions = Array.from(new Set(rows.filter(function(row){
+      return customerId && row.customerSystemId === customerId;
+    }).map(function(row){ return normalize(row.itemName); }).filter(Boolean)))
       .sort(compareText).map(function(name){ return {value:name,label:name}; });
     fillSelect(itemNameSelect,"품명 선택",nameOptions,selectedName || "");
 
     const itemName = itemNameSelect.value;
     const numberOptions = rows.filter(function(row){
-      return (!customerId || row.customerSystemId === customerId) && (!itemName || row.itemName === itemName);
+      return customerId && row.customerSystemId === customerId && itemName && row.itemName === itemName;
     }).sort(function(a,b){ return compareText(a.itemNumber,b.itemNumber); }).map(function(row){
       return {value:row.itemSystemId,label:row.itemNumber};
     });
@@ -1561,16 +1584,36 @@
 
   document.getElementById("btnSave").addEventListener("click",saveCurrentDocument);
 
-  document.getElementById("btnNew").addEventListener("click",function(){
+  document.getElementById("btnNew").addEventListener("click",async function(){
     if(!isAdmin()){ setNotice("신규등록은 관리자만 가능합니다.","error"); return; }
-    currentMode = "new";
-    currentDocumentId = "";
-    currentItemSystemId = "";
-    loadedSnapshot = null;
-    clearForm();
-    rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
-    setEditMode(true);
-    setNotice("신규등록 상태입니다. 고객사명, 품명, 품번을 순서대로 선택한 후 NO1~NO75를 입력해 주세요.","success");
+    setBusy(true,"고객사와 품목 DB를 다시 불러오는 중입니다.");
+    try{
+      /* 작업표준서와 동일하게 신규등록을 시작할 때 기준정보를 다시 조회한다. */
+      await loadReferenceData();
+      await loadDocumentIndex();
+
+      currentMode = "new";
+      currentDocumentId = "";
+      currentItemSystemId = "";
+      loadedSnapshot = null;
+      clearForm();
+      rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
+      setEditMode(true);
+
+      const availableItemCount = activeReferenceItems().length;
+      if(customers.length === 0){
+        setNotice("로그인 회사에 등록된 고객사가 없습니다. 고객사관리를 먼저 확인해 주세요.","error",true);
+      }else if(availableItemCount === 0){
+        setNotice("고객사 " + customers.length + "건은 불러왔지만 등록 가능한 품목이 없습니다. 아이템관리를 확인해 주세요.","error",true);
+      }else{
+        setNotice("고객사 " + customers.length + "건, 품목 " + availableItemCount + "건을 불러왔습니다. 고객사명 → 품명 → 품번 순서로 선택해 주세요.","success");
+      }
+    }catch(error){
+      console.error("신규등록 기준정보 조회 실패:",error);
+      setNotice(errorMessage(error,"고객사와 품목 DB를 불러오지 못했습니다."),"error",true);
+    }finally{
+      setBusy(false);
+    }
   });
 
   document.getElementById("btnReset").addEventListener("click",async function(){
