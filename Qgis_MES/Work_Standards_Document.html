@@ -555,13 +555,65 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
 @media(max-width:520px){
   .toolbar-cascade-step{width:100%;}
 }
+
+/* 첨부 조회 코드와 동일한 고객사명 → 품명 → 품번 → 관리번호 연동 선택 */
+.toolbar-cascade-step{
+  flex:1 1 150px;
+  width:auto;
+  min-width:140px;
+}
+.toolbar-cascade-step[hidden]{display:flex!important;}
+.toolbar-cascade-step select:disabled,
+.modal-cascade-step select:disabled{
+  background:#f3f4f6;
+  color:#9ca3af;
+  cursor:not-allowed;
+}
+.cascade-modal{width:min(920px,100%);}
+.modal-cascade-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin:4px 0 10px;
+}
+.modal-cascade-step{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+  color:#444;
+  font-size:11px;
+  font-weight:400;
+}
+.modal-cascade-step span{font-weight:400;}
+.modal-cascade-step select{
+  width:100%;
+  height:34px;
+  padding:0 9px;
+  border:1px solid #aeb4bc;
+  border-radius:5px;
+  background:#fff;
+  color:#111;
+  font-family:inherit;
+  font-size:12px;
+  font-weight:400;
+}
+.modal-actions{gap:7px;}
+.modal-actions .primary{background:#eaf3ff;border-color:#7c9fc8;}
+.modal-actions button:disabled{opacity:.45;cursor:not-allowed;}
+@media(max-width:900px){
+  .modal-cascade-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:520px){
+  .modal-cascade-grid{grid-template-columns:1fr;}
+}
 </style></head>
 <body><div class="toolbar" id="workStandardToolbar">
-<div class="group toolbar-cascade-group" aria-label="작업표준서 단계별 조회 조건">
-<label class="toolbar-cascade-step" id="toolbarCustomerStep"><span>1. 고객사</span><select aria-label="고객사 선택" id="toolbarCustomerSelect"><option value="">고객사 선택</option></select></label>
-<label class="toolbar-cascade-step" id="toolbarItemNameStep" hidden><span>2. 품명</span><select aria-label="품명 선택" id="toolbarItemNameSelect"><option value="">품명 선택</option></select></label>
-<label class="toolbar-cascade-step" id="toolbarItemNumberStep" hidden><span>3. 품번</span><select aria-label="품번 선택" id="toolbarItemNumberSelect"><option value="">품번 선택</option></select></label>
-<label class="toolbar-cascade-step" id="toolbarManagementStep" hidden><span>4. 관리번호</span><select aria-label="관리번호 선택" id="toolbarManagementSelect"><option value="">관리번호 선택</option></select></label>
+<div class="group toolbar-cascade-group" aria-label="작업표준서 연동 조회 조건">
+<label class="toolbar-cascade-step" id="toolbarCustomerStep"><span>고객사명</span><select aria-label="고객사명 선택" id="toolbarCustomerSelect"><option value="">고객사명 선택</option></select></label>
+<label class="toolbar-cascade-step" id="toolbarItemNameStep"><span>품명</span><select aria-label="품명 선택" id="toolbarItemNameSelect" disabled><option value="">품명 선택</option></select></label>
+<label class="toolbar-cascade-step" id="toolbarItemNumberStep"><span>품번</span><select aria-label="품번 선택" id="toolbarItemNumberSelect" disabled><option value="">품번 선택</option></select></label>
+<label class="toolbar-cascade-step" id="toolbarManagementStep"><span>관리번호</span><select aria-label="관리번호 선택" id="toolbarManagementSelect" disabled><option value="">관리번호 선택</option></select></label>
 <button class="primary toolbar-select-button" id="btnSelectItem" type="button">품목 선택</button>
 </div>
 <div class="group">
@@ -584,13 +636,14 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
 <div aria-hidden="true" class="modal-backdrop" id="itemModal">
 <div aria-labelledby="itemModalTitle" aria-modal="true" class="modal cascade-modal" role="dialog">
 <h2 id="itemModalTitle" tabindex="-1">품목 선택</h2>
-<div class="cascade-modal-header">
-  <div class="cascade-step-title" id="itemModalStepTitle">1. 고객사를 선택하세요.</div>
-  <button class="cascade-back-button" id="btnModalBack" type="button" hidden>이전 단계</button>
+<div class="modal-cascade-grid" aria-label="품목 연동 선택">
+<label class="modal-cascade-step"><span>고객사명</span><select id="modalCustomerSelect" aria-label="팝업 고객사명 선택"><option value="">고객사명 선택</option></select></label>
+<label class="modal-cascade-step"><span>품명</span><select id="modalItemNameSelect" aria-label="팝업 품명 선택" disabled><option value="">품명 선택</option></select></label>
+<label class="modal-cascade-step"><span>품번</span><select id="modalItemNumberSelect" aria-label="팝업 품번 선택" disabled><option value="">품번 선택</option></select></label>
+<label class="modal-cascade-step"><span>관리번호</span><select id="modalManagementSelect" aria-label="팝업 관리번호 선택" disabled><option value="">관리번호 선택</option></select></label>
 </div>
 <div class="cascade-selection-summary" id="itemModalSummary" hidden></div>
-<div class="cascade-option-list" id="itemModalOptions" role="listbox" aria-label="선택 목록"></div>
-<div class="modal-actions"><button id="btnCloseItemModal" type="button">닫기</button></div>
+<div class="modal-actions"><button class="primary" id="btnConfirmItemSelection" type="button" disabled>선택</button><button id="btnCloseItemModal" type="button">닫기</button></div>
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -629,7 +682,7 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
 
   let noticeTimer = null;
   let toolbarSelectedItemId = "";
-  let modalCascadeState = { customerId: "", itemName: "", itemNumber: "" };
+  let modalSelectedItemId = "";
 
   let currentProfile = null;
   let currentMode = "view";
@@ -937,11 +990,6 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     return referenceItems.filter(row => documentByItem.has(row.item_system_id));
   }
 
-  function setStepVisible(id, visible) {
-    const element = $(id);
-    if (element) element.hidden = !visible;
-  }
-
   function fillSelect(selectId, placeholder, options) {
     const select = $(selectId);
     if (!select) return;
@@ -957,75 +1005,96 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     select.value = "";
   }
 
-  function initializeToolbarCascade() {
-    toolbarSelectedItemId = "";
-    const source = savedReferenceItems();
-    const customers = [...new Map(source.map(row => [row.customer_system_id, {
+  function setSelectEnabled(selectId, enabled) {
+    const select = $(selectId);
+    if (select) select.disabled = !enabled;
+  }
+
+  function customerOptions(source) {
+    return [...new Map(source.map(row => [row.customer_system_id, {
       value: row.customer_system_id,
       label: row.customer_name || row.company_number || "미등록 고객사"
     }])).values()].sort((a,b) => compareText(a.label,b.label));
-    fillSelect("toolbarCustomerSelect", "고객사 선택", customers);
+  }
+
+  function itemNameOptions(source, customerId) {
+    return uniqueSorted(source
+      .filter(row => row.customer_system_id === customerId)
+      .map(row => row.item_name));
+  }
+
+  function itemNumberOptions(source, customerId, itemName) {
+    return uniqueSorted(source
+      .filter(row =>
+        row.customer_system_id === customerId &&
+        normalize(row.item_name) === itemName
+      )
+      .map(row => row.item_number));
+  }
+
+  function managementOptions(source, customerId, itemName, itemNumber) {
+    return source.filter(row =>
+      row.customer_system_id === customerId &&
+      normalize(row.item_name) === itemName &&
+      normalize(row.item_number) === itemNumber
+    ).sort((a,b) => compareText(a.work_standard_number,b.work_standard_number))
+      .map(row => ({
+        value: row.item_system_id,
+        label: row.work_standard_number || "관리번호 없음"
+      }));
+  }
+
+  function initializeToolbarCascade() {
+    toolbarSelectedItemId = "";
+    const source = savedReferenceItems();
+    fillSelect("toolbarCustomerSelect", "고객사명 선택", customerOptions(source));
     fillSelect("toolbarItemNameSelect", "품명 선택", []);
     fillSelect("toolbarItemNumberSelect", "품번 선택", []);
     fillSelect("toolbarManagementSelect", "관리번호 선택", []);
-    setStepVisible("toolbarItemNameStep", false);
-    setStepVisible("toolbarItemNumberStep", false);
-    setStepVisible("toolbarManagementStep", false);
+    setSelectEnabled("toolbarCustomerSelect", true);
+    setSelectEnabled("toolbarItemNameSelect", false);
+    setSelectEnabled("toolbarItemNumberSelect", false);
+    setSelectEnabled("toolbarManagementSelect", false);
   }
 
   function toolbarCustomerChanged() {
     toolbarSelectedItemId = "";
+    const source = savedReferenceItems();
     const customerId = $("toolbarCustomerSelect")?.value || "";
     fillSelect("toolbarItemNameSelect", "품명 선택", []);
     fillSelect("toolbarItemNumberSelect", "품번 선택", []);
     fillSelect("toolbarManagementSelect", "관리번호 선택", []);
-    setStepVisible("toolbarItemNameStep", Boolean(customerId));
-    setStepVisible("toolbarItemNumberStep", false);
-    setStepVisible("toolbarManagementStep", false);
+    setSelectEnabled("toolbarItemNameSelect", Boolean(customerId));
+    setSelectEnabled("toolbarItemNumberSelect", false);
+    setSelectEnabled("toolbarManagementSelect", false);
     if (!customerId) return;
-    const names = uniqueSorted(savedReferenceItems()
-      .filter(row => row.customer_system_id === customerId)
-      .map(row => row.item_name));
-    fillSelect("toolbarItemNameSelect", "품명 선택", names);
+    fillSelect("toolbarItemNameSelect", "품명 선택", itemNameOptions(source, customerId));
   }
 
   function toolbarItemNameChanged() {
     toolbarSelectedItemId = "";
+    const source = savedReferenceItems();
     const customerId = $("toolbarCustomerSelect")?.value || "";
     const itemName = $("toolbarItemNameSelect")?.value || "";
     fillSelect("toolbarItemNumberSelect", "품번 선택", []);
     fillSelect("toolbarManagementSelect", "관리번호 선택", []);
-    setStepVisible("toolbarItemNumberStep", Boolean(customerId && itemName));
-    setStepVisible("toolbarManagementStep", false);
+    setSelectEnabled("toolbarItemNumberSelect", Boolean(customerId && itemName));
+    setSelectEnabled("toolbarManagementSelect", false);
     if (!customerId || !itemName) return;
-    const numbers = uniqueSorted(savedReferenceItems()
-      .filter(row => row.customer_system_id === customerId && normalize(row.item_name) === itemName)
-      .map(row => row.item_number));
-    fillSelect("toolbarItemNumberSelect", "품번 선택", numbers);
+    fillSelect("toolbarItemNumberSelect", "품번 선택", itemNumberOptions(source, customerId, itemName));
   }
 
   function toolbarItemNumberChanged() {
     toolbarSelectedItemId = "";
+    const source = savedReferenceItems();
     const customerId = $("toolbarCustomerSelect")?.value || "";
     const itemName = $("toolbarItemNameSelect")?.value || "";
     const itemNumber = $("toolbarItemNumberSelect")?.value || "";
     fillSelect("toolbarManagementSelect", "관리번호 선택", []);
-    setStepVisible("toolbarManagementStep", Boolean(customerId && itemName && itemNumber));
+    setSelectEnabled("toolbarManagementSelect", Boolean(customerId && itemName && itemNumber));
     if (!customerId || !itemName || !itemNumber) return;
-    const matches = savedReferenceItems().filter(row =>
-      row.customer_system_id === customerId &&
-      normalize(row.item_name) === itemName &&
-      normalize(row.item_number) === itemNumber
-    ).sort((a,b) => compareText(a.work_standard_number,b.work_standard_number));
-    const options = matches.map(row => ({
-      value: row.item_system_id,
-      label: row.work_standard_number || "관리번호 없음"
-    }));
-    fillSelect("toolbarManagementSelect", "관리번호 선택", options);
-    if (matches.length === 1) {
-      $("toolbarManagementSelect").value = matches[0].item_system_id;
-      toolbarSelectedItemId = matches[0].item_system_id;
-    }
+    fillSelect("toolbarManagementSelect", "관리번호 선택",
+      managementOptions(source, customerId, itemName, itemNumber));
   }
 
   function toolbarManagementChanged() {
@@ -1036,7 +1105,7 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     const customerId = $("toolbarCustomerSelect")?.value || "";
     const itemName = $("toolbarItemNameSelect")?.value || "";
     const itemNumber = $("toolbarItemNumberSelect")?.value || "";
-    if (!customerId) return setNotice("고객사를 먼저 선택해 주세요.", "error");
+    if (!customerId) return setNotice("고객사명을 먼저 선택해 주세요.", "error");
     if (!itemName) return setNotice("품명을 선택해 주세요.", "error");
     if (!itemNumber) return setNotice("품번을 선택해 주세요.", "error");
     if (!toolbarSelectedItemId) return setNotice("관리번호를 선택해 주세요.", "error");
@@ -1047,125 +1116,106 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     return modalMode === "query" ? savedReferenceItems() : referenceItems;
   }
 
-  function modalSummaryParts() {
-    const parts = [];
-    if (modalCascadeState.customerId) {
-      const row = modalSourceItems().find(item => item.customer_system_id === modalCascadeState.customerId);
-      if (row) parts.push(row.customer_name || row.company_number || "고객사");
-    }
-    if (modalCascadeState.itemName) parts.push(modalCascadeState.itemName);
-    if (modalCascadeState.itemNumber) parts.push(modalCascadeState.itemNumber);
-    return parts;
-  }
-
-  function addModalOption(label, onClick, subText = "") {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "cascade-option-button";
-    button.textContent = label || "미입력";
-    if (subText) {
-      const sub = document.createElement("span");
-      sub.className = "option-sub";
-      sub.textContent = subText;
-      button.appendChild(sub);
-    }
-    button.addEventListener("click", onClick);
-    $("itemModalOptions").appendChild(button);
-  }
-
-  function renderModalCascade() {
+  function updateModalSummary() {
     const source = modalSourceItems();
-    const options = $("itemModalOptions");
+    const customerId = $("modalCustomerSelect")?.value || "";
+    const itemName = $("modalItemNameSelect")?.value || "";
+    const itemNumber = $("modalItemNumberSelect")?.value || "";
+    const selected = source.find(row => row.item_system_id === modalSelectedItemId);
+    const customer = source.find(row => row.customer_system_id === customerId);
+    const parts = [
+      customer?.customer_name || customer?.company_number || "",
+      itemName,
+      itemNumber,
+      selected?.work_standard_number || ""
+    ].filter(Boolean);
     const summary = $("itemModalSummary");
-    const back = $("btnModalBack");
-    options.innerHTML = "";
-
-    const summaryParts = modalSummaryParts();
-    summary.hidden = summaryParts.length === 0;
-    summary.textContent = summaryParts.join("  ›  ");
-    back.hidden = summaryParts.length === 0;
-
-    if (!source.length) {
-      $("itemModalStepTitle").textContent = modalMode === "query"
-        ? "저장된 작업표준서가 없습니다."
-        : "연결된 품목 데이터가 없습니다.";
-      options.innerHTML = '<div class="cascade-empty">선택할 데이터가 없습니다.</div>';
-      return;
-    }
-
-    if (!modalCascadeState.customerId) {
-      $("itemModalStepTitle").textContent = "1. 고객사를 선택하세요.";
-      const customers = [...new Map(source.map(row => [row.customer_system_id, row])).values()]
-        .sort((a,b) => compareText(a.customer_name,b.customer_name));
-      customers.forEach(row => addModalOption(
-        row.customer_name || row.company_number || "미등록 고객사",
-        () => {
-          modalCascadeState.customerId = row.customer_system_id;
-          modalCascadeState.itemName = "";
-          modalCascadeState.itemNumber = "";
-          renderModalCascade();
-        }
-      ));
-      return;
-    }
-
-    const customerRows = source.filter(row => row.customer_system_id === modalCascadeState.customerId);
-    if (!modalCascadeState.itemName) {
-      $("itemModalStepTitle").textContent = "2. 품명을 선택하세요.";
-      uniqueSorted(customerRows.map(row => row.item_name)).forEach(name => addModalOption(name, () => {
-        modalCascadeState.itemName = name;
-        modalCascadeState.itemNumber = "";
-        renderModalCascade();
-      }));
-      return;
-    }
-
-    const nameRows = customerRows.filter(row => normalize(row.item_name) === modalCascadeState.itemName);
-    if (!modalCascadeState.itemNumber) {
-      $("itemModalStepTitle").textContent = "3. 품번을 선택하세요.";
-      uniqueSorted(nameRows.map(row => row.item_number)).forEach(number => addModalOption(number, () => {
-        modalCascadeState.itemNumber = number;
-        const matches = nameRows.filter(row => normalize(row.item_number) === number)
-          .sort((a,b) => compareText(a.work_standard_number,b.work_standard_number));
-        if (matches.length === 1) {
-          selectItem(matches[0], modalMode === "query");
-          return;
-        }
-        renderModalCascade();
-      }));
-      return;
-    }
-
-    const numberRows = nameRows.filter(row => normalize(row.item_number) === modalCascadeState.itemNumber)
-      .sort((a,b) => compareText(a.work_standard_number,b.work_standard_number));
-    $("itemModalStepTitle").textContent = "4. 관리번호를 선택하세요.";
-    if (!numberRows.length) {
-      options.innerHTML = '<div class="cascade-empty">해당 품번의 관리번호가 없습니다.</div>';
-      return;
-    }
-    numberRows.forEach(row => addModalOption(
-      row.work_standard_number || "관리번호 없음",
-      () => selectItem(row, modalMode === "query"),
-      modalMode === "query" ? "저장된 작업표준서" : "품목 선택"
-    ));
+    summary.hidden = parts.length === 0;
+    summary.textContent = parts.join("  ›  ");
   }
 
-  function modalBackStep() {
-    if (modalCascadeState.itemNumber) {
-      modalCascadeState.itemNumber = "";
-    } else if (modalCascadeState.itemName) {
-      modalCascadeState.itemName = "";
-    } else if (modalCascadeState.customerId) {
-      modalCascadeState.customerId = "";
+  function initializeModalCascade() {
+    modalSelectedItemId = "";
+    const source = modalSourceItems();
+    fillSelect("modalCustomerSelect", "고객사명 선택", customerOptions(source));
+    fillSelect("modalItemNameSelect", "품명 선택", []);
+    fillSelect("modalItemNumberSelect", "품번 선택", []);
+    fillSelect("modalManagementSelect", "관리번호 선택", []);
+    setSelectEnabled("modalCustomerSelect", true);
+    setSelectEnabled("modalItemNameSelect", false);
+    setSelectEnabled("modalItemNumberSelect", false);
+    setSelectEnabled("modalManagementSelect", false);
+    $("btnConfirmItemSelection").disabled = true;
+    updateModalSummary();
+  }
+
+  function modalCustomerChanged() {
+    modalSelectedItemId = "";
+    const source = modalSourceItems();
+    const customerId = $("modalCustomerSelect")?.value || "";
+    fillSelect("modalItemNameSelect", "품명 선택", []);
+    fillSelect("modalItemNumberSelect", "품번 선택", []);
+    fillSelect("modalManagementSelect", "관리번호 선택", []);
+    setSelectEnabled("modalItemNameSelect", Boolean(customerId));
+    setSelectEnabled("modalItemNumberSelect", false);
+    setSelectEnabled("modalManagementSelect", false);
+    $("btnConfirmItemSelection").disabled = true;
+    if (customerId) {
+      fillSelect("modalItemNameSelect", "품명 선택", itemNameOptions(source, customerId));
     }
-    renderModalCascade();
+    updateModalSummary();
+  }
+
+  function modalItemNameChanged() {
+    modalSelectedItemId = "";
+    const source = modalSourceItems();
+    const customerId = $("modalCustomerSelect")?.value || "";
+    const itemName = $("modalItemNameSelect")?.value || "";
+    fillSelect("modalItemNumberSelect", "품번 선택", []);
+    fillSelect("modalManagementSelect", "관리번호 선택", []);
+    setSelectEnabled("modalItemNumberSelect", Boolean(customerId && itemName));
+    setSelectEnabled("modalManagementSelect", false);
+    $("btnConfirmItemSelection").disabled = true;
+    if (customerId && itemName) {
+      fillSelect("modalItemNumberSelect", "품번 선택", itemNumberOptions(source, customerId, itemName));
+    }
+    updateModalSummary();
+  }
+
+  function modalItemNumberChanged() {
+    modalSelectedItemId = "";
+    const source = modalSourceItems();
+    const customerId = $("modalCustomerSelect")?.value || "";
+    const itemName = $("modalItemNameSelect")?.value || "";
+    const itemNumber = $("modalItemNumberSelect")?.value || "";
+    fillSelect("modalManagementSelect", "관리번호 선택", []);
+    setSelectEnabled("modalManagementSelect", Boolean(customerId && itemName && itemNumber));
+    $("btnConfirmItemSelection").disabled = true;
+    if (customerId && itemName && itemNumber) {
+      fillSelect("modalManagementSelect", "관리번호 선택",
+        managementOptions(source, customerId, itemName, itemNumber));
+    }
+    updateModalSummary();
+  }
+
+  function modalManagementChanged() {
+    modalSelectedItemId = $("modalManagementSelect")?.value || "";
+    $("btnConfirmItemSelection").disabled = !modalSelectedItemId;
+    updateModalSummary();
+  }
+
+  function confirmModalItemSelection() {
+    if (!modalSelectedItemId) return;
+    const row = modalSourceItems().find(item => item.item_system_id === modalSelectedItemId);
+    if (!row) return setNotice("선택한 품목을 찾을 수 없습니다.", "error");
+    selectItem(row, modalMode === "query");
   }
 
   function openItemModal(mode) {
     modalMode = mode;
-    modalCascadeState = { customerId: "", itemName: "", itemNumber: "" };
     $("itemModalTitle").textContent = mode === "query" ? "저장된 작업표준서 조회" : "품목 선택";
-    renderModalCascade();
+    $("btnConfirmItemSelection").textContent = mode === "query" ? "조회" : "선택";
+    initializeModalCascade();
     itemModal.classList.add("open");
     itemModal.setAttribute("aria-hidden", "false");
     window.setTimeout(() => $("itemModalTitle")?.focus?.(), 0);
@@ -1648,12 +1698,16 @@ body.edit-mode .image-uploader.has-image .image-delete-button{display:block;}
     $("btnSelectItem").addEventListener("click",() => openItemModal("select"));
     $("btnSearch").addEventListener("click",querySelectedWorkStandard);
     $("btnCloseItemModal").addEventListener("click",closeItemModal);
-    $("btnModalBack").addEventListener("click",modalBackStep);
+    $("btnConfirmItemSelection").addEventListener("click",confirmModalItemSelection);
     itemModal.addEventListener("click",event => { if (event.target === itemModal) closeItemModal(); });
     $("toolbarCustomerSelect").addEventListener("change",toolbarCustomerChanged);
     $("toolbarItemNameSelect").addEventListener("change",toolbarItemNameChanged);
     $("toolbarItemNumberSelect").addEventListener("change",toolbarItemNumberChanged);
     $("toolbarManagementSelect").addEventListener("change",toolbarManagementChanged);
+    $("modalCustomerSelect").addEventListener("change",modalCustomerChanged);
+    $("modalItemNameSelect").addEventListener("change",modalItemNameChanged);
+    $("modalItemNumberSelect").addEventListener("change",modalItemNumberChanged);
+    $("modalManagementSelect").addEventListener("change",modalManagementChanged);
     $("equipment_system_id").addEventListener("change",updateEquipmentNumber);
 
     formRoot.querySelectorAll("input,select,textarea").forEach(control => {
