@@ -436,6 +436,40 @@
   .toolbar button.active{background:#fff1cc;border-color:#b8860b;color:#7a5200;}
   .toolbar button:disabled{opacity:.45;cursor:not-allowed;}
 
+  /* 조회 프레임과 첫 번째 제조공정도 양식 사이 간격 */
+  .first-sheet{
+    margin-top:30px;
+  }
+
+  /* 신규등록 시 제조공정도 양식 안에서 고객사 → 품명 → 품번 선택 */
+  .meta-entry-select{
+    width:100%;
+    min-width:0;
+    height:34px;
+    padding:0 10px;
+    border:1px solid #aeb4bc;
+    border-radius:3px;
+    background:#fff;
+    color:#111;
+    font-family:inherit;
+    font-size:13px;
+  }
+  .meta-entry-select:focus{
+    outline:2px solid #1b3a63;
+    outline-offset:1px;
+  }
+  .meta-entry-select:disabled{
+    background:#f3f4f6;
+    color:#9ca3af;
+    cursor:not-allowed;
+  }
+  .new-identity-mode td.value[data-field-role="meta"]{
+    padding:4px 6px;
+  }
+  .new-identity-mode td.value[data-field-role="meta"]::before{
+    content:none!important;
+  }
+
   .status-line{
     position:fixed;
     top:54px;
@@ -569,6 +603,7 @@
     font-weight:700;
   }
   @media print{
+    .first-sheet{margin-top:0!important;}
     td.value[data-field-role="meta"]:empty::before,
     [data-field-type="text"]:empty::before,
     .photo-placeholder{color:#111!important;}
@@ -610,7 +645,7 @@
 <div class="modal-actions"><button id="btnCloseSearchResult" type="button">닫기</button></div>
 </div>
 </div>
-<div class="sheet">
+<div class="sheet first-sheet">
 <div class="titlebar">
 <h1>제조공정도</h1>
 <div class="subtitle">
@@ -860,6 +895,13 @@
   let customers = [];
   let items = [];
   let documents = [];
+  let newIdentity = {
+    customerSystemId:"",
+    customerName:"",
+    itemName:"",
+    itemSystemId:"",
+    itemNumber:""
+  };
 
   const customerMap = new Map();
   const itemMap = new Map();
@@ -901,11 +943,164 @@
   function metaGroup(key){ return Array.from(document.querySelectorAll('[data-meta-key="' + key + '"]')); }
   function getMetaValue(key){
     const first = metaGroup(key)[0];
-    return normalize(first ? first.innerText : "");
+    if(!first) return "";
+    return normalize(first.dataset.metaValue || first.innerText);
   }
   function setMetaValue(key, value){
-    metaGroup(key).forEach(function(cell){ cell.textContent = normalize(value); });
+    const normalized = normalize(value);
+    metaGroup(key).forEach(function(cell){
+      cell.dataset.metaValue = normalized;
+      if(!cell.querySelector('.meta-entry-select')) cell.textContent = normalized;
+    });
   }
+
+  function resetNewIdentity(){
+    newIdentity = {
+      customerSystemId:"",
+      customerName:"",
+      itemName:"",
+      itemSystemId:"",
+      itemNumber:""
+    };
+    currentItemSystemId = "";
+  }
+
+  function leaveNewIdentityMode(){
+    document.body.classList.remove("new-identity-mode");
+    ["customerName","itemName","itemNumber"].forEach(function(key){
+      metaGroup(key).forEach(function(cell){
+        const value = normalize(cell.dataset.metaValue);
+        cell.textContent = value;
+      });
+    });
+  }
+
+  function uniqueItemNamesForCustomer(customerSystemId){
+    return Array.from(new Set(activeReferenceItems().filter(function(item){
+      return item.customer_system_id === customerSystemId;
+    }).map(function(item){ return normalize(item.item_name); }).filter(Boolean))).sort(compareText);
+  }
+
+  function itemsForCustomerAndName(customerSystemId, itemName){
+    return activeReferenceItems().filter(function(item){
+      return item.customer_system_id === customerSystemId && normalize(item.item_name) === normalize(itemName);
+    }).sort(function(a,b){ return compareText(a.item_number,b.item_number); });
+  }
+
+  function focusFormIdentitySelect(key){
+    const select = document.querySelector('.meta-entry-select[data-meta-select-key="' + key + '"]');
+    if(select) window.setTimeout(function(){ select.focus(); },0);
+  }
+
+  function renderNewIdentitySelects(){
+    if(currentMode !== "new") return;
+    document.body.classList.add("new-identity-mode");
+
+    const customerOptions = customers.slice().sort(function(a,b){
+      return compareText(a.company_number,b.company_number) || compareText(a.customer_name,b.customer_name);
+    }).map(function(row){
+      return {value:row.customer_system_id,label:normalize(row.customer_name)};
+    });
+    const itemNameOptions = newIdentity.customerSystemId
+      ? uniqueItemNamesForCustomer(newIdentity.customerSystemId).map(function(name){ return {value:name,label:name}; })
+      : [];
+    const itemNumberOptions = newIdentity.customerSystemId && newIdentity.itemName
+      ? itemsForCustomerAndName(newIdentity.customerSystemId,newIdentity.itemName).map(function(item){
+          return {value:item.item_system_id,label:normalize(item.item_number)};
+        })
+      : [];
+
+    const configs = {
+      customerName:{placeholder:"고객사명 선택",options:customerOptions,value:newIdentity.customerSystemId},
+      itemName:{placeholder:"품명 선택",options:itemNameOptions,value:newIdentity.itemName},
+      itemNumber:{placeholder:"품번 선택",options:itemNumberOptions,value:newIdentity.itemSystemId}
+    };
+
+    Object.keys(configs).forEach(function(key){
+      const config = configs[key];
+      metaGroup(key).forEach(function(cell){
+        cell.textContent = "";
+        cell.dataset.metaValue = key === "customerName" ? newIdentity.customerName : (key === "itemName" ? newIdentity.itemName : newIdentity.itemNumber);
+        const select = document.createElement("select");
+        select.className = "meta-entry-select";
+        select.dataset.metaSelectKey = key;
+        select.setAttribute("aria-label", config.placeholder);
+        select.add(new Option(config.placeholder,""));
+        config.options.forEach(function(option){ select.add(new Option(option.label,option.value)); });
+        select.value = config.options.some(function(option){ return option.value === config.value; }) ? config.value : "";
+        select.disabled = busy || (key === "itemName" && !newIdentity.customerSystemId) || (key === "itemNumber" && (!newIdentity.customerSystemId || !newIdentity.itemName));
+        select.addEventListener("change",function(){ handleFormIdentityChange(key,select.value); });
+        cell.appendChild(select);
+      });
+    });
+  }
+
+  function handleFormIdentityChange(key, value){
+    if(currentMode !== "new") return;
+
+    if(key === "customerName"){
+      const customer = customerMap.get(value);
+      newIdentity.customerSystemId = customer ? customer.customer_system_id : "";
+      newIdentity.customerName = customer ? normalize(customer.customer_name) : "";
+      newIdentity.itemName = "";
+      newIdentity.itemSystemId = "";
+      newIdentity.itemNumber = "";
+      currentItemSystemId = "";
+      renderNewIdentitySelects();
+      if(!value){
+        setNotice("제조공정도 양식에서 고객사명을 선택해 주세요.","error");
+      }else if(uniqueItemNamesForCustomer(value).length === 0){
+        setNotice("선택한 고객사에 등록된 품명이 없습니다. 아이템관리를 확인해 주세요.","error",true);
+      }else{
+        setNotice("고객사를 선택했습니다. 제조공정도 양식에서 품명을 선택해 주세요.","success");
+        focusFormIdentitySelect("itemName");
+      }
+      return;
+    }
+
+    if(key === "itemName"){
+      newIdentity.itemName = normalize(value);
+      newIdentity.itemSystemId = "";
+      newIdentity.itemNumber = "";
+      currentItemSystemId = "";
+      renderNewIdentitySelects();
+      if(!value){
+        setNotice("제조공정도 양식에서 품명을 선택해 주세요.","error");
+      }else if(itemsForCustomerAndName(newIdentity.customerSystemId,value).length === 0){
+        setNotice("선택한 고객사·품명에 등록된 품번이 없습니다. 아이템관리를 확인해 주세요.","error",true);
+      }else{
+        setNotice("품명을 선택했습니다. 제조공정도 양식에서 품번을 선택해 주세요.","success");
+        focusFormIdentitySelect("itemNumber");
+      }
+      return;
+    }
+
+    if(key === "itemNumber"){
+      const item = itemMap.get(value);
+      if(!item || item.customer_system_id !== newIdentity.customerSystemId || normalize(item.item_name) !== newIdentity.itemName){
+        newIdentity.itemSystemId = "";
+        newIdentity.itemNumber = "";
+        currentItemSystemId = "";
+        renderNewIdentitySelects();
+        setNotice("사용 가능한 품번을 선택해 주세요.","error");
+        return;
+      }
+      newIdentity.itemSystemId = item.item_system_id;
+      newIdentity.itemNumber = normalize(item.item_number);
+      currentItemSystemId = item.item_system_id;
+      renderNewIdentitySelects();
+      setNotice("고객사명·품명·품번 선택이 완료되었습니다. 제조공정도 DATA와 공정 사진을 입력해 주세요.","success",true);
+      const firstField = textFields[0];
+      if(firstField) window.setTimeout(function(){ firstField.focus(); },0);
+    }
+  }
+
+  function enterNewIdentityMode(){
+    resetNewIdentity();
+    renderNewIdentitySelects();
+    focusFormIdentitySelect("customerName");
+  }
+
   function photoElements(cell){
     return {
       placeholder:cell.querySelector(".photo-placeholder"),
@@ -963,6 +1158,7 @@
 
   function clearForm(){
     clearPendingPhotos();
+    leaveNewIdentityMode();
     setMetaValue("customerName", "");
     setMetaValue("itemName", "");
     setMetaValue("itemNumber", "");
@@ -1012,6 +1208,7 @@
 
   async function applySnapshot(snapshot){
     if(!snapshot || !Array.isArray(snapshot.values)) return;
+    leaveNewIdentityMode();
     clearPendingPhotos();
     setMetaValue("customerName", snapshot.identity.customerName || "");
     setMetaValue("itemName", snapshot.identity.itemName || "");
@@ -1068,11 +1265,17 @@
     document.getElementById("btnReset").disabled = busy;
     document.getElementById("btnDelete").disabled = busy || !isAdmin() || !currentDocumentId || inEntryMode;
     document.getElementById("btnPdf").disabled = busy || !canPdf();
-    [customerSelect,itemNameSelect,itemNumberSelect].forEach(function(select){ select.disabled = busy; });
-    if(!busy){
+    [customerSelect,itemNameSelect,itemNumberSelect].forEach(function(select){
+      select.disabled = busy || currentMode === "new";
+    });
+    if(!busy && currentMode !== "new"){
       itemNameSelect.disabled = !customerSelect.value;
       itemNumberSelect.disabled = !customerSelect.value || !itemNameSelect.value;
     }
+    document.querySelectorAll(".meta-entry-select").forEach(function(select){
+      const key = select.dataset.metaSelectKey;
+      select.disabled = busy || currentMode !== "new" || (key === "itemName" && !newIdentity.customerSystemId) || (key === "itemNumber" && (!newIdentity.customerSystemId || !newIdentity.itemName));
+    });
   }
 
   function fillSelect(select, placeholder, options, selectedValue){
@@ -1391,7 +1594,7 @@
 
   async function saveNewDocument(){
     if(!isAdmin()) throw new Error("신규등록은 관리자만 가능합니다.");
-    if(!currentItemSystemId) throw new Error("상단에서 고객사명, 품명, 품번을 순서대로 선택해 주세요.");
+    if(!currentItemSystemId) throw new Error("제조공정도 양식에서 고객사명, 품명, 품번을 순서대로 선택해 주세요.");
 
     const item = itemMap.get(currentItemSystemId);
     if(!item || item.is_active === false) throw new Error("사용 가능한 품목을 선택해 주세요.");
@@ -1493,6 +1696,7 @@
       currentItemSystemId = "";
       currentMode = "view";
       loadedSnapshot = null;
+      resetNewIdentity();
       clearForm();
       setEditMode(false);
       await loadDocumentIndex();
@@ -1631,6 +1835,7 @@
       clearForm();
       rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
       setEditMode(true);
+      enterNewIdentityMode();
 
       const availableItemCount = activeReferenceItems().length;
       if(customers.length === 0){
@@ -1638,7 +1843,7 @@
       }else if(availableItemCount === 0){
         setNotice("고객사 " + customers.length + "건은 불러왔지만 등록 가능한 품목이 없습니다. 아이템관리를 확인해 주세요.","error",true);
       }else{
-        setNotice("고객사 " + customers.length + "건, 품목 " + availableItemCount + "건을 불러왔습니다. 고객사명 → 품명 → 품번 순서로 선택해 주세요.","success");
+        setNotice("제조공정도 양식의 고객사 → 품명 → 품번 순서로 선택해 주세요.","success",true);
       }
     }catch(error){
       console.error("신규등록 기준정보 조회 실패:",error);
@@ -1646,7 +1851,8 @@
     }finally{
       setBusy(false);
       if(currentMode === "new"){
-        window.setTimeout(function(){ customerSelect.focus(); },0);
+        renderNewIdentitySelects();
+        focusFormIdentitySelect("customerName");
       }
     }
   });
@@ -1665,6 +1871,7 @@
         currentDocumentId = "";
         currentItemSystemId = "";
         loadedSnapshot = null;
+        resetNewIdentity();
         clearForm();
         setEditMode(false);
         rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
@@ -1690,6 +1897,7 @@
       await loadReferenceData();
       await loadDocumentIndex();
       currentMode = "view";
+      resetNewIdentity();
       clearForm();
       setEditMode(false);
       rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
