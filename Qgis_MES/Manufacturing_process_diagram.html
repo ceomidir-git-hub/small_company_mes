@@ -470,149 +470,6 @@
     content:none!important;
   }
 
-  .status-line{
-    position:fixed;
-    top:54px;
-    right:24px;
-    z-index:1600;
-    width:340px;
-    max-width:calc(100% - 32px);
-    min-height:48px;
-    padding:12px 14px;
-    display:flex;
-    align-items:center;
-    border:1px solid #cbd5e1;
-    border-radius:8px;
-    background:#fff;
-    box-shadow:0 8px 24px rgba(0,0,0,.18);
-    color:#344054;
-    font-size:12px;
-    line-height:1.35;
-    opacity:0;
-    visibility:hidden;
-    transform:translateY(-8px);
-    transition:opacity .2s ease,transform .2s ease,visibility .2s ease;
-    pointer-events:none;
-  }
-  .status-line.show{opacity:1;visibility:visible;transform:translateY(0);}
-  .status-line.success{color:#05603a;border-color:#9ed6bd;background:#f0fff7;}
-  .status-line.error{color:#b42318;border-color:#f0aaa4;background:#fff5f4;}
-
-  .modal-backdrop{
-    display:none;
-    position:fixed;
-    inset:0;
-    z-index:1200;
-    align-items:center;
-    justify-content:center;
-    padding:18px;
-    background:rgba(0,0,0,.52);
-  }
-  .modal-backdrop.open{display:flex;}
-  .modal{
-    width:min(860px,100%);
-    max-height:82vh;
-    overflow:auto;
-    padding:16px;
-    border-radius:8px;
-    background:#fff;
-    box-shadow:0 15px 50px rgba(0,0,0,.35);
-  }
-  .modal h2{margin:0 0 8px;font-size:18px;}
-  .modal-summary{margin:0 0 10px;color:#475467;font-size:12px;}
-  .modal table{width:100%;border-collapse:collapse;table-layout:fixed;}
-  .modal th,.modal td{border:1px solid #ccc;padding:8px;font-size:12px;text-align:left;}
-  .modal th{background:#eef1f6;text-align:center;}
-  .modal tbody tr{cursor:pointer;}
-  .modal tbody tr:hover,.modal tbody tr:focus{background:#fff8c9;outline:none;}
-  .modal .empty{text-align:center;color:#667085;padding:24px;}
-  .modal-actions{display:flex;justify-content:flex-end;margin-top:10px;}
-  .modal-actions button{height:30px;padding:0 12px;border:1px solid #999;background:#fff;border-radius:4px;cursor:pointer;}
-
-  @media(max-width:1150px){
-    .toolbar{flex-wrap:wrap;}
-    .toolbar-search-group{flex-basis:100%;}
-    .toolbar > .group:last-child{flex-wrap:wrap;}
-  }
-  @media(max-width:640px){
-    .toolbar-search-group{display:grid!important;grid-template-columns:1fr 1fr;}
-    .toolbar-filter{min-width:0;}
-  }
-  @media(max-width:420px){
-    .toolbar-search-group{grid-template-columns:1fr;}
-  }
-
-  /* numbered-photo-row-height */
-  table.flow tbody tr:first-child td:not(.rowlabel){height:110px;}
-
-
-  /* ---------- Manufacturing Process Diagram input mapping ---------- */
-  td.value[data-field-role="meta"]:empty::before,
-  [data-field-type="text"]:empty::before{
-    content:attr(data-placeholder);
-    color:#111;
-    font-weight:400;
-    pointer-events:none;
-  }
-  .edit-mode [data-field-type="text"]{
-    cursor:text;
-  }
-  .photo-field{
-    position:relative;
-    height:110px;
-    overflow:hidden;
-    cursor:default;
-  }
-  .photo-placeholder{
-    min-height:96px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    color:#111;
-    font-size:12.5px;
-    line-height:1.35;
-    user-select:none;
-  }
-  .process-photo-preview{
-    width:100%!important;
-    height:96px!important;
-    object-fit:contain!important;
-    display:block;
-    border:0!important;
-    background:#fff;
-  }
-  .process-photo-preview[hidden]{display:none!important;}
-  .process-photo-input{display:none!important;}
-  .edit-mode .photo-field{
-    cursor:pointer;
-    outline:1px dashed #b8860b;
-    outline-offset:-2px;
-  }
-  .edit-mode .photo-field:hover::after{
-    content:"사진 선택";
-    position:absolute;
-    right:7px;
-    bottom:7px;
-    padding:3px 7px;
-    border:1px solid #7c9fc8;
-    border-radius:4px;
-    background:rgba(255,255,255,.94);
-    color:#1b3a63;
-    font-size:10px;
-    font-weight:700;
-  }
-  @media print{
-    .first-sheet{margin-top:0!important;}
-    td.value[data-field-role="meta"]:empty::before,
-    [data-field-type="text"]:empty::before,
-    .photo-placeholder{color:#111!important;}
-    .edit-mode .photo-field:hover::after{display:none!important;}
-  }
-
-  html.auth-pending body{visibility:hidden;}
-  .toolbar button:disabled,.toolbar select:disabled{opacity:.48;cursor:not-allowed;}
-  .status-line.loading{color:#6a4b00;border-color:#d9bd4d;background:#fff9e6;}
 </style>
 </head>
 <body>
@@ -633,7 +490,6 @@
 <button id="btnPdf" type="button">PDF 저장</button>
 </div>
 </div>
-<div class="status-line" id="statusLine" role="status"></div>
 <div aria-hidden="true" class="modal-backdrop" id="searchResultModal">
 <div aria-labelledby="searchResultTitle" aria-modal="true" class="modal" role="dialog">
 <h2 id="searchResultTitle" tabindex="-1">제조공정도 조회 결과</h2>
@@ -890,7 +746,6 @@
   let currentItemSystemId = "";
   let editMode = false;
   let busy = false;
-  let noticeTimer = null;
   let loadedSnapshot = null;
   let customers = [];
   let items = [];
@@ -921,15 +776,8 @@
     return message || fallback;
   }
 
-  function setNotice(message, type, persist){
-    const line = document.getElementById("statusLine");
-    if(!line) return;
-    window.clearTimeout(noticeTimer);
-    line.textContent = message;
-    line.className = "status-line show" + (type ? " " + type : "");
-    if(!persist){
-      noticeTimer = window.setTimeout(function(){ line.className = "status-line"; }, 4500);
-    }
+  function setNotice(){
+    // 화면을 가리는 설명 메시지는 표시하지 않습니다.
   }
 
   function setBusy(enabled, message){
@@ -1089,7 +937,6 @@
       newIdentity.itemNumber = normalize(item.item_number);
       currentItemSystemId = item.item_system_id;
       renderNewIdentitySelects();
-      setNotice("고객사명·품명·품번 선택이 완료되었습니다. 제조공정도 DATA와 공정 사진을 입력해 주세요.","success",true);
       const firstField = textFields[0];
       if(firstField) window.setTimeout(function(){ firstField.focus(); },0);
     }
@@ -1796,7 +1643,6 @@
       setNotice("품번을 선택해 주세요.","error");
       return;
     }
-    setNotice("고객사명·품명·품번 선택이 완료되었습니다. 제조공정도 양식에 DATA와 공정 사진을 입력해 주세요.","success",true);
     const firstField = textFields[0];
     if(firstField){
       window.setTimeout(function(){ firstField.focus(); },0);
