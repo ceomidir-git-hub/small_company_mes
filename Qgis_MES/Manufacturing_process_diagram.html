@@ -75,12 +75,12 @@
   table.meta td.label{
     background:var(--bg-head);
     font-weight:700;
-    width:9%;
+    width:10%;
     text-align:center;
     color:var(--navy-dark);
   }
   table.meta td.value{
-    width:16%;
+    width:23.3333%;
   }
 
   /* ---------- Doc control strip ---------- */
@@ -520,10 +520,6 @@
     font-weight:400;
     pointer-events:none;
   }
-  td.value.company-field:empty::before{
-    color:#667085;
-  }
-  .edit-mode td.value[data-meta-key]:not(.company-field),
   .edit-mode [data-field-type="text"]{
     cursor:text;
   }
@@ -623,7 +619,6 @@
 </div>
 <table class="meta">
 <tr>
-<td class="label">업체명</td><td class="value input-field company-field" contenteditable="false" data-field-role="meta" data-meta-key="companyName" data-placeholder="로그인 회사 자동표시"></td>
 <td class="label">고객사</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="customerName" data-placeholder="고객사명"></td>
 <td class="label">품명</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemName" data-placeholder="품명"></td>
 <td class="label">품번</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemNumber" data-placeholder="품번"></td>
@@ -726,7 +721,6 @@
 </div>
 <table class="meta">
 <tr>
-<td class="label">업체명</td><td class="value input-field company-field" contenteditable="false" data-field-role="meta" data-meta-key="companyName" data-placeholder="로그인 회사 자동표시"></td>
 <td class="label">고객사</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="customerName" data-placeholder="고객사명"></td>
 <td class="label">품명</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemName" data-placeholder="품명"></td>
 <td class="label">품번</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemNumber" data-placeholder="품번"></td>
@@ -839,12 +833,6 @@
   const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
   const PHOTO_FIELD_NUMBERS = Object.freeze([2,7,12,17,22,27,32,37,42,47,52,57,62,67,72]);
   const ALLOWED_IMAGE_TYPES = Object.freeze(["image/jpeg","image/png","image/webp"]);
-  const COMPANY_NAMES = Object.freeze({
-    "17f2ff71-20db-49ff-b682-279989776817":"큐지스",
-    "8926eb68-aad3-4355-a51a-628a18757f71":"금성열처리",
-    "547df2c3-cdf0-40f6-8ec9-868bcb72f946":"아이템티"
-  });
-
   if(!window.supabase){
     window.alert("Supabase 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.");
     return;
@@ -918,10 +906,6 @@
   function setMetaValue(key, value){
     metaGroup(key).forEach(function(cell){ cell.textContent = normalize(value); });
   }
-  function currentCompanyName(){
-    return currentProfile ? (COMPANY_NAMES[currentProfile.company_id] || "") : "";
-  }
-
   function photoElements(cell){
     return {
       placeholder:cell.querySelector(".photo-placeholder"),
@@ -979,7 +963,6 @@
 
   function clearForm(){
     clearPendingPhotos();
-    setMetaValue("companyName", currentCompanyName());
     setMetaValue("customerName", "");
     setMetaValue("itemName", "");
     setMetaValue("itemNumber", "");
@@ -1012,7 +995,6 @@
       documentId:currentDocumentId,
       itemSystemId:currentItemSystemId,
       identity:{
-        companyName:getMetaValue("companyName"),
         customerName:getMetaValue("customerName"),
         itemName:getMetaValue("itemName"),
         itemNumber:getMetaValue("itemNumber")
@@ -1031,7 +1013,6 @@
   async function applySnapshot(snapshot){
     if(!snapshot || !Array.isArray(snapshot.values)) return;
     clearPendingPhotos();
-    setMetaValue("companyName", snapshot.identity.companyName || currentCompanyName());
     setMetaValue("customerName", snapshot.identity.customerName || "");
     setMetaValue("itemName", snapshot.identity.itemName || "");
     setMetaValue("itemNumber", snapshot.identity.itemNumber || "");
@@ -1103,7 +1084,7 @@
 
   function activeReferenceItems(){
     return items.filter(function(item){
-      return item && item.item_system_id && item.customer_system_id && item.is_active !== false;
+      return item && item.item_system_id && item.customer_system_id;
     });
   }
 
@@ -1184,7 +1165,6 @@
     if(currentMode !== "new") return;
     const identity = selectedToolbarIdentity();
     currentItemSystemId = identity.itemSystemId || "";
-    setMetaValue("companyName", currentCompanyName());
     setMetaValue("customerName", identity.customerName || "");
     setMetaValue("itemName", identity.itemName || "");
     setMetaValue("itemNumber", identity.itemNumber || "");
@@ -1216,21 +1196,30 @@
     const companyId = currentProfile.company_id;
     const results = await Promise.all([
       sb.from("customers")
-        .select("company_id,customer_system_id,customer_name")
-        .eq("company_id",companyId),
-      sb.from("items")
-        .select("company_id,item_system_id,customer_system_id,item_name,item_number,is_active")
+        .select("customer_system_id,company_number,customer_name,is_active")
         .eq("company_id",companyId)
+        .eq("is_active",true)
+        .order("company_number",{ascending:true}),
+      sb.from("items")
+        .select("item_system_id,customer_system_id,item_name,item_number,is_active")
+        .eq("company_id",companyId)
+        .eq("is_active",true)
+        .order("item_name",{ascending:true})
+        .order("item_number",{ascending:true})
     ]);
-    if(results[0].error) throw results[0].error;
-    if(results[1].error) throw results[1].error;
+    if(results[0].error) throw new Error("고객사 DB 조회 실패: " + errorMessage(results[0].error,"customers 조회 오류"));
+    if(results[1].error) throw new Error("품목 DB 조회 실패: " + errorMessage(results[1].error,"items 조회 오류"));
 
     customers = results[0].data || [];
     items = results[1].data || [];
     customerMap.clear();
     itemMap.clear();
-    customers.forEach(function(row){ customerMap.set(row.customer_system_id,row); });
-    items.forEach(function(row){ itemMap.set(row.item_system_id,row); });
+    customers.forEach(function(row){
+      if(row.customer_system_id) customerMap.set(row.customer_system_id,row);
+    });
+    items.forEach(function(row){
+      if(row.item_system_id) itemMap.set(row.item_system_id,row);
+    });
   }
 
   async function loadDocumentIndex(){
@@ -1287,7 +1276,6 @@
         documentId:record.documentId,
         itemSystemId:record.itemSystemId,
         identity:{
-          companyName:currentCompanyName(),
           customerName:record.customerName,
           itemName:record.itemName,
           itemNumber:record.itemNumber
@@ -1602,7 +1590,7 @@
 
       const availableItemCount = activeReferenceItems().length;
       if(customers.length === 0){
-        setNotice("로그인 회사에 등록된 고객사가 없습니다. 고객사관리를 먼저 확인해 주세요.","error",true);
+        setNotice("customers 테이블에서 로그인 회사의 사용중 고객사를 0건 불러왔습니다. 고객사관리의 is_active 상태와 RLS를 확인해 주세요.","error",true);
       }else if(availableItemCount === 0){
         setNotice("고객사 " + customers.length + "건은 불러왔지만 등록 가능한 품목이 없습니다. 아이템관리를 확인해 주세요.","error",true);
       }else{
@@ -1666,7 +1654,7 @@
         throw new Error("NO1~NO75 또는 사진 15개 입력 매핑이 올바르지 않습니다.");
       }
       document.documentElement.classList.remove("auth-pending");
-      setNotice("Supabase DB 연결이 완료되었습니다. 조회 가능한 제조공정도 " + documents.length + "건입니다.","success");
+      setNotice("Supabase DB 연결 완료 · 고객사 " + customers.length + "건 · 품목 " + activeReferenceItems().length + "건 · 제조공정도 " + documents.length + "건","success");
     }catch(error){
       console.error(error);
       document.documentElement.classList.remove("auth-pending");
