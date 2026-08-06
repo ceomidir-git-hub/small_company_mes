@@ -801,6 +801,215 @@
     }
   }
 </style>
+
+<style id="requestedManufacturingFixes">
+  /* ============================================================
+     요청 반영: 조회 시 흰색 / 신규·수정 시 입력 영역만 연한 노랑
+     프레임의 행·열 크기와 위치는 입력값에 의해 변경되지 않는다.
+     ============================================================ */
+  :root{
+    --entry-edit-bg:#fffef3;
+    --entry-edit-line:#eee5c8;
+  }
+
+  /* 일반 조회 상태: 모든 DATA 셀과 실제 표시 영역은 흰색 */
+  .input-field,
+  table.flow th.process-field,
+  table.flow td.process-field,
+  table.meta td.value,
+  .photo-field,
+  .fixed-text-editor{
+    background:#fff!important;
+  }
+
+  /* 기존의 셀 전체 노랑색/점선 표시는 사용하지 않는다. */
+  .edit-mode .input-field,
+  .edit-mode .photo-field{
+    outline:0!important;
+  }
+
+  /* 실제 문자가 입력되는 내부 영역만 아주 연한 노랑색 */
+  .fixed-text-editor{
+    width:calc(100% - 6px)!important;
+    height:calc(100% - 6px)!important;
+    margin:3px!important;
+    padding:0 3px!important;
+    border:1px solid transparent;
+    border-radius:2px;
+  }
+  .edit-mode .fixed-text-editor{
+    background:var(--entry-edit-bg)!important;
+    border-color:var(--entry-edit-line)!important;
+    cursor:text;
+  }
+  .edit-mode .fixed-text-editor:focus{
+    outline:1px solid #d8c98f!important;
+    outline-offset:-1px;
+  }
+
+  /* 사진은 셀 전체가 아니라 안쪽 사진 입력 영역만 연한 노랑색 */
+  .photo-field::before{
+    content:"";
+    position:absolute;
+    inset:6px;
+    z-index:0;
+    border:1px solid transparent;
+    border-radius:2px;
+    background:#fff;
+    pointer-events:none;
+  }
+  .edit-mode .photo-field::before{
+    background:var(--entry-edit-bg);
+    border-color:var(--entry-edit-line);
+  }
+  .photo-field .photo-placeholder,
+  .photo-field .process-photo-preview{
+    z-index:1;
+  }
+
+  /* 신규등록의 고객사·품명·품번 선택칸만 연한 노랑색 */
+  .new-identity-mode .meta-entry-select{
+    background:var(--entry-edit-bg)!important;
+    border-color:var(--entry-edit-line)!important;
+  }
+
+  /* 저장·오류 안내는 프레임을 움직이지 않고 화면 우측 아래에 표시 */
+  .manufacturing-notice{
+    display:none;
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:3000;
+    min-width:230px;
+    max-width:min(440px,calc(100vw - 36px));
+    padding:11px 14px;
+    border:1px solid #aeb7c4;
+    border-radius:6px;
+    background:rgba(255,255,255,.98);
+    box-shadow:0 5px 18px rgba(0,0,0,.22);
+    color:#263445;
+    font-size:12px;
+    font-weight:700;
+    line-height:1.45;
+    pointer-events:none;
+  }
+  .manufacturing-notice.show{display:block;}
+  .manufacturing-notice.success{border-color:#7dbb99;background:#f2fbf6;color:#087247;}
+  .manufacturing-notice.error{border-color:#d8a0a8;background:#fff5f6;color:#a52332;}
+  .manufacturing-notice.info{border-color:#9eb9dc;background:#f5f9ff;color:#295993;}
+
+  /* ============================================================
+     PDF: 각 .sheet를 A4 가로 1장에 고정한다.
+     표·선·문자는 브라우저 인쇄의 벡터 요소로 출력된다.
+     ============================================================ */
+  @media print{
+    @page{size:A4 landscape;margin:5mm;}
+    html,body{
+      width:297mm!important;
+      margin:0!important;
+      padding:0!important;
+      background:#fff!important;
+      -webkit-print-color-adjust:exact!important;
+      print-color-adjust:exact!important;
+    }
+    .toolbar,.modal-backdrop,.manufacturing-notice{display:none!important;}
+    .sheet{
+      width:287mm!important;
+      max-width:287mm!important;
+      height:200mm!important;
+      min-height:200mm!important;
+      max-height:200mm!important;
+      margin:0 auto!important;
+      padding:4mm 5mm 3mm!important;
+      overflow:hidden!important;
+      box-shadow:none!important;
+      page-break-inside:avoid!important;
+      break-inside:avoid-page!important;
+      page-break-after:always!important;
+      break-after:page!important;
+    }
+    .sheet:last-of-type{
+      page-break-after:auto!important;
+      break-after:auto!important;
+    }
+    .first-sheet{margin-top:0!important;}
+
+    .titlebar{
+      min-height:11mm!important;
+      margin-bottom:2mm!important;
+      padding:2mm 4mm!important;
+    }
+    .titlebar h1{font-size:18px!important;}
+    .titlebar .subtitle .procname{font-size:12px!important;}
+
+    table.meta{
+      margin-bottom:2mm!important;
+      font-size:10px!important;
+    }
+    table.meta tr,table.meta td{
+      height:8mm!important;
+      min-height:8mm!important;
+      max-height:8mm!important;
+      padding:1mm 2mm!important;
+    }
+
+    .section-title{
+      margin-top:3mm!important;
+      padding:1.5mm 3mm!important;
+      font-size:11px!important;
+      line-height:1.2!important;
+    }
+    .section-title .en{font-size:9px!important;}
+
+    table.flow{
+      margin:0!important;
+      font-size:9.5px!important;
+      line-height:1.2!important;
+      page-break-inside:avoid!important;
+      break-inside:avoid-page!important;
+    }
+    table.flow th,table.flow td{padding:1px 2px!important;}
+    table.flow thead tr,table.flow thead th{
+      height:7mm!important;
+      min-height:7mm!important;
+      max-height:7mm!important;
+    }
+    table.flow tbody tr:first-child,
+    table.flow tbody tr:first-child > td,
+    .photo-field{
+      height:24mm!important;
+      min-height:24mm!important;
+      max-height:24mm!important;
+    }
+    table.flow tbody tr:not(:first-child),
+    table.flow tbody tr:not(:first-child) > td{
+      height:8.4mm!important;
+      min-height:8.4mm!important;
+      max-height:8.4mm!important;
+    }
+    .fixed-text-editor{
+      width:100%!important;
+      height:100%!important;
+      margin:0!important;
+      padding:0 2px!important;
+      border:0!important;
+      background:#fff!important;
+      overflow:hidden!important;
+      font-size:inherit!important;
+    }
+    .photo-field::before{display:none!important;}
+    .photo-field .process-photo-preview{
+      max-width:calc(100% - 8px)!important;
+      max-height:calc(100% - 8px)!important;
+    }
+    .input-field,
+    .edit-mode .fixed-text-editor,
+    .new-identity-mode .meta-entry-select{
+      background:#fff!important;
+    }
+  }
+</style>
+
 </head>
 <body>
 <div class="toolbar" id="manufacturingToolbar">
@@ -819,6 +1028,7 @@
 <button id="btnPdf" type="button">PDF 저장</button>
 </div>
 </div>
+<div aria-live="polite" class="manufacturing-notice" id="manufacturingNotice" role="status"></div>
 <div aria-hidden="true" class="modal-backdrop" id="searchResultModal">
 <div aria-labelledby="searchResultTitle" aria-modal="true" class="modal" role="dialog">
 <h2 id="searchResultTitle" tabindex="-1">제조공정도 조회 결과</h2>
@@ -1135,8 +1345,37 @@
     return message || fallback;
   }
 
-  function setNotice(){
-    /* 화면을 가리는 알림 문장은 표시하지 않는다. */
+  function setNotice(message, type, persistent){
+    const notice = document.getElementById("manufacturingNotice");
+    if(!notice) return;
+
+    if(noticeTimer){
+      window.clearTimeout(noticeTimer);
+      noticeTimer = null;
+    }
+
+    const normalizedMessage = normalize(message);
+    const normalizedType = normalize(type).toLowerCase();
+
+    /* 처리 중 문장은 표시하지 않아 버튼이나 양식을 가리지 않는다. */
+    if(!normalizedMessage || normalizedType === "loading"){
+      notice.textContent = "";
+      notice.className = "manufacturing-notice";
+      return;
+    }
+
+    const classType = normalizedType === "success"
+      ? "success"
+      : (normalizedType === "error" ? "error" : "info");
+
+    notice.textContent = normalizedMessage;
+    notice.className = "manufacturing-notice show " + classType;
+
+    noticeTimer = window.setTimeout(function(){
+      notice.textContent = "";
+      notice.className = "manufacturing-notice";
+      noticeTimer = null;
+    }, persistent ? 6000 : 3600);
   }
 
   function setBusy(enabled, message){
@@ -1846,7 +2085,7 @@
       const record = documents.find(function(row){ return row.documentId === savedId; });
       if(!record) throw new Error("저장된 제조공정도를 조회 목록에서 찾지 못했습니다.");
       await loadDocument(record);
-      setNotice("제조공정도가 Supabase DB에 저장되었습니다.","success");
+      setNotice("제조공정도가 저장되었습니다.","success",true);
     }catch(error){
       console.error(error);
       setNotice(errorMessage(error,"제조공정도 저장에 실패했습니다."),"error");
