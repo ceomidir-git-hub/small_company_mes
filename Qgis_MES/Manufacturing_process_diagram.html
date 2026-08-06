@@ -584,15 +584,230 @@
     content:none!important;
   }
 
+
+
+  /* ---------- 제조공정도 프레임 절대 고정 ---------- */
+  table.meta,
+  table.flow{
+    table-layout:fixed;
+  }
+  table.meta tr{
+    height:40px;
+  }
+  table.meta td{
+    height:40px;
+    max-height:40px;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+  table.flow thead tr{
+    height:42px;
+  }
+  table.flow thead th{
+    height:42px;
+    max-height:42px;
+    overflow:hidden;
+  }
+  table.flow tbody tr:first-child{
+    height:110px;
+  }
+  table.flow tbody tr:first-child > td{
+    height:110px;
+    min-height:110px;
+    max-height:110px;
+    overflow:hidden;
+  }
+  table.flow tbody tr:not(:first-child){
+    height:44px;
+  }
+  table.flow tbody tr:not(:first-child) > td{
+    height:44px;
+    min-height:44px;
+    max-height:44px;
+    overflow:hidden;
+  }
+  table.flow th.process-field,
+  table.flow td.process-field{
+    overflow:hidden;
+  }
+  table.flow th.process-field[data-field-type="text"],
+  table.flow td.process-field[data-field-type="text"]{
+    padding:0!important;
+  }
+  .fixed-text-editor{
+    width:100%;
+    height:100%;
+    min-width:0;
+    min-height:0;
+    max-width:100%;
+    max-height:100%;
+    overflow:hidden;
+    display:grid;
+    place-items:center;
+    padding:0 2px;
+    line-height:1.35;
+    text-align:center;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+  .fixed-text-editor:empty::before{
+    content:attr(data-placeholder);
+    color:#111;
+    font-weight:400;
+    pointer-events:none;
+  }
+  .edit-mode .fixed-text-editor{
+    cursor:text;
+    overflow:auto;
+  }
+  .fixed-text-editor:focus{
+    outline:none;
+  }
+
+  /* 공정 사진은 프레임 크기를 변경하지 않고 가로·세로 정중앙에 배치 */
+  .photo-field{
+    position:relative;
+    height:110px!important;
+    min-height:110px!important;
+    max-height:110px!important;
+    overflow:hidden!important;
+    padding:6px!important;
+  }
+  .photo-field .photo-placeholder,
+  .photo-field .process-photo-preview{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    margin:0!important;
+  }
+  .photo-field .photo-placeholder{
+    width:calc(100% - 12px);
+    height:calc(100% - 12px);
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .photo-field .process-photo-preview{
+    width:auto!important;
+    height:auto!important;
+    max-width:calc(100% - 12px)!important;
+    max-height:calc(100% - 12px)!important;
+    object-fit:contain!important;
+    object-position:center center!important;
+  }
+  .photo-field .process-photo-preview[hidden],
+  .photo-field .photo-placeholder[hidden]{
+    display:none!important;
+  }
+
+  /* 검사기준서와 동일한 조회 입력 방식 */
+  .toolbar-filter input{
+    width:100%;
+    height:30px;
+    padding:0 8px;
+    border:1px solid #aeb4bc;
+    border-radius:4px;
+    background:#fff;
+    color:#111;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:400;
+  }
+  .toolbar-filter input:disabled{
+    background:#f3f4f6;
+    color:#9ca3af;
+    cursor:not-allowed;
+  }
+  .modal-table-scroll{
+    overflow-x:auto;
+  }
+  .modal th.select-column{width:60px;}
+  .modal th.number-column{width:55px;}
+  .result-radio{
+    width:15px;
+    height:15px;
+    margin:0;
+    cursor:pointer;
+    vertical-align:middle;
+  }
+  .modal tbody tr{
+    cursor:default;
+  }
+  .modal tbody tr.radio-selected{
+    background:#e4efff;
+  }
+  .search-pagination{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-height:36px;
+    padding:5px 8px;
+    border:1px solid #d3d7dd;
+    border-top:0;
+    background:#f7f8fa;
+  }
+  .search-pagination button{
+    min-width:52px;
+    height:27px;
+    padding:0 8px;
+    border:1px solid #9da5af;
+    border-radius:3px;
+    background:#fff;
+    color:#222;
+    font-family:inherit;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .search-pagination button:disabled{
+    opacity:.4;
+    cursor:not-allowed;
+  }
+  .search-pagination span{
+    min-width:70px;
+    text-align:center;
+    color:#3b4654;
+    font-size:11px;
+    font-weight:700;
+  }
+  @media print{
+    table.meta tr,
+    table.meta td{
+      height:34px;
+      max-height:34px;
+    }
+    table.flow thead tr,
+    table.flow thead th{
+      height:34px;
+      max-height:34px;
+    }
+    table.flow tbody tr:first-child,
+    table.flow tbody tr:first-child > td,
+    .photo-field{
+      height:80px!important;
+      min-height:80px!important;
+      max-height:80px!important;
+    }
+    table.flow tbody tr:not(:first-child),
+    table.flow tbody tr:not(:first-child) > td{
+      height:34px;
+      min-height:34px;
+      max-height:34px;
+    }
+  }
 </style>
 </head>
 <body>
 <div class="toolbar" id="manufacturingToolbar">
 <div aria-label="제조공정도 조회 조건" class="group toolbar-search-group">
-<label class="toolbar-filter"><span>고객사명</span><select aria-label="고객사명 선택" id="toolbarCustomerSelect"><option value="">고객사명 선택</option></select></label>
-<label class="toolbar-filter"><span>품명</span><select aria-label="품명 선택" id="toolbarItemNameSelect"><option value="">품명 선택</option></select></label>
-<label class="toolbar-filter"><span>품번</span><select aria-label="품번 선택" id="toolbarItemNumberSelect"><option value="">품번 선택</option></select></label>
-
+<label class="toolbar-filter"><span>고객사명</span><select aria-label="고객사명 선택" id="toolbarCustomerSelect"><option value="">전체</option></select></label>
+<label class="toolbar-filter"><span>품명</span><input aria-label="품명 검색" id="toolbarItemNameInput" maxlength="120" placeholder="품명" type="search"/></label>
+<label class="toolbar-filter"><span>품번</span><input aria-label="품번 검색" id="toolbarItemNumberInput" maxlength="120" placeholder="품번" type="search"/></label>
 </div>
 <div class="group">
 <button id="btnSearch" type="button">조회</button>
@@ -608,10 +823,17 @@
 <div aria-labelledby="searchResultTitle" aria-modal="true" class="modal" role="dialog">
 <h2 id="searchResultTitle" tabindex="-1">제조공정도 조회 결과</h2>
 <p class="modal-summary" id="searchResultSummary"></p>
+<div class="modal-table-scroll">
 <table>
-<thead><tr><th>고객사명</th><th>품명</th><th>품번</th></tr></thead>
+<thead><tr><th class="select-column">선택</th><th class="number-column">NO</th><th>고객사명</th><th>품명</th><th>품번</th></tr></thead>
 <tbody id="searchResultBody"></tbody>
 </table>
+</div>
+<div class="search-pagination" id="searchPagination">
+<button id="searchResultPrev" type="button">이전</button>
+<span id="searchResultPageInfo">1 / 1</span>
+<button id="searchResultNext" type="button">다음</button>
+</div>
 <div class="modal-actions"><button id="btnCloseSearchResult" type="button">닫기</button></div>
 </div>
 </div>
@@ -847,12 +1069,31 @@
     auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
   });
 
-  const textFields = Array.from(document.querySelectorAll('[data-field-type="text"]'));
+  function prepareFixedTextEditors(){
+    document.querySelectorAll('[data-field-type="text"]').forEach(function(cell){
+      if(cell.querySelector(":scope > .fixed-text-editor")) return;
+      const editor = document.createElement("div");
+      editor.className = "fixed-text-editor";
+      ["data-field-no","data-field-role","data-field-type","data-placeholder"].forEach(function(name){
+        if(cell.hasAttribute(name)) editor.setAttribute(name,cell.getAttribute(name));
+      });
+      editor.textContent = String(cell.textContent || "").trim();
+      cell.textContent = "";
+      cell.appendChild(editor);
+    });
+  }
+
+  prepareFixedTextEditors();
+
+  const textFields = Array.from(document.querySelectorAll('.fixed-text-editor[data-field-type="text"]'));
   const photoFields = Array.from(document.querySelectorAll('[data-field-type="image"]'));
   const metaFields = Array.from(document.querySelectorAll('[data-meta-key]'));
   const customerSelect = document.getElementById("toolbarCustomerSelect");
-  const itemNameSelect = document.getElementById("toolbarItemNameSelect");
-  const itemNumberSelect = document.getElementById("toolbarItemNumberSelect");
+  const itemNameInput = document.getElementById("toolbarItemNameInput");
+  const itemNumberInput = document.getElementById("toolbarItemNumberInput");
+  const searchResultPrev = document.getElementById("searchResultPrev");
+  const searchResultNext = document.getElementById("searchResultNext");
+  const searchResultPageInfo = document.getElementById("searchResultPageInfo");
 
   let currentProfile = null;
   let currentMode = "view"; // view | new
@@ -865,6 +1106,9 @@
   let customers = [];
   let items = [];
   let documents = [];
+  let searchResultRecords = [];
+  let searchResultPage = 1;
+  const SEARCH_RESULT_PAGE_SIZE = 5;
   let newIdentity = {
     customerSystemId:"",
     customerName:"",
@@ -1227,13 +1471,9 @@
     document.getElementById("btnReset").disabled = busy;
     document.getElementById("btnDelete").disabled = busy || !isAdmin() || !currentDocumentId || inEntryMode;
     document.getElementById("btnPdf").disabled = busy || !canPdf();
-    [customerSelect,itemNameSelect,itemNumberSelect].forEach(function(select){
-      select.disabled = busy || currentMode === "new";
+    [customerSelect,itemNameInput,itemNumberInput].forEach(function(control){
+      control.disabled = busy || currentMode === "new";
     });
-    if(!busy && currentMode !== "new"){
-      itemNameSelect.disabled = !customerSelect.value;
-      itemNumberSelect.disabled = !customerSelect.value || !itemNameSelect.value;
-    }
     document.querySelectorAll(".meta-entry-select").forEach(function(select){
       const key = select.dataset.metaSelectKey;
       select.disabled = busy || currentMode !== "new" || (key === "itemName" && !newIdentity.customerSystemId) || (key === "itemNumber" && (!newIdentity.customerSystemId || !newIdentity.itemName));
@@ -1253,86 +1493,35 @@
     });
   }
 
-  function sourceRowsForToolbar(){
-    if(currentMode === "new"){
-      return activeReferenceItems().map(function(item){
-        const customer = customerMap.get(item.customer_system_id);
-        return {
-          customerSystemId:item.customer_system_id,
-          customerName:customer ? customer.customer_name : "",
-          itemName:item.item_name,
-          itemNumber:item.item_number,
-          itemSystemId:item.item_system_id
-        };
-      }).filter(function(row){
-        return row.customerSystemId && row.customerName && row.itemSystemId;
-      });
-    }
-    return documents.slice();
-  }
-
   function rebuildToolbarOptions(options){
     const preserve = options || {};
-    const rows = sourceRowsForToolbar();
-    const selectedCustomer = preserve.customerSystemId != null ? preserve.customerSystemId : customerSelect.value;
-    const selectedName = preserve.itemName != null ? preserve.itemName : itemNameSelect.value;
-    const selectedItem = preserve.itemSystemId != null ? preserve.itemSystemId : itemNumberSelect.value;
+    const selectedCustomer = preserve.customerSystemId != null
+      ? preserve.customerSystemId
+      : customerSelect.value;
 
-    /* 신규등록은 customers 테이블의 고객사를 직접 표시한다.
-       조회 상태는 실제 제조공정도가 등록된 고객사만 표시한다. */
-    const customerSource = currentMode === "new"
-      ? customers.map(function(row){
-          return {
-            customerSystemId:row.customer_system_id,
-            customerName:row.customer_name
-          };
-        })
-      : rows;
-
-    const customerOptions = Array.from(new Map(customerSource.filter(function(row){
-      return row.customerSystemId && normalize(row.customerName);
+    const customerOptions = customers.slice().sort(function(a,b){
+      return compareText(a.company_number,b.company_number) || compareText(a.customer_name,b.customer_name);
     }).map(function(row){
-      return [row.customerSystemId,{value:row.customerSystemId,label:normalize(row.customerName)}];
-    })).values()).sort(function(a,b){ return compareText(a.label,b.label); });
-    fillSelect(customerSelect,"고객사명 선택",customerOptions,selectedCustomer || "");
-
-    const customerId = customerSelect.value;
-    const nameOptions = Array.from(new Set(rows.filter(function(row){
-      return customerId && row.customerSystemId === customerId;
-    }).map(function(row){ return normalize(row.itemName); }).filter(Boolean)))
-      .sort(compareText).map(function(name){ return {value:name,label:name}; });
-    fillSelect(itemNameSelect,"품명 선택",nameOptions,selectedName || "");
-
-    const itemName = itemNameSelect.value;
-    const numberOptions = rows.filter(function(row){
-      return customerId && row.customerSystemId === customerId && itemName && row.itemName === itemName;
-    }).sort(function(a,b){ return compareText(a.itemNumber,b.itemNumber); }).map(function(row){
-      return {value:row.itemSystemId,label:row.itemNumber};
+      return {value:row.customer_system_id,label:normalize(row.customer_name)};
     });
-    fillSelect(itemNumberSelect,"품번 선택",numberOptions,selectedItem || "");
+
+    fillSelect(customerSelect,"전체",customerOptions,selectedCustomer || "");
+
+    const selectedItem = preserve.itemSystemId ? itemMap.get(preserve.itemSystemId) : null;
+    const identityWasSpecified = Object.prototype.hasOwnProperty.call(preserve,"itemName") ||
+      Object.prototype.hasOwnProperty.call(preserve,"itemNumber") ||
+      Object.prototype.hasOwnProperty.call(preserve,"itemSystemId");
+
+    if(identityWasSpecified){
+      itemNameInput.value = preserve.itemName != null
+        ? normalize(preserve.itemName)
+        : (selectedItem ? normalize(selectedItem.item_name) : "");
+      itemNumberInput.value = preserve.itemNumber != null
+        ? normalize(preserve.itemNumber)
+        : (selectedItem ? normalize(selectedItem.item_number) : "");
+    }
+
     updateButtonStates();
-  }
-
-  function selectedToolbarIdentity(){
-    const itemId = itemNumberSelect.value;
-    const item = itemMap.get(itemId);
-    const customer = item ? customerMap.get(item.customer_system_id) : customerMap.get(customerSelect.value);
-    return {
-      customerSystemId:customer ? customer.customer_system_id : customerSelect.value,
-      customerName:customer ? customer.customer_name : "",
-      itemName:item ? item.item_name : itemNameSelect.value,
-      itemNumber:item ? item.item_number : "",
-      itemSystemId:item ? item.item_system_id : itemId
-    };
-  }
-
-  function applyNewIdentityFromToolbar(){
-    if(currentMode !== "new") return;
-    const identity = selectedToolbarIdentity();
-    currentItemSystemId = identity.itemSystemId || "";
-    setMetaValue("customerName", identity.customerName || "");
-    setMetaValue("itemName", identity.itemName || "");
-    setMetaValue("itemNumber", identity.itemNumber || "");
   }
 
   async function verifySession(){
@@ -1467,13 +1656,14 @@
   }
 
   function matchingDocuments(){
-    const customerId = customerSelect.value;
-    const itemName = itemNameSelect.value;
-    const itemId = itemNumberSelect.value;
+    const customerId = normalize(customerSelect.value);
+    const itemNameKeyword = normalize(itemNameInput.value).toLowerCase();
+    const itemNumberKeyword = normalize(itemNumberInput.value).toLowerCase();
+
     return documents.filter(function(row){
       if(customerId && row.customerSystemId !== customerId) return false;
-      if(itemName && row.itemName !== itemName) return false;
-      if(itemId && row.itemSystemId !== itemId) return false;
+      if(itemNameKeyword && !normalize(row.itemName).toLowerCase().includes(itemNameKeyword)) return false;
+      if(itemNumberKeyword && !normalize(row.itemNumber).toLowerCase().includes(itemNumberKeyword)) return false;
       return true;
     }).sort(function(a,b){
       return compareText(a.customerName,b.customerName) || compareText(a.itemName,b.itemName) || compareText(a.itemNumber,b.itemNumber);
@@ -1486,31 +1676,63 @@
     modal.setAttribute("aria-hidden","true");
   }
 
-  function openSearchResultModal(records){
-    const modal = document.getElementById("searchResultModal");
+  function renderSearchResultPage(){
     const body = document.getElementById("searchResultBody");
+    const totalPages = Math.max(1,Math.ceil(searchResultRecords.length / SEARCH_RESULT_PAGE_SIZE));
+    searchResultPage = Math.min(Math.max(searchResultPage,1),totalPages);
+    const startIndex = (searchResultPage - 1) * SEARCH_RESULT_PAGE_SIZE;
+    const pageRows = searchResultRecords.slice(startIndex,startIndex + SEARCH_RESULT_PAGE_SIZE);
+
     body.innerHTML = "";
-    records.forEach(function(record){
+    pageRows.forEach(function(record,pageIndex){
       const tr = document.createElement("tr");
-      tr.tabIndex = 0;
+      const radioCell = document.createElement("td");
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "manufacturing_process_result";
+      radio.className = "result-radio";
+      radio.value = record.documentId;
+      radio.setAttribute("aria-label",String(startIndex + pageIndex + 1) + "번 제조공정도 선택");
+      radio.addEventListener("change",function(){
+        if(!radio.checked) return;
+        tr.classList.add("radio-selected");
+        closeSearchResultModal();
+        loadDocument(record);
+      });
+      radioCell.appendChild(radio);
+      tr.appendChild(radioCell);
+
+      const numberCell = document.createElement("td");
+      numberCell.textContent = String(startIndex + pageIndex + 1);
+      tr.appendChild(numberCell);
+
       [record.customerName,record.itemName,record.itemNumber].forEach(function(value){
         const td = document.createElement("td");
         td.textContent = value || "-";
         tr.appendChild(td);
       });
-      const choose = function(){ closeSearchResultModal(); loadDocument(record); };
-      tr.addEventListener("click",choose);
-      tr.addEventListener("keydown",function(event){
-        if(event.key === "Enter" || event.key === " "){
-          event.preventDefault();
-          choose();
-        }
-      });
       body.appendChild(tr);
     });
-    document.getElementById("searchResultSummary").textContent = "조회 결과 " + records.length + "건입니다. 불러올 제조공정도를 선택해 주세요.";
+
+    searchResultPageInfo.textContent = String(searchResultPage) + " / " + String(totalPages);
+    searchResultPrev.disabled = searchResultPage <= 1;
+    searchResultNext.disabled = searchResultPage >= totalPages;
+  }
+
+  function openSearchResultModal(records){
+    searchResultRecords = records.slice();
+    searchResultPage = 1;
+    document.getElementById("searchResultSummary").textContent = "조회 결과 " + records.length + "건입니다. 라디오버튼으로 제조공정도를 선택해 주세요.";
+    renderSearchResultPage();
+
+    const modal = document.getElementById("searchResultModal");
     modal.classList.add("open");
     modal.setAttribute("aria-hidden","false");
+    window.setTimeout(function(){
+      const firstRadio = document.querySelector('#searchResultBody input[name="manufacturing_process_result"]');
+      if(firstRadio) firstRadio.focus();
+      else document.getElementById("searchResultTitle").focus();
+    },0);
   }
 
   function validateSelectedFile(file){
@@ -1712,64 +1934,23 @@
     });
   });
 
-  customerSelect.addEventListener("change",function(){
-    currentItemSystemId = "";
-    rebuildToolbarOptions({customerSystemId:customerSelect.value,itemName:"",itemSystemId:""});
-    applyNewIdentityFromToolbar();
-
-    if(currentMode === "new"){
-      if(!customerSelect.value){
-        setNotice("고객사명을 선택해 주세요.","error");
-        return;
+  [itemNameInput,itemNumberInput].forEach(function(input){
+    input.addEventListener("keydown",function(event){
+      if(event.key === "Enter"){
+        event.preventDefault();
+        document.getElementById("btnSearch").click();
       }
-      if(itemNameSelect.options.length <= 1){
-        setNotice("선택한 고객사에 등록된 품명이 없습니다. 아이템관리를 확인해 주세요.","error",true);
-        return;
-      }
-      setNotice("고객사를 선택했습니다. 다음으로 품명을 선택해 주세요.","success");
-      window.setTimeout(function(){ itemNameSelect.focus(); },0);
-    }
-  });
-
-  itemNameSelect.addEventListener("change",function(){
-    currentItemSystemId = "";
-    rebuildToolbarOptions({customerSystemId:customerSelect.value,itemName:itemNameSelect.value,itemSystemId:""});
-    applyNewIdentityFromToolbar();
-
-    if(currentMode === "new"){
-      if(!itemNameSelect.value){
-        setNotice("품명을 선택해 주세요.","error");
-        return;
-      }
-      if(itemNumberSelect.options.length <= 1){
-        setNotice("선택한 고객사·품명에 등록된 품번이 없습니다. 아이템관리를 확인해 주세요.","error",true);
-        return;
-      }
-      setNotice("품명을 선택했습니다. 다음으로 품번을 선택해 주세요.","success");
-      window.setTimeout(function(){ itemNumberSelect.focus(); },0);
-    }
-  });
-
-  itemNumberSelect.addEventListener("change",function(){
-    applyNewIdentityFromToolbar();
-    if(currentMode !== "new") return;
-
-    if(!itemNumberSelect.value){
-      setNotice("품번을 선택해 주세요.","error");
-      return;
-    }
-    const firstField = textFields[0];
-    if(firstField){
-      window.setTimeout(function(){ firstField.focus(); },0);
-    }
+    });
   });
 
   document.getElementById("btnSearch").addEventListener("click",function(){
-    if(!customerSelect.value){ setNotice("고객사명을 먼저 선택해 주세요.","error"); return; }
     const rows = matchingDocuments();
-    if(rows.length === 0) setNotice("선택한 조건에 해당하는 제조공정도가 없습니다.","error");
-    else if(rows.length === 1) loadDocument(rows[0]);
-    else openSearchResultModal(rows);
+    if(rows.length === 0){
+      closeSearchResultModal();
+      setNotice("조회 조건에 해당하는 제조공정도가 없습니다.","error");
+      return;
+    }
+    openSearchResultModal(rows);
   });
 
   document.getElementById("btnEdit").addEventListener("click",function(){
@@ -1847,6 +2028,17 @@
     window.print();
   });
   document.getElementById("btnCloseSearchResult").addEventListener("click",closeSearchResultModal);
+  searchResultPrev.addEventListener("click",function(){
+    if(searchResultPage <= 1) return;
+    searchResultPage -= 1;
+    renderSearchResultPage();
+  });
+  searchResultNext.addEventListener("click",function(){
+    const totalPages = Math.max(1,Math.ceil(searchResultRecords.length / SEARCH_RESULT_PAGE_SIZE));
+    if(searchResultPage >= totalPages) return;
+    searchResultPage += 1;
+    renderSearchResultPage();
+  });
   document.getElementById("searchResultModal").addEventListener("click",function(event){ if(event.target === event.currentTarget) closeSearchResultModal(); });
   document.addEventListener("keydown",function(event){ if(event.key === "Escape") closeSearchResultModal(); });
 
