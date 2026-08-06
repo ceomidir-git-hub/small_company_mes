@@ -1010,6 +1010,40 @@
   }
 </style>
 
+
+<style id="pdfFilenameAndGridFix">
+  /* ============================================================
+     PDF 보완: 파일명 순서 고정 및 표 안쪽 선 선명도 개선
+     - 화면의 프레임 크기·행 높이·열 너비·DATA 위치는 변경하지 않는다.
+     - 인쇄 시 표 선만 벡터 선으로 진하게 출력한다.
+     ============================================================ */
+  @media print{
+    table.meta,
+    table.flow{
+      border-color:#66778d!important;
+      border-width:0.25mm!important;
+      border-style:solid!important;
+    }
+    table.meta td,
+    table.flow th,
+    table.flow td{
+      border-color:#66778d!important;
+      border-width:0.25mm!important;
+      border-style:solid!important;
+    }
+
+    /* 도해 행의 긴 세로 구분선이 PDF 축소 시 사라지지 않도록 고정 */
+    table.flow tbody tr:first-child > td{
+      border-left-color:#66778d!important;
+      border-right-color:#66778d!important;
+      border-left-width:0.25mm!important;
+      border-right-width:0.25mm!important;
+      border-left-style:solid!important;
+      border-right-style:solid!important;
+    }
+  }
+</style>
+
 </head>
 <body>
 <div class="toolbar" id="manufacturingToolbar">
@@ -2264,7 +2298,40 @@
   document.getElementById("btnDelete").addEventListener("click",deleteCurrentDocument);
   document.getElementById("btnPdf").addEventListener("click",function(){
     if(!canPdf()){ setNotice("조회자는 PDF 저장을 사용할 수 없습니다.","error"); return; }
-    window.print();
+
+    const originalTitle = document.title;
+    const customerName = getMetaValue("customerName");
+    const itemName = getMetaValue("itemName");
+    const itemNumber = getMetaValue("itemNumber");
+
+    const safeFilePart = function(value){
+      return normalize(value)
+        .replace(/[\\/:*?"<>|]+/g,"-")
+        .replace(/\s+/g," ")
+        .replace(/-+/g,"-")
+        .replace(/^[-\s]+|[-\s]+$/g,"");
+    };
+
+    const pdfTitleParts = [
+      "제조공정도",
+      safeFilePart(customerName),
+      safeFilePart(itemName),
+      safeFilePart(itemNumber)
+    ].filter(Boolean);
+
+    document.title = pdfTitleParts.join("-");
+
+    const restoreTitle = function(){
+      document.title = originalTitle;
+    };
+    window.addEventListener("afterprint",restoreTitle,{once:true});
+
+    /* 브라우저가 변경된 제목을 PDF 기본 파일명으로 인식한 뒤 인쇄한다. */
+    window.requestAnimationFrame(function(){
+      window.requestAnimationFrame(function(){
+        window.print();
+      });
+    });
   });
   document.getElementById("btnCloseSearchResult").addEventListener("click",closeSearchResultModal);
   searchResultPrev.addEventListener("click",function(){
