@@ -116,6 +116,81 @@ button:disabled{opacity:.55;cursor:not-allowed;}
   .btn{justify-content:center;height:40px;}
 }
 
+
+/* =========================================================
+   2026-08-08 화면 최적화
+   - 생산실적 상세현황 수준의 컴팩트 UI
+   - PC 화면 가로 스크롤 제거
+   ========================================================= */
+@media (min-width:769px){
+  body{font-size:13px;}
+  .top-header{height:40px;padding:0 14px;}
+  .logo{gap:6px;font-size:14px;}
+  .logo svg{width:17px;height:17px;}
+  nav a{font-size:11px;padding:3px 8px;}
+
+  .container{max-width:1280px;padding:10px 10px 24px;}
+  .page-title{gap:6px;margin-bottom:8px;}
+  .page-title svg{width:17px;height:17px;}
+  .page-title h1{font-size:16px;}
+  .page-title .sub{font-size:10px;}
+  .year-badge{font-size:10px;padding:2px 7px;}
+
+  .filter-card{border-radius:7px;padding:7px 9px;margin-bottom:7px;}
+  .filter-label{font-size:10px;margin-bottom:5px;}
+  .filter-row{gap:5px;margin-bottom:0;flex-wrap:nowrap;}
+  .fg{gap:3px;min-width:0;}
+  .fg label{font-size:10px;min-width:auto;}
+  .fg input[type="date"],.fg select{height:27px;border-radius:4px;padding:0 5px;font-size:11px;}
+  .fg input[type="date"]{width:116px;}
+  .fg select{width:108px;}
+  .sep{font-size:10px;}
+  .btn-row{gap:4px;margin-left:auto;flex:0 0 auto;}
+  .btn{height:27px;padding:0 8px;border-radius:4px;font-size:11px;gap:3px;}
+  .btn svg{width:12px;height:12px;}
+
+  .stats-row{gap:5px;margin-bottom:7px;}
+  .stat-card{border-radius:7px;padding:6px 8px;}
+  .s-label{font-size:10px;margin-bottom:1px;}
+  .s-val{font-size:14px;}
+  .s-unit{font-size:10px;}
+
+  .table-card{border-radius:7px;overflow:hidden;}
+  .table-toolbar{padding:6px 8px;}
+  .t-title{font-size:12px;gap:5px;}
+  .cnt-badge{font-size:10px;padding:1px 6px;}
+  .table-wrap{overflow-x:hidden;}
+  table{width:100%;min-width:0;table-layout:fixed;font-size:10px;}
+  thead tr.gr th{padding:4px 2px;font-size:9px;line-height:1.15;white-space:normal;word-break:keep-all;}
+  thead tr.sr th{padding:3px 2px;font-size:8.5px;line-height:1.15;white-space:normal;word-break:keep-all;}
+  tbody td{padding:3px 2px;font-size:9.5px;line-height:1.15;white-space:normal;overflow:hidden;text-overflow:ellipsis;word-break:break-word;}
+  .td-ro{font-size:9.5px;padding:1px 2px;display:block;overflow:hidden;text-overflow:ellipsis;}
+  .td-lot .td-ro{white-space:nowrap;}
+  .td-input{padding:1px 1px;font-size:9px;min-width:0;}
+  .badge{padding:1px 4px;font-size:9px;}
+  .save-btn{height:20px;padding:0 4px;font-size:9px;}
+  .status-bar{padding:5px 8px;font-size:10px;}
+  .notice{margin-bottom:7px;padding:6px 8px;font-size:10px;}
+
+  /* 총 100% 기준 열 폭 재배분 */
+  table col:nth-child(1){width:2%!important;}
+  table col:nth-child(2){width:7.5%!important;}
+  table col:nth-child(3){width:5.5%!important;}
+  table col:nth-child(4){width:5%!important;}
+  table col:nth-child(5){width:5%!important;}
+  table col:nth-child(6){width:6%!important;}
+  table col:nth-child(7){width:4%!important;}
+  table col:nth-child(8){width:4%!important;}
+  table col:nth-child(9){width:4.5%!important;}
+  table col:nth-child(10){width:6.5%!important;}
+  table col:nth-child(11),table col:nth-child(12),table col:nth-child(13){width:3.25%!important;}
+  table col:nth-child(14){width:7%!important;}
+  table col:nth-child(15),table col:nth-child(16),table col:nth-child(17){width:3.5%!important;}
+  table col:nth-child(18){width:5%!important;}
+  table col:nth-child(19){width:14%!important;}
+  table col:nth-child(20){width:3.75%!important;}
+}
+
 </style>
 </head>
 <body>
@@ -163,8 +238,6 @@ button:disabled{opacity:.55;cursor:not-allowed;}
           <option>대기</option>
         </select>
       </div>
-    </div>
-    <div class="filter-row">
       <div class="btn-row">
         <button class="btn" onclick="resetFilter()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -173,6 +246,10 @@ button:disabled{opacity:.55;cursor:not-allowed;}
         <button class="btn btn-primary" onclick="applyFilter()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           조회
+        </button>
+        <button class="btn" id="btnPdf" type="button" onclick="exportPDF()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h9l3 3v4"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M6 17h12v5H6z"/><path d="M8 13h1"/></svg>
+          PDF
         </button>
       </div>
     </div>
@@ -752,6 +829,182 @@ function doExport(){
   setStatus("ok",message);
   showNotice(message,"success");
   showToast("📥 CSV 다운로드 완료");
+}
+
+
+/* =========================================================
+   PDF 출력 - 브라우저 인쇄 엔진 기반 벡터 방식
+   - A4 가로
+   - 텍스트/표 선을 이미지 캡처하지 않고 HTML 인쇄
+   - 저장 버튼 제외
+   - 현재 화면의 수정 중 값까지 반영
+   ========================================================= */
+function currentDisplayValue(tableRow,field,fallback){
+  if(!tableRow) return fallback == null ? "" : fallback;
+  const element = tableRow.querySelector('[data-field="'+field+'"]');
+  return element ? element.value : (fallback == null ? "" : fallback);
+}
+
+function buildPdfRows(){
+  const tableRows = Array.from(document.getElementById("tbody").querySelectorAll("tr[data-idx]"));
+  return tableRows.map(function(tableRow,index){
+    const row = filteredRows[index] || {};
+    const result = currentDisplayValue(tableRow,"inspection_result",row.inspection_result || "대기");
+    return [
+      index+1,
+      row.lot_no || "",
+      row.work_date || "",
+      row.customer_name || "",
+      row.item_name || "",
+      row.item_number || "",
+      row.material_name || "",
+      row.receiving_quantity == null ? "" : row.receiving_quantity,
+      certVal(result),
+      currentDisplayValue(tableRow,"tempering_hardness_hrc",row.tempering_hardness_hrc),
+      currentDisplayValue(tableRow,"p1",row.p1),
+      currentDisplayValue(tableRow,"p2",row.p2),
+      currentDisplayValue(tableRow,"p3",row.p3),
+      currentDisplayValue(tableRow,"hardening_depth",row.hardening_depth),
+      currentDisplayValue(tableRow,"hardening_depth_p1",row.hardening_depth_p1),
+      currentDisplayValue(tableRow,"hardening_depth_p2",row.hardening_depth_p2),
+      currentDisplayValue(tableRow,"hardening_depth_p3",row.hardening_depth_p3),
+      result,
+      currentDisplayValue(tableRow,"inspection_report_special_notes",row.inspection_report_special_notes || "")
+    ];
+  });
+}
+
+function pdfSafeText(value){
+  return escapeHtml(value == null ? "" : String(value));
+}
+
+function buildInspectionPrintDocument(){
+  const from = document.getElementById("fFrom").value || "";
+  const to = document.getElementById("fTo").value || "";
+  const company = document.getElementById("fCompany").value || "전체";
+  const lotNo = document.getElementById("fLotNo").value || "전체";
+  const resultFilter = document.getElementById("fResult").value || "전체";
+  const rows = buildPdfRows();
+
+  const pass = rows.filter(function(r){return r[17] === "양호";}).length;
+  const fail = rows.filter(function(r){return r[17] === "불량";}).length;
+  const inspected = pass + fail;
+  const rate = inspected ? ((pass / inspected) * 100).toFixed(1) : "-";
+
+  const header2 = [
+    "No","LOT NO","작업일","고객사","품명","품번","재질","입고수량","성적서",
+    "도면경도","P1","P2","P3","도면경화깊이","P1","P2","P3","검사결과","특이사항"
+  ];
+
+  const bodyHtml = rows.map(function(row){
+    return "<tr>" + row.map(function(value,idx){
+      const cls = idx === 18 ? ' class="note"' : "";
+      return "<td"+cls+">"+pdfSafeText(value)+"</td>";
+    }).join("") + "</tr>";
+  }).join("");
+
+  return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">'+
+    '<meta name="viewport" content="width=device-width,initial-scale=1.0">'+
+    '<title>검사성적서관리현황_'+pdfSafeText(from)+'_'+pdfSafeText(to)+'</title><style>'+ 
+    '@page{size:A4 landscape;margin:5mm;}'+
+    '*{box-sizing:border-box;}'+
+    'html,body{margin:0;padding:0;background:#fff;color:#111;font-family:"Malgun Gothic","Noto Sans KR",Arial,sans-serif;}'+
+    'body{font-size:7.2pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+    '.title{text-align:center;font-size:13pt;font-weight:700;margin:0 0 2mm;}'+
+    '.meta{display:flex;justify-content:space-between;gap:3mm;margin:0 0 2mm;font-size:7pt;}'+
+    '.meta span{white-space:nowrap;}'+
+    '.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:2mm;margin-bottom:2mm;}'+
+    '.kpi div{border:0.25mm solid #aaa;padding:1.2mm 2mm;text-align:center;}'+
+    '.kpi b{font-size:9pt;}'+
+    'table{width:100%;border-collapse:collapse;table-layout:fixed;}'+
+    'thead{display:table-header-group;}'+
+    'tr{break-inside:avoid;page-break-inside:avoid;}'+
+    'th,td{border:0.18mm solid #777;padding:0.8mm 0.6mm;text-align:center;vertical-align:middle;line-height:1.15;overflow-wrap:anywhere;}'+
+    'thead tr:first-child th{background:#fbeaf0;font-weight:700;font-size:7pt;}'+
+    'thead tr:last-child th{background:#fff5f8;font-weight:700;font-size:6.5pt;}'+
+    'tbody td{font-size:6.7pt;}'+
+    'td.note{text-align:left;}'+
+    'th:nth-child(1),td:nth-child(1){width:2.2%;}'+
+    'th:nth-child(2),td:nth-child(2){width:7.7%;}'+
+    'th:nth-child(3),td:nth-child(3){width:5.8%;}'+
+    'th:nth-child(4),td:nth-child(4){width:5.7%;}'+
+    'th:nth-child(5),td:nth-child(5){width:5.5%;}'+
+    'th:nth-child(6),td:nth-child(6){width:6.8%;}'+
+    'th:nth-child(7),td:nth-child(7){width:4.2%;}'+
+    'th:nth-child(8),td:nth-child(8){width:4.5%;}'+
+    'th:nth-child(9),td:nth-child(9){width:4.6%;}'+
+    'th:nth-child(10),td:nth-child(10){width:7.2%;}'+
+    'th:nth-child(11),td:nth-child(11),th:nth-child(12),td:nth-child(12),th:nth-child(13),td:nth-child(13){width:3.5%;}'+
+    'th:nth-child(14),td:nth-child(14){width:7.6%;}'+
+    'th:nth-child(15),td:nth-child(15),th:nth-child(16),td:nth-child(16),th:nth-child(17),td:nth-child(17){width:3.7%;}'+
+    'th:nth-child(18),td:nth-child(18){width:5.5%;}'+
+    'th:nth-child(19),td:nth-child(19){width:10.8%;}'+
+    '</style></head><body>'+ 
+    '<div class="title">검사성적서관리현황</div>'+ 
+    '<div class="meta"><span>조회기간: '+pdfSafeText(from)+' ~ '+pdfSafeText(to)+'</span>'+ 
+    '<span>고객사: '+pdfSafeText(company)+' / LOT NO: '+pdfSafeText(lotNo)+' / 검사결과: '+pdfSafeText(resultFilter)+'</span></div>'+ 
+    '<div class="kpi"><div>총 건수 <b>'+rows.length+'</b>건</div><div>합격 <b>'+pass+'</b>건</div><div>불합격 <b>'+fail+'</b>건</div><div>합격률 <b>'+rate+'</b>%</div></div>'+ 
+    '<table><colgroup>'+
+    '<col style="width:2.2%"><col style="width:7.7%"><col style="width:5.8%"><col style="width:5.7%"><col style="width:5.5%"><col style="width:6.8%"><col style="width:4.2%"><col style="width:4.5%"><col style="width:4.6%"><col style="width:7.2%">'+
+    '<col style="width:3.5%"><col style="width:3.5%"><col style="width:3.5%"><col style="width:7.6%"><col style="width:3.7%"><col style="width:3.7%"><col style="width:3.7%"><col style="width:5.5%"><col style="width:10.8%">'+
+    '</colgroup><thead><tr>'+ 
+    '<th rowspan="2">No</th><th colspan="8">기본정보</th><th colspan="4">경도</th><th colspan="4">경화깊이</th><th colspan="2">판정 및 비고</th>'+ 
+    '</tr><tr>'+header2.slice(1).map(function(h){return '<th>'+pdfSafeText(h)+'</th>';}).join('')+'</tr></thead>'+ 
+    '<tbody>'+bodyHtml+'</tbody></table></body></html>';
+}
+
+async function exportPDF(){
+  clearNotice();
+  if(!filteredRows.length){
+    showNotice("PDF로 출력할 조회 결과가 없습니다. 먼저 조회해 주세요.","error");
+    showToast("먼저 조회해 주세요.");
+    return;
+  }
+
+  const printWindow = window.open("","_blank","width=1500,height=950");
+  if(!printWindow){
+    showNotice("PDF 출력 실패: 브라우저의 팝업 차단을 해제해 주세요.","error");
+    return;
+  }
+
+  const button = document.getElementById("btnPdf");
+  const original = button.innerHTML;
+  button.disabled = true;
+  button.textContent = "준비 중...";
+  setStatus("loading","A4 가로 벡터 PDF 인쇄 화면을 준비하는 중입니다.");
+
+  try{
+    printWindow.document.open();
+    printWindow.document.write(buildInspectionPrintDocument());
+    printWindow.document.close();
+
+    const openDialog = function(){
+      window.setTimeout(function(){
+        printWindow.focus();
+        printWindow.print();
+      },300);
+    };
+
+    if(printWindow.document.fonts && printWindow.document.fonts.ready){
+      printWindow.document.fonts.ready.then(openDialog).catch(openDialog);
+    }else{
+      openDialog();
+    }
+
+    const message = "A4 가로 벡터 PDF 인쇄창을 열었습니다. 프린터에서 'PDF로 저장'을 선택해 주세요.";
+    setStatus("ok",message);
+    showNotice(message,"success");
+    showToast("PDF 인쇄창을 열었습니다.");
+  }catch(error){
+    console.error(error);
+    if(!printWindow.closed) printWindow.close();
+    const message = "PDF 출력 실패: "+formatDbError(error);
+    setStatus("error",message);
+    showNotice(message,"error");
+  }finally{
+    button.disabled = false;
+    button.innerHTML = original;
+  }
 }
 
 async function initializePage(){
