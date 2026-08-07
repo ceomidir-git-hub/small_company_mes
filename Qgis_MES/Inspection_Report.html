@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <title>열처리 가공제품 검사성적서 | HeatPro MES</title>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -60,12 +59,104 @@ body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:12px;backgr
 
 /* ── 인쇄 ── */
 @media print{
-  body{background:#fff;padding:0;}
-  #toolbar{display:none!important;}
-  .sheet{max-width:100%;}
-  .inp,.inp-date,.sel{background:transparent!important;border:none!important;outline:none!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .ycell{background:transparent!important;}
+  @page{size:A4 portrait;margin:5mm;}
+  html,body{
+    width:auto!important;
+    min-width:0!important;
+    height:auto!important;
+    overflow:visible!important;
+    background:#fff!important;
+    padding:0!important;
+    margin:0!important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  #toolbar,#toast,#loading{display:none!important;}
+
+  /* A4 유효폭 200mm(210-좌우 5mm)에 정확히 맞춤 */
+  .sheet{
+    width:200mm!important;
+    max-width:200mm!important;
+    margin:0 auto!important;
+    background:#fff!important;
+    border:0.25mm solid #000!important;
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+  }
+  .sheet table{
+    border-collapse:collapse!important;
+    table-layout:fixed!important;
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+  }
+  .sheet td,.sheet th{
+    border-color:#000!important;
+    border-width:0.25mm!important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  /* PDF에서는 입력 배경을 흰색으로 통일 */
+  .inp,.inp-date,.sel,.ycell,.dash-cell,.signature-cell{
+    background:#fff!important;
+    background-color:#fff!important;
+    border-color:#000;
+    outline:none!important;
+    box-shadow:none!important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
   .inp::placeholder{color:transparent!important;}
+
+  /* 입력 컨트롤을 PDF 전용 텍스트 객체로 치환할 때 사용 */
+  .pdf-print-value{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    min-height:16px;
+    padding:1px 3px;
+    margin:0;
+    background:#fff!important;
+    color:#111!important;
+    font-family:'Malgun Gothic','Noto Sans KR',sans-serif;
+    font-size:10px;
+    line-height:1.25;
+    white-space:pre-wrap;
+    word-break:break-word;
+    overflow:visible;
+  }
+  .pdf-print-value.left{justify-content:flex-start;text-align:left;}
+  .pdf-print-value.center{justify-content:center;text-align:center;}
+  .pdf-print-value.right{justify-content:flex-end;text-align:right;}
+  .pdf-print-value.textarea{
+    display:block;
+    min-height:68px;
+    text-align:left;
+    white-space:pre-wrap;
+  }
+
+  /* SVG는 래스터화하지 않고 벡터 선으로 인쇄, 너무 옅은 격자만 보강 */
+  #main-svg line,#hv-svg line,.sheet svg line{
+    vector-effect:non-scaling-stroke;
+    shape-rendering:geometricPrecision;
+  }
+  #main-svg line[stroke="#eee"],#hv-svg line[stroke="#eee"]{
+    stroke:#c8c8c8!important;
+    stroke-width:0.8!important;
+  }
+  #main-svg line[stroke="#ddd"],#hv-svg line[stroke="#ddd"]{
+    stroke:#b8b8b8!important;
+    stroke-width:0.8!important;
+  }
+  .sheet svg line[stroke="black"]{
+    stroke:#000!important;
+    stroke-width:1.2!important;
+  }
+  #main-line,#hv-line{
+    vector-effect:non-scaling-stroke;
+    shape-rendering:geometricPrecision;
+  }
 }
 
 html.auth-pending body{visibility:hidden;}
@@ -1780,15 +1871,19 @@ const PLACEHOLDER_SYMBOLS = [
 async function exportPDF() {
   const button = document.querySelector(".tb-btn.purple");
   const previousText = button ? button.textContent : "";
-  if (button) {
-    button.disabled = true;
-    button.textContent = "📄 변환 중...";
+  const originalTitle = document.title;
+  const target = document.getElementById("doc-container");
+  const replacements = [];
+
+  if (!target) {
+    setQueryMessage("PDF 변환 실패: 성적서 영역을 찾을 수 없습니다.", "err");
+    return;
   }
 
-  const toolbar = document.getElementById("toolbar");
-  const target = document.getElementById("doc-container");
-  if (toolbar) toolbar.style.display = "none";
-  showLoading("PDF 파일을 생성하는 중입니다.");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "📄 준비 중...";
+  }
 
   function isConvertible(element) {
     if (element.tagName === "SELECT" || element.tagName === "TEXTAREA") return true;
@@ -1799,27 +1894,68 @@ async function exportPDF() {
     return false;
   }
 
-  const fieldData = [];
-  target.querySelectorAll("input, select, textarea").forEach(function(element) {
-    if (!isConvertible(element)) return;
+  function printableValue(element) {
+    if (element.tagName === "SELECT") {
+      const option = element.options[element.selectedIndex];
+      return option ? (option.textContent || "") : "";
+    }
     let value = element.value || "";
     if (PLACEHOLDER_SYMBOLS.includes(value)) value = "";
-    const style = window.getComputedStyle(element);
-    fieldData.push({
-      value: value,
-      textAlign: style.textAlign,
-      fontSize: style.fontSize,
-      fontFamily: style.fontFamily,
-      lineHeight: style.lineHeight,
-      color: style.color,
-      isTextarea: element.tagName === "TEXTAREA"
-    });
-  });
+    return value;
+  }
 
-  window.scrollTo(0, 0);
-  const fullHeight = target.scrollHeight;
+  function makePrintText(element) {
+    const style = window.getComputedStyle(element);
+    const box = document.createElement(element.tagName === "TEXTAREA" ? "div" : "span");
+    const value = printableValue(element);
+    const align = (style.textAlign || "center").toLowerCase();
+
+    box.className = "pdf-print-value";
+    if (element.tagName === "TEXTAREA") box.classList.add("textarea", "left");
+    else if (align === "left" || element.classList.contains("left")) box.classList.add("left");
+    else if (align === "right") box.classList.add("right");
+    else box.classList.add("center");
+
+    box.textContent = value;
+    box.style.fontSize = style.fontSize || "10px";
+    box.style.fontWeight = style.fontWeight || "400";
+    box.style.fontFamily = style.fontFamily || "'Malgun Gothic', sans-serif";
+    box.style.color = style.color || "#111";
+
+    /* 원래 컨트롤 높이를 유지하여 표 높이가 변하지 않도록 한다. */
+    const rect = element.getBoundingClientRect();
+    if (element.tagName !== "TEXTAREA" && rect.height > 0) {
+      box.style.minHeight = rect.height.toFixed(2) + "px";
+    }
+
+    return box;
+  }
+
+  function replaceControlsForPrint() {
+    target.querySelectorAll("input, select, textarea").forEach(function(element) {
+      if (!isConvertible(element)) return;
+      const parent = element.parentNode;
+      if (!parent) return;
+      const nextSibling = element.nextSibling;
+      const printNode = makePrintText(element);
+      parent.replaceChild(printNode, element);
+      replacements.push({ parent, element, printNode, nextSibling });
+    });
+  }
+
+  function restoreControls() {
+    for (let i = replacements.length - 1; i >= 0; i--) {
+      const item = replacements[i];
+      if (!item.parent || !item.printNode.parentNode) continue;
+      item.parent.replaceChild(item.element, item.printNode);
+    }
+    replacements.length = 0;
+  }
 
   try {
+    showLoading("벡터 PDF 출력 화면을 준비하는 중입니다.");
+
+    /* 도장/서명 이미지가 모두 준비된 후 인쇄한다. */
     await Promise.all(Array.from(target.querySelectorAll("img")).map(function(image) {
       if (image.complete) return Promise.resolve();
       return new Promise(function(resolve) {
@@ -1828,89 +1964,43 @@ async function exportPDF() {
       });
     }));
 
-    const canvas = await html2canvas(target, {
-      scale: 3,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      windowWidth: 820,
-      windowHeight: fullHeight,
-      width: 820,
-      height: fullHeight,
-      scrollX: 0,
-      scrollY: 0,
-      onclone: function(clonedDocument) {
-        const clonedTarget = clonedDocument.getElementById("doc-container");
-        if (!clonedTarget) return;
+    /* 한글 폰트가 준비되기 전에 PDF가 생성되는 것을 방지한다. */
+    if (document.fonts && document.fonts.ready) {
+      try { await document.fonts.ready; } catch (_) {}
+    }
 
-        clonedTarget.style.background = "#ffffff";
-        clonedTarget.querySelectorAll("div, table, thead, tbody, tfoot, tr, td, th, .ycell, .dash-cell").forEach(function(element) {
-          element.style.background = "#ffffff";
-          element.style.backgroundColor = "#ffffff";
-        });
-
-        let index = 0;
-        clonedTarget.querySelectorAll("input, select, textarea").forEach(function(element) {
-          if (!isConvertible(element)) return;
-          const data = fieldData[index++];
-          if (!data) return;
-
-          const box = clonedDocument.createElement("div");
-          box.textContent = data.value;
-          let css =
-            "display:block;box-sizing:border-box;width:100%;margin:0;" +
-            "background:#ffffff;border:none;outline:none;" +
-            "font-size:" + data.fontSize + ";font-family:" + data.fontFamily + ";" +
-            "line-height:" + data.lineHeight + ";color:" + data.color + ";padding:1px 3px;";
-
-          if (data.isTextarea) {
-            css += "text-align:left;white-space:pre-wrap;word-break:break-all;overflow:visible;";
-          } else {
-            css += "text-align:" + data.textAlign + ";white-space:nowrap;overflow:hidden;";
-          }
-
-          box.style.cssText = css;
-          if (element.parentNode) element.parentNode.replaceChild(box, element);
-        });
-      }
-    });
-
-    const pdf = new window.jspdf.jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4"
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 5;
-    const ratio = Math.min(
-      (pageWidth - margin * 2) / canvas.width,
-      (pageHeight - margin * 2) / canvas.height
-    );
-
-    pdf.addImage(
-      canvas.toDataURL("image/png"),
-      "PNG",
-      (pageWidth - canvas.width * ratio) / 2,
-      margin,
-      canvas.width * ratio,
-      canvas.height * ratio
-    );
-
+    /* 파일명은 입력 컨트롤을 치환하기 전에 확정한다. */
     const lot = cleanVal(v("f-lot")) || "inspection";
     const date = cleanVal(v("f-date")) || localDateText(new Date());
-    pdf.save("inspection_report_" + lot + "_" + date + ".pdf");
 
-    setQueryMessage("PDF 다운로드가 완료되었습니다.", "ok");
-    showToast("✅ PDF 저장 완료");
+    replaceControlsForPrint();
+    document.title = "inspection_report_" + lot + "_" + date;
+
+    /* 로딩 오버레이가 인쇄 영역에 들어가지 않도록 인쇄 직전에 제거 */
+    hideLoading();
+    if (button) button.textContent = "📄 PDF 저장";
+
+    setQueryMessage("벡터 PDF 인쇄 창이 열립니다. 대상에서 ‘PDF로 저장’을 선택하세요.", "info");
+
+    /* 브라우저(Chrome/Edge)의 인쇄 엔진을 사용하므로
+       HTML 글자/표 선/SVG 그래프는 PDF 벡터 객체로 유지된다.
+       도장·서명처럼 원래 이미지인 항목만 이미지로 포함된다. */
+    await new Promise(function(resolve) {
+      requestAnimationFrame(function() {
+        requestAnimationFrame(resolve);
+      });
+    });
+
+    window.print();
+
+    showToast("✅ 벡터 PDF 출력 준비 완료");
   } catch (error) {
     console.error(error);
     setQueryMessage("PDF 변환 실패: " + formatDbError(error), "err");
     showToast("❌ PDF 변환 실패");
   } finally {
-    if (toolbar) toolbar.style.display = "";
+    restoreControls();
+    document.title = originalTitle;
     hideLoading();
     if (button) {
       button.disabled = false;
