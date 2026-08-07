@@ -1205,15 +1205,15 @@ function applyProductionFields(row) {
   sv("f-res3", row.core_hardness_p1 || (row.core_hardness === "-" ? "" : (row.core_hardness || "")));
   sv("f-res3-p02", row.core_hardness_p2 || "");
   sv("f-res3-p03", row.core_hardness_p3 || "");
-  sv("f-std4", row.inspection_structure_standard || "육안");
+  ss("f-std4", row.inspection_structure_standard || "");
   sv("f-res4", row.inspection_structure_p1 || "");
   sv("f-res4-p02", row.inspection_structure_p2 || "");
   sv("f-res4-p03", row.inspection_structure_p3 || "");
-  sv("f-std5", row.inspection_distortion_standard || "육안");
+  ss("f-std5", row.inspection_distortion_standard || "");
   sv("f-res5", row.inspection_distortion_p1 || "");
   sv("f-res5-p02", row.inspection_distortion_p2 || "");
   sv("f-res5-p03", row.inspection_distortion_p3 || "");
-  sv("f-std6", row.inspection_crack_standard || "육안");
+  ss("f-std6", row.inspection_crack_standard || "");
   sv("f-res6", row.inspection_crack_p1 || "");
   sv("f-res6-p02", row.inspection_crack_p2 || "");
   sv("f-res6-p03", row.inspection_crack_p3 || "");
