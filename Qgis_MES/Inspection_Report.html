@@ -653,6 +653,7 @@ const PRODUCTION_COLUMNS = [
   "hardening_depth_p3",
   "hardening_depth_judgment",
   "core_hardness",
+  "core_hardness_standard",
   "core_hardness_p1",
   "core_hardness_p2",
   "core_hardness_p3",
@@ -1200,7 +1201,7 @@ function applyProductionFields(row) {
   sv("hd03", row.hardening_depth_p3);
   for (let i = 4; i <= 8; i += 1) sv("hd0" + i, "");
 
-  sv("f-std3", "-");
+  sv("f-std3", row.core_hardness_standard || "-");
   sv("f-res3", row.core_hardness_p1 || (row.core_hardness === "-" ? "" : (row.core_hardness || "")));
   sv("f-res3-p02", row.core_hardness_p2 || "");
   sv("f-res3-p03", row.core_hardness_p3 || "");
@@ -1437,6 +1438,7 @@ async function saveToDb() {
       hardening_depth_p3: cleanVal(v("hd03")) || null,
       hardening_depth_judgment: cleanVal(v("f-jdg2")) || null,
       core_hardness: cleanVal(v("f-res3")) || null,
+      core_hardness_standard: cleanVal(v("f-std3")) || null,
       core_hardness_p1: cleanVal(v("f-res3")) || null,
       core_hardness_p2: cleanVal(v("f-res3-p02")) || null,
       core_hardness_p3: cleanVal(v("f-res3-p03")) || null,
