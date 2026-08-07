@@ -475,9 +475,11 @@ body{min-width:844px;overflow-x:auto;}
       <input class="inp center" id="f-std3" value="-" placeholder="-">
     </td>
     <td style="font-size:9px;">시편</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res3"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p02"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p03"></td>
     <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
-    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg3">
         <option value="">-</option>
@@ -499,9 +501,11 @@ body{min-width:844px;overflow-x:auto;}
       </select>
     </td>
     <td style="font-size:9px;">시편</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res4"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res4"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res4-p02"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res4-p03"></td>
     <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
-    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg4">
         <option value="">-</option>
@@ -523,9 +527,11 @@ body{min-width:844px;overflow-x:auto;}
       </select>
     </td>
     <td style="font-size:9px;">현물</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res5"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res5"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res5-p02"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res5-p03"></td>
     <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
-    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg5">
         <option value="">-</option>
@@ -547,9 +553,11 @@ body{min-width:844px;overflow-x:auto;}
       </select>
     </td>
     <td style="font-size:9px;">현물</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center" id="f-res6"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res6"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res6-p02"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res6-p03"></td>
     <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
-    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="dash-cell"></td><td class="dash-cell"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg6">
         <option value="">-</option>
@@ -643,14 +651,28 @@ const PRODUCTION_COLUMNS = [
   "hardening_depth_p1",
   "hardening_depth_p2",
   "hardening_depth_p3",
+  "hardening_depth_judgment",
   "core_hardness",
+  "core_hardness_p1",
+  "core_hardness_p2",
+  "core_hardness_p3",
+  "core_hardness_judgment",
   "inspection_result",
   "inspection_report_special_notes",
   "inspection_structure_standard",
+  "inspection_structure_p1",
+  "inspection_structure_p2",
+  "inspection_structure_p3",
   "inspection_structure_judgment",
   "inspection_distortion_standard",
+  "inspection_distortion_p1",
+  "inspection_distortion_p2",
+  "inspection_distortion_p3",
   "inspection_distortion_judgment",
   "inspection_crack_standard",
+  "inspection_crack_p1",
+  "inspection_crack_p2",
+  "inspection_crack_p3",
   "inspection_crack_judgment",
   "inspected_by",
   "approved_by",
@@ -1179,13 +1201,21 @@ function applyProductionFields(row) {
   for (let i = 4; i <= 8; i += 1) sv("hd0" + i, "");
 
   sv("f-std3", "-");
-  sv("f-res3", row.core_hardness === "-" ? "" : (row.core_hardness || ""));
+  sv("f-res3", row.core_hardness_p1 || (row.core_hardness === "-" ? "" : (row.core_hardness || "")));
+  sv("f-res3-p02", row.core_hardness_p2 || "");
+  sv("f-res3-p03", row.core_hardness_p3 || "");
   sv("f-std4", row.inspection_structure_standard || "육안");
-  sv("f-res4", "");
+  sv("f-res4", row.inspection_structure_p1 || "");
+  sv("f-res4-p02", row.inspection_structure_p2 || "");
+  sv("f-res4-p03", row.inspection_structure_p3 || "");
   sv("f-std5", row.inspection_distortion_standard || "육안");
-  sv("f-res5", "");
+  sv("f-res5", row.inspection_distortion_p1 || "");
+  sv("f-res5-p02", row.inspection_distortion_p2 || "");
+  sv("f-res5-p03", row.inspection_distortion_p3 || "");
   sv("f-std6", row.inspection_crack_standard || "육안");
-  sv("f-res6", "");
+  sv("f-res6", row.inspection_crack_p1 || "");
+  sv("f-res6-p02", row.inspection_crack_p2 || "");
+  sv("f-res6-p03", row.inspection_crack_p3 || "");
   sv("f-note", row.inspection_report_special_notes || "");
 
   /*
@@ -1204,8 +1234,8 @@ function applyProductionFields(row) {
     : "";
 
   ss("f-jdg1", judgment);
-  ss("f-jdg2", judgment);
-  ss("f-jdg3", "");
+  ss("f-jdg2", row.hardening_depth_judgment || "");
+  ss("f-jdg3", row.core_hardness_judgment || "");
   ss("f-jdg4", row.inspection_structure_judgment || "");
   ss("f-jdg5", row.inspection_distortion_judgment || "");
   ss("f-jdg6", row.inspection_crack_judgment || "");
@@ -1229,12 +1259,20 @@ function clearReportOnlyFields() {
   sv("f-std2", "");
   sv("f-std3", "-");
   sv("f-res3", "");
+  sv("f-res3-p02", "");
+  sv("f-res3-p03", "");
   sv("f-std4", "육안");
   sv("f-res4", "");
+  sv("f-res4-p02", "");
+  sv("f-res4-p03", "");
   sv("f-std5", "육안");
   sv("f-res5", "");
+  sv("f-res5-p02", "");
+  sv("f-res5-p03", "");
   sv("f-std6", "육안");
   sv("f-res6", "");
+  sv("f-res6-p02", "");
+  sv("f-res6-p03", "");
 
   for (let i = 1; i <= 6; i += 1) {
     ss("f-jdg" + i, "");
@@ -1281,7 +1319,7 @@ function applyReportData(data) {
 
   if (data.insp_std2) sv("f-std2", data.insp_std2);
   ss("f-jdg1", data.insp_jdg1 || v("f-jdg1"));
-  ss("f-jdg2", data.insp_jdg2 || v("f-jdg2"));
+  ss("f-jdg2", v("f-jdg2") || data.insp_jdg2 || "");
 
   for (let i = 3; i <= 6; i += 1) {
     const stdValue = data["insp_std" + i];
@@ -1397,13 +1435,27 @@ async function saveToDb() {
       hardening_depth_p1: cleanVal(v("hd01")) || null,
       hardening_depth_p2: cleanVal(v("hd02")) || null,
       hardening_depth_p3: cleanVal(v("hd03")) || null,
+      hardening_depth_judgment: cleanVal(v("f-jdg2")) || null,
       core_hardness: cleanVal(v("f-res3")) || null,
+      core_hardness_p1: cleanVal(v("f-res3")) || null,
+      core_hardness_p2: cleanVal(v("f-res3-p02")) || null,
+      core_hardness_p3: cleanVal(v("f-res3-p03")) || null,
+      core_hardness_judgment: cleanVal(v("f-jdg3")) || null,
       inspection_report_special_notes: cleanVal(v("f-note")),
       inspection_structure_standard: cleanVal(v("f-std4")) || null,
+      inspection_structure_p1: cleanVal(v("f-res4")) || null,
+      inspection_structure_p2: cleanVal(v("f-res4-p02")) || null,
+      inspection_structure_p3: cleanVal(v("f-res4-p03")) || null,
       inspection_structure_judgment: cleanVal(v("f-jdg4")) || null,
       inspection_distortion_standard: cleanVal(v("f-std5")) || null,
+      inspection_distortion_p1: cleanVal(v("f-res5")) || null,
+      inspection_distortion_p2: cleanVal(v("f-res5-p02")) || null,
+      inspection_distortion_p3: cleanVal(v("f-res5-p03")) || null,
       inspection_distortion_judgment: cleanVal(v("f-jdg5")) || null,
       inspection_crack_standard: cleanVal(v("f-std6")) || null,
+      inspection_crack_p1: cleanVal(v("f-res6")) || null,
+      inspection_crack_p2: cleanVal(v("f-res6-p02")) || null,
+      inspection_crack_p3: cleanVal(v("f-res6-p03")) || null,
       inspection_crack_judgment: cleanVal(v("f-jdg6")) || null,
       inspected_by: cleanVal(v("f-inspected")) || null,
       approved_by: cleanVal(v("f-approved")) || null,
@@ -1526,12 +1578,20 @@ function resetForm() {
   sv("f-method", "고주파열처리");
   sv("f-std3", "-");
   sv("f-res3", "");
+  sv("f-res3-p02", "");
+  sv("f-res3-p03", "");
   sv("f-std4", "육안");
   sv("f-res4", "");
+  sv("f-res4-p02", "");
+  sv("f-res4-p03", "");
   sv("f-std5", "육안");
   sv("f-res5", "");
+  sv("f-res5-p02", "");
+  sv("f-res5-p03", "");
   sv("f-std6", "육안");
   sv("f-res6", "");
+  sv("f-res6-p02", "");
+  sv("f-res6-p03", "");
   updateAllSignatures();
 
   clearMainGraph();
