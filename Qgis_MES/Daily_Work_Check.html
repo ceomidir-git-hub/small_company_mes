@@ -17,29 +17,29 @@
     margin:0; font-family:'Malgun Gothic','Segoe UI',sans-serif; background:var(--gray-bg);
     color:var(--text); min-height:100vh;
   }
-  .container{ max-width:1280px; margin:0 auto; padding:20px; width:100%; }
+  .container{ max-width:1600px; margin:0 auto; padding:14px; width:100%; }
 
-  header{ margin-bottom:16px; }
+  header{ margin-bottom:10px; }
   header h1{ font-size:20px; margin:0 0 2px 0; color:var(--blue-dark); text-align:left; }
   header h1 .title-suffix{ font-size:0.5em; font-weight:400; color:var(--sub); margin-left:6px; }
   header .sub{ font-size:12px; color:var(--sub); }
 
   .filter-bar{
-    background:#fff; border:1px solid var(--border); border-radius:8px; padding:14px 16px;
-    display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:12px;
+    background:#fff; border:1px solid var(--border); border-radius:7px; padding:8px 10px;
+    display:flex; flex-wrap:wrap; gap:7px; align-items:flex-end; margin-bottom:9px;
   }
-  .filter-item{ display:flex; flex-direction:column; gap:4px; }
-  .filter-item label{ font-size:12px; color:var(--sub); }
+  .filter-item{ display:flex; flex-direction:column; gap:2px; }
+  .filter-item label{ font-size:11px; color:var(--sub); }
   .filter-item input, .filter-item select{
-    padding:6px 8px; border:1px solid var(--border); border-radius:5px; font-size:13px; background:#fff;
+    padding:4px 6px; border:1px solid var(--border); border-radius:4px; font-size:12px; background:#fff; min-height:29px;
   }
-  .filter-item.range{ flex-direction:row; align-items:center; gap:6px; }
-  .filter-item.range > div{ display:flex; flex-direction:column; gap:4px; }
-  .filter-sep{ color:var(--sub); padding-top:18px; }
+  .filter-item.range{ flex-direction:row; align-items:center; gap:4px; }
+  .filter-item.range > div{ display:flex; flex-direction:column; gap:2px; }
+  .filter-sep{ color:var(--sub); padding-top:15px; }
 
   .btn{
-    padding:7px 14px; border-radius:5px; border:1px solid var(--border); background:#fff;
-    font-size:13px; cursor:pointer; white-space:nowrap;
+    padding:5px 10px; border-radius:4px; border:1px solid var(--border); background:#fff;
+    font-size:12px; cursor:pointer; white-space:nowrap; min-height:29px;
   }
   .btn:hover{ background:#f3f4f6; }
   .btn-primary{ background:var(--blue); border-color:var(--blue); color:#fff; }
@@ -50,37 +50,60 @@
 
   .action-bar{
     display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
-    margin-bottom:10px;
+    margin-bottom:7px;
   }
   .summary{ font-size:13px; color:var(--sub); }
   .summary b{ color:var(--text); }
   .action-buttons{ display:flex; gap:8px; flex-wrap:wrap; }
 
-  #doc-container{ background:#fff; border-radius:8px; padding:16px; border:1px solid var(--border); }
-  .doc-title{ text-align:center; font-size:17px; font-weight:700; margin-bottom:10px; color:var(--blue-dark); }
+  #doc-container{ background:#fff; border-radius:7px; padding:10px; border:1px solid var(--border); }
+  .doc-title{ text-align:center; font-size:16px; font-weight:700; margin-bottom:7px; color:var(--blue-dark); }
 
-  .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  table{ width:100%; min-width:1150px; border-collapse:collapse; font-size:12px; }
+  .table-wrap{ width:100%; overflow-x:hidden; }
+  table{ width:100%; min-width:0; border-collapse:collapse; font-size:10.5px; table-layout:fixed; }
+  #dataTable th, #dataTable td{ min-width:0 !important; max-width:none; }
   thead th{
     position:sticky; top:0; background:var(--blue); color:#fff; font-weight:600;
-    padding:7px 4px; border:1px solid #234; text-align:center; white-space:nowrap;
+    padding:5px 2px; border:1px solid #234; text-align:center; white-space:normal; line-height:1.15; word-break:keep-all;
   }
-  tbody td{ padding:4px 3px; border:1px solid var(--border); text-align:center; white-space:nowrap; }
+  tbody td{ padding:3px 2px; border:1px solid var(--border); text-align:center; white-space:normal; line-height:1.15; overflow-wrap:anywhere; }
   tbody tr:nth-child(even){ background:#fafafa; }
   tbody tr.selected{ background:#e8f1ff !important; }
   .select-cell{ width:38px; min-width:38px; }
   .row-selector, #selectAllRows{ width:17px; height:17px; cursor:pointer; accent-color:var(--blue); }
   tfoot td{
-    padding:7px 4px; border:1px solid var(--border); text-align:center; font-weight:700;
+    padding:5px 2px; border:1px solid var(--border); text-align:center; font-weight:700;
     background:#eef2ff; color:var(--blue-dark);
   }
   td input, td select{
     width:100%; border:1px solid transparent; background:transparent; text-align:center;
-    font-size:12px; padding:3px 2px; border-radius:3px; font-family:inherit;
+    font-size:10.5px; padding:2px 1px; border-radius:3px; font-family:inherit;
   }
   td input:focus, td select:focus{ border-color:var(--blue); background:#fff; outline:none; }
   td.readonly{ color:#374151; background:#f9fafb; }
   td.num input{ text-align:right; }
+
+  /* 상세현황 20열을 화면 폭 안에 배치하여 가로 스크롤 방지 */
+  #dataTable th:nth-child(1), #dataTable td:nth-child(1){ width:2.2%; }
+  #dataTable th:nth-child(2), #dataTable td:nth-child(2){ width:2.4%; }
+  #dataTable th:nth-child(3), #dataTable td:nth-child(3){ width:5.4%; }
+  #dataTable th:nth-child(4), #dataTable td:nth-child(4){ width:5.4%; }
+  #dataTable th:nth-child(5), #dataTable td:nth-child(5){ width:5.8%; }
+  #dataTable th:nth-child(6), #dataTable td:nth-child(6){ width:5.8%; }
+  #dataTable th:nth-child(7), #dataTable td:nth-child(7){ width:6.5%; }
+  #dataTable th:nth-child(8), #dataTable td:nth-child(8){ width:4.4%; }
+  #dataTable th:nth-child(9), #dataTable td:nth-child(9){ width:5.0%; }
+  #dataTable th:nth-child(10), #dataTable td:nth-child(10),
+  #dataTable th:nth-child(11), #dataTable td:nth-child(11),
+  #dataTable th:nth-child(12), #dataTable td:nth-child(12),
+  #dataTable th:nth-child(13), #dataTable td:nth-child(13){ width:4.0%; }
+  #dataTable th:nth-child(14), #dataTable td:nth-child(14),
+  #dataTable th:nth-child(15), #dataTable td:nth-child(15){ width:4.6%; }
+  #dataTable th:nth-child(16), #dataTable td:nth-child(16){ width:4.8%; }
+  #dataTable th:nth-child(17), #dataTable td:nth-child(17){ width:5.1%; }
+  #dataTable th:nth-child(18), #dataTable td:nth-child(18){ width:4.7%; }
+  #dataTable th:nth-child(19), #dataTable td:nth-child(19){ width:5.3%; }
+  #dataTable th:nth-child(20), #dataTable td:nth-child(20){ width:7.0%; }
 
   #loadingOverlay{
     position:fixed; inset:0; background:rgba(255,255,255,0.75); display:none;
@@ -93,8 +116,13 @@
 
   @media (max-width:768px){
     header h1{ font-size:16px; }
-    .filter-bar{ flex-direction:column; align-items:stretch; }
-    table{ font-size:11px; }
+    .filter-bar{ flex-direction:row; align-items:flex-end; padding:7px 8px; gap:6px; }
+    .filter-item{ flex:1 1 30%; min-width:92px; }
+    .filter-item.range{ flex:1 1 100%; }
+    .filter-bar .btn{ flex:0 0 auto; }
+    .container{ padding:8px; }
+    table{ font-size:8.5px; }
+    thead th, tbody td, tfoot td{ padding-left:1px; padding-right:1px; }
   }
 
   /* PDF 캡처용(화면에는 노출 안 됨) */
@@ -144,6 +172,7 @@
     </div>
     <button class="btn btn-primary" id="btnSearch">🔍 조회</button>
     <button class="btn" id="btnReset">초기화</button>
+    <button class="btn" id="btnNewItem">신규Item</button>
   </div>
 
   <div class="action-bar">
@@ -620,6 +649,137 @@ async function searchData() {
     console.error(error);
     setActionMessage("조회 실패: " + dbErrorMessage(error), "error");
     alert("조회 중 오류가 발생했습니다: " + dbErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+/* ══════════════════════════════════════════════
+   신규Item 조회
+   기준: 선택한 월의 생산실적 중
+         해당 월 1일 이전에 동일 고객사+품명+품번 생산이 0건인 Item
+   DB 등록/수정/삭제 없음 - 조회 결과만 currentRows에 표시
+   ══════════════════════════════════════════════ */
+function itemIdentityKey(row) {
+  return [
+    String(row.customer_name == null ? "" : row.customer_name).trim(),
+    String(row.item_name == null ? "" : row.item_name).trim(),
+    String(row.item_number == null ? "" : row.item_number).trim()
+  ].join("\u001f");
+}
+
+function getSelectedMonthRange() {
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+
+  if (!from || !to) {
+    throw new Error("신규Item 조회는 작업기간 시작일과 종료일을 모두 입력해야 합니다.");
+  }
+
+  if (from > to) {
+    throw new Error("작업기간 시작일이 종료일보다 늦습니다.");
+  }
+
+  const fromMonth = from.substring(0, 7);
+  const toMonth = to.substring(0, 7);
+
+  if (fromMonth !== toMonth) {
+    throw new Error("신규Item 조회는 같은 월 안에서 작업기간을 선택해 주세요.");
+  }
+
+  return {
+    from,
+    to,
+    monthStart: fromMonth + "-01",
+    monthLabel: fromMonth
+  };
+}
+
+async function searchNewItems() {
+  if (!currentProfile) {
+    alert("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const customer = document.getElementById("fCustomer").value;
+  const product = document.getElementById("fProduct").value;
+  const partNo = document.getElementById("fPartNo").value;
+  const material = document.getElementById("fMaterial").value;
+
+  let period;
+  try {
+    period = getSelectedMonthRange();
+  } catch (error) {
+    setActionMessage(error.message, "error");
+    alert(error.message);
+    return;
+  }
+
+  updateTitle(period.from, period.to);
+  showLoading("신규Item을 확인하는 중입니다...");
+
+  try {
+    /* 1. 선택 기간의 상세 생산실적 조회 */
+    const periodRows = await fetchAllRows(
+      SELECT_COLUMNS,
+      (query) => {
+        let filtered = query
+          .gte("work_date", period.from)
+          .lte("work_date", period.to);
+
+        if (customer) filtered = filtered.eq("customer_name", customer);
+        if (product) filtered = filtered.eq("item_name", product);
+        if (partNo) filtered = filtered.eq("item_number", partNo);
+        if (material) filtered = filtered.eq("material_name", material);
+
+        return filtered
+          .order("work_date", { ascending:true, nullsFirst:false })
+          .order("created_at", { ascending:true, nullsFirst:false })
+          .order("production_system_id", { ascending:true });
+      }
+    );
+
+    if (!periodRows.length) {
+      currentRows = [];
+      renderTable();
+      setActionMessage("신규Item 조회 완료: 선택 기간 생산실적 0건", "success");
+      return;
+    }
+
+    /* 2. 선택 월 1일 이전의 생산 Item 목록 조회
+          로그인 회사 + is_active=true + 월 시작일 이전만 조회 */
+    const previousRows = await fetchAllRows(
+      "customer_name,item_name,item_number",
+      (query) => query
+        .lt("work_date", period.monthStart)
+        .order("work_date", { ascending:true, nullsFirst:false })
+    );
+
+    const previousItemKeys = new Set(
+      previousRows.map((row) => itemIdentityKey(row))
+    );
+
+    /* 3. 이전 생산 이력이 없는 Item의 선택 기간 작업내역만 표시 */
+    currentRows = periodRows.filter(
+      (row) => !previousItemKeys.has(itemIdentityKey(row))
+    );
+
+    renderTable();
+
+    const newItemCount = new Set(
+      currentRows.map((row) => itemIdentityKey(row))
+    ).size;
+
+    const yy = period.monthLabel.substring(2, 4);
+    const mm = Number(period.monthLabel.substring(5, 7));
+    setActionMessage(
+      `${yy}년 ${mm}월 신규Item ${newItemCount}종 · 상세 생산실적 ${currentRows.length}건`,
+      "success"
+    );
+  } catch (error) {
+    console.error(error);
+    setActionMessage("신규Item 조회 실패: " + dbErrorMessage(error), "error");
+    alert("신규Item 조회 중 오류가 발생했습니다: " + dbErrorMessage(error));
   } finally {
     hideLoading();
   }
@@ -1206,6 +1366,11 @@ function buildPrintSumRowHtml() {
 document.getElementById("btnSearch").addEventListener(
   "click",
   searchData
+);
+
+document.getElementById("btnNewItem").addEventListener(
+  "click",
+  searchNewItems
 );
 
 document.getElementById("btnReset").addEventListener("click", () => {
