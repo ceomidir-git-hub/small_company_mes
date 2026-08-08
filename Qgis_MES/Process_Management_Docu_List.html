@@ -334,7 +334,7 @@ async function fetchAllRows(tableName, selectColumns, applyQuery) {
 async function loadMasterData() {
   const [customerRows, itemRows] = await Promise.all([
     fetchAllRows(CUSTOMERS_TABLE, "customer_system_id,customer_name,is_active", (query) => query.eq("is_active", true).order("customer_name", { ascending:true })),
-    fetchAllRows(ITEMS_TABLE, "item_system_id,customer_system_id,item_name,item_number,is_active", (query) => query.eq("is_active", true).order("item_name", { ascending:true }).order("item_number", { ascending:true }))
+    fetchAllRows(ITEMS_TABLE, "item_system_id,customer_system_id,item_name,item_number,control_plan_number,is_active", (query) => query.eq("is_active", true).order("item_name", { ascending:true }).order("item_number", { ascending:true }))
   ]);
 
   const customerNameById = new Map();
@@ -357,7 +357,8 @@ async function loadMasterData() {
       item_system_id: normalize(row.item_system_id),
       customer_name: customerName,
       item_name: itemName,
-      item_number: itemNumber
+      item_number: itemNumber,
+      control_plan_number: normalize(row.control_plan_number)
     });
   });
 
@@ -425,38 +426,86 @@ function updateTitle(from, to) {
   document.title = title + " | HeatPro MES";
 }
 
-function hasInspectionReportData(row) {
-  const keys = [
-    "inspection_result","p1","p2","p3","hardening_depth","core_hardness",
-    "hardening_depth_p1","hardening_depth_p2","hardening_depth_p3",
-    "core_hardness_p1","core_hardness_p2","core_hardness_p3",
-    "inspection_structure_standard","inspection_distortion_standard","inspection_crack_standard",
-    "inspection_report_special_notes","inspected_by"
-  ];
-  return keys.some(key => normalize(row[key]));
+function hasApprovedHeatReport(row) {
+  return normalize(row.approved_by) === "최석현";
 }
 
-async function fetchDocIndexByCandidates(candidates) {
-  for (const tableName of candidates) {
-    try {
-      const rows = await fetchAllRows(tableName, "item_system_id,is_active", (query) => query.eq("is_active", true));
-      return new Set(rows.map(row => normalize(row.item_system_id)).filter(Boolean));
-    } catch (error) {
-      console.warn("문서 테이블 점검 실패:", tableName, error);
-    }
-  }
-  return new Set();
+async function loadApproverEmployeeIds() {
+  const rows = await fetchAllRows("employees", "employee_system_id,employee_name,signature_storage_path,is_active", (query) =>
+    query.eq("is_active", true).eq("employee_name", "최석현")
+  );
+  return new Set(rows
+    .filter(row => normalize(row.signature_storage_path))
+    .map(row => normalize(row.employee_system_id))
+    .filter(Boolean));
+}
+
+async function loadControlPlanCompletedNumbers() {
+  const [plans, approvals] = await Promise.all([
+    fetchAllRows("control_plans", "control_plan_system_id,plan_no,is_active", (query) => query.eq("is_active", true)),
+    fetchAllRows("control_plan_approvals", "control_plan_system_id,approval_role,approver_name,signature_storage_path,is_active", (query) =>
+      query.eq("is_active", true).eq("approval_role", "approver").eq("approver_name", "최석현")
+    )
+  ]);
+  const approvedIds = new Set(approvals
+    .filter(row => normalize(row.signature_storage_path))
+    .map(row => normalize(row.control_plan_system_id))
+    .filter(Boolean));
+  return new Set(plans
+    .filter(row => approvedIds.has(normalize(row.control_plan_system_id)))
+    .map(row => normalize(row.plan_no))
+    .filter(Boolean));
+}
+
+async function loadManufacturingCompletedItems() {
+  const rows = await fetchAllRows("manufacturing_process_diagrams", "item_system_id,is_completed,is_active", (query) =>
+    query.eq("is_active", true).eq("is_completed", true)
+  );
+  return new Set(rows.map(row => normalize(row.item_system_id)).filter(Boolean));
+}
+
+async function loadInspectionStandardCompletedItems(approverEmployeeIds) {
+  if (!approverEmployeeIds.size) return new Set();
+  const [documents, approvals] = await Promise.all([
+    fetchAllRows("inspection_standard_documents", "inspection_standard_system_id,item_system_id,is_active", (query) => query.eq("is_active", true)),
+    fetchAllRows("inspection_standard_approvals", "inspection_standard_system_id,approval_stage,employee_system_id", (query) => query.eq("approval_stage", "APPROVER"))
+  ]);
+  const approvedDocumentIds = new Set(approvals
+    .filter(row => approverEmployeeIds.has(normalize(row.employee_system_id)))
+    .map(row => normalize(row.inspection_standard_system_id))
+    .filter(Boolean));
+  return new Set(documents
+    .filter(row => approvedDocumentIds.has(normalize(row.inspection_standard_system_id)))
+    .map(row => normalize(row.item_system_id))
+    .filter(Boolean));
+}
+
+async function loadWorkStandardCompletedItems(approverEmployeeIds) {
+  if (!approverEmployeeIds.size) return new Set();
+  const [documents, revisions] = await Promise.all([
+    fetchAllRows("work_standard_documents", "work_standard_system_id,item_system_id,is_active", (query) => query.eq("is_active", true)),
+    fetchAllRows("work_standard_revisions", "work_standard_system_id,approver_employee_system_id,is_active", (query) => query.eq("is_active", true))
+  ]);
+  const approvedDocumentIds = new Set(revisions
+    .filter(row => approverEmployeeIds.has(normalize(row.approver_employee_system_id)))
+    .map(row => normalize(row.work_standard_system_id))
+    .filter(Boolean));
+  return new Set(documents
+    .filter(row => approvedDocumentIds.has(normalize(row.work_standard_system_id)))
+    .map(row => normalize(row.item_system_id))
+    .filter(Boolean));
 }
 
 async function loadDocumentIndexes() {
-  const [controlPlanSet, manufacturingSet, inspectionSet, workStandardSet] = await Promise.all([
-    fetchDocIndexByCandidates(DOC_SOURCES.controlPlan.tables),
-    fetchDocIndexByCandidates(DOC_SOURCES.manufacturing.tables),
-    fetchDocIndexByCandidates(DOC_SOURCES.inspectionStandard.tables),
-    fetchDocIndexByCandidates(DOC_SOURCES.workStandard.tables)
+  const approverEmployeeIds = await loadApproverEmployeeIds();
+  const [controlPlanNumbers, manufacturingSet, inspectionSet, workStandardSet] = await Promise.all([
+    loadControlPlanCompletedNumbers(),
+    loadManufacturingCompletedItems(),
+    loadInspectionStandardCompletedItems(approverEmployeeIds),
+    loadWorkStandardCompletedItems(approverEmployeeIds)
   ]);
   docIndex = {
-    controlPlan: controlPlanSet,
+    controlPlan: controlPlanNumbers,
     manufacturing: manufacturingSet,
     inspectionStandard: inspectionSet,
     workStandard: workStandardSet
@@ -530,7 +579,7 @@ async function searchData() {
       "hardening_depth_p1","hardening_depth_p2","hardening_depth_p3",
       "core_hardness_p1","core_hardness_p2","core_hardness_p3",
       "inspection_structure_standard","inspection_distortion_standard","inspection_crack_standard",
-      "inspection_report_special_notes","inspected_by","is_active"
+      "inspection_report_special_notes","inspected_by","approved_by","is_active"
     ].join(",");
 
     const productionRows = await fetchAllRows(PRODUCTION_TABLE, selectColumns, (query) => {
@@ -553,7 +602,7 @@ async function searchData() {
       const key = companyItemKey(customerName, itemName, itemNumber);
       const workDate = normalize(row.work_date);
       const materialName = normalize(row.material_name);
-      const reportExists = hasInspectionReportData(row);
+      const reportExists = hasApprovedHeatReport(row);
       if (!grouped.has(key)) {
         const itemInfo = itemIndexMap.get(key) || {};
         grouped.set(key, {
@@ -579,7 +628,9 @@ async function searchData() {
 
     currentRows = Array.from(grouped.values()).map(row => {
       const itemSystemId = normalize(row.item_system_id);
-      const hasControlPlan = itemSystemId ? docIndex.controlPlan.has(itemSystemId) : false;
+      const itemInfo = itemIndexMap.get(companyItemKey(row.customer_name, row.item_name, row.item_number)) || {};
+      const controlPlanNumber = normalize(itemInfo.control_plan_number);
+      const hasControlPlan = controlPlanNumber ? docIndex.controlPlan.has(controlPlanNumber) : false;
       const hasManufacturing = itemSystemId ? docIndex.manufacturing.has(itemSystemId) : false;
       const hasInspectionStandard = itemSystemId ? docIndex.inspectionStandard.has(itemSystemId) : false;
       const hasWorkStandard = itemSystemId ? docIndex.workStandard.has(itemSystemId) : false;
