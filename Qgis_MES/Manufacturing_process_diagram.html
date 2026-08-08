@@ -1,2463 +1,1354 @@
 <!DOCTYPE html>
-
 <html class="auth-pending" lang="ko">
 <head>
-<meta charset="utf-8"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>제조공정도</title>
 <style>
-  :root{
-    --navy:#1b3a63;
-    --navy-dark:#12294a;
-    --line:#8a97a8;
-    --line-light:#d3d9e2;
-    --bg-head:#eef1f6;
-    --ctq:#c0392b;
-    --paper:#ffffff;
-  }
-  *{box-sizing:border-box;}
-  body{
-    font-family:"Malgun Gothic","Noto Sans KR","Apple SD Gothic Neo",sans-serif;
-    background:#5d6b7d;
-    margin:0;
-    padding:24px 0 60px;
-    color:#1c2530;
-  }
+:root{
+  --navy:#1b3a63;
+  --navy-dark:#12294a;
+  --line:#8a97a8;
+  --line-light:#d3d9e2;
+  --bg-head:#eef1f6;
+  --paper:#fff;
+  --edit-bg:#fffef3;
+  --edit-line:#eee5c8;
+}
+*{box-sizing:border-box}
+html.auth-pending body{visibility:hidden}
+body{
+  margin:0;
+  padding:24px 0 60px;
+  background:#5d6b7d;
+  color:#1c2530;
+  font-family:"Malgun Gothic","Noto Sans KR","Apple SD Gothic Neo",sans-serif;
+}
+.toolbar{
+  position:static;
+  width:1400px;
+  max-width:96vw;
+  margin:8px auto 0;
+  padding:6px 8px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:6px;
+  flex-wrap:nowrap;
+  background:#f7f7f7;
+  border:1px solid #b7b7b7;
+  border-radius:6px;
+  box-shadow:0 1px 5px rgba(0,0,0,.18);
+}
+.toolbar .group{display:flex;align-items:flex-end;gap:5px;flex-wrap:nowrap}
+.toolbar-search-group{flex:1 1 0;min-width:0}
+.toolbar-filter{display:flex;flex-direction:column;gap:3px;flex:1 1 150px;min-width:120px;color:#444;font-size:10px;line-height:1}
+.toolbar-filter select,.toolbar-filter input{
+  width:100%;height:30px;padding:0 8px;border:1px solid #aeb4bc;border-radius:4px;
+  background:#fff;color:#111;font:400 12px inherit;
+}
+.toolbar button{
+  height:30px;padding:0 9px;border:1px solid #aaa;border-radius:4px;background:#fff;color:#1c2530;
+  font:700 12px inherit;white-space:nowrap;cursor:pointer;
+}
+.toolbar button:hover{border-color:#555;background:#f0f0f0}
+.toolbar button.primary{background:#eaf3ff;border-color:#7c9fc8}
+.toolbar button.danger{color:#b42318}
+.toolbar button:disabled,.toolbar select:disabled,.toolbar input:disabled{opacity:.45;cursor:not-allowed}
+
+.sheet{
+  width:1400px;
+  max-width:96vw;
+  margin:0 auto 32px;
+  background:var(--paper);
+  box-shadow:0 6px 24px rgba(0,0,0,.35);
+  padding:26px 30px 30px;
+}
+.first-sheet{margin-top:30px}
+.titlebar{
+  display:flex;align-items:center;justify-content:space-between;background:var(--navy);color:#fff;
+  padding:14px 22px;margin-bottom:14px;
+}
+.titlebar h1{font-size:26px;letter-spacing:1px;margin:0;font-weight:800}
+.titlebar .subtitle{text-align:right;line-height:1.5}
+.titlebar .procname{font-size:16px;font-weight:700}
+
+table.meta{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;border:1px solid var(--line);table-layout:fixed}
+table.meta tr{height:40px}
+table.meta td{border:1px solid var(--line);padding:7px 10px;height:40px;max-height:40px;overflow:hidden}
+table.meta td.label{background:var(--bg-head);font-weight:700;width:10%;text-align:center;color:var(--navy-dark)}
+table.meta td.value{width:23.3333%;white-space:nowrap;text-overflow:ellipsis}
+.meta-entry-select{
+  width:100%;min-width:0;height:34px;padding:0 10px;border:1px solid var(--edit-line);border-radius:3px;
+  background:var(--edit-bg);color:#111;font:400 13px inherit;
+}
+
+.section-title{
+  background:var(--navy);color:#fff;font-size:14px;font-weight:700;padding:8px 14px;margin-top:22px;margin-bottom:0;letter-spacing:.3px
+}
+.section-title .en{font-weight:400;font-size:12px;color:#c3cee0;margin-left:6px}
+
+table.flow{
+  width:100%;border-collapse:collapse;table-layout:fixed;font-size:12.5px;margin-bottom:4px;border:1px solid var(--line)
+}
+table.flow th,table.flow td{
+  border:1px solid var(--line);padding:9px 10px;vertical-align:middle;text-align:center;overflow:hidden
+}
+table.flow thead tr,table.flow thead th{height:42px;max-height:42px}
+table.flow thead th{background:var(--bg-head);color:#1c2530;font-weight:700;font-size:13px}
+table.flow td.rowlabel,table.flow th.rowlabel{background:var(--bg-head);color:#1c2530;font-weight:700;width:9%}
+table.flow tbody tr:first-child,table.flow tbody tr:first-child>td{height:110px;min-height:110px;max-height:110px}
+table.flow tbody tr:not(:first-child),table.flow tbody tr:not(:first-child)>td{height:44px;min-height:44px;max-height:44px}
+
+.process-field{padding:0!important;background:#fff!important}
+.fixed-text-editor{
+  width:calc(100% - 6px);height:calc(100% - 6px);margin:3px;padding:0 3px;border:1px solid transparent;border-radius:2px;
+  overflow:hidden;display:grid;place-items:center;line-height:1.35;text-align:center;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;
+}
+.fixed-text-editor:empty::before{content:attr(data-placeholder);color:#111;font-weight:400;pointer-events:none}
+.edit-mode .fixed-text-editor{background:var(--edit-bg);border-color:var(--edit-line);cursor:text;overflow:auto}
+.fixed-text-editor:focus{outline:1px solid #d8c98f;outline-offset:-1px}
+
+.photo-field{position:relative!important;height:110px!important;min-height:110px!important;max-height:110px!important;padding:6px!important;background:#fff!important;overflow:hidden!important}
+.photo-field::before{
+  content:"";position:absolute;inset:6px;z-index:0;border:1px solid transparent;border-radius:2px;background:#fff;pointer-events:none
+}
+.edit-mode .photo-field::before{background:var(--edit-bg);border-color:var(--edit-line)}
+.photo-placeholder,.process-photo-preview{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1;margin:0!important
+}
+.photo-placeholder{
+  width:calc(100% - 12px);height:calc(100% - 12px);display:flex;align-items:center;justify-content:center;
+  text-align:center;color:#111;font-size:12.5px;line-height:1.35;user-select:none
+}
+.process-photo-preview{
+  width:auto!important;height:auto!important;max-width:calc(100% - 12px)!important;max-height:calc(100% - 12px)!important;
+  object-fit:contain!important;object-position:center center!important;background:#fff;border:0!important
+}
+.process-photo-preview[hidden],.photo-placeholder[hidden]{display:none!important}
+.process-photo-input{display:none!important}
+.edit-mode .photo-field{cursor:pointer}
+.edit-mode .photo-field:hover::after{
+  content:"사진 선택";position:absolute;right:7px;bottom:7px;z-index:2;padding:3px 7px;border:1px solid #7c9fc8;border-radius:4px;
+  background:rgba(255,255,255,.94);color:#1b3a63;font-size:10px;font-weight:700
+}
+
+.manufacturing-notice{
+  display:none;position:fixed;right:18px;bottom:18px;z-index:3000;min-width:230px;max-width:min(440px,calc(100vw - 36px));
+  padding:11px 14px;border:1px solid #aeb7c4;border-radius:6px;background:rgba(255,255,255,.98);
+  box-shadow:0 5px 18px rgba(0,0,0,.22);color:#263445;font-size:12px;font-weight:700;line-height:1.45;pointer-events:none
+}
+.manufacturing-notice.show{display:block}
+.manufacturing-notice.success{border-color:#7dbb99;background:#f2fbf6;color:#087247}
+.manufacturing-notice.error{border-color:#d8a0a8;background:#fff5f6;color:#a52332}
+.manufacturing-notice.info{border-color:#9eb9dc;background:#f5f9ff;color:#295993}
+
+.modal-backdrop{
+  display:none;position:fixed;inset:0;z-index:1200;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.52)
+}
+.modal-backdrop.open{display:flex}
+.modal{
+  width:min(860px,100%);max-height:82vh;overflow:auto;padding:16px;border-radius:8px;background:#fff;box-shadow:0 15px 50px rgba(0,0,0,.35)
+}
+.modal h2{margin:0 0 8px;font-size:18px}
+.modal-summary{margin:0 0 10px;color:#475467;font-size:12px}
+.modal-table-scroll{overflow-x:auto}
+.modal table{width:100%;border-collapse:collapse;table-layout:fixed}
+.modal th,.modal td{border:1px solid #ccc;padding:8px;font-size:12px;text-align:left}
+.modal th{background:#eef1f6;text-align:center}
+.modal th.select-column{width:60px}.modal th.number-column{width:55px}.modal th.status-column{width:90px}
+.modal tbody tr.radio-selected{background:#e4efff}
+.result-radio{width:15px;height:15px;margin:0;cursor:pointer;vertical-align:middle}
+.document-status{display:inline-block;min-width:54px;padding:3px 7px;border-radius:3px;font-size:11px;font-weight:700;text-align:center}
+.document-status.complete{color:#166534;background:#ecfdf3;border:1px solid #86efac}
+.document-status.progress{color:#475467;background:#f2f4f7;border:1px solid #d0d5dd}
+.search-pagination{display:flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:5px 8px;border:1px solid #d3d7dd;border-top:0;background:#f7f8fa}
+.search-pagination button,.modal-actions button{height:29px;padding:0 10px;border:1px solid #9da5af;border-radius:3px;background:#fff;font:700 11px inherit;cursor:pointer}
+.search-pagination span{min-width:70px;text-align:center;color:#3b4654;font-size:11px;font-weight:700}
+.modal-actions{display:flex;justify-content:flex-end;margin-top:10px}
+
+@media(max-width:1150px){
+  .toolbar{flex-wrap:wrap}.toolbar-search-group{flex-basis:100%}.toolbar>.group:last-child{flex-wrap:wrap}
+}
+@media(max-width:640px){
+  .toolbar-search-group{display:grid!important;grid-template-columns:1fr 1fr}.toolbar-filter{min-width:0}
+}
+@media(max-width:420px){.toolbar-search-group{grid-template-columns:1fr}}
+
+@media print{
+  @page{size:A4 landscape;margin:5mm}
+  html,body{width:297mm!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  .toolbar,.modal-backdrop,.manufacturing-notice{display:none!important}
   .sheet{
-    width:1400px;
-    max-width:96vw;
-    margin:0 auto 32px;
-    background:var(--paper);
-    box-shadow:0 6px 24px rgba(0,0,0,.35);
-    padding:26px 30px 30px;
-  }
-  /* ---------- Title Bar ---------- */
-  .titlebar{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:var(--navy);
-    color:#fff;
-    padding:14px 22px;
-    margin-bottom:14px;
-  }
-  .titlebar h1{
-    font-size:26px;
-    letter-spacing:1px;
-    margin:0;
-    font-weight:800;
-  }
-  .titlebar .subtitle{
-    text-align:right;
-    line-height:1.5;
-  }
-  .titlebar .subtitle .doctype{
-    font-size:12px;
-    letter-spacing:2px;
-    color:#b9c6db;
-    font-weight:600;
-  }
-  .titlebar .subtitle .procname{
-    font-size:16px;
-    font-weight:700;
-  }
-  /* ---------- Meta / Header table ---------- */
-  table.meta{
-    width:100%;
-    border-collapse:collapse;
-    margin-bottom:16px;
-    font-size:13px;
-    border:1px solid var(--line);
-  }
-  table.meta td{
-    border:1px solid var(--line);
-    padding:7px 10px;
-  }
-  table.meta td.label{
-    background:var(--bg-head);
-    font-weight:700;
-    width:10%;
-    text-align:center;
-    color:var(--navy-dark);
-  }
-  table.meta td.value{
-    width:23.3333%;
-  }
-
-  /* ---------- Doc control strip ---------- */
-  .docctrl{
-    display:flex;
-    gap:0;
-    border:1px solid var(--line);
-    margin-bottom:18px;
-    font-size:12px;
-  }
-  .docctrl div{
-    flex:1;
-    padding:6px 10px;
-    border-right:1px solid var(--line-light);
-  }
-  .docctrl div:last-child{border-right:none;}
-  .docctrl span.k{
-    display:block;
-    color:#5b6a7d;
-    font-size:10.5px;
-    letter-spacing:.5px;
-    margin-bottom:2px;
-  }
-  .docctrl span.v{font-weight:700;color:var(--navy-dark);}
-
-  /* ---------- Section header ---------- */
-  .section-title{
-    background:var(--navy);
-    color:#fff;
-    font-size:14px;
-    font-weight:700;
-    padding:8px 14px;
-    margin-top:22px;
-    margin-bottom:0;
-    letter-spacing:.3px;
-  }
-  .section-title .en{
-    font-weight:400;
-    font-size:12px;
-    color:#c3cee0;
-    margin-left:6px;
-  }
-
-  /* ---------- Control Plan Table ---------- */
-  table.cp{
-    width:100%;
-    border-collapse:collapse;
-    table-layout:fixed;
-    font-size:12px;
-  }
-  table.cp th, table.cp td{
-    border:1px solid var(--line);
-    padding:6px 7px;
-    vertical-align:top;
-  }
-  table.cp thead th{
-    background:var(--bg-head);
-    color:var(--navy-dark);
-    font-weight:700;
-    text-align:center;
-    font-size:11.5px;
-    line-height:1.35;
-  }
-  table.cp thead th .en{
-    display:block;
-    font-weight:400;
-    font-size:9.5px;
-    color:#6a7688;
-  }
-  table.cp col.c-no{width:4.4%;}
-  table.cp col.c-proc{width:11%;}
-  table.cp col.c-photo{width:9%;}
-  table.cp col.c-equip{width:12%;}
-  table.cp col.c-charprod{width:9%;}
-  table.cp col.c-charproc{width:9%;}
-  table.cp col.c-special{width:4.5%;}
-  table.cp col.c-spec{width:15%;}
-  table.cp col.c-method{width:14%;}
-  table.cp col.c-reaction{width:12.1%;}
-
-  td.center{text-align:center;vertical-align:middle;}
-  td.procno{
-    text-align:center;
-    font-weight:800;
-    color:var(--navy);
-    font-size:14px;
-    vertical-align:middle;
-  }
-  td.procname{
-    font-weight:700;
-    vertical-align:middle;
-  }
-  td.procname .sub{
-    display:block;
-    font-weight:400;
-    color:#5b6a7d;
-    font-size:10.5px;
-    margin-top:2px;
-  }
-  .photo-cell{
-    text-align:center;
-  }
-  .photo-cell img{
-    width:100%;
-    max-width:110px;
-    height:66px;
-    object-fit:cover;
-    border:1px solid #c7cfd9;
-  }
-  .ctq-mark{
-    text-align:center;
-    vertical-align:middle;
-    font-size:15px;
-    color:var(--ctq);
-    font-weight:800;
-  }
-  .tag{
-    display:inline-block;
-    font-size:9.5px;
-    font-weight:700;
-    padding:1px 5px;
-    border-radius:3px;
-    margin-right:3px;
-    margin-bottom:2px;
-  }
-  .tag-mes{background:#e4ecf7;color:#1b3a63;}
-  .tag-log{background:#f2eee0;color:#7a5c00;}
-  ul.plain{
-    margin:0;
-    padding-left:14px;
-  }
-  ul.plain li{margin-bottom:2px;}
-  .row-continued td{
-    color:#9aa5b3;
-    font-style:italic;
-    text-align:center;
-    vertical-align:middle;
-  }
-  .group-row td{
-    background:#f7f8fa;
-  }
-
-  /* ---------- Legend / Remark section ---------- */
-  table.remark{
-    width:100%;
-    border-collapse:collapse;
-    font-size:12px;
-    margin-top:0;
-  }
-  table.remark th,table.remark td{
-    border:1px solid var(--line);
-    padding:8px 12px;
-    vertical-align:top;
-  }
-  table.remark th{
-    background:var(--bg-head);
-    color:var(--navy-dark);
-    text-align:left;
-    width:22%;
-    font-size:12.5px;
-  }
-  table.remark ul{margin:0;padding-left:16px;}
-  table.remark li{margin-bottom:3px;}
-
-  /* ---------- Sign-off ---------- */
-  table.signoff{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:18px;
-    font-size:12px;
-  }
-  table.signoff th,table.signoff td{
-    border:1px solid var(--line);
-    padding:8px;
-    text-align:center;
-  }
-  table.signoff th{
-    background:var(--bg-head);
-    color:var(--navy-dark);
-    width:12%;
-  }
-  table.signoff td{height:52px;width:13%;}
-
-  .footer-note{
-    margin-top:16px;
-    font-size:10.5px;
-    color:#6a7688;
-    border-top:1px solid var(--line-light);
-    padding-top:8px;
-    line-height:1.6;
-  }
-  .verify-flag{
-    display:inline-block;
-    background:#fdecea;
-    color:#a12f22;
-    border:1px solid #f3c4bd;
-    padding:1px 6px;
-    border-radius:3px;
-    font-size:10px;
-    font-weight:700;
-  }
-
-  /* ---------- Original flow-chart style grid table (공정명/도해/공정설명/검사항목/측정기기) ---------- */
-  table.flow{
-    width:100%;
-    border-collapse:collapse;
-    table-layout:fixed;
-    font-size:12.5px;
-    margin-bottom:4px;
-    border:1px solid var(--line);
-  }
-  table.flow th, table.flow td{
-    border:1px solid var(--line);
-    padding:9px 10px;
-    vertical-align:middle;
-    text-align:center;
-  }
-  table.flow thead th{
-    background:var(--bg-head);
-    color:#1c2530;
-    font-weight:700;
-    font-size:13px;
-  }
-  table.flow td.rowlabel, table.flow th.rowlabel{
-    background:var(--bg-head);
-    color:#1c2530;
-    font-weight:700;
-    width:9%;
-  }
-  table.flow td.blank{
-    background:#fbfbfc;
-  }
-  table.flow td.phototd{
-    padding:6px;
-  }
-  table.flow td.phototd img{
-    width:100%;
-    height:110px;
-    object-fit:cover;
-    display:block;
-    border:1px solid #c7cfd9;
-  }
-  table.flow td.photo-none{
-    color:#9aa5b3;
-    font-size:11px;
-  }
-  table.flow td.text-cell{
-    text-align:left;
-    line-height:1.5;
-  }
-
-  @media print{
-    body{background:#fff;padding:0;}
-    .toolbar,.modal-backdrop{display:none!important;}
-    .sheet{box-shadow:none;width:100%;max-width:none;margin:0;padding:8mm;page-break-after:always;}
-    .sheet:last-of-type{page-break-after:auto;}
-    table.flow{font-size:11px;}
-    table.flow th, table.flow td{padding:6px 7px;}
-    table.flow td.phototd img{height:80px;}
-    table.flow tbody tr:first-child td:not(.rowlabel){height:80px;}
-    table.meta{font-size:12px;}
-    @page{size:A4 landscape;margin:6mm;}
-    .toolbar{display:none;}
-  }
-
-  /* ---------- Data-entry field highlight ---------- */
-  /* Every cell EXCEPT the row-label column (공정명/도해/공정설명/검사항목/측정기기) holds DATA */
-  .input-field{
-    background:#FFF9C4 !important;
-  }
-  .edit-mode .input-field{
-    outline:1px dashed #b8860b;
-    outline-offset:-2px;
-    cursor:text;
-  }
-  .input-field:focus{
-    outline:2px solid #1b3a63;
-    outline-offset:-2px;
-    background:#FFF3A0 !important;
-  }
-
-  /* ---------- Toolbar / 조회 프레임 ---------- */
-  .toolbar{
-    position:static;
-    width:1400px;
-    max-width:96vw;
-    margin:8px auto 0;
-    padding:6px 8px;
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:6px;
-    flex-wrap:nowrap;
-    background:#f7f7f7;
-    border:1px solid #b7b7b7;
-    border-radius:6px;
-    box-shadow:0 1px 5px rgba(0,0,0,.18);
-  }
-  .toolbar .group{
-    display:flex;
-    align-items:flex-end;
-    gap:5px;
-    flex-wrap:nowrap;
-  }
-  .toolbar-search-group{
-    flex:1 1 0;
-    min-width:0;
-  }
-  .toolbar-filter{
-    display:flex;
-    flex-direction:column;
-    gap:3px;
-    flex:1 1 150px;
-    min-width:120px;
-    color:#444;
-    font-size:10px;
-    line-height:1;
-  }
-  .toolbar-filter span{font-weight:400;}
-  .toolbar-filter select{
-    width:100%;
-    height:30px;
-    padding:0 8px;
-    border:1px solid #aeb4bc;
-    border-radius:4px;
-    background:#fff;
-    color:#111;
-    font-family:inherit;
-    font-size:12px;
-    font-weight:400;
-  }
-  .toolbar-filter select:disabled{
-    background:#f3f4f6;
-    color:#9ca3af;
-    cursor:not-allowed;
-  }
-  .toolbar button{
-    height:30px;
-    padding:0 9px;
-    border:1px solid #aaa;
-    border-radius:4px;
-    background:#fff;
-    color:#1c2530;
-    font-family:inherit;
-    font-size:12px;
-    font-weight:700;
-    white-space:nowrap;
-    cursor:pointer;
-  }
-  .toolbar button:hover{border-color:#555;background:#f0f0f0;}
-  .toolbar button.primary{background:#eaf3ff;border-color:#7c9fc8;}
-  .toolbar button.danger{color:#b42318;}
-  .toolbar button.active{background:#fff1cc;border-color:#b8860b;color:#7a5200;}
-  .toolbar button:disabled{opacity:.45;cursor:not-allowed;}
-
-  .modal-backdrop{
-    display:none;
-    position:fixed;
-    inset:0;
-    z-index:1200;
-    align-items:center;
-    justify-content:center;
-    padding:18px;
-    background:rgba(0,0,0,.52);
-  }
-  .modal-backdrop.open{display:flex;}
-  .modal{
-    width:min(860px,100%);
-    max-height:82vh;
-    overflow:auto;
-    padding:16px;
-    border-radius:8px;
-    background:#fff;
-    box-shadow:0 15px 50px rgba(0,0,0,.35);
-  }
-  .modal h2{margin:0 0 8px;font-size:18px;}
-  .modal-summary{margin:0 0 10px;color:#475467;font-size:12px;}
-  .modal table{width:100%;border-collapse:collapse;table-layout:fixed;}
-  .modal th,.modal td{border:1px solid #ccc;padding:8px;font-size:12px;text-align:left;}
-  .modal th{background:#eef1f6;text-align:center;}
-  .modal tbody tr{cursor:pointer;}
-  .modal tbody tr:hover,.modal tbody tr:focus{background:#fff8c9;outline:none;}
-  .modal .empty{text-align:center;color:#667085;padding:24px;}
-  .modal-actions{display:flex;justify-content:flex-end;margin-top:10px;}
-  .modal-actions button{height:30px;padding:0 12px;border:1px solid #999;background:#fff;border-radius:4px;cursor:pointer;}
-
-  @media(max-width:1150px){
-    .toolbar{flex-wrap:wrap;}
-    .toolbar-search-group{flex-basis:100%;}
-    .toolbar > .group:last-child{flex-wrap:wrap;}
-  }
-  @media(max-width:640px){
-    .toolbar-search-group{display:grid!important;grid-template-columns:1fr 1fr;}
-    .toolbar-filter{min-width:0;}
-  }
-  @media(max-width:420px){
-    .toolbar-search-group{grid-template-columns:1fr;}
-  }
-
-  /* numbered-photo-row-height */
-  table.flow tbody tr:first-child td:not(.rowlabel){height:110px;}
-
-
-  /* ---------- Manufacturing Process Diagram input mapping ---------- */
-  td.value[data-field-role="meta"]:empty::before,
-  [data-field-type="text"]:empty::before{
-    content:attr(data-placeholder);
-    color:#111;
-    font-weight:400;
-    pointer-events:none;
-  }
-  .edit-mode [data-field-type="text"]{
-    cursor:text;
-  }
-  .photo-field{
-    position:relative;
-    height:110px;
-    overflow:hidden;
-    cursor:default;
-  }
-  .photo-placeholder{
-    min-height:96px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    color:#111;
-    font-size:12.5px;
-    line-height:1.35;
-    user-select:none;
-  }
-  .process-photo-preview{
-    width:100%!important;
-    height:96px!important;
-    object-fit:contain!important;
-    display:block;
-    border:0!important;
-    background:#fff;
-  }
-  .process-photo-preview[hidden]{display:none!important;}
-  .process-photo-input{display:none!important;}
-  .edit-mode .photo-field{
-    cursor:pointer;
-    outline:1px dashed #b8860b;
-    outline-offset:-2px;
-  }
-  .edit-mode .photo-field:hover::after{
-    content:"사진 선택";
-    position:absolute;
-    right:7px;
-    bottom:7px;
-    padding:3px 7px;
-    border:1px solid #7c9fc8;
-    border-radius:4px;
-    background:rgba(255,255,255,.94);
-    color:#1b3a63;
-    font-size:10px;
-    font-weight:700;
-  }
-  @media print{
-    td.value[data-field-role="meta"]:empty::before,
-    [data-field-type="text"]:empty::before,
-    .photo-placeholder{color:#111!important;}
-    .edit-mode .photo-field:hover::after{display:none!important;}
-  }
-
-  html.auth-pending body{visibility:hidden;}
-  .toolbar button:disabled,.toolbar select:disabled{opacity:.48;cursor:not-allowed;}
-
-  /* 조회 프레임과 첫 번째 제조공정도 양식 사이 간격 */
-  .first-sheet{
-    margin-top:30px;
-  }
-
-  /* 신규등록 시 제조공정도 양식 안에서 고객사 → 품명 → 품번 선택 */
-  .meta-entry-select{
-    width:100%;
-    min-width:0;
-    height:34px;
-    padding:0 10px;
-    border:1px solid #aeb4bc;
-    border-radius:3px;
-    background:#fff;
-    color:#111;
-    font-family:inherit;
-    font-size:13px;
-  }
-  .meta-entry-select:focus{
-    outline:2px solid #1b3a63;
-    outline-offset:1px;
-  }
-  .meta-entry-select:disabled{
-    background:#f3f4f6;
-    color:#9ca3af;
-    cursor:not-allowed;
-  }
-  .new-identity-mode td.value[data-field-role="meta"]{
-    padding:4px 6px;
-  }
-  .new-identity-mode td.value[data-field-role="meta"]::before{
-    content:none!important;
-  }
-
-
-
-  /* ---------- 제조공정도 프레임 절대 고정 ---------- */
-  table.meta,
-  table.flow{
-    table-layout:fixed;
-  }
-  table.meta tr{
-    height:40px;
-  }
-  table.meta td{
-    height:40px;
-    max-height:40px;
-    overflow:hidden;
-    white-space:nowrap;
-    text-overflow:ellipsis;
-  }
-  table.flow thead tr{
-    height:42px;
-  }
-  table.flow thead th{
-    height:42px;
-    max-height:42px;
-    overflow:hidden;
-  }
-  table.flow tbody tr:first-child{
-    height:110px;
-  }
-  table.flow tbody tr:first-child > td{
-    height:110px;
-    min-height:110px;
-    max-height:110px;
-    overflow:hidden;
-  }
-  table.flow tbody tr:not(:first-child){
-    height:44px;
-  }
-  table.flow tbody tr:not(:first-child) > td{
-    height:44px;
-    min-height:44px;
-    max-height:44px;
-    overflow:hidden;
-  }
-  table.flow th.process-field,
-  table.flow td.process-field{
-    overflow:hidden;
-  }
-  table.flow th.process-field[data-field-type="text"],
-  table.flow td.process-field[data-field-type="text"]{
-    padding:0!important;
-  }
-  .fixed-text-editor{
-    width:100%;
-    height:100%;
-    min-width:0;
-    min-height:0;
-    max-width:100%;
-    max-height:100%;
-    overflow:hidden;
-    display:grid;
-    place-items:center;
-    padding:0 2px;
-    line-height:1.35;
-    text-align:center;
-    white-space:pre-wrap;
-    overflow-wrap:anywhere;
-    word-break:break-word;
-  }
-  .fixed-text-editor:empty::before{
-    content:attr(data-placeholder);
-    color:#111;
-    font-weight:400;
-    pointer-events:none;
-  }
-  .edit-mode .fixed-text-editor{
-    cursor:text;
-    overflow:auto;
-  }
-  .fixed-text-editor:focus{
-    outline:none;
-  }
-
-  /* 공정 사진은 프레임 크기를 변경하지 않고 가로·세로 정중앙에 배치 */
-  .photo-field{
-    position:relative;
-    height:110px!important;
-    min-height:110px!important;
-    max-height:110px!important;
-    overflow:hidden!important;
-    padding:6px!important;
-  }
-  .photo-field .photo-placeholder,
-  .photo-field .process-photo-preview{
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    margin:0!important;
-  }
-  .photo-field .photo-placeholder{
-    width:calc(100% - 12px);
-    height:calc(100% - 12px);
-    min-height:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .photo-field .process-photo-preview{
-    width:auto!important;
-    height:auto!important;
-    max-width:calc(100% - 12px)!important;
-    max-height:calc(100% - 12px)!important;
-    object-fit:contain!important;
-    object-position:center center!important;
-  }
-  .photo-field .process-photo-preview[hidden],
-  .photo-field .photo-placeholder[hidden]{
-    display:none!important;
-  }
-
-  /* 검사기준서와 동일한 조회 입력 방식 */
-  .toolbar-filter input{
-    width:100%;
-    height:30px;
-    padding:0 8px;
-    border:1px solid #aeb4bc;
-    border-radius:4px;
-    background:#fff;
-    color:#111;
-    font-family:inherit;
-    font-size:12px;
-    font-weight:400;
-  }
-  .toolbar-filter input:disabled{
-    background:#f3f4f6;
-    color:#9ca3af;
-    cursor:not-allowed;
-  }
-  .modal-table-scroll{
-    overflow-x:auto;
-  }
-  .modal th.select-column{width:60px;}
-  .modal th.number-column{width:55px;}
-  .modal th.status-column{width:90px;}
-  .document-status{
-    display:inline-block;
-    min-width:54px;
-    padding:3px 7px;
-    border-radius:3px;
-    font-size:11px;
-    font-weight:700;
-    text-align:center;
-  }
-  .document-status.complete{
-    color:#166534;
-    background:#ecfdf3;
-    border:1px solid #86efac;
-  }
-  .document-status.progress{
-    color:#475467;
-    background:#f2f4f7;
-    border:1px solid #d0d5dd;
-  }
-  .result-radio{
-    width:15px;
-    height:15px;
-    margin:0;
-    cursor:pointer;
-    vertical-align:middle;
-  }
-  .modal tbody tr{
-    cursor:default;
-  }
-  .modal tbody tr.radio-selected{
-    background:#e4efff;
-  }
-  .search-pagination{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    min-height:36px;
-    padding:5px 8px;
-    border:1px solid #d3d7dd;
-    border-top:0;
-    background:#f7f8fa;
-  }
-  .search-pagination button{
-    min-width:52px;
-    height:27px;
-    padding:0 8px;
-    border:1px solid #9da5af;
-    border-radius:3px;
-    background:#fff;
-    color:#222;
-    font-family:inherit;
-    font-size:11px;
-    font-weight:700;
-    cursor:pointer;
-  }
-  .search-pagination button:disabled{
-    opacity:.4;
-    cursor:not-allowed;
-  }
-  .search-pagination span{
-    min-width:70px;
-    text-align:center;
-    color:#3b4654;
-    font-size:11px;
-    font-weight:700;
-  }
-  @media print{
-    table.meta tr,
-    table.meta td{
-      height:34px;
-      max-height:34px;
-    }
-    table.flow thead tr,
-    table.flow thead th{
-      height:34px;
-      max-height:34px;
-    }
-    table.flow tbody tr:first-child,
-    table.flow tbody tr:first-child > td,
-    .photo-field{
-      height:80px!important;
-      min-height:80px!important;
-      max-height:80px!important;
-    }
-    table.flow tbody tr:not(:first-child),
-    table.flow tbody tr:not(:first-child) > td{
-      height:34px;
-      min-height:34px;
-      max-height:34px;
-    }
-  }
+    width:287mm!important;max-width:287mm!important;height:200mm!important;min-height:200mm!important;max-height:200mm!important;
+    margin:0 auto!important;padding:4mm 5mm 3mm!important;overflow:hidden!important;box-shadow:none!important;
+    page-break-inside:avoid!important;break-inside:avoid-page!important;page-break-after:always!important;break-after:page!important
+  }
+  .sheet:last-of-type{page-break-after:auto!important;break-after:auto!important}
+  .first-sheet{margin-top:0!important}
+  .titlebar{min-height:11mm!important;margin-bottom:2mm!important;padding:2mm 4mm!important}
+  .titlebar h1{font-size:18px!important}.titlebar .procname{font-size:12px!important}
+  table.meta{margin-bottom:2mm!important;font-size:10px!important}
+  table.meta tr,table.meta td{height:8mm!important;min-height:8mm!important;max-height:8mm!important;padding:1mm 2mm!important}
+  .section-title{margin-top:3mm!important;padding:1.5mm 3mm!important;font-size:11px!important;line-height:1.2!important}
+  .section-title .en{font-size:9px!important}
+  table.flow{margin:0!important;font-size:9.5px!important;line-height:1.2!important;page-break-inside:avoid!important;break-inside:avoid-page!important;border-color:#66778d!important;border-width:.25mm!important}
+  table.flow th,table.flow td{padding:1px 2px!important;border-color:#66778d!important;border-width:.25mm!important;border-style:solid!important}
+  table.flow thead tr,table.flow thead th{height:7mm!important;min-height:7mm!important;max-height:7mm!important}
+  table.flow tbody tr:first-child,table.flow tbody tr:first-child>td,.photo-field{height:24mm!important;min-height:24mm!important;max-height:24mm!important}
+  table.flow tbody tr:not(:first-child),table.flow tbody tr:not(:first-child)>td{height:8.4mm!important;min-height:8.4mm!important;max-height:8.4mm!important}
+  .fixed-text-editor{width:100%!important;height:100%!important;margin:0!important;padding:0 2px!important;border:0!important;background:#fff!important;overflow:hidden!important}
+  .photo-field::before{display:none!important}
+  .photo-field .process-photo-preview{max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important}
+  .meta-entry-select{background:#fff!important;border:0!important}
+}
 </style>
-
-<style id="requestedManufacturingFixes">
-  /* ============================================================
-     요청 반영: 조회 시 흰색 / 신규·수정 시 입력 영역만 연한 노랑
-     프레임의 행·열 크기와 위치는 입력값에 의해 변경되지 않는다.
-     ============================================================ */
-  :root{
-    --entry-edit-bg:#fffef3;
-    --entry-edit-line:#eee5c8;
-  }
-
-  /* 일반 조회 상태: 모든 DATA 셀과 실제 표시 영역은 흰색 */
-  .input-field,
-  table.flow th.process-field,
-  table.flow td.process-field,
-  table.meta td.value,
-  .photo-field,
-  .fixed-text-editor{
-    background:#fff!important;
-  }
-
-  /* 기존의 셀 전체 노랑색/점선 표시는 사용하지 않는다. */
-  .edit-mode .input-field,
-  .edit-mode .photo-field{
-    outline:0!important;
-  }
-
-  /* 실제 문자가 입력되는 내부 영역만 아주 연한 노랑색 */
-  .fixed-text-editor{
-    width:calc(100% - 6px)!important;
-    height:calc(100% - 6px)!important;
-    margin:3px!important;
-    padding:0 3px!important;
-    border:1px solid transparent;
-    border-radius:2px;
-  }
-  .edit-mode .fixed-text-editor{
-    background:var(--entry-edit-bg)!important;
-    border-color:var(--entry-edit-line)!important;
-    cursor:text;
-  }
-  .edit-mode .fixed-text-editor:focus{
-    outline:1px solid #d8c98f!important;
-    outline-offset:-1px;
-  }
-
-  /* 사진은 셀 전체가 아니라 안쪽 사진 입력 영역만 연한 노랑색 */
-  .photo-field::before{
-    content:"";
-    position:absolute;
-    inset:6px;
-    z-index:0;
-    border:1px solid transparent;
-    border-radius:2px;
-    background:#fff;
-    pointer-events:none;
-  }
-  .edit-mode .photo-field::before{
-    background:var(--entry-edit-bg);
-    border-color:var(--entry-edit-line);
-  }
-  .photo-field .photo-placeholder,
-  .photo-field .process-photo-preview{
-    z-index:1;
-  }
-
-  /* 신규등록의 고객사·품명·품번 선택칸만 연한 노랑색 */
-  .new-identity-mode .meta-entry-select{
-    background:var(--entry-edit-bg)!important;
-    border-color:var(--entry-edit-line)!important;
-  }
-
-  /* 저장·오류 안내는 프레임을 움직이지 않고 화면 우측 아래에 표시 */
-  .manufacturing-notice{
-    display:none;
-    position:fixed;
-    right:18px;
-    bottom:18px;
-    z-index:3000;
-    min-width:230px;
-    max-width:min(440px,calc(100vw - 36px));
-    padding:11px 14px;
-    border:1px solid #aeb7c4;
-    border-radius:6px;
-    background:rgba(255,255,255,.98);
-    box-shadow:0 5px 18px rgba(0,0,0,.22);
-    color:#263445;
-    font-size:12px;
-    font-weight:700;
-    line-height:1.45;
-    pointer-events:none;
-  }
-  .manufacturing-notice.show{display:block;}
-  .manufacturing-notice.success{border-color:#7dbb99;background:#f2fbf6;color:#087247;}
-  .manufacturing-notice.error{border-color:#d8a0a8;background:#fff5f6;color:#a52332;}
-  .manufacturing-notice.info{border-color:#9eb9dc;background:#f5f9ff;color:#295993;}
-
-  /* ============================================================
-     PDF: 각 .sheet를 A4 가로 1장에 고정한다.
-     표·선·문자는 브라우저 인쇄의 벡터 요소로 출력된다.
-     ============================================================ */
-  @media print{
-    @page{size:A4 landscape;margin:5mm;}
-    html,body{
-      width:297mm!important;
-      margin:0!important;
-      padding:0!important;
-      background:#fff!important;
-      -webkit-print-color-adjust:exact!important;
-      print-color-adjust:exact!important;
-    }
-    .toolbar,.modal-backdrop,.manufacturing-notice{display:none!important;}
-    .sheet{
-      width:287mm!important;
-      max-width:287mm!important;
-      height:200mm!important;
-      min-height:200mm!important;
-      max-height:200mm!important;
-      margin:0 auto!important;
-      padding:4mm 5mm 3mm!important;
-      overflow:hidden!important;
-      box-shadow:none!important;
-      page-break-inside:avoid!important;
-      break-inside:avoid-page!important;
-      page-break-after:always!important;
-      break-after:page!important;
-    }
-    .sheet:last-of-type{
-      page-break-after:auto!important;
-      break-after:auto!important;
-    }
-    .first-sheet{margin-top:0!important;}
-
-    .titlebar{
-      min-height:11mm!important;
-      margin-bottom:2mm!important;
-      padding:2mm 4mm!important;
-    }
-    .titlebar h1{font-size:18px!important;}
-    .titlebar .subtitle .procname{font-size:12px!important;}
-
-    table.meta{
-      margin-bottom:2mm!important;
-      font-size:10px!important;
-    }
-    table.meta tr,table.meta td{
-      height:8mm!important;
-      min-height:8mm!important;
-      max-height:8mm!important;
-      padding:1mm 2mm!important;
-    }
-
-    .section-title{
-      margin-top:3mm!important;
-      padding:1.5mm 3mm!important;
-      font-size:11px!important;
-      line-height:1.2!important;
-    }
-    .section-title .en{font-size:9px!important;}
-
-    table.flow{
-      margin:0!important;
-      font-size:9.5px!important;
-      line-height:1.2!important;
-      page-break-inside:avoid!important;
-      break-inside:avoid-page!important;
-    }
-    table.flow th,table.flow td{padding:1px 2px!important;}
-    table.flow thead tr,table.flow thead th{
-      height:7mm!important;
-      min-height:7mm!important;
-      max-height:7mm!important;
-    }
-    table.flow tbody tr:first-child,
-    table.flow tbody tr:first-child > td,
-    .photo-field{
-      height:24mm!important;
-      min-height:24mm!important;
-      max-height:24mm!important;
-    }
-    table.flow tbody tr:not(:first-child),
-    table.flow tbody tr:not(:first-child) > td{
-      height:8.4mm!important;
-      min-height:8.4mm!important;
-      max-height:8.4mm!important;
-    }
-    .fixed-text-editor{
-      width:100%!important;
-      height:100%!important;
-      margin:0!important;
-      padding:0 2px!important;
-      border:0!important;
-      background:#fff!important;
-      overflow:hidden!important;
-      font-size:inherit!important;
-    }
-    .photo-field::before{display:none!important;}
-    .photo-field .process-photo-preview{
-      max-width:calc(100% - 8px)!important;
-      max-height:calc(100% - 8px)!important;
-    }
-    .input-field,
-    .edit-mode .fixed-text-editor,
-    .new-identity-mode .meta-entry-select{
-      background:#fff!important;
-    }
-  }
-</style>
-
-
-<style id="pdfFilenameAndGridFix">
-  /* ============================================================
-     PDF 보완: 파일명 순서 고정 및 표 안쪽 선 선명도 개선
-     - 화면의 프레임 크기·행 높이·열 너비·DATA 위치는 변경하지 않는다.
-     - 인쇄 시 표 선만 벡터 선으로 진하게 출력한다.
-     ============================================================ */
-  @media print{
-    table.meta,
-    table.flow{
-      border-color:#66778d!important;
-      border-width:0.25mm!important;
-      border-style:solid!important;
-    }
-    table.meta td,
-    table.flow th,
-    table.flow td{
-      border-color:#66778d!important;
-      border-width:0.25mm!important;
-      border-style:solid!important;
-    }
-
-    /* 도해 행의 긴 세로 구분선이 PDF 축소 시 사라지지 않도록 고정 */
-    table.flow tbody tr:first-child > td{
-      border-left-color:#66778d!important;
-      border-right-color:#66778d!important;
-      border-left-width:0.25mm!important;
-      border-right-width:0.25mm!important;
-      border-left-style:solid!important;
-      border-right-style:solid!important;
-    }
-  }
-</style>
-
 </head>
 <body>
+
 <div class="toolbar" id="manufacturingToolbar">
-<div aria-label="제조공정도 조회 조건" class="group toolbar-search-group">
-<label class="toolbar-filter"><span>고객사명</span><select aria-label="고객사명 선택" id="toolbarCustomerSelect"><option value="">전체</option></select></label>
-<label class="toolbar-filter"><span>품명</span><input aria-label="품명 검색" id="toolbarItemNameInput" maxlength="120" placeholder="품명" type="search"/></label>
-<label class="toolbar-filter"><span>품번</span><input aria-label="품번 검색" id="toolbarItemNumberInput" maxlength="120" placeholder="품번" type="search"/></label>
+  <div aria-label="제조공정도 조회 조건" class="group toolbar-search-group">
+    <label class="toolbar-filter"><span>고객사명</span><select id="toolbarCustomerSelect"><option value="">전체</option></select></label>
+    <label class="toolbar-filter"><span>품명</span><input id="toolbarItemNameInput" maxlength="120" placeholder="품명" type="search"></label>
+    <label class="toolbar-filter"><span>품번</span><input id="toolbarItemNumberInput" maxlength="120" placeholder="품번" type="search"></label>
+  </div>
+  <div class="group">
+    <button id="btnSearch" type="button">조회</button>
+    <button id="btnEdit" type="button">수정</button>
+    <button class="primary" id="btnSave" type="button">저장</button>
+    <button id="btnNew" type="button">신규등록</button>
+    <button id="btnReset" type="button">초기화</button>
+    <button class="danger" id="btnDelete" type="button">삭제</button>
+    <button id="btnPdf" type="button">PDF 저장</button>
+    <button id="btnComplete" type="button">완료</button>
+  </div>
 </div>
-<div class="group">
-<button id="btnSearch" type="button">조회</button>
-<button id="btnEdit" type="button">수정</button>
-<button class="primary" id="btnSave" type="button">저장</button>
-<button id="btnNew" type="button">신규등록</button>
-<button id="btnReset" type="button">초기화</button>
-<button class="danger" id="btnDelete" type="button">삭제</button>
-<button id="btnPdf" type="button">PDF 저장</button>
-<button id="btnComplete" type="button">완료</button>
-</div>
-</div>
+
 <div aria-live="polite" class="manufacturing-notice" id="manufacturingNotice" role="status"></div>
+
 <div aria-hidden="true" class="modal-backdrop" id="searchResultModal">
-<div aria-labelledby="searchResultTitle" aria-modal="true" class="modal" role="dialog">
-<h2 id="searchResultTitle" tabindex="-1">제조공정도 조회 결과</h2>
-<p class="modal-summary" id="searchResultSummary"></p>
-<div class="modal-table-scroll">
-<table>
-<thead><tr><th class="select-column">선택</th><th class="number-column">NO</th><th>고객사명</th><th>품명</th><th>품번</th><th class="status-column">상태</th></tr></thead>
-<tbody id="searchResultBody"></tbody>
-</table>
+  <div aria-labelledby="searchResultTitle" aria-modal="true" class="modal" role="dialog">
+    <h2 id="searchResultTitle" tabindex="-1">제조공정도 조회 결과</h2>
+    <p class="modal-summary" id="searchResultSummary"></p>
+    <div class="modal-table-scroll">
+      <table>
+        <thead><tr><th class="select-column">선택</th><th class="number-column">NO</th><th>고객사명</th><th>품명</th><th>품번</th><th class="status-column">상태</th></tr></thead>
+        <tbody id="searchResultBody"></tbody>
+      </table>
+    </div>
+    <div class="search-pagination">
+      <button id="searchResultPrev" type="button">이전</button>
+      <span id="searchResultPageInfo">1 / 1</span>
+      <button id="searchResultNext" type="button">다음</button>
+    </div>
+    <div class="modal-actions"><button id="btnCloseSearchResult" type="button">닫기</button></div>
+  </div>
 </div>
-<div class="search-pagination" id="searchPagination">
-<button id="searchResultPrev" type="button">이전</button>
-<span id="searchResultPageInfo">1 / 1</span>
-<button id="searchResultNext" type="button">다음</button>
-</div>
-<div class="modal-actions"><button id="btnCloseSearchResult" type="button">닫기</button></div>
-</div>
-</div>
+
 <div class="sheet first-sheet">
-<div class="titlebar">
-<h1>제조공정도</h1>
-<div class="subtitle">
-<div class="procname">고주파고주파 열처리 (Induction Hardening)  ·  1/2  전처리·소입 공정</div>
+  <div class="titlebar">
+    <h1>제조공정도</h1>
+    <div class="subtitle"><div class="procname">고주파고주파 열처리 (Induction Hardening) · 1/2 전처리·소입 공정</div></div>
+  </div>
+  <table class="meta">
+    <tr>
+      <td class="label">고객사</td><td class="value" data-meta-key="customerName"></td>
+      <td class="label">품명</td><td class="value" data-meta-key="itemName"></td>
+      <td class="label">품번</td><td class="value" data-meta-key="itemNumber"></td>
+    </tr>
+  </table>
+  <div class="section-title">① 전처리 · 셋업 공정 <span class="en">Pre-Process · Set-up</span></div>
+  <div id="section1"></div>
+  <div class="section-title">② 가열 · 소입 공정 <span class="en">Induction Hardening</span></div>
+  <div id="section2"></div>
 </div>
-</div>
-<table class="meta">
-<tr>
-<td class="label">고객사</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="customerName" data-placeholder="고객사명"></td>
-<td class="label">품명</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemName" data-placeholder="품명"></td>
-<td class="label">품번</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemNumber" data-placeholder="품번"></td>
-</tr>
-</table>
-<!-- ================= SECTION 1 ================= -->
-<div class="section-title">① 전처리 · 셋업 공정 <span class="en">Pre-Process · Set-up</span></div>
-<table class="flow">
-<colgroup>
-<col style="width:9%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/>
-</colgroup>
-<thead>
-<tr>
-<th class="rowlabel">공정명</th>
-<th class="process-field input-field" contenteditable="false" data-field-no="1" data-field-role="process-value" data-field-type="text" data-placeholder="NO1"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="6" data-field-role="process-value" data-field-type="text" data-placeholder="NO6"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="11" data-field-role="process-value" data-field-type="text" data-placeholder="NO11"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="16" data-field-role="process-value" data-field-type="text" data-placeholder="NO16"></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="rowlabel">도해</td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="2" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO2 [ 공정 사진 ]</div><img alt="NO2 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO2 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="7" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO7 [ 공정 사진 ]</div><img alt="NO7 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO7 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="12" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO12 [ 공정 사진 ]</div><img alt="NO12 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO12 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="blank phototd process-field input-field photo-field" contenteditable="false" data-field-no="17" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO17 [ 공정 사진 ]</div><img alt="NO17 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO17 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-</tr>
-<tr>
-<td class="rowlabel">공정 설명</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="3" data-field-role="process-value" data-field-type="text" data-placeholder="NO3"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="8" data-field-role="process-value" data-field-type="text" data-placeholder="NO8"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="13" data-field-role="process-value" data-field-type="text" data-placeholder="NO13"></td>
-<td class="blank process-field input-field" contenteditable="false" data-field-no="18" data-field-role="process-value" data-field-type="text" data-placeholder="NO18"></td>
-</tr>
-<tr>
-<td class="rowlabel">검사 항목</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="4" data-field-role="process-value" data-field-type="text" data-placeholder="NO4"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="9" data-field-role="process-value" data-field-type="text" data-placeholder="NO9"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="14" data-field-role="process-value" data-field-type="text" data-placeholder="NO14"></td>
-<td class="blank process-field input-field" contenteditable="false" data-field-no="19" data-field-role="process-value" data-field-type="text" data-placeholder="NO19"></td>
-</tr>
-<tr>
-<td class="rowlabel">측정 기기</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="5" data-field-role="process-value" data-field-type="text" data-placeholder="NO5"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="10" data-field-role="process-value" data-field-type="text" data-placeholder="NO10"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="15" data-field-role="process-value" data-field-type="text" data-placeholder="NO15"></td>
-<td class="blank process-field input-field" contenteditable="false" data-field-no="20" data-field-role="process-value" data-field-type="text" data-placeholder="NO20"></td>
-</tr>
-</tbody>
-</table>
-<!-- ================= SECTION 2 ================= -->
-<div class="section-title">② 가열 · 소입 공정 <span class="en">Induction Hardening</span></div>
-<table class="flow">
-<colgroup>
-<col style="width:9%;"/><col style="width:30.33%;"/><col style="width:30.33%;"/><col style="width:30.34%;"/>
-</colgroup>
-<thead>
-<tr>
-<th class="rowlabel">공정명</th>
-<th class="process-field input-field" contenteditable="false" data-field-no="21" data-field-role="process-value" data-field-type="text" data-placeholder="NO21"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="26" data-field-role="process-value" data-field-type="text" data-placeholder="NO26"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="31" data-field-role="process-value" data-field-type="text" data-placeholder="NO31"></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="rowlabel">도해</td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="22" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO22 [ 공정 사진 ]</div><img alt="NO22 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO22 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="27" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO27 [ 공정 사진 ]</div><img alt="NO27 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO27 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="blank phototd process-field input-field photo-field" contenteditable="false" data-field-no="32" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO32 [ 공정 사진 ]</div><img alt="NO32 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO32 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-</tr>
-<tr>
-<td class="rowlabel">공정 설명</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="23" data-field-role="process-value" data-field-type="text" data-placeholder="NO23"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="28" data-field-role="process-value" data-field-type="text" data-placeholder="NO28"></td>
-<td class="blank process-field input-field" contenteditable="false" data-field-no="33" data-field-role="process-value" data-field-type="text" data-placeholder="NO33"></td>
-</tr>
-<tr>
-<td class="rowlabel">검사 항목</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="24" data-field-role="process-value" data-field-type="text" data-placeholder="NO24"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="29" data-field-role="process-value" data-field-type="text" data-placeholder="NO29"></td>
-<td class="blank process-field input-field" contenteditable="false" data-field-no="34" data-field-role="process-value" data-field-type="text" data-placeholder="NO34"></td>
-</tr>
-<tr>
-<td class="rowlabel">측정 기기</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="25" data-field-role="process-value" data-field-type="text" data-placeholder="NO25"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="30" data-field-role="process-value" data-field-type="text" data-placeholder="NO30"></td>
-<td class="blank process-field input-field" contenteditable="false" data-field-no="35" data-field-role="process-value" data-field-type="text" data-placeholder="NO35"></td>
-</tr>
-</tbody>
-</table>
-</div>
+
 <div class="sheet">
-<div class="titlebar">
-<h1>제조공정도</h1>
-<div class="subtitle">
-<div class="procname">고주파고주파 열처리 (Induction Hardening)  ·  2/2  템퍼링·검사·출하공정</div>
-</div>
-</div>
-<table class="meta">
-<tr>
-<td class="label">고객사</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="customerName" data-placeholder="고객사명"></td>
-<td class="label">품명</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemName" data-placeholder="품명"></td>
-<td class="label">품번</td><td class="value input-field" contenteditable="false" data-field-role="meta" data-meta-key="itemNumber" data-placeholder="품번"></td>
-</tr>
-</table>
-<!-- ================= SECTION 3 ================= -->
-<div class="section-title">③ 템퍼링 · 검사 · 출하 공정 <span class="en">Tempering · Inspection · Delivery</span></div>
-<table class="flow">
-<colgroup>
-<col style="width:9%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/>
-</colgroup>
-<thead>
-<tr>
-<th class="rowlabel">공정명</th>
-<th class="process-field input-field" contenteditable="false" data-field-no="36" data-field-role="process-value" data-field-type="text" data-placeholder="NO36"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="41" data-field-role="process-value" data-field-type="text" data-placeholder="NO41"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="46" data-field-role="process-value" data-field-type="text" data-placeholder="NO46"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="51" data-field-role="process-value" data-field-type="text" data-placeholder="NO51"></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="rowlabel">도해</td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="37" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO37 [ 공정 사진 ]</div><img alt="NO37 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO37 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="42" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO42 [ 공정 사진 ]</div><img alt="NO42 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO42 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="47" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO47 [ 공정 사진 ]</div><img alt="NO47 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO47 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="52" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO52 [ 공정 사진 ]</div><img alt="NO52 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO52 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-</tr>
-<tr>
-<td class="rowlabel">공정 설명</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="38" data-field-role="process-value" data-field-type="text" data-placeholder="NO38"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="43" data-field-role="process-value" data-field-type="text" data-placeholder="NO43"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="48" data-field-role="process-value" data-field-type="text" data-placeholder="NO48"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="53" data-field-role="process-value" data-field-type="text" data-placeholder="NO53"></td>
-</tr>
-<tr>
-<td class="rowlabel">검사 항목</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="39" data-field-role="process-value" data-field-type="text" data-placeholder="NO39"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="44" data-field-role="process-value" data-field-type="text" data-placeholder="NO44"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="49" data-field-role="process-value" data-field-type="text" data-placeholder="NO49"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="54" data-field-role="process-value" data-field-type="text" data-placeholder="NO54"></td>
-</tr>
-<tr>
-<td class="rowlabel">측정 기기</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="40" data-field-role="process-value" data-field-type="text" data-placeholder="NO40"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="45" data-field-role="process-value" data-field-type="text" data-placeholder="NO45"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="50" data-field-role="process-value" data-field-type="text" data-placeholder="NO50"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="55" data-field-role="process-value" data-field-type="text" data-placeholder="NO55"></td>
-</tr>
-</tbody>
-</table>
-<!-- ================= REMARK ================= -->
-<div class="section-title">④ 비 고 <span class="en">Remark</span></div>
-<table class="flow">
-<colgroup>
-<col style="width:9%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/><col style="width:22.75%;"/>
-</colgroup>
-<thead>
-<tr>
-<th class="rowlabel">공정명</th>
-<th class="process-field input-field" contenteditable="false" data-field-no="56" data-field-role="process-value" data-field-type="text" data-placeholder="NO56"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="61" data-field-role="process-value" data-field-type="text" data-placeholder="NO61"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="66" data-field-role="process-value" data-field-type="text" data-placeholder="NO66"></th>
-<th class="process-field input-field" contenteditable="false" data-field-no="71" data-field-role="process-value" data-field-type="text" data-placeholder="NO71"></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="rowlabel">도해</td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="57" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO57 [ 공정 사진 ]</div><img alt="NO57 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO57 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="62" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO62 [ 공정 사진 ]</div><img alt="NO62 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO62 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="67" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO67 [ 공정 사진 ]</div><img alt="NO67 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO67 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-<td class="phototd process-field input-field photo-field" contenteditable="false" data-field-no="72" data-field-role="process-value" data-field-type="image" tabindex="-1"><div class="photo-placeholder">NO72 [ 공정 사진 ]</div><img alt="NO72 공정 사진" class="process-photo-preview" hidden=""/><input accept="image/*" aria-label="NO72 공정 사진 선택" class="process-photo-input" tabindex="-1" type="file"/></td>
-</tr>
-<tr>
-<td class="rowlabel">공정 설명</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="58" data-field-role="process-value" data-field-type="text" data-placeholder="NO58"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="63" data-field-role="process-value" data-field-type="text" data-placeholder="NO63"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="68" data-field-role="process-value" data-field-type="text" data-placeholder="NO68"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="73" data-field-role="process-value" data-field-type="text" data-placeholder="NO73"></td>
-</tr>
-<tr>
-<td class="rowlabel">검사 항목</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="59" data-field-role="process-value" data-field-type="text" data-placeholder="NO59"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="64" data-field-role="process-value" data-field-type="text" data-placeholder="NO64"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="69" data-field-role="process-value" data-field-type="text" data-placeholder="NO69"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="74" data-field-role="process-value" data-field-type="text" data-placeholder="NO74"></td>
-</tr>
-<tr>
-<td class="rowlabel">측정 기기</td>
-<td class="process-field input-field" contenteditable="false" data-field-no="60" data-field-role="process-value" data-field-type="text" data-placeholder="NO60"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="65" data-field-role="process-value" data-field-type="text" data-placeholder="NO65"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="70" data-field-role="process-value" data-field-type="text" data-placeholder="NO70"></td>
-<td class="process-field input-field" contenteditable="false" data-field-no="75" data-field-role="process-value" data-field-type="text" data-placeholder="NO75"></td>
-</tr>
-</tbody>
-</table>
+  <div class="titlebar">
+    <h1>제조공정도</h1>
+    <div class="subtitle"><div class="procname">고주파고주파 열처리 (Induction Hardening) · 2/2 템퍼링·검사·출하공정</div></div>
+  </div>
+  <table class="meta">
+    <tr>
+      <td class="label">고객사</td><td class="value" data-meta-key="customerName"></td>
+      <td class="label">품명</td><td class="value" data-meta-key="itemName"></td>
+      <td class="label">품번</td><td class="value" data-meta-key="itemNumber"></td>
+    </tr>
+  </table>
+  <div class="section-title">③ 템퍼링 · 검사 · 출하 공정 <span class="en">Tempering · Inspection · Delivery</span></div>
+  <div id="section3"></div>
+  <div class="section-title">④ 비 고 <span class="en">Remark</span></div>
+  <div id="section4"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
-  "use strict";
+"use strict";
 
-  const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
-  const LOGIN_PAGE_URL = "../index.html";
-  const IMAGE_BUCKET = "manufacturing-process-images";
-  const SIGNED_URL_SECONDS = 60 * 60;
-  const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-  const PHOTO_FIELD_NUMBERS = Object.freeze([2,7,12,17,22,27,32,37,42,47,52,57,62,67,72]);
-  const ALLOWED_IMAGE_TYPES = Object.freeze(["image/jpeg","image/png","image/webp"]);
-  if(!window.supabase){
-    window.alert("Supabase 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.");
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const LOGIN_PAGE_URL = "../index.html";
+const IMAGE_BUCKET = "manufacturing-process-images";
+const SIGNED_URL_SECONDS = 60 * 60;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const SEARCH_RESULT_PAGE_SIZE = 5;
+const PHOTO_FIELD_NUMBERS = Object.freeze([2,7,12,17,22,27,32,37,42,47,52,57,62,67,72]);
+const DEFAULT_SOURCE_DOCUMENT = Object.freeze({
+  customerName:"(주)대호",
+  itemName:"ROTOR SHAFT",
+  itemNumber:"40950602F"
+});
+const ALLOWED_IMAGE_TYPES = Object.freeze(["image/jpeg","image/png","image/webp"]);
+
+if(!window.supabase){
+  window.alert("Supabase 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.");
+  return;
+}
+
+const sb = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+});
+
+let currentProfile = null;
+let customers = [];
+let items = [];
+let documents = [];
+let customerMap = new Map();
+let itemMap = new Map();
+
+let currentMode = "view"; // view | new
+let editMode = false;
+let busy = false;
+let currentDocumentId = "";
+let currentItemSystemId = "";
+let currentCompleted = false;
+let loadedSnapshot = null;
+
+let pendingPhotoFiles = new Map();
+let currentImagePaths = new Map();
+let previewObjectUrls = new Map();
+
+let searchResultRecords = [];
+let searchResultPage = 1;
+let selectedSearchDocumentId = "";
+
+let defaultSourceRecord = null;
+let defaultSourceValuesCache = null;
+
+const customerSelect = document.getElementById("toolbarCustomerSelect");
+const itemNameInput = document.getElementById("toolbarItemNameInput");
+const itemNumberInput = document.getElementById("toolbarItemNumberInput");
+const notice = document.getElementById("manufacturingNotice");
+
+function normalize(v){ return String(v == null ? "" : v).trim(); }
+function compareText(a,b){ return normalize(a).localeCompare(normalize(b),"ko",{numeric:true,sensitivity:"base"}); }
+function cloneData(v){ return JSON.parse(JSON.stringify(v)); }
+function fieldIsPhoto(no){ return PHOTO_FIELD_NUMBERS.includes(Number(no)); }
+function fieldNoFromSlot(slot,offset){ return (slot - 1) * 5 + offset; }
+
+function makeFlowTable(slots){
+  const count = slots.length;
+  const dataWidth = (91 / count).toFixed(4) + "%";
+  const headers = slots.map(function(slot){
+    const no = fieldNoFromSlot(slot,1);
+    return '<th class="process-field" data-field-no="'+no+'" data-field-type="text"><div class="fixed-text-editor" data-placeholder="NO'+no+'"></div></th>';
+  }).join("");
+
+  const photoCells = slots.map(function(slot){
+    const no = fieldNoFromSlot(slot,2);
+    return '<td class="process-field photo-field" data-field-no="'+no+'" data-field-type="image" tabindex="-1">'+
+      '<div class="photo-placeholder">NO'+no+' [ 공정 사진 ]</div>'+
+      '<img class="process-photo-preview" alt="NO'+no+' 공정 사진" hidden>'+
+      '<input class="process-photo-input" type="file" accept="image/*" tabindex="-1" aria-label="NO'+no+' 공정 사진 선택">'+
+      '</td>';
+  }).join("");
+
+  function textRow(label,offset){
+    return '<tr><td class="rowlabel">'+label+'</td>'+
+      slots.map(function(slot){
+        const no = fieldNoFromSlot(slot,offset);
+        return '<td class="process-field" data-field-no="'+no+'" data-field-type="text"><div class="fixed-text-editor" data-placeholder="NO'+no+'"></div></td>';
+      }).join("")+'</tr>';
+  }
+
+  return '<table class="flow"><colgroup><col style="width:9%">'+
+    slots.map(function(){ return '<col style="width:'+dataWidth+'">'; }).join("")+
+    '</colgroup><thead><tr><th class="rowlabel">공정명</th>'+headers+'</tr></thead>'+
+    '<tbody><tr><td class="rowlabel">도해</td>'+photoCells+'</tr>'+
+    textRow("공정 설명",3)+textRow("검사 항목",4)+textRow("측정 기기",5)+
+    '</tbody></table>';
+}
+
+document.getElementById("section1").innerHTML = makeFlowTable([1,2,3,4]);
+document.getElementById("section2").innerHTML = makeFlowTable([5,6,7]);
+document.getElementById("section3").innerHTML = makeFlowTable([8,9,10,11]);
+document.getElementById("section4").innerHTML = makeFlowTable([12,13,14,15]);
+
+const textFields = Array.from(document.querySelectorAll('[data-field-type="text"]'));
+const photoFields = Array.from(document.querySelectorAll('[data-field-type="image"]'));
+
+function setNotice(message,type,sticky){
+  notice.textContent = message || "";
+  notice.className = "manufacturing-notice show " + (type || "info");
+  clearTimeout(setNotice.timer);
+  if(!sticky){
+    setNotice.timer = setTimeout(function(){ notice.className = "manufacturing-notice"; },3200);
+  }
+}
+
+function errorMessage(error,fallback){
+  if(!error) return fallback || "오류가 발생했습니다.";
+  return normalize(error.message || error.error_description || error.details || error.hint || fallback);
+}
+
+function isAdmin(){ return currentProfile && currentProfile.access_role === "admin"; }
+function canEdit(){ return currentProfile && (currentProfile.access_role === "admin" || currentProfile.access_role === "user"); }
+function canPdf(){ return canEdit(); }
+
+function setBusy(flag,message){
+  busy = !!flag;
+  if(message) setNotice(message,"info",true);
+  updateButtonStates();
+}
+
+function updateButtonStates(){
+  const inEntry = editMode || currentMode === "new";
+  document.getElementById("btnSearch").disabled = busy || inEntry;
+  document.getElementById("btnEdit").disabled = busy || !canEdit() || !currentDocumentId || inEntry;
+  document.getElementById("btnSave").disabled = busy || !editMode || (currentMode === "new" ? !isAdmin() : !canEdit());
+  document.getElementById("btnNew").disabled = busy || !isAdmin() || inEntry;
+  document.getElementById("btnReset").disabled = busy;
+  document.getElementById("btnDelete").disabled = busy || !isAdmin() || !currentDocumentId || inEntry;
+  document.getElementById("btnPdf").disabled = busy || !canPdf();
+  document.getElementById("btnComplete").disabled = busy || !canEdit() || !currentDocumentId || inEntry || currentCompleted;
+  [customerSelect,itemNameInput,itemNumberInput].forEach(function(el){ el.disabled = busy || currentMode === "new"; });
+}
+
+function setEditMode(flag){
+  editMode = !!flag;
+  document.body.classList.toggle("edit-mode",editMode);
+
+  textFields.forEach(function(cell){
+    const editor = cell.querySelector(".fixed-text-editor");
+    if(editor) editor.contentEditable = editMode ? "true" : "false";
+  });
+
+  updateButtonStates();
+}
+
+function clearPreviewUrls(){
+  previewObjectUrls.forEach(function(url){ try{ URL.revokeObjectURL(url); }catch(_){} });
+  previewObjectUrls.clear();
+}
+
+function setTextField(no,value){
+  const cell = document.querySelector('[data-field-no="'+Number(no)+'"][data-field-type="text"]');
+  if(!cell) return;
+  const editor = cell.querySelector(".fixed-text-editor");
+  if(editor) editor.textContent = value == null ? "" : String(value);
+}
+
+async function signedUrl(path){
+  if(!path) return "";
+  const r = await sb.storage.from(IMAGE_BUCKET).createSignedUrl(path,SIGNED_URL_SECONDS);
+  if(r.error) throw r.error;
+  return r.data && r.data.signedUrl ? r.data.signedUrl : "";
+}
+
+async function setPhotoPath(no,path){
+  const cell = document.querySelector('[data-field-no="'+Number(no)+'"][data-field-type="image"]');
+  if(!cell) return;
+  const placeholder = cell.querySelector(".photo-placeholder");
+  const img = cell.querySelector(".process-photo-preview");
+  currentImagePaths.set(Number(no),path || null);
+
+  if(!path){
+    img.hidden = true;
+    img.removeAttribute("src");
+    placeholder.hidden = false;
     return;
   }
 
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  const url = await signedUrl(path);
+  img.src = url;
+  img.hidden = false;
+  placeholder.hidden = true;
+}
+
+function setPendingPhoto(no,file){
+  const cell = document.querySelector('[data-field-no="'+Number(no)+'"][data-field-type="image"]');
+  if(!cell) return;
+  const placeholder = cell.querySelector(".photo-placeholder");
+  const img = cell.querySelector(".process-photo-preview");
+
+  const old = previewObjectUrls.get(Number(no));
+  if(old) URL.revokeObjectURL(old);
+
+  const url = URL.createObjectURL(file);
+  previewObjectUrls.set(Number(no),url);
+  pendingPhotoFiles.set(Number(no),file);
+  img.src = url;
+  img.hidden = false;
+  placeholder.hidden = true;
+}
+
+function validateSelectedFile(file){
+  if(!file) throw new Error("사진 파일을 선택해 주세요.");
+  if(!ALLOWED_IMAGE_TYPES.includes(file.type)) throw new Error("공정 사진은 JPG, PNG, WEBP 형식만 등록할 수 있습니다.");
+  if(file.size > MAX_IMAGE_BYTES) throw new Error("공정 사진은 파일당 5MB 이하만 등록할 수 있습니다.");
+}
+
+function safeFileExtensionFromType(type){
+  if(type === "image/png") return "png";
+  if(type === "image/webp") return "webp";
+  return "jpg";
+}
+
+function randomToken(){
+  if(window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+  return Date.now().toString(36)+"_"+Math.random().toString(36).slice(2);
+}
+
+function setMetaText(key,value){
+  document.querySelectorAll('[data-meta-key="'+key+'"]').forEach(function(cell){
+    cell.textContent = value || "";
+  });
+}
+
+function renderViewIdentity(identity){
+  ["customerName","itemName","itemNumber"].forEach(function(key){
+    document.querySelectorAll('[data-meta-key="'+key+'"]').forEach(function(cell){
+      cell.innerHTML = "";
+      cell.textContent = normalize(identity && identity[key]);
+    });
+  });
+}
+
+function uniqueSorted(values){
+  return Array.from(new Set(values.map(normalize).filter(Boolean))).sort(compareText);
+}
+
+function fillSelect(select,placeholder,rows,selected){
+  select.innerHTML = "";
+  select.add(new Option(placeholder,""));
+  rows.forEach(function(row){ select.add(new Option(row.label,row.value)); });
+  select.value = rows.some(function(r){ return r.value === selected; }) ? selected : "";
+}
+
+function activeItems(){ return items.filter(function(i){ return i && i.item_system_id && i.customer_system_id && i.is_active !== false; }); }
+
+function renderNewIdentity(){
+  const state = renderNewIdentity.state || {customerId:"",itemName:"",itemId:""};
+  renderNewIdentity.state = state;
+
+  document.querySelectorAll('[data-meta-key="customerName"]').forEach(function(cell,index){
+    cell.innerHTML = "";
+    const s = document.createElement("select");
+    s.className = "meta-entry-select";
+    s.dataset.key = "customerName";
+    fillSelect(s,"고객사 선택",customers.slice().sort(function(a,b){return compareText(a.customer_name,b.customer_name);}).map(function(c){
+      return {value:c.customer_system_id,label:c.customer_name};
+    }),state.customerId);
+    if(index > 0) s.disabled = true;
+    cell.appendChild(s);
   });
 
-  function prepareFixedTextEditors(){
-    document.querySelectorAll('[data-field-type="text"]').forEach(function(cell){
-      if(cell.querySelector(":scope > .fixed-text-editor")) return;
-      const editor = document.createElement("div");
-      editor.className = "fixed-text-editor";
-      ["data-field-no","data-field-role","data-field-type","data-placeholder"].forEach(function(name){
-        if(cell.hasAttribute(name)) editor.setAttribute(name,cell.getAttribute(name));
-      });
-      editor.textContent = String(cell.textContent || "").trim();
-      cell.textContent = "";
-      cell.appendChild(editor);
-    });
-  }
+  const itemNameOptions = state.customerId
+    ? uniqueSorted(activeItems().filter(function(i){return i.customer_system_id === state.customerId;}).map(function(i){return i.item_name;}))
+    : [];
 
-  prepareFixedTextEditors();
+  document.querySelectorAll('[data-meta-key="itemName"]').forEach(function(cell,index){
+    cell.innerHTML = "";
+    const s = document.createElement("select");
+    s.className = "meta-entry-select";
+    s.dataset.key = "itemName";
+    fillSelect(s,"품명 선택",itemNameOptions.map(function(v){return {value:v,label:v};}),state.itemName);
+    s.disabled = index > 0 || !state.customerId;
+    cell.appendChild(s);
+  });
 
-  const textFields = Array.from(document.querySelectorAll('.fixed-text-editor[data-field-type="text"]'));
-  const photoFields = Array.from(document.querySelectorAll('[data-field-type="image"]'));
-  const metaFields = Array.from(document.querySelectorAll('[data-meta-key]'));
-  const customerSelect = document.getElementById("toolbarCustomerSelect");
-  const itemNameInput = document.getElementById("toolbarItemNameInput");
-  const itemNumberInput = document.getElementById("toolbarItemNumberInput");
-  const searchResultPrev = document.getElementById("searchResultPrev");
-  const searchResultNext = document.getElementById("searchResultNext");
-  const searchResultPageInfo = document.getElementById("searchResultPageInfo");
+  const itemOptions = (state.customerId && state.itemName)
+    ? activeItems().filter(function(i){ return i.customer_system_id === state.customerId && normalize(i.item_name) === state.itemName; })
+        .sort(function(a,b){return compareText(a.item_number,b.item_number);})
+        .map(function(i){return {value:i.item_system_id,label:i.item_number};})
+    : [];
 
-  let currentProfile = null;
-  let currentMode = "view"; // view | new
-  let currentDocumentId = "";
-  let currentItemSystemId = "";
-  let currentCompleted = false;
-  let editMode = false;
-  let busy = false;
-  let noticeTimer = null;
-  let loadedSnapshot = null;
-  let customers = [];
-  let items = [];
-  let documents = [];
-  let searchResultRecords = [];
-  let searchResultPage = 1;
-  const SEARCH_RESULT_PAGE_SIZE = 5;
-  let newIdentity = {
-    customerSystemId:"",
-    customerName:"",
-    itemName:"",
-    itemSystemId:"",
-    itemNumber:""
-  };
+  document.querySelectorAll('[data-meta-key="itemNumber"]').forEach(function(cell,index){
+    cell.innerHTML = "";
+    const s = document.createElement("select");
+    s.className = "meta-entry-select";
+    s.dataset.key = "itemNumber";
+    fillSelect(s,"품번 선택",itemOptions,state.itemId);
+    s.disabled = index > 0 || !state.customerId || !state.itemName;
+    cell.appendChild(s);
+  });
 
-  const customerMap = new Map();
-  const itemMap = new Map();
-  const pendingPhotoFiles = new Map();
-  const previewObjectUrls = new Map();
+  const firstCustomer = document.querySelector('.meta-entry-select[data-key="customerName"]:not(:disabled)');
+  const firstName = document.querySelector('.meta-entry-select[data-key="itemName"]:not(:disabled)');
+  const firstNumber = document.querySelector('.meta-entry-select[data-key="itemNumber"]:not(:disabled)');
 
-  function normalize(value){ return String(value == null ? "" : value).trim(); }
-  function compareText(a,b){ return normalize(a).localeCompare(normalize(b), "ko-KR", {numeric:true,sensitivity:"base"}); }
-  function cloneData(value){ return JSON.parse(JSON.stringify(value)); }
-  function fieldNumber(cell){ return Number(cell.getAttribute("data-field-no")); }
-  function isAdmin(){ return currentProfile && currentProfile.access_role === "admin"; }
-  function canEdit(){ return currentProfile && ["admin","user"].includes(currentProfile.access_role); }
-  function canPdf(){ return currentProfile && currentProfile.access_role !== "viewer"; }
-
-  function updateCompleteButton(){
-    const button = document.getElementById("btnComplete");
-    if(!button) return;
-    button.textContent = currentCompleted ? "완료됨" : "완료";
-    button.classList.toggle("active", currentCompleted);
-  }
-
-  function errorMessage(error, fallback){
-    const message = normalize(error && (error.message || error.error_description || error.details));
-    return message || fallback;
-  }
-
-  function setNotice(message, type, persistent){
-    const notice = document.getElementById("manufacturingNotice");
-    if(!notice) return;
-
-    if(noticeTimer){
-      window.clearTimeout(noticeTimer);
-      noticeTimer = null;
-    }
-
-    const normalizedMessage = normalize(message);
-    const normalizedType = normalize(type).toLowerCase();
-
-    /* 처리 중 문장은 표시하지 않아 버튼이나 양식을 가리지 않는다. */
-    if(!normalizedMessage || normalizedType === "loading"){
-      notice.textContent = "";
-      notice.className = "manufacturing-notice";
-      return;
-    }
-
-    const classType = normalizedType === "success"
-      ? "success"
-      : (normalizedType === "error" ? "error" : "info");
-
-    notice.textContent = normalizedMessage;
-    notice.className = "manufacturing-notice show " + classType;
-
-    noticeTimer = window.setTimeout(function(){
-      notice.textContent = "";
-      notice.className = "manufacturing-notice";
-      noticeTimer = null;
-    }, persistent ? 6000 : 3600);
-  }
-
-  function setBusy(enabled, message){
-    busy = Boolean(enabled);
-    if(message) setNotice(message, "loading", true);
-    updateButtonStates();
-  }
-
-  function redirectToLogin(){ window.location.replace(LOGIN_PAGE_URL); }
-
-  function metaGroup(key){ return Array.from(document.querySelectorAll('[data-meta-key="' + key + '"]')); }
-  function getMetaValue(key){
-    const first = metaGroup(key)[0];
-    if(!first) return "";
-    return normalize(first.dataset.metaValue || first.innerText);
-  }
-  function setMetaValue(key, value){
-    const normalized = normalize(value);
-    metaGroup(key).forEach(function(cell){
-      cell.dataset.metaValue = normalized;
-      if(!cell.querySelector('.meta-entry-select')) cell.textContent = normalized;
-    });
-  }
-
-  function resetNewIdentity(){
-    newIdentity = {
-      customerSystemId:"",
-      customerName:"",
-      itemName:"",
-      itemSystemId:"",
-      itemNumber:""
-    };
-    currentItemSystemId = "";
-  }
-
-  function leaveNewIdentityMode(){
-    document.body.classList.remove("new-identity-mode");
-    ["customerName","itemName","itemNumber"].forEach(function(key){
-      metaGroup(key).forEach(function(cell){
-        const value = normalize(cell.dataset.metaValue);
-        cell.textContent = value;
-      });
-    });
-  }
-
-  function uniqueItemNamesForCustomer(customerSystemId){
-    return Array.from(new Set(activeReferenceItems().filter(function(item){
-      return item.customer_system_id === customerSystemId;
-    }).map(function(item){ return normalize(item.item_name); }).filter(Boolean))).sort(compareText);
-  }
-
-  function itemsForCustomerAndName(customerSystemId, itemName){
-    return activeReferenceItems().filter(function(item){
-      return item.customer_system_id === customerSystemId && normalize(item.item_name) === normalize(itemName);
-    }).sort(function(a,b){ return compareText(a.item_number,b.item_number); });
-  }
-
-  function focusFormIdentitySelect(key){
-    const select = document.querySelector('.meta-entry-select[data-meta-select-key="' + key + '"]');
-    if(select) window.setTimeout(function(){ select.focus(); },0);
-  }
-
-  function renderNewIdentitySelects(){
-    if(currentMode !== "new") return;
-    document.body.classList.add("new-identity-mode");
-
-    const customerOptions = customers.slice().sort(function(a,b){
-      return compareText(a.company_number,b.company_number) || compareText(a.customer_name,b.customer_name);
-    }).map(function(row){
-      return {value:row.customer_system_id,label:normalize(row.customer_name)};
-    });
-    const itemNameOptions = newIdentity.customerSystemId
-      ? uniqueItemNamesForCustomer(newIdentity.customerSystemId).map(function(name){ return {value:name,label:name}; })
-      : [];
-    const itemNumberOptions = newIdentity.customerSystemId && newIdentity.itemName
-      ? itemsForCustomerAndName(newIdentity.customerSystemId,newIdentity.itemName).map(function(item){
-          return {value:item.item_system_id,label:normalize(item.item_number)};
-        })
-      : [];
-
-    const configs = {
-      customerName:{placeholder:"고객사명 선택",options:customerOptions,value:newIdentity.customerSystemId},
-      itemName:{placeholder:"품명 선택",options:itemNameOptions,value:newIdentity.itemName},
-      itemNumber:{placeholder:"품번 선택",options:itemNumberOptions,value:newIdentity.itemSystemId}
-    };
-
-    Object.keys(configs).forEach(function(key){
-      const config = configs[key];
-      metaGroup(key).forEach(function(cell){
-        cell.textContent = "";
-        cell.dataset.metaValue = key === "customerName" ? newIdentity.customerName : (key === "itemName" ? newIdentity.itemName : newIdentity.itemNumber);
-        const select = document.createElement("select");
-        select.className = "meta-entry-select";
-        select.dataset.metaSelectKey = key;
-        select.setAttribute("aria-label", config.placeholder);
-        select.add(new Option(config.placeholder,""));
-        config.options.forEach(function(option){ select.add(new Option(option.label,option.value)); });
-        select.value = config.options.some(function(option){ return option.value === config.value; }) ? config.value : "";
-        select.disabled = busy || (key === "itemName" && !newIdentity.customerSystemId) || (key === "itemNumber" && (!newIdentity.customerSystemId || !newIdentity.itemName));
-        select.addEventListener("change",function(){ handleFormIdentityChange(key,select.value); });
-        cell.appendChild(select);
-      });
-    });
-  }
-
-  function handleFormIdentityChange(key, value){
-    if(currentMode !== "new") return;
-
-    if(key === "customerName"){
-      const customer = customerMap.get(value);
-      newIdentity.customerSystemId = customer ? customer.customer_system_id : "";
-      newIdentity.customerName = customer ? normalize(customer.customer_name) : "";
-      newIdentity.itemName = "";
-      newIdentity.itemSystemId = "";
-      newIdentity.itemNumber = "";
+  if(firstCustomer){
+    firstCustomer.onchange = function(){
+      state.customerId = this.value;
+      state.itemName = "";
+      state.itemId = "";
       currentItemSystemId = "";
-      renderNewIdentitySelects();
-      if(!value){
-        setNotice("제조공정도 양식에서 고객사명을 선택해 주세요.","error");
-      }else if(uniqueItemNamesForCustomer(value).length === 0){
-        setNotice("선택한 고객사에 등록된 품명이 없습니다. 아이템관리를 확인해 주세요.","error",true);
-      }else{
-        setNotice("고객사를 선택했습니다. 제조공정도 양식에서 품명을 선택해 주세요.","success");
-        focusFormIdentitySelect("itemName");
-      }
-      return;
-    }
-
-    if(key === "itemName"){
-      newIdentity.itemName = normalize(value);
-      newIdentity.itemSystemId = "";
-      newIdentity.itemNumber = "";
+      renderNewIdentity();
+    };
+  }
+  if(firstName){
+    firstName.onchange = function(){
+      state.itemName = this.value;
+      state.itemId = "";
       currentItemSystemId = "";
-      renderNewIdentitySelects();
-      if(!value){
-        setNotice("제조공정도 양식에서 품명을 선택해 주세요.","error");
-      }else if(itemsForCustomerAndName(newIdentity.customerSystemId,value).length === 0){
-        setNotice("선택한 고객사·품명에 등록된 품번이 없습니다. 아이템관리를 확인해 주세요.","error",true);
-      }else{
-        setNotice("품명을 선택했습니다. 제조공정도 양식에서 품번을 선택해 주세요.","success");
-        focusFormIdentitySelect("itemNumber");
-      }
-      return;
-    }
-
-    if(key === "itemNumber"){
-      const item = itemMap.get(value);
-      if(!item || item.customer_system_id !== newIdentity.customerSystemId || normalize(item.item_name) !== newIdentity.itemName){
-        newIdentity.itemSystemId = "";
-        newIdentity.itemNumber = "";
-        currentItemSystemId = "";
-        renderNewIdentitySelects();
-        setNotice("사용 가능한 품번을 선택해 주세요.","error");
-        return;
-      }
-      newIdentity.itemSystemId = item.item_system_id;
-      newIdentity.itemNumber = normalize(item.item_number);
-      currentItemSystemId = item.item_system_id;
-      renderNewIdentitySelects();
-      const firstField = textFields[0];
-      if(firstField) window.setTimeout(function(){ firstField.focus(); },0);
-    }
-  }
-
-  function enterNewIdentityMode(){
-    resetNewIdentity();
-    renderNewIdentitySelects();
-    focusFormIdentitySelect("customerName");
-  }
-
-  function photoElements(cell){
-    return {
-      placeholder:cell.querySelector(".photo-placeholder"),
-      image:cell.querySelector(".process-photo-preview"),
-      input:cell.querySelector(".process-photo-input")
+      renderNewIdentity();
     };
   }
-
-  function revokePreviewUrl(fieldNo){
-    const oldUrl = previewObjectUrls.get(fieldNo);
-    if(oldUrl){
-      URL.revokeObjectURL(oldUrl);
-      previewObjectUrls.delete(fieldNo);
-    }
-  }
-
-  function clearPhotoDisplay(cell, clearStoredPath){
-    const no = fieldNumber(cell);
-    const parts = photoElements(cell);
-    revokePreviewUrl(no);
-    if(parts.image){
-      parts.image.removeAttribute("src");
-      parts.image.hidden = true;
-      parts.image.dataset.fileName = "";
-    }
-    if(parts.placeholder) parts.placeholder.hidden = false;
-    if(parts.input) parts.input.value = "";
-    if(clearStoredPath !== false) cell.dataset.imagePath = "";
-  }
-
-  function setPhotoDisplay(cell, src, fileName, imagePath, objectUrl){
-    const no = fieldNumber(cell);
-    const parts = photoElements(cell);
-    revokePreviewUrl(no);
-    if(!src){
-      clearPhotoDisplay(cell, imagePath == null);
-      if(imagePath != null) cell.dataset.imagePath = imagePath || "";
-      return;
-    }
-    if(objectUrl) previewObjectUrls.set(no, src);
-    if(parts.image){
-      parts.image.src = src;
-      parts.image.hidden = false;
-      parts.image.dataset.fileName = fileName || "";
-    }
-    if(parts.placeholder) parts.placeholder.hidden = true;
-    if(parts.input) parts.input.value = "";
-    cell.dataset.imagePath = imagePath || "";
-  }
-
-  function clearPendingPhotos(){
-    pendingPhotoFiles.clear();
-    Array.from(previewObjectUrls.keys()).forEach(revokePreviewUrl);
-  }
-
-  function clearForm(){
-    clearPendingPhotos();
-    leaveNewIdentityMode();
-    setMetaValue("customerName", "");
-    setMetaValue("itemName", "");
-    setMetaValue("itemNumber", "");
-    textFields.forEach(function(cell){ cell.textContent = ""; });
-    photoFields.forEach(function(cell){ clearPhotoDisplay(cell, true); });
-  }
-
-  async function completeCurrentDocument(){
-    if(!canEdit()){ setNotice("완료 처리 권한이 없습니다.","error"); return; }
-    if(!currentDocumentId){ setNotice("완료 처리할 제조공정도를 먼저 조회해 주세요.","error"); return; }
-    if(editMode || currentMode === "new"){ setNotice("저장을 완료한 뒤 완료 버튼을 눌러 주세요.","error"); return; }
-    if(currentCompleted){ setNotice("이미 완료 처리된 제조공정도입니다.","info"); return; }
-    if(!window.confirm("현재 제조공정도를 완료 처리하시겠습니까?")) return;
-
-    setBusy(true,"제조공정도를 완료 처리하는 중입니다.");
-    try{
-      const result = await sb.from("manufacturing_process_diagrams")
-        .update({is_completed:true})
-        .eq("company_id",currentProfile.company_id)
-        .eq("manufacturing_process_system_id",currentDocumentId)
-        .eq("is_active",true)
-        .select("manufacturing_process_system_id,is_completed")
-        .single();
-      if(result.error) throw result.error;
-      if(!result.data || result.data.is_completed !== true) throw new Error("완료 상태가 DB에 저장되지 않았습니다.");
-
-      currentCompleted = true;
-      const record = documents.find(function(row){ return row.documentId === currentDocumentId; });
-      if(record) record.isCompleted = true;
-      updateCompleteButton();
-      setNotice("제조공정도가 완료 처리되었습니다.","success",true);
-    }catch(error){
-      console.error(error);
-      setNotice(errorMessage(error,"제조공정도 완료 처리에 실패했습니다."),"error",true);
-    }finally{
-      setBusy(false);
-    }
-  }
-
-  function captureValues(){
-    const values = [];
-    textFields.forEach(function(cell){
-      values.push({
-        field_no:fieldNumber(cell),
-        text_value:normalize(cell.innerText),
-        image_path:null
-      });
-    });
-    photoFields.forEach(function(cell){
-      values.push({
-        field_no:fieldNumber(cell),
-        text_value:null,
-        image_path:normalize(cell.dataset.imagePath) || null
-      });
-    });
-    values.sort(function(a,b){ return a.field_no - b.field_no; });
-    return values;
-  }
-
-  function captureSnapshot(){
-    return {
-      documentId:currentDocumentId,
-      itemSystemId:currentItemSystemId,
-      identity:{
-        customerName:getMetaValue("customerName"),
-        itemName:getMetaValue("itemName"),
-        itemNumber:getMetaValue("itemNumber")
-      },
-      values:captureValues()
+  if(firstNumber){
+    firstNumber.onchange = function(){
+      state.itemId = this.value;
+      currentItemSystemId = this.value;
+      const item = itemMap.get(this.value);
+      if(item){
+        setNotice("품목을 선택했습니다. 기본값에서 필요한 부분만 수정한 뒤 저장해 주세요.","success");
+      }
+      renderNewIdentity();
     };
   }
+}
 
-  async function signedUrlForPath(path){
-    if(!path) return "";
-    const result = await sb.storage.from(IMAGE_BUCKET).createSignedUrl(path, SIGNED_URL_SECONDS);
-    if(result.error) throw result.error;
-    return result.data && result.data.signedUrl ? result.data.signedUrl : "";
-  }
+function resetNewIdentity(){
+  renderNewIdentity.state = {customerId:"",itemName:"",itemId:""};
+  currentItemSystemId = "";
+}
 
-  async function applySnapshot(snapshot){
-    if(!snapshot || !Array.isArray(snapshot.values)) return;
-    leaveNewIdentityMode();
-    clearPendingPhotos();
-    setMetaValue("customerName", snapshot.identity.customerName || "");
-    setMetaValue("itemName", snapshot.identity.itemName || "");
-    setMetaValue("itemNumber", snapshot.identity.itemNumber || "");
-
-    const byNo = new Map(snapshot.values.map(function(row){ return [Number(row.field_no), row]; }));
-    textFields.forEach(function(cell){
-      const row = byNo.get(fieldNumber(cell));
-      cell.textContent = row ? normalize(row.text_value) : "";
-    });
-    photoFields.forEach(function(cell){
-      const row = byNo.get(fieldNumber(cell));
-      clearPhotoDisplay(cell, true);
-      cell.dataset.imagePath = row && row.image_path ? row.image_path : "";
-    });
-
-    const token = snapshot.documentId || "new";
-    await Promise.all(photoFields.map(async function(cell){
-      const row = byNo.get(fieldNumber(cell));
-      const path = row && row.image_path ? row.image_path : "";
-      if(!path) return;
-      try{
-        const url = await signedUrlForPath(path);
-        if((currentDocumentId || "new") !== token) return;
-        setPhotoDisplay(cell, url, path.split("/").pop() || "", path, false);
-      }catch(error){
-        console.error("공정 사진 조회 실패:", path, error);
+function clearForm(){
+  clearPreviewUrls();
+  pendingPhotoFiles.clear();
+  currentImagePaths.clear();
+  for(let no=1;no<=75;no++){
+    if(fieldIsPhoto(no)){
+      const cell = document.querySelector('[data-field-no="'+no+'"][data-field-type="image"]');
+      if(cell){
+        cell.querySelector(".process-photo-preview").hidden = true;
+        cell.querySelector(".process-photo-preview").removeAttribute("src");
+        cell.querySelector(".photo-placeholder").hidden = false;
       }
-    }));
-  }
-
-  function setEditMode(enabled){
-    editMode = Boolean(enabled);
-    document.body.classList.toggle("edit-mode", editMode);
-    metaFields.forEach(function(cell){ cell.setAttribute("contenteditable", "false"); });
-    textFields.forEach(function(cell){ cell.setAttribute("contenteditable", editMode ? "true" : "false"); });
-    photoFields.forEach(function(cell){
-      const parts = photoElements(cell);
-      cell.tabIndex = editMode ? 0 : -1;
-      if(parts.input) parts.input.disabled = !editMode;
-    });
-    const button = document.getElementById("btnEdit");
-    button.classList.toggle("active", editMode);
-    button.textContent = editMode ? "수정 완료" : "수정";
-    updateButtonStates();
-  }
-
-  function updateButtonStates(){
-    const inEntryMode = editMode || currentMode === "new";
-    document.getElementById("btnSearch").disabled = busy || inEntryMode;
-    document.getElementById("btnEdit").disabled = busy || !canEdit() || (!currentDocumentId && currentMode !== "new");
-    document.getElementById("btnSave").disabled = busy || !editMode || (currentMode === "new" ? !isAdmin() : !canEdit());
-    document.getElementById("btnNew").disabled = busy || !isAdmin() || inEntryMode;
-    document.getElementById("btnReset").disabled = busy;
-    document.getElementById("btnDelete").disabled = busy || !isAdmin() || !currentDocumentId || inEntryMode;
-    document.getElementById("btnPdf").disabled = busy || !canPdf();
-    document.getElementById("btnComplete").disabled = busy || !canEdit() || !currentDocumentId || inEntryMode || currentCompleted;
-    updateCompleteButton();
-    [customerSelect,itemNameInput,itemNumberInput].forEach(function(control){
-      control.disabled = busy || currentMode === "new";
-    });
-    document.querySelectorAll(".meta-entry-select").forEach(function(select){
-      const key = select.dataset.metaSelectKey;
-      select.disabled = busy || currentMode !== "new" || (key === "itemName" && !newIdentity.customerSystemId) || (key === "itemNumber" && (!newIdentity.customerSystemId || !newIdentity.itemName));
-    });
-  }
-
-  function fillSelect(select, placeholder, options, selectedValue){
-    select.innerHTML = "";
-    select.add(new Option(placeholder, ""));
-    options.forEach(function(option){ select.add(new Option(option.label, option.value)); });
-    select.value = options.some(function(option){ return option.value === selectedValue; }) ? selectedValue : "";
-  }
-
-  function activeReferenceItems(){
-    return items.filter(function(item){
-      return item && item.item_system_id && item.customer_system_id;
-    });
-  }
-
-  function rebuildToolbarOptions(options){
-    const preserve = options || {};
-    const selectedCustomer = preserve.customerSystemId != null
-      ? preserve.customerSystemId
-      : customerSelect.value;
-
-    const customerOptions = customers.slice().sort(function(a,b){
-      return compareText(a.company_number,b.company_number) || compareText(a.customer_name,b.customer_name);
-    }).map(function(row){
-      return {value:row.customer_system_id,label:normalize(row.customer_name)};
-    });
-
-    fillSelect(customerSelect,"전체",customerOptions,selectedCustomer || "");
-
-    const selectedItem = preserve.itemSystemId ? itemMap.get(preserve.itemSystemId) : null;
-    const identityWasSpecified = Object.prototype.hasOwnProperty.call(preserve,"itemName") ||
-      Object.prototype.hasOwnProperty.call(preserve,"itemNumber") ||
-      Object.prototype.hasOwnProperty.call(preserve,"itemSystemId");
-
-    if(identityWasSpecified){
-      itemNameInput.value = preserve.itemName != null
-        ? normalize(preserve.itemName)
-        : (selectedItem ? normalize(selectedItem.item_name) : "");
-      itemNumberInput.value = preserve.itemNumber != null
-        ? normalize(preserve.itemNumber)
-        : (selectedItem ? normalize(selectedItem.item_number) : "");
+    }else{
+      setTextField(no,"");
     }
-
-    updateButtonStates();
   }
+  renderViewIdentity({customerName:"",itemName:"",itemNumber:""});
+}
 
-  async function verifySession(){
-    const userResult = await sb.auth.getUser();
-    const user = userResult.data && userResult.data.user;
-    if(userResult.error || !user){ redirectToLogin(); return false; }
-
-    const profileResult = await sb.from("profiles")
-      .select("company_id,is_active,login_enabled,access_role")
-      .eq("user_id",user.id)
-      .single();
-
-    const profile = profileResult.data;
-    const validRole = profile && ["admin","user","viewer"].includes(profile.access_role);
-    if(profileResult.error || !profile || profile.is_active !== true || profile.login_enabled !== true || !validRole){
-      console.error("프로필 권한 확인 실패:", profileResult.error);
-      await sb.auth.signOut({scope:"local"});
-      redirectToLogin();
-      return false;
+function captureValues(){
+  return Array.from({length:75},function(_,idx){
+    const no = idx + 1;
+    if(fieldIsPhoto(no)){
+      return {field_no:no,text_value:null,image_path:currentImagePaths.get(no) || null};
     }
-    currentProfile = profile;
-    return true;
+    const cell = document.querySelector('[data-field-no="'+no+'"][data-field-type="text"]');
+    const editor = cell && cell.querySelector(".fixed-text-editor");
+    return {field_no:no,text_value:normalize(editor ? editor.textContent : ""),image_path:null};
+  });
+}
+
+async function applyValues(values){
+  const byNo = new Map((values || []).map(function(v){return [Number(v.field_no),v];}));
+  for(let no=1;no<=75;no++){
+    const row = byNo.get(no) || {};
+    if(fieldIsPhoto(no)){
+      await setPhotoPath(no,row.image_path || null);
+    }else{
+      setTextField(no,row.text_value || "");
+    }
+  }
+}
+
+function assert75(values,label){
+  const nums = (values || []).map(function(v){return Number(v.field_no);});
+  const distinct = new Set(nums);
+  const min = nums.length ? Math.min.apply(null,nums) : null;
+  const max = nums.length ? Math.max.apply(null,nums) : null;
+  if(nums.length !== 75 || distinct.size !== 75 || min !== 1 || max !== 75){
+    throw new Error((label || "입력값")+" NO1~NO75 검증 실패: 행수 "+nums.length+", 고유번호 "+distinct.size+", 최소 "+min+", 최대 "+max);
+  }
+  const mismatches = (values || []).filter(function(v){
+    const no = Number(v.field_no);
+    return fieldIsPhoto(no) ? v.field_type && v.field_type !== "image" : v.field_type && v.field_type !== "text";
+  });
+  if(mismatches.length) throw new Error((label || "입력값")+" field_type 매핑 오류 "+mismatches.length+"건");
+}
+
+async function verifySession(){
+  const userResult = await sb.auth.getUser();
+  const user = userResult.data && userResult.data.user;
+  if(userResult.error || !user){
+    window.location.replace(LOGIN_PAGE_URL);
+    return false;
   }
 
-  async function loadReferenceData(){
-    const companyId = currentProfile.company_id;
-    const results = await Promise.all([
-      sb.from("customers")
-        .select("customer_system_id,company_number,customer_name,is_active")
-        .eq("company_id",companyId)
-        .order("company_number",{ascending:true}),
-      sb.from("items")
-        .select("item_system_id,customer_system_id,item_name,item_number,is_active")
-        .eq("company_id",companyId)
-        .order("item_name",{ascending:true})
-        .order("item_number",{ascending:true})
-    ]);
-    if(results[0].error) throw new Error("고객사 DB 조회 실패: " + errorMessage(results[0].error,"customers 조회 오류"));
-    if(results[1].error) throw new Error("품목 DB 조회 실패: " + errorMessage(results[1].error,"items 조회 오류"));
+  const profileResult = await sb.from("profiles")
+    .select("company_id,is_active,login_enabled,access_role")
+    .eq("user_id",user.id)
+    .single();
 
-    /* 기존 DATA 중 is_active가 NULL인 행도 사용 가능하도록 하고,
-       명확하게 false인 행만 제외한다. */
-    customers = (results[0].data || []).filter(function(row){
-      return row && row.customer_system_id && normalize(row.customer_name) && row.is_active !== false;
-    });
-    items = (results[1].data || []).filter(function(row){
-      return row && row.item_system_id && row.customer_system_id && normalize(row.item_name) && normalize(row.item_number) && row.is_active !== false;
-    });
-
-    customerMap.clear();
-    itemMap.clear();
-    customers.forEach(function(row){ customerMap.set(row.customer_system_id,row); });
-    items.forEach(function(row){ itemMap.set(row.item_system_id,row); });
+  const p = profileResult.data;
+  const validRole = p && ["admin","user","viewer"].includes(p.access_role);
+  if(profileResult.error || !p || p.is_active !== true || p.login_enabled !== true || !p.company_id || !validRole){
+    await sb.auth.signOut({scope:"local"});
+    window.location.replace(LOGIN_PAGE_URL);
+    return false;
   }
+  currentProfile = p;
+  return true;
+}
 
-  async function loadDocumentIndex(){
-    const result = await sb.from("manufacturing_process_diagrams")
-      .select("manufacturing_process_system_id,company_id,customer_system_id,item_system_id,is_completed,is_active,created_at,updated_at")
+async function loadReferenceData(){
+  const companyId = currentProfile.company_id;
+  const results = await Promise.all([
+    sb.from("customers")
+      .select("customer_system_id,company_number,customer_name,is_active")
+      .eq("company_id",companyId)
+      .order("company_number",{ascending:true}),
+    sb.from("items")
+      .select("item_system_id,customer_system_id,item_name,item_number,is_active")
+      .eq("company_id",companyId)
+      .order("item_name",{ascending:true})
+      .order("item_number",{ascending:true})
+  ]);
+  if(results[0].error) throw results[0].error;
+  if(results[1].error) throw results[1].error;
+
+  customers = (results[0].data || []).filter(function(r){return r && r.customer_system_id && normalize(r.customer_name) && r.is_active !== false;});
+  items = (results[1].data || []).filter(function(r){return r && r.item_system_id && r.customer_system_id && normalize(r.item_name) && normalize(r.item_number) && r.is_active !== false;});
+
+  customerMap = new Map(customers.map(function(r){return [r.customer_system_id,r];}));
+  itemMap = new Map(items.map(function(r){return [r.item_system_id,r];}));
+
+  const selected = customerSelect.value;
+  fillSelect(customerSelect,"전체",customers.slice().sort(function(a,b){return compareText(a.customer_name,b.customer_name);}).map(function(r){
+    return {value:r.customer_system_id,label:r.customer_name};
+  }),selected);
+}
+
+async function loadDocumentIndex(){
+  const r = await sb.from("manufacturing_process_diagrams")
+    .select("manufacturing_process_system_id,company_id,customer_system_id,item_system_id,is_completed,is_active,created_at,updated_at")
+    .eq("company_id",currentProfile.company_id)
+    .eq("is_active",true)
+    .order("created_at",{ascending:false});
+  if(r.error) throw r.error;
+
+  documents = (r.data || []).map(function(row){
+    const c = customerMap.get(row.customer_system_id);
+    const i = itemMap.get(row.item_system_id);
+    return {
+      documentId:row.manufacturing_process_system_id,
+      customerSystemId:row.customer_system_id,
+      customerName:c ? c.customer_name : "",
+      itemSystemId:row.item_system_id,
+      itemName:i ? i.item_name : "",
+      itemNumber:i ? i.item_number : "",
+      isCompleted:row.is_completed === true,
+      createdAt:row.created_at,
+      updatedAt:row.updated_at
+    };
+  }).filter(function(r){return r.customerName && r.itemName && r.itemNumber;});
+}
+
+async function loadDocument(record){
+  if(!record) return;
+  setBusy(true,"제조공정도를 불러오는 중입니다.");
+  try{
+    const r = await sb.from("manufacturing_process_values")
+      .select("field_no,field_type,text_value,image_path,is_active")
       .eq("company_id",currentProfile.company_id)
+      .eq("manufacturing_process_system_id",record.documentId)
       .eq("is_active",true)
-      .order("created_at",{ascending:false});
-    if(result.error) throw result.error;
+      .order("field_no",{ascending:true});
+    if(r.error) throw r.error;
 
-    documents = (result.data || []).map(function(row){
-      const customer = customerMap.get(row.customer_system_id);
-      const item = itemMap.get(row.item_system_id);
-      return {
-        documentId:row.manufacturing_process_system_id,
-        customerSystemId:row.customer_system_id,
-        customerName:customer ? customer.customer_name : "",
-        itemSystemId:row.item_system_id,
-        itemName:item ? item.item_name : "",
-        itemNumber:item ? item.item_number : "",
-        isCompleted:row.is_completed === true,
-        createdAt:row.created_at,
-        updatedAt:row.updated_at
-      };
-    }).filter(function(row){ return row.customerName && row.itemName && row.itemNumber; });
+    const values = r.data || [];
+    assert75(values,"제조공정도");
+
+    currentMode = "view";
+    currentDocumentId = record.documentId;
+    currentItemSystemId = record.itemSystemId;
+    currentCompleted = record.isCompleted === true;
+    clearPreviewUrls();
+    pendingPhotoFiles.clear();
+
+    renderViewIdentity({customerName:record.customerName,itemName:record.itemName,itemNumber:record.itemNumber});
+    await applyValues(values);
+
+    loadedSnapshot = {
+      documentId:record.documentId,
+      itemSystemId:record.itemSystemId,
+      isCompleted:record.isCompleted === true,
+      identity:{customerName:record.customerName,itemName:record.itemName,itemNumber:record.itemNumber},
+      values:cloneData(values)
+    };
+    setEditMode(false);
+    setNotice("제조공정도를 불러왔습니다.","success");
+  }catch(error){
+    console.error(error);
+    setNotice(errorMessage(error,"제조공정도를 불러오지 못했습니다."),"error",true);
+  }finally{
+    setBusy(false);
   }
+}
 
-  async function loadDocument(record){
-    if(!record) return;
-    setBusy(true,"제조공정도를 불러오는 중입니다.");
-    try{
-      const result = await sb.from("manufacturing_process_values")
-        .select("field_no,field_type,text_value,image_path,is_active")
-        .eq("company_id",currentProfile.company_id)
-        .eq("manufacturing_process_system_id",record.documentId)
-        .eq("is_active",true)
-        .order("field_no",{ascending:true});
-      if(result.error) throw result.error;
+function matchingDocuments(){
+  const customerId = normalize(customerSelect.value);
+  const nameKw = normalize(itemNameInput.value).toLowerCase();
+  const noKw = normalize(itemNumberInput.value).toLowerCase();
 
-      const byNo = new Map((result.data || []).map(function(row){ return [Number(row.field_no),row]; }));
-      const values = Array.from({length:75},function(_,index){
-        const no = index + 1;
-        const row = byNo.get(no);
-        return {
-          field_no:no,
-          text_value:PHOTO_FIELD_NUMBERS.includes(no) ? null : (row ? normalize(row.text_value) : ""),
-          image_path:PHOTO_FIELD_NUMBERS.includes(no) ? (row && row.image_path ? row.image_path : null) : null
-        };
-      });
-
-      currentMode = "view";
-      currentDocumentId = record.documentId;
-      currentItemSystemId = record.itemSystemId;
-      currentCompleted = record.isCompleted === true;
-      const snapshot = {
-        documentId:record.documentId,
-        itemSystemId:record.itemSystemId,
-        identity:{
-          customerName:record.customerName,
-          itemName:record.itemName,
-          itemNumber:record.itemNumber
-        },
-        values:values
-      };
-      loadedSnapshot = cloneData(snapshot);
-      await applySnapshot(snapshot);
-      setEditMode(false);
-      rebuildToolbarOptions({
-        customerSystemId:record.customerSystemId,
-        itemName:record.itemName,
-        itemSystemId:record.itemSystemId
-      });
-      const count = result.data ? result.data.length : 0;
-      setNotice(count === 75 ? "제조공정도를 불러왔습니다." : "제조공정도를 불러왔지만 NO1~NO75 상세행 수가 " + count + "개입니다.", count === 75 ? "success" : "error");
-    }catch(error){
-      console.error(error);
-      setNotice(errorMessage(error,"제조공정도를 불러오지 못했습니다."),"error");
-    }finally{
-      setBusy(false);
-    }
-  }
-
-  function matchingDocuments(){
-    const customerId = normalize(customerSelect.value);
-    const itemNameKeyword = normalize(itemNameInput.value).toLowerCase();
-    const itemNumberKeyword = normalize(itemNumberInput.value).toLowerCase();
-
-    return documents.filter(function(row){
-      if(customerId && row.customerSystemId !== customerId) return false;
-      if(itemNameKeyword && !normalize(row.itemName).toLowerCase().includes(itemNameKeyword)) return false;
-      if(itemNumberKeyword && !normalize(row.itemNumber).toLowerCase().includes(itemNumberKeyword)) return false;
-      return true;
-    }).sort(function(a,b){
-      return compareText(a.customerName,b.customerName) || compareText(a.itemName,b.itemName) || compareText(a.itemNumber,b.itemNumber);
-    });
-  }
-
-  function closeSearchResultModal(){
-    const modal = document.getElementById("searchResultModal");
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden","true");
-  }
-
-  function renderSearchResultPage(){
-    const body = document.getElementById("searchResultBody");
-    const totalPages = Math.max(1,Math.ceil(searchResultRecords.length / SEARCH_RESULT_PAGE_SIZE));
-    searchResultPage = Math.min(Math.max(searchResultPage,1),totalPages);
-    const startIndex = (searchResultPage - 1) * SEARCH_RESULT_PAGE_SIZE;
-    const pageRows = searchResultRecords.slice(startIndex,startIndex + SEARCH_RESULT_PAGE_SIZE);
-
-    body.innerHTML = "";
-    pageRows.forEach(function(record,pageIndex){
-      const tr = document.createElement("tr");
-      const radioCell = document.createElement("td");
-      const radio = document.createElement("input");
-      radio.type = "radio";
-      radio.name = "manufacturing_process_result";
-      radio.className = "result-radio";
-      radio.value = record.documentId;
-      radio.setAttribute("aria-label",String(startIndex + pageIndex + 1) + "번 제조공정도 선택");
-      radio.addEventListener("change",function(){
-        if(!radio.checked) return;
-        tr.classList.add("radio-selected");
-        closeSearchResultModal();
-        loadDocument(record);
-      });
-      radioCell.appendChild(radio);
-      tr.appendChild(radioCell);
-
-      const numberCell = document.createElement("td");
-      numberCell.textContent = String(startIndex + pageIndex + 1);
-      tr.appendChild(numberCell);
-
-      [record.customerName,record.itemName,record.itemNumber].forEach(function(value){
-        const td = document.createElement("td");
-        td.textContent = value || "-";
-        tr.appendChild(td);
-      });
-
-      const statusCell = document.createElement("td");
-      statusCell.style.textAlign = "center";
-      const statusBadge = document.createElement("span");
-      statusBadge.className = "document-status " + (record.isCompleted ? "complete" : "progress");
-      statusBadge.textContent = record.isCompleted ? "완료" : "진행중";
-      statusCell.appendChild(statusBadge);
-      tr.appendChild(statusCell);
-
-      body.appendChild(tr);
-    });
-
-    searchResultPageInfo.textContent = String(searchResultPage) + " / " + String(totalPages);
-    searchResultPrev.disabled = searchResultPage <= 1;
-    searchResultNext.disabled = searchResultPage >= totalPages;
-  }
-
-  function openSearchResultModal(records){
-    searchResultRecords = records.slice();
-    searchResultPage = 1;
-    document.getElementById("searchResultSummary").textContent = "조회 결과 " + records.length + "건입니다. 라디오버튼으로 제조공정도를 선택해 주세요.";
-    renderSearchResultPage();
-
-    const modal = document.getElementById("searchResultModal");
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden","false");
-    window.setTimeout(function(){
-      const firstRadio = document.querySelector('#searchResultBody input[name="manufacturing_process_result"]');
-      if(firstRadio) firstRadio.focus();
-      else document.getElementById("searchResultTitle").focus();
-    },0);
-  }
-
-  function validateSelectedFile(file){
-    if(!ALLOWED_IMAGE_TYPES.includes(file.type)) throw new Error("JPG, PNG, WEBP 사진만 등록할 수 있습니다.");
-    if(file.size > MAX_IMAGE_BYTES) throw new Error("공정 사진은 파일당 5MB 이하만 등록할 수 있습니다.");
-  }
-
-  function safeFileExtension(file){
-    if(file.type === "image/png") return "png";
-    if(file.type === "image/webp") return "webp";
-    return "jpg";
-  }
-
-  function randomToken(){
-    if(window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
-    return Date.now().toString(36) + "_" + Math.random().toString(36).slice(2);
-  }
-
-  async function uploadPendingPhotos(documentId, values){
-    const uploaded = [];
-    const valueMap = new Map(values.map(function(row){ return [Number(row.field_no),row]; }));
-    const entries = Array.from(pendingPhotoFiles.entries()).sort(function(a,b){ return a[0]-b[0]; });
-    for(const entry of entries){
-      const no = entry[0];
-      const file = entry[1];
-      validateSelectedFile(file);
-      const oldPath = valueMap.get(no) ? valueMap.get(no).image_path : null;
-      const path = currentProfile.company_id + "/" + documentId + "/NO" + String(no).padStart(2,"0") + "/" + Date.now() + "_" + randomToken() + "." + safeFileExtension(file);
-      const uploadResult = await sb.storage.from(IMAGE_BUCKET).upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
-      if(uploadResult.error) throw uploadResult.error;
-      valueMap.get(no).image_path = path;
-      uploaded.push({fieldNo:no,newPath:path,oldPath:oldPath});
-    }
-    return uploaded;
-  }
-
-  async function removeStoragePaths(paths){
-    const unique = Array.from(new Set(paths.filter(Boolean)));
-    if(unique.length === 0) return;
-    const result = await sb.storage.from(IMAGE_BUCKET).remove(unique);
-    if(result.error) throw result.error;
-  }
-
-  async function saveNewDocument(){
-    if(!isAdmin()) throw new Error("신규등록은 관리자만 가능합니다.");
-    if(!currentItemSystemId) throw new Error("제조공정도 양식에서 고객사명, 품명, 품번을 순서대로 선택해 주세요.");
-
-    const item = itemMap.get(currentItemSystemId);
-    if(!item || item.is_active === false) throw new Error("사용 가능한 품목을 선택해 주세요.");
-
-    const values = captureValues();
-    let documentId = "";
-    let uploaded = [];
-    try{
-      const createResult = await sb.rpc("create_manufacturing_process_diagram",{
-        p_item_system_id:currentItemSystemId,
-        p_values:values
-      });
-      if(createResult.error) throw createResult.error;
-      documentId = createResult.data;
-      if(!documentId) throw new Error("제조공정도 내부 ID가 반환되지 않았습니다.");
-
-      uploaded = await uploadPendingPhotos(documentId,values);
-      if(uploaded.length > 0){
-        const updateResult = await sb.rpc("update_manufacturing_process_diagram",{
-          p_manufacturing_process_system_id:documentId,
-          p_values:values
-        });
-        if(updateResult.error) throw updateResult.error;
-      }
-      return documentId;
-    }catch(error){
-      try{ await removeStoragePaths(uploaded.map(function(row){ return row.newPath; })); }catch(cleanupError){ console.error("신규 사진 정리 실패:",cleanupError); }
-      if(documentId){
-        try{ await sb.rpc("delete_manufacturing_process_diagram",{p_manufacturing_process_system_id:documentId}); }catch(cleanupError){ console.error("신규 문서 정리 실패:",cleanupError); }
-      }
-      throw error;
-    }
-  }
-
-  async function saveExistingDocument(){
-    if(!canEdit()) throw new Error("수정 권한이 없습니다.");
-    if(!currentDocumentId) throw new Error("수정할 제조공정도를 먼저 조회해 주세요.");
-
-    const values = captureValues();
-    let uploaded = [];
-    try{
-      uploaded = await uploadPendingPhotos(currentDocumentId,values);
-      const updateResult = await sb.rpc("update_manufacturing_process_diagram",{
-        p_manufacturing_process_system_id:currentDocumentId,
-        p_values:values
-      });
-      if(updateResult.error) throw updateResult.error;
-      const oldPaths = uploaded.map(function(row){ return row.oldPath; }).filter(Boolean);
-      try{ await removeStoragePaths(oldPaths); }catch(removeError){ console.error("교체 전 사진 삭제 실패:",removeError); }
-      return currentDocumentId;
-    }catch(error){
-      try{ await removeStoragePaths(uploaded.map(function(row){ return row.newPath; })); }catch(cleanupError){ console.error("업로드 사진 정리 실패:",cleanupError); }
-      throw error;
-    }
-  }
-
-  async function saveCurrentDocument(){
-    if(!editMode){ setNotice("신규등록 또는 수정 상태에서 저장해 주세요.","error"); return; }
-    setBusy(true,"제조공정도를 저장하는 중입니다.");
-    try{
-      const savedId = currentMode === "new" ? await saveNewDocument() : await saveExistingDocument();
-      clearPendingPhotos();
-      await loadReferenceData();
-      await loadDocumentIndex();
-      const record = documents.find(function(row){ return row.documentId === savedId; });
-      if(!record) throw new Error("저장된 제조공정도를 조회 목록에서 찾지 못했습니다.");
-      await loadDocument(record);
-      setNotice("제조공정도가 저장되었습니다.","success",true);
-    }catch(error){
-      console.error(error);
-      setNotice(errorMessage(error,"제조공정도 저장에 실패했습니다."),"error");
-    }finally{
-      setBusy(false);
-    }
-  }
-
-  async function deleteCurrentDocument(){
-    if(!isAdmin()){ setNotice("삭제는 관리자만 가능합니다.","error"); return; }
-    if(!currentDocumentId){ setNotice("삭제할 제조공정도를 먼저 조회해 주세요.","error"); return; }
-    if(!window.confirm("현재 조회한 제조공정도를 삭제하시겠습니까?")) return;
-
-    setBusy(true,"제조공정도를 삭제하는 중입니다.");
-    try{
-      const valuesResult = await sb.from("manufacturing_process_values")
-        .select("image_path")
-        .eq("company_id",currentProfile.company_id)
-        .eq("manufacturing_process_system_id",currentDocumentId)
-        .not("image_path","is",null);
-      if(valuesResult.error) throw valuesResult.error;
-      await removeStoragePaths((valuesResult.data || []).map(function(row){ return row.image_path; }));
-
-      const deleteResult = await sb.rpc("delete_manufacturing_process_diagram",{
-        p_manufacturing_process_system_id:currentDocumentId
-      });
-      if(deleteResult.error) throw deleteResult.error;
-      if(deleteResult.data !== true) throw new Error("삭제할 제조공정도를 찾지 못했습니다.");
-
-      currentDocumentId = "";
-      currentItemSystemId = "";
-      currentCompleted = false;
-      currentMode = "view";
-      loadedSnapshot = null;
-      resetNewIdentity();
-      clearForm();
-      setEditMode(false);
-      await loadDocumentIndex();
-      rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
-      setNotice("제조공정도가 삭제되었습니다.","success");
-    }catch(error){
-      console.error(error);
-      setNotice(errorMessage(error,"제조공정도 삭제에 실패했습니다."),"error");
-    }finally{
-      setBusy(false);
-    }
-  }
-
-  photoFields.forEach(function(cell){
-    const parts = photoElements(cell);
-    if(parts.input) parts.input.accept = ".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
-    function openPicker(){ if(editMode && parts.input) parts.input.click(); }
-    cell.addEventListener("click",function(event){ if(event.target !== parts.input) openPicker(); });
-    cell.addEventListener("keydown",function(event){
-      if(editMode && (event.key === "Enter" || event.key === " ")){
-        event.preventDefault();
-        openPicker();
-      }
-    });
-    if(parts.input){
-      parts.input.addEventListener("change",function(){
-        const file = parts.input.files && parts.input.files[0];
-        if(!file) return;
-        try{
-          validateSelectedFile(file);
-          const no = fieldNumber(cell);
-          pendingPhotoFiles.set(no,file);
-          const objectUrl = URL.createObjectURL(file);
-          setPhotoDisplay(cell,objectUrl,file.name,cell.dataset.imagePath || "",true);
-          setNotice("NO" + no + " 공정 사진을 선택했습니다. 저장 버튼을 눌러 DB에 저장해 주세요.","success");
-        }catch(error){
-          parts.input.value = "";
-          setNotice(errorMessage(error,"공정 사진을 선택하지 못했습니다."),"error");
-        }
-      });
-    }
+  return documents.filter(function(r){
+    if(customerId && r.customerSystemId !== customerId) return false;
+    if(nameKw && normalize(r.itemName).toLowerCase().indexOf(nameKw) < 0) return false;
+    if(noKw && normalize(r.itemNumber).toLowerCase().indexOf(noKw) < 0) return false;
+    return true;
+  }).sort(function(a,b){
+    return compareText(a.customerName,b.customerName) || compareText(a.itemName,b.itemName) || compareText(a.itemNumber,b.itemNumber);
   });
+}
 
-  textFields.forEach(function(cell){
-    cell.addEventListener("blur",function(){ cell.textContent = normalize(cell.innerText); });
-    cell.addEventListener("paste",function(event){
-      if(!editMode) return;
-      event.preventDefault();
-      const text = (event.clipboardData || window.clipboardData).getData("text");
-      document.execCommand("insertText",false,text);
-    });
-  });
+function closeSearchResultModal(){
+  const modal = document.getElementById("searchResultModal");
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden","true");
+  selectedSearchDocumentId = "";
+}
 
-  [itemNameInput,itemNumberInput].forEach(function(input){
-    input.addEventListener("keydown",function(event){
-      if(event.key === "Enter"){
-        event.preventDefault();
-        document.getElementById("btnSearch").click();
-      }
-    });
-  });
+function renderSearchResultPage(){
+  const body = document.getElementById("searchResultBody");
+  const total = searchResultRecords.length;
+  const totalPages = Math.max(1,Math.ceil(total / SEARCH_RESULT_PAGE_SIZE));
+  searchResultPage = Math.min(Math.max(1,searchResultPage),totalPages);
+  const start = (searchResultPage - 1) * SEARCH_RESULT_PAGE_SIZE;
+  const pageRows = searchResultRecords.slice(start,start+SEARCH_RESULT_PAGE_SIZE);
 
-  document.getElementById("btnSearch").addEventListener("click",function(){
-    const rows = matchingDocuments();
-    if(rows.length === 0){
+  body.innerHTML = "";
+  pageRows.forEach(function(r,index){
+    const tr = document.createElement("tr");
+    const checked = r.documentId === selectedSearchDocumentId;
+    if(checked) tr.classList.add("radio-selected");
+    tr.innerHTML =
+      '<td style="text-align:center"><input class="result-radio" type="radio" name="mpSearchRow" value="'+r.documentId+'" '+(checked?'checked':'')+'></td>'+
+      '<td style="text-align:center">'+(start+index+1)+'</td>'+
+      '<td>'+r.customerName+'</td><td>'+r.itemName+'</td><td>'+r.itemNumber+'</td>'+
+      '<td style="text-align:center"><span class="document-status '+(r.isCompleted?'complete':'progress')+'">'+(r.isCompleted?'완료':'진행')+'</span></td>';
+
+    const radio = tr.querySelector(".result-radio");
+    radio.onchange = async function(){
+      selectedSearchDocumentId = r.documentId;
       closeSearchResultModal();
-      setNotice("조회 조건에 해당하는 제조공정도가 없습니다.","error");
-      return;
+      await loadDocument(r);
+    };
+    tr.onclick = function(e){ if(e.target !== radio){ radio.checked = true; radio.dispatchEvent(new Event("change")); } };
+    body.appendChild(tr);
+  });
+
+  document.getElementById("searchResultPageInfo").textContent = searchResultPage+" / "+totalPages;
+  document.getElementById("searchResultPrev").disabled = searchResultPage <= 1;
+  document.getElementById("searchResultNext").disabled = searchResultPage >= totalPages;
+  document.getElementById("searchResultSummary").textContent = "조회 결과 "+total+"건 · 5건씩 표시";
+}
+
+function openSearchResultModal(rows){
+  searchResultRecords = rows.slice();
+  searchResultPage = 1;
+  selectedSearchDocumentId = "";
+  renderSearchResultPage();
+  const modal = document.getElementById("searchResultModal");
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden","false");
+  document.getElementById("searchResultTitle").focus();
+}
+
+async function cloneStorageObject(sourcePath,targetPath){
+  const d = await sb.storage.from(IMAGE_BUCKET).download(sourcePath);
+  if(d.error) throw d.error;
+  const blob = d.data;
+  const u = await sb.storage.from(IMAGE_BUCKET).upload(targetPath,blob,{
+    cacheControl:"3600",
+    upsert:false,
+    contentType:blob.type || undefined
+  });
+  if(u.error) throw u.error;
+  return targetPath;
+}
+
+function extFromPathOrBlob(path,type){
+  const p = normalize(path).toLowerCase();
+  if(p.endsWith(".png")) return "png";
+  if(p.endsWith(".webp")) return "webp";
+  if(p.endsWith(".jpeg")) return "jpg";
+  if(p.endsWith(".jpg")) return "jpg";
+  return safeFileExtensionFromType(type || "image/jpeg");
+}
+
+function sameKey(a,b){
+  return normalize(a).toLocaleLowerCase("ko-KR") === normalize(b).toLocaleLowerCase("ko-KR");
+}
+
+function findDefaultSourceDocument(){
+  const matches = documents.filter(function(r){
+    return sameKey(r.customerName,DEFAULT_SOURCE_DOCUMENT.customerName)
+      && sameKey(r.itemName,DEFAULT_SOURCE_DOCUMENT.itemName)
+      && sameKey(r.itemNumber,DEFAULT_SOURCE_DOCUMENT.itemNumber);
+  });
+
+  if(matches.length !== 1){
+    throw new Error(
+      "기준 제조공정도는 정확히 1건이어야 합니다. "
+      + DEFAULT_SOURCE_DOCUMENT.customerName+" / "
+      + DEFAULT_SOURCE_DOCUMENT.itemName+" / "
+      + DEFAULT_SOURCE_DOCUMENT.itemNumber
+      + " 현재 "+matches.length+"건"
+    );
+  }
+  return matches[0];
+}
+
+async function loadDefaultValues(){
+  // SQL/테이블 추가 없이 기존 완성 제조공정도를 매번 다시 읽는다.
+  const sourceRecord = findDefaultSourceDocument();
+
+  const r = await sb.from("manufacturing_process_values")
+    .select("field_no,field_type,text_value,image_path,is_active")
+    .eq("company_id",currentProfile.company_id)
+    .eq("manufacturing_process_system_id",sourceRecord.documentId)
+    .eq("is_active",true)
+    .order("field_no",{ascending:true});
+
+  if(r.error){
+    throw new Error(
+      "기준 제조공정도 NO1~NO75 조회 실패: "
+      + errorMessage(r.error,"manufacturing_process_values 조회 오류")
+    );
+  }
+
+  const values = r.data || [];
+  assert75(values,"기준 제조공정도");
+
+  const typeMismatchCount = values.filter(function(row){
+    const no = Number(row.field_no);
+    return fieldIsPhoto(no)
+      ? row.field_type !== "image"
+      : row.field_type !== "text";
+  }).length;
+
+  if(typeMismatchCount !== 0){
+    throw new Error("기준 제조공정도 field_type 매핑 오류 "+typeMismatchCount+"건");
+  }
+
+  defaultSourceRecord = sourceRecord;
+  defaultSourceValuesCache = cloneData(values);
+  return values;
+}
+
+async function startNew(){
+  if(!isAdmin()){
+    setNotice("신규등록은 관리자만 가능합니다.","error");
+    return;
+  }
+  setBusy(true,"(주)대호 / ROTOR SHAFT / 40950602F 기준 제조공정도 75개를 다시 읽는 중입니다.");
+  try{
+    await loadReferenceData();
+    await loadDocumentIndex();
+
+    const defaults = await loadDefaultValues();
+
+    currentMode = "new";
+    currentDocumentId = "";
+    currentItemSystemId = "";
+    currentCompleted = false;
+    loadedSnapshot = null;
+    resetNewIdentity();
+    clearPreviewUrls();
+    pendingPhotoFiles.clear();
+    currentImagePaths.clear();
+
+    await applyValues(defaults);
+    renderNewIdentity();
+    setEditMode(true);
+
+    const textFilled = defaults.filter(function(r){return r.field_type==="text" && normalize(r.text_value);}).length;
+    const imageFilled = defaults.filter(function(r){return r.field_type==="image" && normalize(r.image_path);}).length;
+    setNotice("기준 제조공정도 NO1~NO75를 다시 읽어 화면에 덮어썼습니다. 자동 입력 "+(textFilled+imageFilled)+"개(텍스트 "+textFilled+" + 이미지 "+imageFilled+"). 고객사 → 품명 → 품번을 선택하고 필요한 부분만 수정해 주세요.","success",true);
+  }catch(error){
+    console.error(error);
+    currentMode = "view";
+    setEditMode(false);
+    setNotice(errorMessage(error,"신규등록 기준 제조공정도를 불러오지 못했습니다."),"error",true);
+  }finally{
+    setBusy(false);
+  }
+}
+
+async function removeStoragePaths(paths){
+  const unique = Array.from(new Set((paths || []).filter(Boolean)));
+  if(!unique.length) return;
+  const r = await sb.storage.from(IMAGE_BUCKET).remove(unique);
+  if(r.error) throw r.error;
+}
+
+async function uploadPendingPhotos(documentId,values){
+  const uploaded = [];
+  const valueMap = new Map(values.map(function(v){return [Number(v.field_no),v];}));
+  const entries = Array.from(pendingPhotoFiles.entries()).sort(function(a,b){return a[0]-b[0];});
+
+  for(const entry of entries){
+    const no = entry[0], file = entry[1];
+    validateSelectedFile(file);
+
+    const oldPath = valueMap.get(no) ? valueMap.get(no).image_path : null;
+    const path = currentProfile.company_id+"/"+documentId+"/NO"+String(no).padStart(2,"0")+"/"+Date.now()+"_"+randomToken()+"."+safeFileExtensionFromType(file.type);
+
+    const r = await sb.storage.from(IMAGE_BUCKET).upload(path,file,{
+      cacheControl:"3600",upsert:false,contentType:file.type
+    });
+    if(r.error) throw r.error;
+
+    valueMap.get(no).image_path = path;
+    uploaded.push({fieldNo:no,newPath:path,oldPath:oldPath});
+  }
+  return uploaded;
+}
+
+async function copySourceImagesToNewDocument(documentId,sourceValues,finalValues){
+  const copied = [];
+  const sourceMap = new Map(sourceValues.map(function(v){return [Number(v.field_no),v];}));
+  const finalMap = new Map(finalValues.map(function(v){return [Number(v.field_no),v];}));
+
+  for(const no of PHOTO_FIELD_NUMBERS){
+    if(pendingPhotoFiles.has(no)) {
+      finalMap.get(no).image_path = null;
+      continue;
     }
-    openSearchResultModal(rows);
+
+    const sourcePath = sourceMap.get(no) && sourceMap.get(no).image_path;
+    if(!sourcePath){
+      finalMap.get(no).image_path = null;
+      continue;
+    }
+
+    const d = await sb.storage.from(IMAGE_BUCKET).download(sourcePath);
+    if(d.error) throw new Error("NO"+no+" 기준문서 이미지 복사 읽기 실패: "+errorMessage(d.error,"Storage 오류"));
+    const blob = d.data;
+    const target = currentProfile.company_id+"/"+documentId+"/NO"+String(no).padStart(2,"0")+"/"+Date.now()+"_"+randomToken()+"."+extFromPathOrBlob(sourcePath,blob.type);
+
+    const u = await sb.storage.from(IMAGE_BUCKET).upload(target,blob,{
+      cacheControl:"3600",upsert:false,contentType:blob.type || undefined
+    });
+    if(u.error) throw u.error;
+
+    finalMap.get(no).image_path = target;
+    copied.push(target);
+  }
+  return copied;
+}
+
+async function saveNewDocument(){
+  if(!isAdmin()) throw new Error("신규등록은 관리자만 가능합니다.");
+  if(!currentItemSystemId) throw new Error("제조공정도 양식에서 고객사명, 품명, 품번을 순서대로 선택해 주세요.");
+
+  const item = itemMap.get(currentItemSystemId);
+  if(!item || item.is_active === false) throw new Error("사용 가능한 품목을 선택해 주세요.");
+
+  const sourceValues = captureValues();
+  assert75(sourceValues,"신규 제조공정도");
+
+  const createValues = sourceValues.map(function(v){
+    return {field_no:v.field_no,text_value:fieldIsPhoto(v.field_no)?null:v.text_value,image_path:null};
   });
 
-  document.getElementById("btnEdit").addEventListener("click",function(){
-    if(currentMode !== "new" && !currentDocumentId){ setNotice("수정할 제조공정도를 먼저 조회해 주세요.","error"); return; }
-    if(!canEdit()){ setNotice("수정 권한이 없습니다.","error"); return; }
-    setEditMode(!editMode);
-    setNotice(editMode ? "수정할 문자와 공정 사진을 입력해 주세요." : "수정 입력을 종료했습니다.");
-  });
+  let documentId = "";
+  let copiedPaths = [];
+  let uploaded = [];
 
-  document.getElementById("btnSave").addEventListener("click",saveCurrentDocument);
+  try{
+    const createResult = await sb.rpc("create_manufacturing_process_diagram",{
+      p_item_system_id:currentItemSystemId,
+      p_values:createValues
+    });
+    if(createResult.error) throw createResult.error;
+    documentId = createResult.data;
+    if(!documentId) throw new Error("제조공정도 내부 ID가 반환되지 않았습니다.");
 
-  document.getElementById("btnNew").addEventListener("click",async function(){
-    if(!isAdmin()){ setNotice("신규등록은 관리자만 가능합니다.","error"); return; }
-    setBusy(true,"고객사와 품목 DB를 다시 불러오는 중입니다.");
-    try{
-      /* 작업표준서와 동일하게 신규등록을 시작할 때 기준정보를 다시 조회한다. */
+    const finalValues = cloneData(sourceValues);
+    copiedPaths = await copySourceImagesToNewDocument(documentId,sourceValues,finalValues);
+    uploaded = await uploadPendingPhotos(documentId,finalValues);
+
+    const updateResult = await sb.rpc("update_manufacturing_process_diagram",{
+      p_manufacturing_process_system_id:documentId,
+      p_values:finalValues
+    });
+    if(updateResult.error) throw updateResult.error;
+
+    return documentId;
+  }catch(error){
+    try{ await removeStoragePaths(copiedPaths.concat(uploaded.map(function(r){return r.newPath;}))); }catch(cleanupError){ console.error(cleanupError); }
+    if(documentId){
+      try{ await sb.rpc("delete_manufacturing_process_diagram",{p_manufacturing_process_system_id:documentId}); }catch(cleanupError){ console.error(cleanupError); }
+    }
+    throw error;
+  }
+}
+
+async function saveExistingDocument(){
+  if(!canEdit()) throw new Error("수정 권한이 없습니다.");
+  if(!currentDocumentId) throw new Error("수정할 제조공정도를 먼저 조회해 주세요.");
+
+  const values = captureValues();
+  assert75(values,"수정 제조공정도");
+  let uploaded = [];
+
+  try{
+    uploaded = await uploadPendingPhotos(currentDocumentId,values);
+    const r = await sb.rpc("update_manufacturing_process_diagram",{
+      p_manufacturing_process_system_id:currentDocumentId,
+      p_values:values
+    });
+    if(r.error) throw r.error;
+
+    const oldPaths = uploaded.map(function(x){return x.oldPath;}).filter(function(p){
+      return p && p.indexOf(currentProfile.company_id+"/DEFAULT/") !== 0;
+    });
+    if(oldPaths.length){
+      try{ await removeStoragePaths(oldPaths); }catch(removeError){ console.error("기존 사진 정리 실패",removeError); }
+    }
+  }catch(error){
+    try{ await removeStoragePaths(uploaded.map(function(x){return x.newPath;})); }catch(cleanupError){ console.error(cleanupError); }
+    throw error;
+  }
+}
+
+async function saveCurrentDocument(){
+  if(!editMode) return;
+  setBusy(true,currentMode === "new" ? "제조공정도를 신규 저장하는 중입니다." : "제조공정도를 수정 저장하는 중입니다.");
+  try{
+    if(currentMode === "new"){
+      const id = await saveNewDocument();
       await loadReferenceData();
       await loadDocumentIndex();
+      const record = documents.find(function(r){return r.documentId === id;});
+      pendingPhotoFiles.clear();
+      if(record) await loadDocument(record);
+      setNotice("제조공정도가 저장되었습니다.","success",true);
+    }else{
+      await saveExistingDocument();
+      pendingPhotoFiles.clear();
+      await loadDocumentIndex();
+      const record = documents.find(function(r){return r.documentId === currentDocumentId;});
+      if(record) await loadDocument(record);
+      setNotice("제조공정도가 수정 저장되었습니다.","success",true);
+    }
+  }catch(error){
+    console.error(error);
+    setNotice(errorMessage(error,"저장에 실패했습니다."),"error",true);
+  }finally{
+    setBusy(false);
+  }
+}
 
-      currentMode = "new";
+async function deleteCurrentDocument(){
+  if(!isAdmin()){ setNotice("삭제는 관리자만 가능합니다.","error"); return; }
+  if(!currentDocumentId){ setNotice("삭제할 제조공정도를 먼저 조회해 주세요.","error"); return; }
+  if(!window.confirm("현재 제조공정도를 삭제하시겠습니까?")) return;
+
+  setBusy(true,"제조공정도를 삭제하는 중입니다.");
+  try{
+    const valueResult = await sb.from("manufacturing_process_values")
+      .select("image_path")
+      .eq("company_id",currentProfile.company_id)
+      .eq("manufacturing_process_system_id",currentDocumentId)
+      .eq("field_type","image")
+      .eq("is_active",true);
+
+    if(valueResult.error) throw valueResult.error;
+    const paths = (valueResult.data || []).map(function(r){return r.image_path;}).filter(Boolean);
+
+    const d = await sb.rpc("delete_manufacturing_process_diagram",{p_manufacturing_process_system_id:currentDocumentId});
+    if(d.error) throw d.error;
+
+    try{ await removeStoragePaths(paths); }catch(storageError){ console.error("삭제 사진 정리 실패",storageError); }
+
+    currentDocumentId = "";
+    currentItemSystemId = "";
+    currentCompleted = false;
+    currentMode = "view";
+    loadedSnapshot = null;
+    clearForm();
+    setEditMode(false);
+    await loadDocumentIndex();
+    setNotice("제조공정도를 삭제했습니다.","success",true);
+  }catch(error){
+    setNotice(errorMessage(error,"삭제에 실패했습니다."),"error",true);
+  }finally{
+    setBusy(false);
+  }
+}
+
+async function completeCurrentDocument(){
+  if(!canEdit() || !currentDocumentId) return;
+  setBusy(true,"제조공정도를 완료 처리하는 중입니다.");
+  try{
+    const r = await sb.from("manufacturing_process_diagrams")
+      .update({is_completed:true,updated_at:new Date().toISOString()})
+      .eq("company_id",currentProfile.company_id)
+      .eq("manufacturing_process_system_id",currentDocumentId);
+    if(r.error) throw r.error;
+    currentCompleted = true;
+    await loadDocumentIndex();
+    updateButtonStates();
+    setNotice("제조공정도를 완료 처리했습니다.","success",true);
+  }catch(error){
+    setNotice(errorMessage(error,"완료 처리에 실패했습니다."),"error",true);
+  }finally{
+    setBusy(false);
+  }
+}
+
+photoFields.forEach(function(cell){
+  const no = Number(cell.dataset.fieldNo);
+  const input = cell.querySelector(".process-photo-input");
+  cell.addEventListener("click",function(){
+    if(!editMode || busy) return;
+    input.value = "";
+    input.click();
+  });
+  input.addEventListener("change",function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      validateSelectedFile(file);
+      setPendingPhoto(no,file);
+    }catch(error){
+      setNotice(errorMessage(error,"사진을 선택하지 못했습니다."),"error",true);
+    }
+  });
+});
+
+document.getElementById("btnSearch").addEventListener("click",function(){
+  const rows = matchingDocuments();
+  if(!rows.length){
+    closeSearchResultModal();
+    setNotice("조회 조건에 해당하는 제조공정도가 없습니다.","error");
+    return;
+  }
+  openSearchResultModal(rows);
+});
+
+document.getElementById("btnEdit").addEventListener("click",function(){
+  if(!currentDocumentId){ setNotice("수정할 제조공정도를 먼저 조회해 주세요.","error"); return; }
+  if(!canEdit()){ setNotice("수정 권한이 없습니다.","error"); return; }
+  setEditMode(true);
+  setNotice("수정할 문자와 공정 사진을 입력해 주세요.","info");
+});
+
+document.getElementById("btnSave").addEventListener("click",saveCurrentDocument);
+document.getElementById("btnNew").addEventListener("click",startNew);
+
+document.getElementById("btnReset").addEventListener("click",async function(){
+  setBusy(true,"입력폼을 초기화하는 중입니다.");
+  try{
+    if(currentMode === "new"){
+      const defaults = await loadDefaultValues();
+      resetNewIdentity();
+      clearPreviewUrls();
+      pendingPhotoFiles.clear();
+      currentImagePaths.clear();
+      await applyValues(defaults);
+      renderNewIdentity();
+      setEditMode(true);
+      setNotice("신규등록 기준 제조공정도 NO1~NO75를 다시 읽어 초기화했습니다.","success",true);
+    }else if(loadedSnapshot){
+      renderViewIdentity(loadedSnapshot.identity);
+      await applyValues(loadedSnapshot.values);
+      currentDocumentId = loadedSnapshot.documentId;
+      currentItemSystemId = loadedSnapshot.itemSystemId;
+      currentCompleted = loadedSnapshot.isCompleted === true;
+      pendingPhotoFiles.clear();
+      setEditMode(false);
+      setNotice("조회된 제조공정도로 되돌렸습니다.","success");
+    }else{
       currentDocumentId = "";
       currentItemSystemId = "";
       currentCompleted = false;
-      loadedSnapshot = null;
-      clearForm();
-      rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
-      setEditMode(true);
-      enterNewIdentityMode();
-
-      const availableItemCount = activeReferenceItems().length;
-      if(customers.length === 0){
-        setNotice("customers 테이블에서 로그인 회사의 사용중 고객사를 0건 불러왔습니다. 고객사관리의 is_active 상태와 RLS를 확인해 주세요.","error",true);
-      }else if(availableItemCount === 0){
-        setNotice("고객사 " + customers.length + "건은 불러왔지만 등록 가능한 품목이 없습니다. 아이템관리를 확인해 주세요.","error",true);
-      }else{
-        setNotice("제조공정도 양식의 고객사 → 품명 → 품번 순서로 선택해 주세요.","success",true);
-      }
-    }catch(error){
-      console.error("신규등록 기준정보 조회 실패:",error);
-      setNotice(errorMessage(error,"고객사와 품목 DB를 불러오지 못했습니다."),"error",true);
-    }finally{
-      setBusy(false);
-      if(currentMode === "new"){
-        renderNewIdentitySelects();
-        focusFormIdentitySelect("customerName");
-      }
-    }
-  });
-
-  document.getElementById("btnReset").addEventListener("click",async function(){
-    try{
-      if(loadedSnapshot && currentDocumentId){
-        await applySnapshot(cloneData(loadedSnapshot));
-        currentMode = "view";
-        setEditMode(false);
-        const record = documents.find(function(row){ return row.documentId === currentDocumentId; });
-        if(record) rebuildToolbarOptions({customerSystemId:record.customerSystemId,itemName:record.itemName,itemSystemId:record.itemSystemId});
-        setNotice("마지막으로 조회하거나 저장한 상태로 초기화했습니다.");
-      }else{
-        currentMode = "view";
-        currentDocumentId = "";
-        currentItemSystemId = "";
-        currentCompleted = false;
-        loadedSnapshot = null;
-        resetNewIdentity();
-        clearForm();
-        setEditMode(false);
-        rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
-        setNotice("입력폼을 초기화했습니다.");
-      }
-    }catch(error){ setNotice(errorMessage(error,"초기화에 실패했습니다."),"error"); }
-  });
-
-  document.getElementById("btnDelete").addEventListener("click",deleteCurrentDocument);
-  document.getElementById("btnPdf").addEventListener("click",function(){
-    if(!canPdf()){ setNotice("조회자는 PDF 저장을 사용할 수 없습니다.","error"); return; }
-
-    const originalTitle = document.title;
-    const customerName = getMetaValue("customerName");
-    const itemName = getMetaValue("itemName");
-    const itemNumber = getMetaValue("itemNumber");
-
-    const safeFilePart = function(value){
-      return normalize(value)
-        .replace(/[\\/:*?"<>|]+/g,"-")
-        .replace(/\s+/g," ")
-        .replace(/-+/g,"-")
-        .replace(/^[-\s]+|[-\s]+$/g,"");
-    };
-
-    const pdfTitleParts = [
-      "제조공정도",
-      safeFilePart(customerName),
-      safeFilePart(itemName),
-      safeFilePart(itemNumber)
-    ].filter(Boolean);
-
-    document.title = pdfTitleParts.join("-");
-
-    const restoreTitle = function(){
-      document.title = originalTitle;
-    };
-    window.addEventListener("afterprint",restoreTitle,{once:true});
-
-    /* 브라우저가 변경된 제목을 PDF 기본 파일명으로 인식한 뒤 인쇄한다. */
-    window.requestAnimationFrame(function(){
-      window.requestAnimationFrame(function(){
-        window.print();
-      });
-    });
-  });
-  document.getElementById("btnComplete").addEventListener("click",completeCurrentDocument);
-  document.getElementById("btnCloseSearchResult").addEventListener("click",closeSearchResultModal);
-  searchResultPrev.addEventListener("click",function(){
-    if(searchResultPage <= 1) return;
-    searchResultPage -= 1;
-    renderSearchResultPage();
-  });
-  searchResultNext.addEventListener("click",function(){
-    const totalPages = Math.max(1,Math.ceil(searchResultRecords.length / SEARCH_RESULT_PAGE_SIZE));
-    if(searchResultPage >= totalPages) return;
-    searchResultPage += 1;
-    renderSearchResultPage();
-  });
-  document.getElementById("searchResultModal").addEventListener("click",function(event){ if(event.target === event.currentTarget) closeSearchResultModal(); });
-  document.addEventListener("keydown",function(event){ if(event.key === "Escape") closeSearchResultModal(); });
-
-  async function initialize(){
-    setBusy(true,"로그인 및 제조공정도 DB 연결을 확인하는 중입니다.");
-    try{
-      const verified = await verifySession();
-      if(!verified) return;
-      await loadReferenceData();
-      await loadDocumentIndex();
-      currentMode = "view";
-      currentCompleted = false;
-      resetNewIdentity();
       clearForm();
       setEditMode(false);
-      rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
-
-      const mappedNumbers = textFields.concat(photoFields).map(fieldNumber).sort(function(a,b){ return a-b; });
-      const expectedNumbers = Array.from({length:75},function(_,index){ return index + 1; });
-      const mappedPhotos = photoFields.map(fieldNumber).sort(function(a,b){ return a-b; });
-      if(JSON.stringify(mappedNumbers) !== JSON.stringify(expectedNumbers) || JSON.stringify(mappedPhotos) !== JSON.stringify(PHOTO_FIELD_NUMBERS)){
-        throw new Error("NO1~NO75 또는 사진 15개 입력 매핑이 올바르지 않습니다.");
-      }
-      document.documentElement.classList.remove("auth-pending");
-      setNotice("Supabase DB 연결 완료 · 고객사 " + customers.length + "건 · 품목 " + activeReferenceItems().length + "건 · 제조공정도 " + documents.length + "건","success");
-    }catch(error){
-      console.error(error);
-      document.documentElement.classList.remove("auth-pending");
-      setNotice(errorMessage(error,"Supabase DB 연결에 실패했습니다. SQL 설치 상태를 확인해 주세요."),"error",true);
-    }finally{
-      setBusy(false);
+      setNotice("입력폼을 초기화했습니다.","success");
     }
+  }catch(error){
+    setNotice(errorMessage(error,"초기화에 실패했습니다."),"error",true);
+  }finally{
+    setBusy(false);
   }
+});
 
-  initialize();
+document.getElementById("btnDelete").addEventListener("click",deleteCurrentDocument);
+document.getElementById("btnComplete").addEventListener("click",completeCurrentDocument);
+
+document.getElementById("btnPdf").addEventListener("click",function(){
+  if(!canPdf()){ setNotice("조회자는 PDF 저장을 사용할 수 없습니다.","error"); return; }
+  const originalTitle = document.title;
+  const vals = {};
+  ["customerName","itemName","itemNumber"].forEach(function(k){
+    const cell = document.querySelector('[data-meta-key="'+k+'"]');
+    const select = cell && cell.querySelector("select");
+    vals[k] = select ? (select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : "") : normalize(cell ? cell.textContent : "");
+  });
+  const safe = function(v){ return normalize(v).replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," ").replace(/-+/g,"-").replace(/^[-\s]+|[-\s]+$/g,""); };
+  document.title = ["제조공정도",safe(vals.customerName),safe(vals.itemName),safe(vals.itemNumber)].filter(Boolean).join("-");
+  window.addEventListener("afterprint",function(){document.title=originalTitle;},{once:true});
+  requestAnimationFrame(function(){requestAnimationFrame(function(){window.print();});});
+});
+
+document.getElementById("btnCloseSearchResult").addEventListener("click",closeSearchResultModal);
+document.getElementById("searchResultModal").addEventListener("click",function(e){ if(e.target === e.currentTarget) closeSearchResultModal(); });
+document.getElementById("searchResultPrev").addEventListener("click",function(){ if(searchResultPage>1){searchResultPage--;renderSearchResultPage();} });
+document.getElementById("searchResultNext").addEventListener("click",function(){
+  const pages = Math.max(1,Math.ceil(searchResultRecords.length/SEARCH_RESULT_PAGE_SIZE));
+  if(searchResultPage<pages){searchResultPage++;renderSearchResultPage();}
+});
+document.addEventListener("keydown",function(e){ if(e.key==="Escape") closeSearchResultModal(); });
+
+async function initialize(){
+  setBusy(true,"로그인 및 제조공정도 DB 연결을 확인하는 중입니다.");
+  try{
+    const ok = await verifySession();
+    if(!ok) return;
+    await loadReferenceData();
+    await loadDocumentIndex();
+
+    const mapped = Array.from({length:75},function(_,i){return i+1;});
+    const domMapped = Array.from(document.querySelectorAll("[data-field-no]")).map(function(el){return Number(el.dataset.fieldNo);}).sort(function(a,b){return a-b;});
+    const photos = photoFields.map(function(el){return Number(el.dataset.fieldNo);}).sort(function(a,b){return a-b;});
+    if(JSON.stringify(mapped)!==JSON.stringify(domMapped) || JSON.stringify(photos)!==JSON.stringify(PHOTO_FIELD_NUMBERS)){
+      throw new Error("NO1~NO75 또는 사진 15개 입력 매핑이 올바르지 않습니다.");
+    }
+
+    currentMode = "view";
+    currentCompleted = false;
+    clearForm();
+    setEditMode(false);
+    document.documentElement.classList.remove("auth-pending");
+    setNotice("Supabase DB 연결 완료 · 고객사 "+customers.length+"건 · 품목 "+activeItems().length+"건 · 제조공정도 "+documents.length+"건","success");
+  }catch(error){
+    console.error(error);
+    document.documentElement.classList.remove("auth-pending");
+    setNotice(errorMessage(error,"Supabase DB 연결에 실패했습니다."),"error",true);
+  }finally{
+    setBusy(false);
+  }
+}
+
+initialize();
+
 })();
 </script>
 </body>
