@@ -23,25 +23,25 @@
   .file-name{margin-left:5px;color:#667085;font-size:14px;font-weight:400}
   .subtitle{margin-top:5px;color:#5f6b7a;font-size:14px}
   .main-button{
-    min-width:122px;height:42px;padding:0 16px;
-    border:1px solid #94a3b8;border-radius:8px;
-    background:#334155;color:#fff;font-weight:800;
-    box-shadow:0 2px 7px rgba(15,23,42,.16)
+    min-width:76px;height:30px;padding:0 9px;
+    border:1px solid #94a3b8;border-radius:6px;
+    background:#334155;color:#fff;font-size:12px;font-weight:800;
+    box-shadow:0 1px 4px rgba(15,23,42,.14)
   }
   .main-button:hover{background:#1e293b;border-color:#64748b}
   .toolbar{
-    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-    padding:10px 12px;margin-bottom:12px;
+    display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+    padding:7px 9px;margin-bottom:12px;
     border:1px solid #b8c3d1;border-radius:var(--radius);
     background:#eef2f7;
-    box-shadow:0 2px 8px rgba(15,23,42,.08)
+    box-shadow:0 1px 5px rgba(15,23,42,.07)
   }
   .btn{
-    min-width:88px;min-height:42px;padding:8px 15px;
-    border:1px solid #aeb9c8;border-radius:7px;
+    min-width:54px;min-height:30px;padding:4px 8px;
+    border:1px solid #aeb9c8;border-radius:5px;
     background:#fff;color:#1f2937;
-    font-size:14px;font-weight:800;white-space:nowrap;
-    box-shadow:0 1px 3px rgba(15,23,42,.08);
+    font-size:12px;font-weight:800;white-space:nowrap;
+    box-shadow:0 1px 2px rgba(15,23,42,.07);
     transition:background .15s ease,border-color .15s ease,box-shadow .15s ease,transform .05s ease
   }
   .btn:hover:not(:disabled){box-shadow:0 2px 7px rgba(15,23,42,.14);transform:translateY(-1px)}
@@ -82,9 +82,9 @@
     .title-frame{align-items:flex-start}
     .title-area h1{font-size:19px}
     .file-name{display:block;margin:3px 0 0}
-    .main-button{min-width:104px;height:40px;padding:0 10px;font-size:13px}
-    .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:9px}
-    .toolbar .btn{width:100%;min-width:0;min-height:42px;padding:7px 6px}
+    .main-button{min-width:74px;height:30px;padding:0 8px;font-size:11px}
+    .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:7px}
+    .toolbar .btn{width:100%;min-width:0;min-height:30px;padding:4px 5px;font-size:11px}
     .search-frame,.editor-grid{grid-template-columns:1fr}
     .list-frame{padding:10px}
   }
@@ -100,6 +100,12 @@
     <button class="main-button" type="button" onclick="goPrevious()">← 이전화면</button>
   </section>
 
+  <section class="search-frame" aria-label="검사장비 조회 조건">
+    <div class="field"><label for="searchLot">LOT 번호</label><input id="searchLot" placeholder="전체"></div>
+    <div class="field"><label for="searchName">측정장비명</label><input id="searchName" placeholder="전체"></div>
+    <div class="field"><label for="searchLocation">장비위치</label><input id="searchLocation" placeholder="전체"></div>
+  </section>
+
   <section class="toolbar" aria-label="검사장비 업무 버튼">
     <button id="btnNew" class="btn btn-green" type="button" onclick="startNew()">＋ 등록</button>
     <button class="btn btn-blue" type="button" onclick="searchRows()">🔍 조회</button>
@@ -108,12 +114,6 @@
     <button id="btnDelete" class="btn btn-red" type="button" onclick="deleteSelected()" disabled>▣ 삭제</button>
     <button class="btn" type="button" onclick="resetPage()">초기화</button>
     <button class="btn btn-red" type="button" onclick="savePdf()">PDF 저장</button>
-  </section>
-
-  <section class="search-frame" aria-label="검사장비 조회 조건">
-    <div class="field"><label for="searchLot">LOT 번호</label><input id="searchLot" placeholder="전체"></div>
-    <div class="field"><label for="searchName">측정장비명</label><input id="searchName" placeholder="전체"></div>
-    <div class="field"><label for="searchLocation">장비위치</label><input id="searchLocation" placeholder="전체"></div>
   </section>
 
   <div id="notice" class="notice" role="status" aria-live="polite"></div>
