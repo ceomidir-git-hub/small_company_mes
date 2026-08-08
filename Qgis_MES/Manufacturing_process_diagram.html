@@ -424,7 +424,7 @@ function setNotice(message,type,sticky){
   notice.className = "manufacturing-notice show " + (type || "info");
   clearTimeout(setNotice.timer);
   if(!sticky){
-    setNotice.timer = setTimeout(function(){ notice.className = "manufacturing-notice"; },3200);
+    setNotice.timer = setTimeout(function(){ notice.className = "manufacturing-notice"; },5000);
   }
 }
 
@@ -1058,7 +1058,7 @@ async function startNew(){
 
     const textFilled = defaults.filter(function(r){return r.field_type==="text" && normalize(r.text_value);}).length;
     const imageFilled = defaults.filter(function(r){return r.field_type==="image" && normalize(r.image_path);}).length;
-    setNotice("기준 제조공정도 NO1~NO75를 다시 읽어 화면에 덮어썼습니다. 자동 입력 "+(textFilled+imageFilled)+"개(텍스트 "+textFilled+" + 이미지 "+imageFilled+"). 고객사 → 품명 → 품번을 선택하고 필요한 부분만 수정해 주세요.","success",true);
+    setNotice("기준 제조공정도 NO1~NO75를 다시 읽어 화면에 덮어썼습니다. 자동 입력 "+(textFilled+imageFilled)+"개(텍스트 "+textFilled+" + 이미지 "+imageFilled+"). 고객사 → 품명 → 품번을 선택하고 필요한 부분만 수정해 주세요.","success");
   }catch(error){
     console.error(error);
     currentMode = "view";
@@ -1273,7 +1273,7 @@ async function deleteCurrentDocument(){
     clearForm();
     setEditMode(false);
     await loadDocumentIndex();
-    setNotice("제조공정도를 삭제했습니다.","success",true);
+    setNotice("제조공정도를 삭제했습니다.","success");
   }catch(error){
     setNotice(errorMessage(error,"삭제에 실패했습니다."),"error",true);
   }finally{
@@ -1369,7 +1369,7 @@ document.getElementById("btnReset").addEventListener("click",async function(){
       await applyValues(defaults);
       renderNewIdentity();
       setEditMode(true);
-      setNotice("신규등록 기준 제조공정도 NO1~NO75를 다시 읽어 초기화했습니다.","success",true);
+      setNotice("신규등록 기준 제조공정도 NO1~NO75를 다시 읽어 초기화했습니다.","success");
     }else if(loadedSnapshot){
       renderViewIdentity(loadedSnapshot.identity);
       await applyValues(loadedSnapshot.values);
