@@ -419,12 +419,38 @@ document.getElementById("section4").innerHTML = makeFlowTable([12,13,14,15]);
 const textFields = Array.from(document.querySelectorAll('[data-field-type="text"]'));
 const photoFields = Array.from(document.querySelectorAll('[data-field-type="image"]'));
 
+let noticeTimerId = null;
+let noticeSequence = 0;
+
+function hideNotice(){
+  if(noticeTimerId){
+    clearTimeout(noticeTimerId);
+    noticeTimerId = null;
+  }
+  notice.className = "manufacturing-notice";
+  notice.textContent = "";
+}
+
 function setNotice(message,type,sticky){
+  noticeSequence += 1;
+  const mySequence = noticeSequence;
+
+  if(noticeTimerId){
+    clearTimeout(noticeTimerId);
+    noticeTimerId = null;
+  }
+
   notice.textContent = message || "";
   notice.className = "manufacturing-notice show " + (type || "info");
-  clearTimeout(setNotice.timer);
+
   if(!sticky){
-    setNotice.timer = setTimeout(function(){ notice.className = "manufacturing-notice"; },5000);
+    noticeTimerId = setTimeout(function(){
+      if(mySequence === noticeSequence){
+        notice.className = "manufacturing-notice";
+        notice.textContent = "";
+        noticeTimerId = null;
+      }
+    },5000);
   }
 }
 
@@ -1058,7 +1084,7 @@ async function startNew(){
 
     const textFilled = defaults.filter(function(r){return r.field_type==="text" && normalize(r.text_value);}).length;
     const imageFilled = defaults.filter(function(r){return r.field_type==="image" && normalize(r.image_path);}).length;
-    setNotice("기준 제조공정도 NO1~NO75를 다시 읽어 화면에 덮어썼습니다. 자동 입력 "+(textFilled+imageFilled)+"개(텍스트 "+textFilled+" + 이미지 "+imageFilled+"). 고객사 → 품명 → 품번을 선택하고 필요한 부분만 수정해 주세요.","success");
+    setNotice("기준 제조공정도 NO1~NO75를 다시 읽어 화면에 덮어썼습니다. 자동 입력 "+(textFilled+imageFilled)+"개(텍스트 "+textFilled+" + 이미지 "+imageFilled+"). 고객사 → 품명 → 품번을 선택하고 필요한 부분만 수정해 주세요.","success",false);
   }catch(error){
     console.error(error);
     currentMode = "view";
