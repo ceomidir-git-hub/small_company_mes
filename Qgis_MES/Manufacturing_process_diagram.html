@@ -727,6 +727,26 @@
   }
   .modal th.select-column{width:60px;}
   .modal th.number-column{width:55px;}
+  .modal th.status-column{width:90px;}
+  .document-status{
+    display:inline-block;
+    min-width:54px;
+    padding:3px 7px;
+    border-radius:3px;
+    font-size:11px;
+    font-weight:700;
+    text-align:center;
+  }
+  .document-status.complete{
+    color:#166534;
+    background:#ecfdf3;
+    border:1px solid #86efac;
+  }
+  .document-status.progress{
+    color:#475467;
+    background:#f2f4f7;
+    border:1px solid #d0d5dd;
+  }
   .result-radio{
     width:15px;
     height:15px;
@@ -1070,7 +1090,7 @@
 <p class="modal-summary" id="searchResultSummary"></p>
 <div class="modal-table-scroll">
 <table>
-<thead><tr><th class="select-column">선택</th><th class="number-column">NO</th><th>고객사명</th><th>품명</th><th>품번</th></tr></thead>
+<thead><tr><th class="select-column">선택</th><th class="number-column">NO</th><th>고객사명</th><th>품명</th><th>품번</th><th class="status-column">상태</th></tr></thead>
 <tbody id="searchResultBody"></tbody>
 </table>
 </div>
@@ -2029,6 +2049,15 @@
         td.textContent = value || "-";
         tr.appendChild(td);
       });
+
+      const statusCell = document.createElement("td");
+      statusCell.style.textAlign = "center";
+      const statusBadge = document.createElement("span");
+      statusBadge.className = "document-status " + (record.isCompleted ? "complete" : "progress");
+      statusBadge.textContent = record.isCompleted ? "완료" : "진행중";
+      statusCell.appendChild(statusBadge);
+      tr.appendChild(statusCell);
+
       body.appendChild(tr);
     });
 
