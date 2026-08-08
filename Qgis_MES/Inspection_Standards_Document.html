@@ -771,95 +771,6 @@ body.search-modal-open{overflow:hidden!important}
 }
 @media print{.search-result-modal{display:none!important}}
 </style>
-<style>
-/* ============================================================
-   신규등록 - 유사 검사기준서 선택/미리보기
-   ============================================================ */
-.similar-standard-modal[hidden]{display:none!important}
-.similar-standard-modal{
-  position:fixed;inset:0;z-index:12500;display:flex;
-  align-items:flex-start;justify-content:center;
-  padding:5vh 10px 18px;background:rgba(18,25,34,.50);
-  backdrop-filter:blur(1px);
-}
-.similar-standard-dialog{
-  width:min(1180px,calc(100vw - 20px));max-height:90vh;overflow:auto;
-  border-radius:8px;background:#fff;box-shadow:0 14px 42px rgba(0,0,0,.32);
-}
-.similar-standard-head{
-  position:sticky;top:0;z-index:6;display:flex;align-items:center;
-  justify-content:space-between;gap:10px;padding:9px 12px;
-  border-bottom:1px solid #d7dbe0;background:#f5f7fa;
-}
-.similar-standard-head strong{font-size:13px}
-.similar-standard-head-actions{display:flex;align-items:center;gap:7px}
-.similar-standard-head-actions button,
-.similar-standard-actions button{
-  height:29px;padding:0 11px;border:1px solid #8f98a4;border-radius:4px;
-  background:#fff;color:#222;font-size:11px;font-weight:700;cursor:pointer;
-}
-.similar-standard-actions button.primary{
-  border-color:#5d84bc;background:#edf4ff;
-}
-.similar-standard-body{padding:10px 12px 12px}
-.similar-standard-guide{
-  margin:0 0 8px;padding:7px 9px;border:1px solid #d5dbe3;border-radius:4px;
-  background:#fafbfc;color:#465467;font-size:11px;line-height:1.45;
-}
-.similar-candidate-wrap{overflow:auto;border:1px solid #cfd5dc;border-radius:4px}
-.similar-candidate-table,
-.similar-preview-table{width:100%;border-collapse:collapse;table-layout:fixed}
-.similar-candidate-table{min-width:800px;font-size:10.5px}
-.similar-candidate-table th,
-.similar-candidate-table td{
-  padding:6px 5px;border-right:1px solid #dde1e6;border-bottom:1px solid #dde1e6;
-  text-align:center;white-space:normal;overflow-wrap:anywhere;
-}
-.similar-candidate-table th{background:#eef2f7;font-weight:700}
-.similar-candidate-table tr.selected{background:#e7f0ff}
-.similar-candidate-table tbody tr{cursor:pointer}
-.similar-candidate-table tbody tr:hover{background:#f4f7fb}
-.similar-candidate-table tbody tr.selected:hover{background:#e7f0ff}
-.similar-candidate-table th:nth-child(1){width:6%}
-.similar-candidate-table th:nth-child(2){width:9%}
-.similar-candidate-table th:nth-child(3){width:12%}
-.similar-candidate-table th:nth-child(4){width:18%}
-.similar-candidate-table th:nth-child(5){width:18%}
-.similar-candidate-table th:nth-child(6){width:18%}
-.similar-candidate-table th:nth-child(7){width:19%}
-.similar-candidate-radio{width:15px;height:15px;margin:0;vertical-align:middle;cursor:pointer}
-.similar-preview-title{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  margin-top:10px;padding:0 1px 5px;font-size:11px;font-weight:700;
-}
-.similar-preview-wrap{overflow:auto;border:1px solid #d3d7dc;border-radius:4px}
-.similar-preview-table{min-width:840px;font-size:11px}
-.similar-preview-table th,
-.similar-preview-table td{
-  padding:8px 7px;border-bottom:1px solid #e0e3e7;text-align:left;
-  white-space:normal;overflow-wrap:anywhere;vertical-align:middle;
-}
-.similar-preview-table th{background:#fafafa;font-size:11px;font-weight:700}
-.similar-preview-table th:nth-child(1),.similar-preview-table td:nth-child(1){width:6%;text-align:center}
-.similar-preview-table th:nth-child(2),.similar-preview-table td:nth-child(2){width:8%;text-align:center}
-.similar-preview-table th:nth-child(3){width:17%}
-.similar-preview-table th:nth-child(4){width:20%}
-.similar-preview-table th:nth-child(5){width:22%}
-.similar-preview-table th:nth-child(6){width:14%}
-.similar-preview-table th:nth-child(7){width:13%}
-.similar-preview-table td.spec-cell{font-weight:700}
-.similar-standard-actions{
-  position:sticky;bottom:0;z-index:5;display:flex;justify-content:flex-end;gap:6px;
-  padding:8px 12px;border-top:1px solid #d7dbe0;background:#f8f9fb;
-}
-.similar-empty{padding:18px;text-align:center;color:#68717d;font-size:11px}
-@media(max-width:650px){
-  .similar-standard-modal{padding:8px 4px}
-  .similar-standard-dialog{width:calc(100vw - 8px);max-height:96vh}
-  .similar-standard-body{padding:8px 6px}
-}
-@media print{.similar-standard-modal{display:none!important}}
-</style>
 </head>
 <body>
 <section aria-label="검사기준서 조회 및 작업" class="inspection-toolbar no-print">
@@ -968,50 +879,6 @@ body.search-modal-open{overflow:hidden!important}
 </div>
 </div>
 
-<div aria-labelledby="similarStandardTitle" aria-modal="true" class="similar-standard-modal no-print" hidden="hidden" id="similarStandardModal" role="dialog">
-  <div class="similar-standard-dialog">
-    <div class="similar-standard-head">
-      <strong id="similarStandardTitle">유사 검사기준서 선택</strong>
-      <div class="similar-standard-head-actions">
-        <span id="similarStandardCount">0건</span>
-        <button id="similarStandardClose" type="button">닫기</button>
-      </div>
-    </div>
-    <div class="similar-standard-body">
-      <p class="similar-standard-guide" id="similarStandardGuide">
-        신규 품명과 유사한 기존 검사기준서를 최근순으로 최대 5건 표시합니다. 한 건을 선택하면 아래에서 검사내용을 미리 볼 수 있습니다.
-      </p>
-      <div class="similar-candidate-wrap">
-        <table class="similar-candidate-table">
-          <thead>
-            <tr>
-              <th>선택</th><th>유사도</th><th>제정일</th><th>고객사</th><th>품명</th><th>품번</th><th>문서번호</th>
-            </tr>
-          </thead>
-          <tbody id="similarCandidateBody"></tbody>
-        </table>
-      </div>
-      <div class="similar-preview-title">
-        <span>검사항목 미리보기</span>
-        <span id="similarPreviewLabel"></span>
-      </div>
-      <div class="similar-preview-wrap">
-        <table class="similar-preview-table">
-          <thead>
-            <tr>
-              <th>NO</th><th>중요도</th><th>검사항목</th><th>규격</th><th>사용계측기</th><th>검사수량</th><th>비고</th>
-            </tr>
-          </thead>
-          <tbody id="similarPreviewBody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="similar-standard-actions">
-      <button id="similarStandardCancel" type="button">취소</button>
-      <button class="primary" id="similarStandardApply" type="button">선택 적용</button>
-    </div>
-  </div>
-</div>
 <div aria-hidden="true" class="form-loading no-print" id="formLoading">
 <div class="form-loading-box" id="formLoadingText">처리 중입니다.</div>
 </div><script>
@@ -1079,15 +946,6 @@ body.search-modal-open{overflow:hidden!important}
   const sketchStatus = document.getElementById("sketchStatus");
   const formPreparer = document.getElementById("formPreparer");
   const formApprover = document.getElementById("formApprover");
-  const similarStandardModal = document.getElementById("similarStandardModal");
-  const similarStandardCount = document.getElementById("similarStandardCount");
-  const similarStandardGuide = document.getElementById("similarStandardGuide");
-  const similarCandidateBody = document.getElementById("similarCandidateBody");
-  const similarPreviewBody = document.getElementById("similarPreviewBody");
-  const similarPreviewLabel = document.getElementById("similarPreviewLabel");
-  const similarStandardClose = document.getElementById("similarStandardClose");
-  const similarStandardCancel = document.getElementById("similarStandardCancel");
-  const similarStandardApply = document.getElementById("similarStandardApply");
 
   let currentUser = null;
   let currentProfile = null;
@@ -1098,9 +956,6 @@ body.search-modal-open{overflow:hidden!important}
   let currentDetailOrders = [];
   let currentRevisionNumbers = [];
   let searchResults = [];
-  let similarCandidates = [];
-  let selectedSimilarDocumentId = "";
-  const similarDetailMap = new Map();
   const RESULT_PAGE_SIZE = 5;
   const INACTIVITY_LIMIT_MS = 20 * 60 * 1000;
   let searchPage = 1;
@@ -1139,273 +994,8 @@ body.search-modal-open{overflow:hidden!important}
   }
 
 
-  function normalizeSimilarityText(value) {
-    return normalize(value)
-      .toUpperCase()
-      .replace(/[^0-9A-Z가-힣]+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function compactSimilarityText(value) {
-    return normalizeSimilarityText(value).replace(/\s+/g, "");
-  }
-
-  function bigrams(value) {
-    const text = compactSimilarityText(value);
-    if (!text) return [];
-    if (text.length === 1) return [text];
-    const result = [];
-    for (let index = 0; index < text.length - 1; index += 1) {
-      result.push(text.slice(index, index + 2));
-    }
-    return result;
-  }
-
-  function diceSimilarity(left, right) {
-    const leftBigrams = bigrams(left);
-    const rightBigrams = bigrams(right);
-    if (!leftBigrams.length || !rightBigrams.length) return 0;
-
-    const rightCounts = new Map();
-    rightBigrams.forEach(value => {
-      rightCounts.set(value, (rightCounts.get(value) || 0) + 1);
-    });
-
-    let matches = 0;
-    leftBigrams.forEach(value => {
-      const count = rightCounts.get(value) || 0;
-      if (count > 0) {
-        matches += 1;
-        rightCounts.set(value, count - 1);
-      }
-    });
-
-    return (2 * matches / (leftBigrams.length + rightBigrams.length)) * 100;
-  }
-
-  function itemNameSimilarity(targetName, candidateName) {
-    const target = normalizeSimilarityText(targetName);
-    const candidate = normalizeSimilarityText(candidateName);
-    if (!target || !candidate) return 0;
-
-    const targetCompact = target.replace(/\s+/g, "");
-    const candidateCompact = candidate.replace(/\s+/g, "");
-    if (targetCompact === candidateCompact) return 100;
-
-    let score = 0;
-    const shorterLength = Math.min(targetCompact.length, candidateCompact.length);
-    if (
-      shorterLength >= 3 &&
-      (targetCompact.includes(candidateCompact) || candidateCompact.includes(targetCompact))
-    ) {
-      score = 85;
-    }
-
-    const targetTokens = Array.from(new Set(target.split(" ").filter(Boolean)));
-    const candidateTokens = Array.from(new Set(candidate.split(" ").filter(Boolean)));
-    const commonTokens = targetTokens.filter(token => candidateTokens.includes(token)).length;
-    if (commonTokens > 0) {
-      const tokenScore = commonTokens / Math.max(targetTokens.length, candidateTokens.length) * 100;
-      score = Math.max(score, tokenScore);
-    }
-
-    score = Math.max(score, diceSimilarity(targetName, candidateName));
-    return Math.min(100, score);
-  }
-
   function inspectionItemName(codeId) {
     return normalize(itemCodeMap.get(codeId)?.inspection_item_name);
-  }
-
-  function closeSimilarStandardPopup() {
-    similarStandardModal.hidden = true;
-    selectedSimilarDocumentId = "";
-  }
-
-  function openSimilarStandardPopup() {
-    if (!similarCandidates.length) return;
-    similarStandardModal.hidden = false;
-    window.setTimeout(() => {
-      similarCandidateBody.querySelector('input[name="similar_standard_candidate"]:checked')?.focus();
-    }, 0);
-  }
-
-  function renderSimilarPreview(documentId) {
-    selectedSimilarDocumentId = normalize(documentId);
-    const candidate = similarCandidates.find(
-      row => row.inspection_standard_system_id === selectedSimilarDocumentId
-    );
-    const detailRows = similarDetailMap.get(selectedSimilarDocumentId) || [];
-
-    similarCandidateBody.querySelectorAll("tr[data-document-id]").forEach(row => {
-      row.classList.toggle("selected", row.dataset.documentId === selectedSimilarDocumentId);
-    });
-
-    if (!candidate) {
-      similarPreviewLabel.textContent = "";
-      similarPreviewBody.innerHTML = '<tr><td class="similar-empty" colspan="7">검사기준서를 선택해 주세요.</td></tr>';
-      return;
-    }
-
-    similarPreviewLabel.textContent = [
-      candidate.customer_name,
-      candidate.item_name,
-      candidate.item_number,
-      candidate.document_number
-    ].filter(Boolean).join(" · ");
-
-    if (!detailRows.length) {
-      similarPreviewBody.innerHTML = '<tr><td class="similar-empty" colspan="7">저장된 검사 상세항목이 없습니다.</td></tr>';
-      return;
-    }
-
-    similarPreviewBody.innerHTML = detailRows.map(row => `
-      <tr>
-        <td>${escapeHtml(row.display_order)}</td>
-        <td>${escapeHtml(row.importance_code || "")}</td>
-        <td>${escapeHtml(inspectionItemName(row.inspection_item_code_system_id))}</td>
-        <td class="spec-cell">${escapeHtml(row.specification || "")}</td>
-        <td>${escapeHtml(row.measurement_method || "")}</td>
-        <td>${escapeHtml(row.inspection_quantity || "")}</td>
-        <td>${escapeHtml(row.remarks || "")}</td>
-      </tr>
-    `).join("");
-  }
-
-  function renderSimilarCandidates() {
-    similarStandardCount.textContent = similarCandidates.length + "건";
-    similarCandidateBody.innerHTML = similarCandidates.map((candidate, index) => `
-      <tr data-document-id="${escapeHtml(candidate.inspection_standard_system_id)}"
-          class="${index === 0 ? "selected" : ""}">
-        <td><input class="similar-candidate-radio" type="radio"
-          name="similar_standard_candidate"
-          value="${escapeHtml(candidate.inspection_standard_system_id)}"
-          ${index === 0 ? "checked" : ""}></td>
-        <td>${Math.round(candidate.similarity_score)}%</td>
-        <td>${escapeHtml(candidate.established_date || "")}</td>
-        <td>${escapeHtml(candidate.customer_name || "")}</td>
-        <td>${escapeHtml(candidate.item_name || "")}</td>
-        <td>${escapeHtml(candidate.item_number || "")}</td>
-        <td>${escapeHtml(candidate.document_number || "")}</td>
-      </tr>
-    `).join("");
-
-    renderSimilarPreview(similarCandidates[0]?.inspection_standard_system_id || "");
-  }
-
-  async function searchSimilarStandards(itemName) {
-    if (mode !== "new" || !currentProfile?.company_id) return;
-
-    const targetName = normalize(itemName);
-    if (!targetName) {
-      closeSimilarStandardPopup();
-      return;
-    }
-
-    showLoading("유사 검사기준서를 찾는 중입니다.");
-    try {
-      const { data: documents, error: documentError } = await sb
-        .from(DOCUMENT_TABLE)
-        .select(
-          "inspection_standard_system_id,customer_system_id,item_system_id," +
-          "document_number,established_date,is_active"
-        )
-        .eq("company_id", currentProfile.company_id)
-        .eq("is_active", true)
-        .order("established_date", { ascending: false, nullsFirst: false });
-
-      if (documentError) throw documentError;
-
-      const ranked = (documents || [])
-        .map(documentRow => {
-          const item = itemMap.get(documentRow.item_system_id) || {};
-          const customer = customerMap.get(documentRow.customer_system_id) || {};
-          return {
-            ...documentRow,
-            item_name: normalize(item.item_name),
-            item_number: normalize(item.item_number),
-            customer_name: normalize(customer.customer_name),
-            similarity_score: itemNameSimilarity(targetName, item.item_name)
-          };
-        })
-        .filter(row => row.similarity_score >= 30)
-        .sort((left, right) => {
-          if (right.similarity_score !== left.similarity_score) {
-            return right.similarity_score - left.similarity_score;
-          }
-          return normalize(right.established_date).localeCompare(normalize(left.established_date));
-        })
-        .slice(0, 5);
-
-      similarCandidates = ranked;
-      similarDetailMap.clear();
-
-      if (!similarCandidates.length) {
-        closeSimilarStandardPopup();
-        setNotice(`품명 '${targetName}'과 유사한 기존 검사기준서가 없습니다.`, "info");
-        return;
-      }
-
-      const candidateIds = similarCandidates.map(row => row.inspection_standard_system_id);
-      const { data: details, error: detailError } = await sb
-        .from(DETAIL_TABLE)
-        .select(
-          "inspection_standard_system_id,display_order,importance_code," +
-          "inspection_item_code_system_id,specification,measurement_method," +
-          "inspection_quantity,remarks,is_active"
-        )
-        .eq("company_id", currentProfile.company_id)
-        .eq("is_active", true)
-        .in("inspection_standard_system_id", candidateIds)
-        .order("display_order", { ascending: true });
-
-      if (detailError) throw detailError;
-
-      candidateIds.forEach(id => similarDetailMap.set(id, []));
-      (details || []).forEach(row => {
-        const list = similarDetailMap.get(row.inspection_standard_system_id) || [];
-        list.push(row);
-        similarDetailMap.set(row.inspection_standard_system_id, list);
-      });
-
-      similarStandardGuide.textContent =
-        `품명 '${targetName}' 기준 유사 검사기준서 ${similarCandidates.length}건입니다. ` +
-        "유사도가 같으면 제정일자가 최근인 문서를 먼저 표시합니다.";
-      renderSimilarCandidates();
-      openSimilarStandardPopup();
-    } catch (error) {
-      console.error(error);
-      closeSimilarStandardPopup();
-      setNotice("유사 검사기준서 조회 실패: " + dbMessage(error), "error");
-    } finally {
-      hideLoading();
-    }
-  }
-
-  function copySimilarDetailRows(documentId) {
-    const detailRows = similarDetailMap.get(documentId) || [];
-    clearDetails();
-
-    detailRows.forEach(row => {
-      const order = Number(row.display_order);
-      if (order < 1 || order > 7) return;
-
-      document.querySelector(`[name="detail_${order}_importance_code"]`).value =
-        row.importance_code || "";
-      document.querySelector(`[name="detail_${order}_inspection_item_code_system_id"]`).value =
-        row.inspection_item_code_system_id || "";
-      document.querySelector(`[name="detail_${order}_specification"]`).value =
-        row.specification || "";
-      document.querySelector(`[name="detail_${order}_measurement_method"]`).value =
-        row.measurement_method || "";
-      document.querySelector(`[name="detail_${order}_inspection_quantity"]`).value =
-        row.inspection_quantity || "";
-      document.querySelector(`[name="detail_${order}_remarks"]`).value =
-        row.remarks || "";
-    });
-
-    updateAllHintStates(form);
   }
 
   function surfaceHardnessSpecificationControl() {
@@ -1456,7 +1046,7 @@ body.search-modal-open{overflow:hidden!important}
     if (!drawingHardness) {
       if (notify) {
         setNotice(
-          "선택한 품목의 작업일보에서 도면경도 규격을 찾지 못했습니다. 복사된 규격을 직접 수정할 수 있습니다.",
+          "선택한 품목의 작업일보에서 도면경도 규격을 찾지 못했습니다. 표면경도 규격을 직접 입력할 수 있습니다.",
           "info"
         );
       }
@@ -1473,45 +1063,6 @@ body.search-modal-open{overflow:hidden!important}
       );
     }
     return true;
-  }
-
-  async function applySelectedSimilarStandard() {
-    const documentId = normalize(selectedSimilarDocumentId);
-    if (!documentId) {
-      setNotice("적용할 유사 검사기준서를 선택해 주세요.", "error");
-      return;
-    }
-
-    const candidate = similarCandidates.find(
-      row => row.inspection_standard_system_id === documentId
-    );
-    if (!candidate) return;
-
-    copySimilarDetailRows(documentId);
-    closeSimilarStandardPopup();
-
-    let hardnessApplied = false;
-    try {
-      hardnessApplied = await applyLatestDrawingHardness({ notify: false });
-    } catch (error) {
-      console.error(error);
-      setNotice("작업일보 도면규격 조회 실패: " + dbMessage(error), "error");
-      return;
-    }
-
-    if (hardnessApplied) {
-      setNotice(
-        `유사 검사기준서 '${candidate.document_number || candidate.item_name}' 내용을 불러왔고, ` +
-        "표면경도 규격은 선택 품목의 최근 작업일보 도면규격으로 적용했습니다. 모든 값은 수정할 수 있습니다.",
-        "success"
-      );
-    } else {
-      setNotice(
-        `유사 검사기준서 '${candidate.document_number || candidate.item_name}' 내용을 불러왔습니다. ` +
-        "가져온 모든 값은 저장 전에 수정할 수 있습니다.",
-        "success"
-      );
-    }
   }
 
   function localDateText(date = new Date()) {
@@ -1962,6 +1513,39 @@ body.search-modal-open{overflow:hidden!important}
     }
   }
 
+  function inspectionItemCodeId(itemName) {
+    const targetName = normalize(itemName);
+    const row = itemCodes.find(code =>
+      code.is_active !== false &&
+      normalize(code.inspection_item_name) === targetName
+    );
+    return row?.inspection_item_code_system_id || "";
+  }
+
+  function applyNewDocumentDefaults() {
+    const defaults = [
+      { order: 1, importance: "A", item: "표면경도", specification: "", measurement: "로크웰경도기", quantity: "1EA/LOT", remarks: "" },
+      { order: 2, importance: "A", item: "경도깊이", specification: "1~3mm", measurement: "", quantity: "1EA/LOT", remarks: "" },
+      { order: 3, importance: "B", item: "경화구간", specification: "", measurement: "V/C", quantity: "1EA/LOT", remarks: "" },
+      { order: 4, importance: "B", item: "외관", specification: "발청없을것", measurement: "육안", quantity: "전수", remarks: "" },
+      { order: 5, importance: "B", item: "외관", specification: "용융상태없을것", measurement: "육안", quantity: "전수", remarks: "" }
+    ];
+
+    clearDetails();
+
+    defaults.forEach(row => {
+      document.querySelector(`[name="detail_${row.order}_importance_code"]`).value = row.importance;
+      document.querySelector(`[name="detail_${row.order}_inspection_item_code_system_id"]`).value =
+        inspectionItemCodeId(row.item);
+      document.querySelector(`[name="detail_${row.order}_specification"]`).value = row.specification;
+      document.querySelector(`[name="detail_${row.order}_measurement_method"]`).value = row.measurement;
+      document.querySelector(`[name="detail_${row.order}_inspection_quantity"]`).value = row.quantity;
+      document.querySelector(`[name="detail_${row.order}_remarks"]`).value = row.remarks;
+    });
+
+    updateAllHintStates(form);
+  }
+
   function clearRevisions() {
     for (let row = 1; row <= 4; row += 1) {
       const date = document.querySelector(`[name="revision_${row}_revision_date"]`);
@@ -1977,28 +1561,6 @@ body.search-modal-open{overflow:hidden!important}
 
   function clearApprovals() {
   
-  similarCandidateBody.addEventListener("change", event => {
-    const radio = event.target.closest('input[name="similar_standard_candidate"]');
-    if (!radio) return;
-    renderSimilarPreview(radio.value);
-  });
-
-  similarCandidateBody.addEventListener("click", event => {
-    const row = event.target.closest("tr[data-document-id]");
-    if (!row) return;
-    const radio = row.querySelector('input[name="similar_standard_candidate"]');
-    if (!radio) return;
-    radio.checked = true;
-    renderSimilarPreview(radio.value);
-  });
-
-  similarStandardApply.addEventListener("click", applySelectedSimilarStandard);
-  similarStandardClose.addEventListener("click", closeSimilarStandardPopup);
-  similarStandardCancel.addEventListener("click", closeSimilarStandardPopup);
-  similarStandardModal.addEventListener("click", event => {
-    if (event.target === similarStandardModal) closeSimilarStandardPopup();
-  });
-
   [formPreparer, formApprover].forEach(select => {
       select.value = "";
       const entry = approvalEntry(select);
@@ -2044,15 +1606,15 @@ body.search-modal-open{overflow:hidden!important}
 
   function startNew() {
     closeSearchPopup();
-    closeSimilarStandardPopup();
     clearFormData({ keepSearch: true });
     formEstablishedDate.value = localDateText();
     syncAutomaticDates();
 
     setMode("new");
+    applyNewDocumentDefaults();
     formCustomerId.focus();
     setNotice(
-      "신규작성 모드입니다. 고객사 → 품명 → 품번을 선택하고 내용을 입력한 후 저장하세요.",
+      "신규작성 모드입니다. 기본 검사 5행을 적용했습니다. 고객사 → 품명 → 품번을 선택하면 최근 작업일보의 도면규격을 표면경도 규격에 적용합니다. 모든 값은 수정할 수 있습니다.",
       "info"
     );
   }
@@ -2073,7 +1635,6 @@ body.search-modal-open{overflow:hidden!important}
 
   function resetScreen() {
     closeSearchPopup();
-    closeSimilarStandardPopup();
     clearFormData({ keepSearch: false });
     setMode("view");
     setNotice("조회조건과 입력화면을 초기화했습니다.", "success");
@@ -2828,13 +2389,9 @@ body.search-modal-open{overflow:hidden!important}
     formDocumentNumber.value = "";
   });
 
-  formItemName.addEventListener("change", async () => {
+  formItemName.addEventListener("change", () => {
     updateFormItemNumbers();
     formDocumentNumber.value = "";
-
-    if (mode === "new" && normalize(formItemName.value)) {
-      await searchSimilarStandards(formItemName.value);
-    }
   });
 
   formItemId.addEventListener("change", async () => {
@@ -2890,12 +2447,7 @@ body.search-modal-open{overflow:hidden!important}
   });
 
   document.addEventListener("keydown", event => {
-    if (event.key !== "Escape") return;
-    if (!similarStandardModal.hidden) {
-      closeSimilarStandardPopup();
-      return;
-    }
-    if (!searchResultModal.hidden) {
+    if (event.key === "Escape" && !searchResultModal.hidden) {
       closeSearchPopup();
     }
   });
