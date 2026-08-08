@@ -68,9 +68,23 @@
   .action-message{ min-height:20px; margin:-2px 0 10px; font-size:12px; font-weight:600; color:var(--sub); }
   .action-message.success{ color:var(--green); }
   .action-message.error{ color:var(--red); }
-  .status-link{ text-decoration:none; font-weight:700; }
+  .status-link{
+    border:0; background:transparent; padding:0; margin:0; font:inherit;
+    text-decoration:none; font-weight:700; cursor:pointer;
+  }
+  .status-link:hover{ text-decoration:underline; }
   .status-complete{ color:var(--green); }
   .status-missing{ color:var(--red); font-weight:700; }
+  .pagination{
+    display:flex; align-items:center; justify-content:center; flex-wrap:wrap;
+    gap:4px; min-height:34px; padding:8px 4px 2px;
+  }
+  .pagination button{
+    min-width:30px; height:28px; padding:0 8px; border:1px solid var(--border);
+    border-radius:4px; background:#fff; color:#374151; font-size:12px; font-weight:700; cursor:pointer;
+  }
+  .pagination button:hover{ background:#eef2ff; border-color:#9bb3e8; }
+  .pagination button.active{ background:var(--blue); border-color:var(--blue); color:#fff; cursor:default; }
   .sortable{
     background:none; color:#fff; border:0; padding:0; margin:0; width:100%;
     font:inherit; font-weight:600; cursor:pointer;
@@ -192,10 +206,11 @@
         </tfoot>
       </table>
     </div>
+    <div class="pagination" id="pagination" aria-label="조회 결과 페이지"></div>
     <div class="note-box">
       <b>안내사항</b><br>
       · 최초작업일은 같은 회사·고객사·품명·품번 조합의 작업일 중 가장 빠른 날짜(MIN 작업일)입니다.<br>
-      · <b>작성완료</b>를 클릭하면 해당 문서 화면으로 이동합니다.
+      · <b>미작성</b> 또는 <b>작성완료</b>를 클릭하면 해당 문서 양식으로 이동합니다.
     </div>
   </div>
 </div>
@@ -213,29 +228,14 @@ const PRODUCTION_TABLE = "Total_Production_DB";
 const ITEMS_TABLE = "items";
 const CUSTOMERS_TABLE = "customers";
 
-/* 실제 프로젝트 테이블명을 우선 1순위로 사용하고, 후보명을 순차 점검 */
-const DOC_SOURCES = {
-  controlPlan: {
-    tables:["control_plan_documents","control_plan_document"],
-    file:"control_plan.html"
-  },
-  manufacturing: {
-    tables:["manufacturing_process_documents","manufacturing_process_diagrams","manufacturing_process_document"],
-    file:"Manufacturing_process_diagram.html"
-  },
-  inspectionStandard: {
-    tables:["inspection_standard_documents"],
-    file:"Inspection_Standards_Document.html"
-  },
-  inspectionReport: {
-    tables:[PRODUCTION_TABLE],
-    file:"Inspection_Report.html"
-  },
-  workStandard: {
-    tables:["work_standard_documents"],
-    file:"Work_Standards_Document.html"
-  }
-};
+/* 관리문서 화면 파일명 */
+const DOC_SOURCES = Object.freeze({
+  controlPlan: { file:"control_plan.html" },
+  manufacturing: { file:"Manufacturing_process_diagram.html" },
+  inspectionStandard: { file:"Inspection_Standards_Document.html" },
+  inspectionReport: { file:"Inspection_Report.html" },
+  workStandard: { file:"Work_Standards_Document.html" }
+});
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
@@ -247,11 +247,13 @@ let masterProducts = {};
 let currentRows = [];
 let sortAscending = true;
 let itemIndexMap = new Map();
+const PAGE_SIZE = 10;
+let currentPage = 1;
 let docIndex = {
-  controlPlan:new Set(),
-  manufacturing:new Set(),
-  inspectionStandard:new Set(),
-  workStandard:new Set()
+  controlPlan:{ exists:new Set(), completed:new Set() },
+  manufacturing:{ exists:new Set(), completed:new Set() },
+  inspectionStandard:{ exists:new Set(), completed:new Set() },
+  workStandard:{ exists:new Set(), completed:new Set() }
 };
 
 function redirectToLogin() { window.location.replace(LOGIN_PAGE_URL); }
@@ -334,7 +336,7 @@ async function fetchAllRows(tableName, selectColumns, applyQuery) {
 async function loadMasterData() {
   const [customerRows, itemRows] = await Promise.all([
     fetchAllRows(CUSTOMERS_TABLE, "customer_system_id,customer_name,is_active", (query) => query.eq("is_active", true).order("customer_name", { ascending:true })),
-    fetchAllRows(ITEMS_TABLE, "item_system_id,customer_system_id,item_name,item_number,control_plan_number,is_active", (query) => query.eq("is_active", true).order("item_name", { ascending:true }).order("item_number", { ascending:true }))
+    fetchAllRows(ITEMS_TABLE, "item_system_id,customer_system_id,item_name,item_number,control_plan_number,manufacturing_process_number,inspection_standard_number,work_standard_number,is_active", (query) => query.eq("is_active", true).order("item_name", { ascending:true }).order("item_number", { ascending:true }))
   ]);
 
   const customerNameById = new Map();
@@ -358,7 +360,10 @@ async function loadMasterData() {
       customer_name: customerName,
       item_name: itemName,
       item_number: itemNumber,
-      control_plan_number: normalize(row.control_plan_number)
+      control_plan_number: normalize(row.control_plan_number),
+      manufacturing_process_number: normalize(row.manufacturing_process_number),
+      inspection_standard_number: normalize(row.inspection_standard_number),
+      work_standard_number: normalize(row.work_standard_number)
     });
   });
 
@@ -440,7 +445,7 @@ async function loadApproverEmployeeIds() {
     .filter(Boolean));
 }
 
-async function loadControlPlanCompletedNumbers() {
+async function loadControlPlanIndex() {
   const [plans, approvals] = await Promise.all([
     fetchAllRows("control_plans", "control_plan_system_id,plan_no,is_active", (query) => query.eq("is_active", true)),
     fetchAllRows("control_plan_approvals", "control_plan_system_id,approval_role,approver_name,signature_storage_path,is_active", (query) =>
@@ -451,21 +456,25 @@ async function loadControlPlanCompletedNumbers() {
     .filter(row => normalize(row.signature_storage_path))
     .map(row => normalize(row.control_plan_system_id))
     .filter(Boolean));
-  return new Set(plans
+  const exists = new Set(plans.map(row => normalize(row.plan_no)).filter(Boolean));
+  const completed = new Set(plans
     .filter(row => approvedIds.has(normalize(row.control_plan_system_id)))
     .map(row => normalize(row.plan_no))
     .filter(Boolean));
+  return { exists, completed };
 }
 
-async function loadManufacturingCompletedItems() {
+async function loadManufacturingIndex() {
   const rows = await fetchAllRows("manufacturing_process_diagrams", "item_system_id,is_completed,is_active", (query) =>
-    query.eq("is_active", true).eq("is_completed", true)
+    query.eq("is_active", true)
   );
-  return new Set(rows.map(row => normalize(row.item_system_id)).filter(Boolean));
+  return {
+    exists:new Set(rows.map(row => normalize(row.item_system_id)).filter(Boolean)),
+    completed:new Set(rows.filter(row => row.is_completed === true).map(row => normalize(row.item_system_id)).filter(Boolean))
+  };
 }
 
-async function loadInspectionStandardCompletedItems(approverEmployeeIds) {
-  if (!approverEmployeeIds.size) return new Set();
+async function loadInspectionStandardIndex(approverEmployeeIds) {
   const [documents, approvals] = await Promise.all([
     fetchAllRows("inspection_standard_documents", "inspection_standard_system_id,item_system_id,is_active", (query) => query.eq("is_active", true)),
     fetchAllRows("inspection_standard_approvals", "inspection_standard_system_id,approval_stage,employee_system_id", (query) => query.eq("approval_stage", "APPROVER"))
@@ -474,14 +483,16 @@ async function loadInspectionStandardCompletedItems(approverEmployeeIds) {
     .filter(row => approverEmployeeIds.has(normalize(row.employee_system_id)))
     .map(row => normalize(row.inspection_standard_system_id))
     .filter(Boolean));
-  return new Set(documents
-    .filter(row => approvedDocumentIds.has(normalize(row.inspection_standard_system_id)))
-    .map(row => normalize(row.item_system_id))
-    .filter(Boolean));
+  return {
+    exists:new Set(documents.map(row => normalize(row.item_system_id)).filter(Boolean)),
+    completed:new Set(documents
+      .filter(row => approvedDocumentIds.has(normalize(row.inspection_standard_system_id)))
+      .map(row => normalize(row.item_system_id))
+      .filter(Boolean))
+  };
 }
 
-async function loadWorkStandardCompletedItems(approverEmployeeIds) {
-  if (!approverEmployeeIds.size) return new Set();
+async function loadWorkStandardIndex(approverEmployeeIds) {
   const [documents, revisions] = await Promise.all([
     fetchAllRows("work_standard_documents", "work_standard_system_id,item_system_id,is_active", (query) => query.eq("is_active", true)),
     fetchAllRows("work_standard_revisions", "work_standard_system_id,approver_employee_system_id,is_active", (query) => query.eq("is_active", true))
@@ -490,52 +501,44 @@ async function loadWorkStandardCompletedItems(approverEmployeeIds) {
     .filter(row => approverEmployeeIds.has(normalize(row.approver_employee_system_id)))
     .map(row => normalize(row.work_standard_system_id))
     .filter(Boolean));
-  return new Set(documents
-    .filter(row => approvedDocumentIds.has(normalize(row.work_standard_system_id)))
-    .map(row => normalize(row.item_system_id))
-    .filter(Boolean));
+  return {
+    exists:new Set(documents.map(row => normalize(row.item_system_id)).filter(Boolean)),
+    completed:new Set(documents
+      .filter(row => approvedDocumentIds.has(normalize(row.work_standard_system_id)))
+      .map(row => normalize(row.item_system_id))
+      .filter(Boolean))
+  };
 }
 
 async function loadDocumentIndexes() {
   const approverEmployeeIds = await loadApproverEmployeeIds();
-  const [controlPlanNumbers, manufacturingSet, inspectionSet, workStandardSet] = await Promise.all([
-    loadControlPlanCompletedNumbers(),
-    loadManufacturingCompletedItems(),
-    loadInspectionStandardCompletedItems(approverEmployeeIds),
-    loadWorkStandardCompletedItems(approverEmployeeIds)
+  const [controlPlan, manufacturing, inspectionStandard, workStandard] = await Promise.all([
+    loadControlPlanIndex(),
+    loadManufacturingIndex(),
+    loadInspectionStandardIndex(approverEmployeeIds),
+    loadWorkStandardIndex(approverEmployeeIds)
   ]);
-  docIndex = {
-    controlPlan: controlPlanNumbers,
-    manufacturing: manufacturingSet,
-    inspectionStandard: inspectionSet,
-    workStandard: workStandardSet
-  };
+  docIndex = { controlPlan, manufacturing, inspectionStandard, workStandard };
 }
 
-function buildDocUrl(fileName, row) {
-  const params = new URLSearchParams({
-    customer_name: row.customer_name,
-    item_name: row.item_name,
-    item_number: row.item_number,
-    item_system_id: row.item_system_id || ""
-  });
-  return `./${fileName}?${params.toString()}`;
+function rowKey(row) {
+  return companyItemKey(row.customer_name, row.item_name, row.item_number);
 }
 
-function makeStatusHtml(exists, fileName, row) {
-  if (!exists) return '<span class="status-missing">미작성</span>';
-  const url = buildDocUrl(fileName, row);
-  return `<a class="status-link status-complete" href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">작성완료</a>`;
+function makeStatusHtml(docType, isCompleted, row) {
+  const label = isCompleted ? "작성완료" : "미작성";
+  const statusClass = isCompleted ? "status-complete" : "status-missing";
+  return `<button type="button" class="status-link doc-status-button ${statusClass}" data-doc-type="${escapeAttr(docType)}" data-row-key="${escapeAttr(rowKey(row))}">${label}</button>`;
 }
 
 function buildStatusRow(row) {
   return {
     ...row,
-    control_plan_status: makeStatusHtml(row.has_control_plan, DOC_SOURCES.controlPlan.file, row),
-    manufacturing_status: makeStatusHtml(row.has_manufacturing, DOC_SOURCES.manufacturing.file, row),
-    inspection_standard_status: makeStatusHtml(row.has_inspection_standard, DOC_SOURCES.inspectionStandard.file, row),
-    inspection_report_status: makeStatusHtml(row.has_inspection_report, DOC_SOURCES.inspectionReport.file, row),
-    work_standard_status: makeStatusHtml(row.has_work_standard, DOC_SOURCES.workStandard.file, row)
+    control_plan_status: makeStatusHtml("controlPlan", row.has_control_plan, row),
+    manufacturing_status: makeStatusHtml("manufacturing", row.has_manufacturing, row),
+    inspection_standard_status: makeStatusHtml("inspectionStandard", row.has_inspection_standard, row),
+    inspection_report_status: makeStatusHtml("inspectionReport", row.has_inspection_report, row),
+    work_standard_status: makeStatusHtml("workStandard", row.has_work_standard, row)
   };
 }
 
@@ -619,30 +622,40 @@ async function searchData() {
       const current = grouped.get(key);
       if (workDate && (!current.first_work_date || workDate < current.first_work_date)) {
         current.first_work_date = workDate;
+        current.has_inspection_report = reportExists;
         if (materialName) current.material_name = materialName;
       } else if (!current.material_name && materialName) {
         current.material_name = materialName;
       }
-      current.has_inspection_report = current.has_inspection_report || reportExists;
     });
 
     currentRows = Array.from(grouped.values()).map(row => {
       const itemSystemId = normalize(row.item_system_id);
       const itemInfo = itemIndexMap.get(companyItemKey(row.customer_name, row.item_name, row.item_number)) || {};
       const controlPlanNumber = normalize(itemInfo.control_plan_number);
-      const hasControlPlan = controlPlanNumber ? docIndex.controlPlan.has(controlPlanNumber) : false;
-      const hasManufacturing = itemSystemId ? docIndex.manufacturing.has(itemSystemId) : false;
-      const hasInspectionStandard = itemSystemId ? docIndex.inspectionStandard.has(itemSystemId) : false;
-      const hasWorkStandard = itemSystemId ? docIndex.workStandard.has(itemSystemId) : false;
+      const existsControlPlan = controlPlanNumber ? docIndex.controlPlan.exists.has(controlPlanNumber) : false;
+      const hasControlPlan = controlPlanNumber ? docIndex.controlPlan.completed.has(controlPlanNumber) : false;
+      const existsManufacturing = itemSystemId ? docIndex.manufacturing.exists.has(itemSystemId) : false;
+      const hasManufacturing = itemSystemId ? docIndex.manufacturing.completed.has(itemSystemId) : false;
+      const existsInspectionStandard = itemSystemId ? docIndex.inspectionStandard.exists.has(itemSystemId) : false;
+      const hasInspectionStandard = itemSystemId ? docIndex.inspectionStandard.completed.has(itemSystemId) : false;
+      const existsWorkStandard = itemSystemId ? docIndex.workStandard.exists.has(itemSystemId) : false;
+      const hasWorkStandard = itemSystemId ? docIndex.workStandard.completed.has(itemSystemId) : false;
       return buildStatusRow({
         ...row,
+        control_plan_number: controlPlanNumber,
+        exists_control_plan: existsControlPlan,
         has_control_plan: hasControlPlan,
+        exists_manufacturing: existsManufacturing,
         has_manufacturing: hasManufacturing,
+        exists_inspection_standard: existsInspectionStandard,
         has_inspection_standard: hasInspectionStandard,
+        exists_work_standard: existsWorkStandard,
         has_work_standard: hasWorkStandard
       });
     });
 
+    currentPage = 1;
     sortCurrentRows();
     renderTable();
     setActionMessage(`조회 완료: ${currentRows.length}건`, "success");
@@ -661,14 +674,21 @@ function renderTable() {
 
   if (!currentRows.length) {
     tbody.innerHTML = '<tr><td colspan="11" class="empty-msg">조회된 데이터가 없습니다.</td></tr>';
+    currentPage = 1;
+    renderPagination();
     updateSummary();
     return;
   }
 
-  currentRows.forEach((row, index) => {
+  const totalPages = Math.max(1, Math.ceil(currentRows.length / PAGE_SIZE));
+  currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = currentRows.slice(startIndex, startIndex + PAGE_SIZE);
+
+  pageRows.forEach((row, pageIndex) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${index + 1}</td>
+      <td>${startIndex + pageIndex + 1}</td>
       <td>${escapeHtml(row.first_work_date)}</td>
       <td>${escapeHtml(row.customer_name)}</td>
       <td>${escapeHtml(row.item_name)}</td>
@@ -683,13 +703,265 @@ function renderTable() {
     tbody.appendChild(tr);
   });
 
+  renderPagination();
   updateSummary();
+}
+
+function renderPagination() {
+  const pagination = document.getElementById("pagination");
+  pagination.innerHTML = "";
+  if (!currentRows.length) return;
+
+  const totalPages = Math.ceil(currentRows.length / PAGE_SIZE);
+  if (totalPages <= 1) return;
+
+  for (let page = 1; page <= totalPages; page += 1) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = String(page);
+    button.className = page === currentPage ? "active" : "";
+    button.setAttribute("aria-label", `${page}페이지`);
+    if (page === currentPage) button.setAttribute("aria-current", "page");
+    button.addEventListener("click", () => {
+      if (page === currentPage) return;
+      currentPage = page;
+      renderTable();
+      document.getElementById("dataTable").scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+    pagination.appendChild(button);
+  }
 }
 
 function updateSummary() {
   document.getElementById("summaryText").innerHTML = `총 <b>${currentRows.length}</b>건 조회됨`;
   document.getElementById("tfootSummary").textContent = `총 ${currentRows.length}건`;
 }
+
+function findCurrentRowByKey(key) {
+  return currentRows.find(row => rowKey(row) === key) || null;
+}
+
+function docExistsForType(docType, row) {
+  if (docType === "controlPlan") return row.exists_control_plan === true;
+  if (docType === "manufacturing") return row.exists_manufacturing === true;
+  if (docType === "inspectionStandard") return row.exists_inspection_standard === true;
+  if (docType === "workStandard") return row.exists_work_standard === true;
+  return true;
+}
+
+function waitForChild(child, predicate, timeoutMs = 30000, intervalMs = 150) {
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      if (!child || child.closed) {
+        window.clearInterval(timer);
+        reject(new Error("문서 창이 닫혔습니다."));
+        return;
+      }
+      try {
+        const value = predicate(child);
+        if (value) {
+          window.clearInterval(timer);
+          resolve(value);
+          return;
+        }
+      } catch (error) {
+        /* 새 창이 로드되는 동안 DOM 접근이 잠시 실패할 수 있어 다음 주기에 다시 확인 */
+      }
+      if (Date.now() - startedAt >= timeoutMs) {
+        window.clearInterval(timer);
+        reject(new Error("문서 자동조회 준비 시간이 초과되었습니다."));
+      }
+    }, intervalMs);
+  });
+}
+
+function dispatchChange(element) {
+  const targetWindow = element?.ownerDocument?.defaultView || window;
+  element.dispatchEvent(new targetWindow.Event("change", { bubbles:true }));
+}
+
+function setSelectByText(select, wantedText) {
+  if (!select) return false;
+  const wanted = normalize(wantedText);
+  const option = Array.from(select.options || []).find(item => normalize(item.textContent) === wanted);
+  if (!option) return false;
+  select.value = option.value;
+  dispatchChange(select);
+  return true;
+}
+
+function setSelectByValue(select, wantedValue) {
+  if (!select) return false;
+  const wanted = normalize(wantedValue);
+  const option = Array.from(select.options || []).find(item => normalize(item.value) === wanted);
+  if (!option) return false;
+  select.value = option.value;
+  dispatchChange(select);
+  return true;
+}
+
+async function autoOpenControlPlan(child, row) {
+  const btnLoad = await waitForChild(child, win => {
+    const button = win.document.getElementById("btnLoad");
+    return button && !button.disabled ? button : null;
+  });
+  btnLoad.click();
+
+  const lookupCustomer = await waitForChild(child, win => {
+    const modal = win.document.getElementById("lookupModal");
+    const select = win.document.getElementById("lookupCustomer");
+    return modal?.classList.contains("open") && select && select.options.length > 1 ? select : null;
+  });
+  if (!setSelectByText(lookupCustomer, row.customer_name)) throw new Error("관리계획서 고객사를 찾지 못했습니다.");
+
+  const lookupItemName = await waitForChild(child, win => {
+    const select = win.document.getElementById("lookupItemName");
+    return select && Array.from(select.options).some(option => normalize(option.value) === normalize(row.item_name)) ? select : null;
+  });
+  if (!setSelectByValue(lookupItemName, row.item_name)) throw new Error("관리계획서 품명을 찾지 못했습니다.");
+
+  const lookupItemNumber = await waitForChild(child, win => {
+    const select = win.document.getElementById("lookupItemNumber");
+    return select && Array.from(select.options).some(option => normalize(option.value) === normalize(row.item_number)) ? select : null;
+  });
+  if (!setSelectByValue(lookupItemNumber, row.item_number)) throw new Error("관리계획서 품번을 찾지 못했습니다.");
+
+  const resultRow = await waitForChild(child, win => win.document.querySelector("#lookupResultBody tr[data-plan-id]"));
+  resultRow.click();
+  const applyButton = child.document.getElementById("btnLookupApply");
+  if (!applyButton || applyButton.disabled) throw new Error("관리계획서 선택 버튼을 사용할 수 없습니다.");
+  applyButton.click();
+}
+
+async function autoOpenManufacturing(child, row) {
+  const customerSelect = await waitForChild(child, win => {
+    const select = win.document.getElementById("toolbarCustomerSelect");
+    const button = win.document.getElementById("btnSearch");
+    return select && button && !button.disabled && select.options.length > 1 ? select : null;
+  });
+  if (!setSelectByText(customerSelect, row.customer_name)) throw new Error("제조공정도 고객사를 찾지 못했습니다.");
+
+  const itemNameInput = child.document.getElementById("toolbarItemNameInput");
+  const itemNumberInput = child.document.getElementById("toolbarItemNumberInput");
+  itemNameInput.value = row.item_name;
+  itemNumberInput.value = row.item_number;
+  child.document.getElementById("btnSearch").click();
+
+  const radio = await waitForChild(child, win => win.document.querySelector('#searchResultBody input[name="manufacturing_process_result"]'));
+  radio.checked = true;
+  dispatchChange(radio);
+}
+
+async function autoOpenInspectionStandard(child, row) {
+  const customerSelect = await waitForChild(child, win => {
+    const select = win.document.getElementById("searchCustomerId");
+    const button = win.document.getElementById("btnSearch");
+    return select && button && !button.disabled && select.options.length > 1 ? select : null;
+  });
+  if (!setSelectByText(customerSelect, row.customer_name)) throw new Error("검사기준서 고객사를 찾지 못했습니다.");
+
+  child.document.getElementById("searchItemName").value = row.item_name;
+  child.document.getElementById("searchItemNumber").value = row.item_number;
+  child.document.getElementById("btnSearch").click();
+
+  const radio = await waitForChild(child, win => win.document.querySelector('#searchResultBody input[name="inspection_standard_result"]'));
+  radio.checked = true;
+  dispatchChange(radio);
+}
+
+async function autoOpenWorkStandard(child, row) {
+  const customerSelect = await waitForChild(child, win => {
+    const select = win.document.getElementById("toolbarCustomerSelect");
+    const button = win.document.getElementById("btnSearch");
+    return select && button && !button.disabled && select.options.length > 1 ? select : null;
+  });
+  if (!setSelectByText(customerSelect, row.customer_name)) throw new Error("작업표준서 고객사를 찾지 못했습니다.");
+
+  const itemNameSelect = await waitForChild(child, win => {
+    const select = win.document.getElementById("toolbarItemNameSelect");
+    return select && Array.from(select.options).some(option => normalize(option.value) === normalize(row.item_name)) ? select : null;
+  });
+  if (!setSelectByValue(itemNameSelect, row.item_name)) throw new Error("작업표준서 품명을 찾지 못했습니다.");
+
+  const itemNumberSelect = await waitForChild(child, win => {
+    const select = win.document.getElementById("toolbarItemNumberSelect");
+    return select && Array.from(select.options).some(option => normalize(option.value) === normalize(row.item_number)) ? select : null;
+  });
+  if (!setSelectByValue(itemNumberSelect, row.item_number)) throw new Error("작업표준서 품번을 찾지 못했습니다.");
+
+  child.document.getElementById("btnSearch").click();
+
+  /* 정상은 1건이라 바로 로드된다. 혹시 조회 팝업이 열리는 경우에도 첫 행을 선택한다. */
+  window.setTimeout(() => {
+    try {
+      const firstRow = child.document.querySelector("#searchResultModal.open #searchResultBody tr");
+      if (firstRow) firstRow.click();
+    } catch (error) {
+      console.warn("작업표준서 조회 팝업 보조 선택 실패:", error);
+    }
+  }, 500);
+}
+
+async function autoOpenInspectionReport(child, row) {
+  const dateInput = await waitForChild(child, win => {
+    const input = win.document.getElementById("q-date");
+    const queryButton = Array.from(win.document.querySelectorAll("button")).find(button =>
+      (button.getAttribute("onclick") || "").includes("queryByDate")
+    );
+    return input && queryButton ? input : null;
+  });
+  dateInput.value = row.first_work_date;
+  child.document.getElementById("q-lot").value = "";
+  child.document.getElementById("q-customer").value = row.customer_name;
+  child.document.getElementById("q-product").value = row.item_name;
+  child.document.getElementById("q-dwg").value = row.item_number;
+
+  const queryButton = Array.from(child.document.querySelectorAll("button")).find(button =>
+    (button.getAttribute("onclick") || "").includes("queryByDate")
+  );
+  if (!queryButton) throw new Error("열처리성적서 조회 버튼을 찾지 못했습니다.");
+  queryButton.click();
+}
+
+async function openManagedDocument(docType, row) {
+  const source = DOC_SOURCES[docType];
+  if (!source) return;
+
+  const child = window.open(`./${source.file}`, "_blank");
+  if (!child) {
+    alert("팝업이 차단되었습니다. 브라우저에서 이 사이트의 팝업을 허용해 주세요.");
+    return;
+  }
+
+  /* 열처리성적서 미작성은 사용자가 요청한 대로 양식만 연다. */
+  if (docType === "inspectionReport" && row.has_inspection_report !== true) return;
+
+  /* 나머지 4개 문서는 저장된 문서 자체가 없으면 빈 양식만 연다. */
+  if (docType !== "inspectionReport" && !docExistsForType(docType, row)) return;
+
+  try {
+    if (docType === "controlPlan") await autoOpenControlPlan(child, row);
+    else if (docType === "manufacturing") await autoOpenManufacturing(child, row);
+    else if (docType === "inspectionStandard") await autoOpenInspectionStandard(child, row);
+    else if (docType === "inspectionReport") await autoOpenInspectionReport(child, row);
+    else if (docType === "workStandard") await autoOpenWorkStandard(child, row);
+  } catch (error) {
+    console.error(`${docType} 자동조회 오류:`, error);
+    setActionMessage(`문서는 열렸지만 자동조회에 실패했습니다: ${dbErrorMessage(error)}`, "error");
+  }
+}
+
+document.getElementById("tbody").addEventListener("click", event => {
+  const button = event.target.closest(".doc-status-button");
+  if (!button) return;
+  const row = findCurrentRowByKey(button.dataset.rowKey);
+  if (!row) {
+    setActionMessage("선택한 행 정보를 찾지 못했습니다. 다시 조회해 주세요.", "error");
+    return;
+  }
+  void openManagedDocument(button.dataset.docType, row);
+});
 
 function csvEscape(v) {
   const s = String(v == null ? "" : v);
@@ -890,7 +1162,12 @@ function buildPrintSumRowHtml() {
 document.getElementById("btnSearch").addEventListener("click", searchData);
 document.getElementById("btnCsv").addEventListener("click", exportCSV);
 document.getElementById("btnPdf").addEventListener("click", exportPDF);
-document.getElementById("sortFirstWorkDate").addEventListener("click", () => { sortAscending = !sortAscending; sortCurrentRows(); renderTable(); });
+document.getElementById("sortFirstWorkDate").addEventListener("click", () => {
+  sortAscending = !sortAscending;
+  currentPage = 1;
+  sortCurrentRows();
+  renderTable();
+});
 
 document.getElementById("btnReset").addEventListener("click", () => {
   const range = monthRange();
@@ -903,9 +1180,11 @@ document.getElementById("btnReset").addEventListener("click", () => {
   refreshProductSelect();
   refreshPartNoSelect();
   sortAscending = true;
+  currentPage = 1;
   currentRows = [];
   updateTitle(range.from, range.to);
   document.getElementById("tbody").innerHTML = '<tr><td colspan="11" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>';
+  renderPagination();
   document.getElementById("sortFirstWorkDate").textContent = "최초작업일 ▲";
   updateSummary();
   setActionMessage("초기화를 완료했습니다.", "success");
