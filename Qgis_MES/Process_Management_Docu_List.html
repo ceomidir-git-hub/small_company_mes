@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리문서현황 | HeatPro MES</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --blue:#1a56db; --blue-dark:#123a99; --gray-bg:#f3f4f6; --border:#d1d5db;
+    --text:#111827; --sub:#6b7280; --red:#dc2626; --green:#059669;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Malgun Gothic','Segoe UI',sans-serif; background:var(--gray-bg);
+    color:var(--text); min-height:100vh;
+  }
+  .container{ max-width:1600px; margin:0 auto; padding:14px; width:100%; }
+  header{ margin-bottom:10px; }
+  header h1{ font-size:20px; margin:0 0 2px 0; color:var(--blue-dark); text-align:left; }
+  header h1 .title-suffix{ font-size:0.5em; font-weight:400; color:var(--sub); margin-left:6px; }
+  header .sub{ font-size:12px; color:var(--sub); }
+  .filter-bar{
+    background:#fff; border:1px solid var(--border); border-radius:7px; padding:8px 10px;
+    display:flex; flex-wrap:wrap; gap:7px; align-items:flex-end; margin-bottom:9px;
+  }
+  .filter-item{ display:flex; flex-direction:column; gap:2px; }
+  .filter-item label{ font-size:11px; color:var(--sub); }
+  .filter-item input, .filter-item select{
+    padding:4px 6px; border:1px solid var(--border); border-radius:4px; font-size:12px; background:#fff; min-height:29px;
+  }
+  .filter-item.range{ flex-direction:row; align-items:center; gap:4px; }
+  .filter-item.range > div{ display:flex; flex-direction:column; gap:2px; }
+  .filter-sep{ color:var(--sub); padding-top:15px; }
+  .btn{
+    padding:5px 10px; border-radius:4px; border:1px solid var(--border); background:#fff;
+    font-size:12px; cursor:pointer; white-space:nowrap; min-height:29px;
+  }
+  .btn:hover{ background:#f3f4f6; }
+  .btn-primary{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .btn-primary:hover{ background:var(--blue-dark); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .action-bar{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    margin-bottom:7px;
+  }
+  .summary{ font-size:13px; color:var(--sub); }
+  .summary b{ color:var(--text); }
+  .action-buttons{ display:flex; gap:8px; flex-wrap:wrap; }
+  #doc-container{ background:#fff; border-radius:7px; padding:10px; border:1px solid var(--border); }
+  .doc-title{ text-align:center; font-size:16px; font-weight:700; margin-bottom:7px; color:var(--blue-dark); }
+  .table-wrap{ width:100%; overflow-x:hidden; }
+  table{ width:100%; min-width:0; border-collapse:collapse; font-size:11px; table-layout:fixed; }
+  #dataTable th, #dataTable td{ min-width:0 !important; max-width:none; }
+  thead th{
+    position:sticky; top:0; background:var(--blue); color:#fff; font-weight:600;
+    padding:6px 3px; border:1px solid #234; text-align:center; white-space:normal; line-height:1.15; word-break:keep-all;
+  }
+  tbody td{ padding:5px 3px; border:1px solid var(--border); text-align:center; white-space:normal; line-height:1.2; overflow-wrap:anywhere; }
+  tbody tr:nth-child(even){ background:#fafafa; }
+  tfoot td{
+    padding:6px 3px; border:1px solid var(--border); text-align:center; font-weight:700;
+    background:#eef2ff; color:var(--blue-dark);
+  }
+  .empty-msg{ text-align:center; color:var(--sub); padding:30px; font-size:13px; }
+  .action-message{ min-height:20px; margin:-2px 0 10px; font-size:12px; font-weight:600; color:var(--sub); }
+  .action-message.success{ color:var(--green); }
+  .action-message.error{ color:var(--red); }
+  .status-link{ text-decoration:none; font-weight:700; }
+  .status-complete{ color:var(--green); }
+  .status-missing{ color:var(--red); font-weight:700; }
+  .sortable{
+    background:none; color:#fff; border:0; padding:0; margin:0; width:100%;
+    font:inherit; font-weight:600; cursor:pointer;
+  }
+  .sortable:hover{ text-decoration:underline; }
+  #dataTable th:nth-child(1), #dataTable td:nth-child(1){ width:4.5%; }
+  #dataTable th:nth-child(2), #dataTable td:nth-child(2){ width:8.0%; }
+  #dataTable th:nth-child(3), #dataTable td:nth-child(3){ width:10.0%; }
+  #dataTable th:nth-child(4), #dataTable td:nth-child(4){ width:11.0%; }
+  #dataTable th:nth-child(5), #dataTable td:nth-child(5){ width:11.0%; }
+  #dataTable th:nth-child(6), #dataTable td:nth-child(6){ width:7.0%; }
+  #dataTable th:nth-child(7), #dataTable td:nth-child(7),
+  #dataTable th:nth-child(8), #dataTable td:nth-child(8),
+  #dataTable th:nth-child(9), #dataTable td:nth-child(9),
+  #dataTable th:nth-child(10), #dataTable td:nth-child(10),
+  #dataTable th:nth-child(11), #dataTable td:nth-child(11){ width:9.7%; }
+  #loadingOverlay{
+    position:fixed; inset:0; background:rgba(255,255,255,0.75); display:none;
+    align-items:center; justify-content:center; font-size:15px; color:var(--blue-dark); z-index:999;
+  }
+  .note-box{
+    margin-top:10px; padding:10px 12px; background:#f8fbff; border:1px solid #d6e4ff; border-radius:6px;
+    font-size:12px; color:#374151;
+  }
+  .note-box b{ color:#123a99; }
+  @media (max-width:768px){
+    header h1{ font-size:16px; }
+    .filter-bar{ flex-direction:row; align-items:flex-end; padding:7px 8px; gap:6px; }
+    .filter-item{ flex:1 1 30%; min-width:92px; }
+    .filter-item.range{ flex:1 1 100%; }
+    .filter-bar .btn{ flex:0 0 auto; }
+    .container{ padding:8px; }
+    table{ font-size:9px; }
+    thead th, tbody td, tfoot td{ padding-left:1px; padding-right:1px; }
+  }
+  #printRoot{ position:fixed; left:-99999px; top:0; background:#fff; }
+  #printRoot table{ border-collapse:collapse; }
+  #printRoot th, #printRoot td{ border:1px solid #888; padding:5px 4px; font-size:13px; text-align:center; white-space:nowrap; }
+  #printRoot thead th{ background:#1a56db; color:#fff; }
+  #printRoot tfoot td{ background:#eef2ff; font-weight:700; }
+  #printRoot .print-title{ font-size:18px; font-weight:700; text-align:center; margin-bottom:8px; color:#123a99; }
+  #printRoot .print-page{ font-size:10px; text-align:right; color:#666; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1 id="pageTitle">관리문서현황</h1>
+    <div class="sub">HeatPro MES · 공정관리문서 · Process_Management_Docu_List.html</div>
+  </header>
+
+  <div class="filter-bar">
+    <div class="filter-item range">
+      <div>
+        <label>작업기간(시작)</label>
+        <input type="date" id="fFrom">
+      </div>
+      <span class="filter-sep">~</span>
+      <div>
+        <label>작업기간(종료)</label>
+        <input type="date" id="fTo">
+      </div>
+    </div>
+    <div class="filter-item">
+      <label>고객사</label>
+      <select id="fCustomer"><option value="">전체</option></select>
+    </div>
+    <div class="filter-item">
+      <label>품명</label>
+      <select id="fProduct"><option value="">전체</option></select>
+    </div>
+    <div class="filter-item">
+      <label>품번</label>
+      <select id="fPartNo"><option value="">전체</option></select>
+    </div>
+    <div class="filter-item">
+      <label>재질</label>
+      <select id="fMaterial"><option value="">전체</option></select>
+    </div>
+    <button class="btn btn-primary" id="btnSearch">🔍 조회</button>
+    <button class="btn" id="btnReset">초기화</button>
+  </div>
+
+  <div class="action-bar">
+    <div class="summary" id="summaryText">조회 버튼을 눌러 데이터를 불러오세요.</div>
+    <div class="action-buttons">
+      <button class="btn" id="btnCsv">⬇ CSV 다운로드</button>
+      <button class="btn" id="btnPdf">🖨 PDF 다운로드</button>
+    </div>
+  </div>
+  <div id="actionMessage" class="action-message" role="status" aria-live="polite"></div>
+
+  <div id="doc-container">
+    <div class="doc-title" id="docTitle">관리문서현황</div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>번호</th>
+            <th><button type="button" class="sortable" id="sortFirstWorkDate">최초작업일 ▲</button></th>
+            <th>고객사</th>
+            <th>품명</th>
+            <th>품번</th>
+            <th>재질</th>
+            <th>관리계획서</th>
+            <th>제조공정도</th>
+            <th>검사기준서</th>
+            <th>열처리성적서</th>
+            <th>작업표준서</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="11" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="11" id="tfootSummary">총 0건</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="note-box">
+      <b>안내사항</b><br>
+      · 최초작업일은 같은 회사·고객사·품명·품번 조합의 작업일 중 가장 빠른 날짜(MIN 작업일)입니다.<br>
+      · <b>작성완료</b>를 클릭하면 해당 문서 화면으로 이동합니다.
+    </div>
+  </div>
+</div>
+
+<div id="loadingOverlay">⏳ 처리 중입니다...</div>
+<div id="printRoot"></div>
+
+<script>
+"use strict";
+
+const SUPABASE_URL = "https://enxtgbyslnryxvfpjdkc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
+const LOGIN_PAGE_URL = "../index.html";
+const PRODUCTION_TABLE = "Total_Production_DB";
+const ITEMS_TABLE = "items";
+const CUSTOMERS_TABLE = "customers";
+
+/* 실제 프로젝트 테이블명을 우선 1순위로 사용하고, 후보명을 순차 점검 */
+const DOC_SOURCES = {
+  controlPlan: {
+    tables:["control_plan_documents","control_plan_document"],
+    file:"control_plan.html"
+  },
+  manufacturing: {
+    tables:["manufacturing_process_documents","manufacturing_process_diagrams","manufacturing_process_document"],
+    file:"Manufacturing_process_diagram.html"
+  },
+  inspectionStandard: {
+    tables:["inspection_standard_documents"],
+    file:"Inspection_Standards_Document.html"
+  },
+  inspectionReport: {
+    tables:[PRODUCTION_TABLE],
+    file:"Inspection_Report.html"
+  },
+  workStandard: {
+    tables:["work_standard_documents"],
+    file:"Work_Standards_Document.html"
+  }
+};
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+});
+
+let currentUser = null;
+let currentProfile = null;
+let masterProducts = {};
+let currentRows = [];
+let sortAscending = true;
+let itemIndexMap = new Map();
+let docIndex = {
+  controlPlan:new Set(),
+  manufacturing:new Set(),
+  inspectionStandard:new Set(),
+  workStandard:new Set()
+};
+
+function redirectToLogin() { window.location.replace(LOGIN_PAGE_URL); }
+function normalize(v){ return String(v == null ? "" : v).trim(); }
+function normKey(v){ return normalize(v).toUpperCase(); }
+function escapeHtml(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+function dbErrorMessage(error){ return error?.message || error?.details || error?.hint || String(error || "알 수 없는 오류"); }
+function dateText(v){ return normalize(v); }
+function cmpText(a,b){ return normKey(a).localeCompare(normKey(b), "ko"); }
+function companyItemKey(customerName,itemName,itemNumber){
+  return [normKey(customerName), normKey(itemName), normKey(itemNumber)].join("||");
+}
+
+function showLoading(msg){ const el = document.getElementById("loadingOverlay"); el.textContent = msg || "⏳ 처리 중입니다..."; el.style.display = "flex"; }
+function hideLoading(){ document.getElementById("loadingOverlay").style.display = "none"; }
+function setActionMessage(message, type){ const el = document.getElementById("actionMessage"); el.textContent = message || ""; el.className = "action-message" + (type ? " " + type : ""); }
+
+function monthRange(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  const f = x => x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0");
+  return { from:f(first), to:f(last) };
+}
+
+async function verifyCompanyAccess() {
+  const { data:userData, error:userError } = await sb.auth.getUser();
+  const user = userData && userData.user;
+  if (userError || !user) {
+    redirectToLogin();
+    return false;
+  }
+
+  const { data:profile, error:profileError } = await sb
+    .from("profiles")
+    .select("company_id,is_active")
+    .eq("user_id", user.id)
+    .single();
+
+  if (profileError || !profile || profile.is_active !== true || !profile.company_id) {
+    console.error("회사 권한 확인 실패:", profileError);
+    await sb.auth.signOut({ scope:"local" });
+    redirectToLogin();
+    return false;
+  }
+
+  currentUser = user;
+  currentProfile = profile;
+  return true;
+}
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") redirectToLogin();
+});
+
+async function fetchAllRows(tableName, selectColumns, applyQuery) {
+  const pageSize = 1000;
+  let start = 0;
+  let resultRows = [];
+  while (true) {
+    let query = sb
+      .from(tableName)
+      .select(selectColumns)
+      .eq("company_id", currentProfile.company_id);
+    query = applyQuery ? applyQuery(query) : query;
+    query = query.range(start, start + pageSize - 1);
+    const { data, error } = await query;
+    if (error) throw error;
+    const pageRows = data || [];
+    resultRows = resultRows.concat(pageRows);
+    if (pageRows.length < pageSize) break;
+    start += pageSize;
+  }
+  return resultRows;
+}
+
+async function loadMasterData() {
+  const [customerRows, itemRows] = await Promise.all([
+    fetchAllRows(CUSTOMERS_TABLE, "customer_system_id,customer_name,is_active", (query) => query.eq("is_active", true).order("customer_name", { ascending:true })),
+    fetchAllRows(ITEMS_TABLE, "item_system_id,customer_system_id,item_name,item_number,is_active", (query) => query.eq("is_active", true).order("item_name", { ascending:true }).order("item_number", { ascending:true }))
+  ]);
+
+  const customerNameById = new Map();
+  customerRows.forEach(row => customerNameById.set(normalize(row.customer_system_id), normalize(row.customer_name)));
+
+  const customers = new Set();
+  masterProducts = {};
+  itemIndexMap = new Map();
+
+  itemRows.forEach(row => {
+    const customerName = customerNameById.get(normalize(row.customer_system_id));
+    const itemName = normalize(row.item_name);
+    const itemNumber = normalize(row.item_number);
+    if (!customerName || !itemName || !itemNumber) return;
+    customers.add(customerName);
+    if (!masterProducts[customerName]) masterProducts[customerName] = {};
+    if (!masterProducts[customerName][itemName]) masterProducts[customerName][itemName] = [];
+    if (!masterProducts[customerName][itemName].includes(itemNumber)) masterProducts[customerName][itemName].push(itemNumber);
+    itemIndexMap.set(companyItemKey(customerName, itemName, itemNumber), {
+      item_system_id: normalize(row.item_system_id),
+      customer_name: customerName,
+      item_name: itemName,
+      item_number: itemNumber
+    });
+  });
+
+  fillSelect("fCustomer", Array.from(customers).sort((a,b) => cmpText(a,b)));
+  refreshProductSelect();
+  refreshPartNoSelect();
+}
+
+async function loadMaterialMaster() {
+  const rows = await fetchAllRows(PRODUCTION_TABLE, "material_name,is_active", (query) => query.eq("is_active", true));
+  const materials = Array.from(new Set(rows.map(row => normalize(row.material_name)).filter(Boolean))).sort((a,b) => cmpText(a,b));
+  fillSelect("fMaterial", materials);
+}
+
+function fillSelect(id, list) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">전체</option>' + list.map(v => `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`).join("");
+  sel.value = list.includes(cur) ? cur : "";
+}
+
+function refreshProductSelect() {
+  const customer = document.getElementById("fCustomer").value;
+  const names = new Set();
+  if (customer && masterProducts[customer]) {
+    Object.keys(masterProducts[customer]).forEach(name => names.add(name));
+  } else {
+    Object.keys(masterProducts).forEach(customerName => {
+      Object.keys(masterProducts[customerName] || {}).forEach(name => names.add(name));
+    });
+  }
+  fillSelect("fProduct", Array.from(names).sort((a,b) => cmpText(a,b)));
+}
+
+function refreshPartNoSelect() {
+  const customer = document.getElementById("fCustomer").value;
+  const product = document.getElementById("fProduct").value;
+  const partNos = new Set();
+  if (customer && masterProducts[customer]) {
+    if (product && masterProducts[customer][product]) {
+      masterProducts[customer][product].forEach(partNo => partNos.add(partNo));
+    } else {
+      Object.values(masterProducts[customer]).forEach(list => list.forEach(partNo => partNos.add(partNo)));
+    }
+  } else {
+    Object.keys(masterProducts).forEach(customerName => {
+      Object.keys(masterProducts[customerName] || {}).forEach(itemName => {
+        if (!product || itemName === product) {
+          masterProducts[customerName][itemName].forEach(partNo => partNos.add(partNo));
+        }
+      });
+    });
+  }
+  fillSelect("fPartNo", Array.from(partNos).sort((a,b) => cmpText(a,b)));
+}
+
+document.getElementById("fCustomer").addEventListener("change", () => { refreshProductSelect(); refreshPartNoSelect(); });
+document.getElementById("fProduct").addEventListener("change", refreshPartNoSelect);
+
+function updateTitle(from, to) {
+  let title = "관리문서현황";
+  if (from && to) title = `관리문서현황 (${from} ~ ${to})`;
+  document.getElementById("pageTitle").innerHTML = `${escapeHtml(title)}<span class="title-suffix">_Process_Management_Docu_List.html</span>`;
+  document.getElementById("docTitle").textContent = title;
+  document.title = title + " | HeatPro MES";
+}
+
+function hasInspectionReportData(row) {
+  const keys = [
+    "inspection_result","p1","p2","p3","hardening_depth","core_hardness",
+    "hardening_depth_p1","hardening_depth_p2","hardening_depth_p3",
+    "core_hardness_p1","core_hardness_p2","core_hardness_p3",
+    "inspection_structure_standard","inspection_distortion_standard","inspection_crack_standard",
+    "inspection_report_special_notes","inspected_by"
+  ];
+  return keys.some(key => normalize(row[key]));
+}
+
+async function fetchDocIndexByCandidates(candidates) {
+  for (const tableName of candidates) {
+    try {
+      const rows = await fetchAllRows(tableName, "item_system_id,is_active", (query) => query.eq("is_active", true));
+      return new Set(rows.map(row => normalize(row.item_system_id)).filter(Boolean));
+    } catch (error) {
+      console.warn("문서 테이블 점검 실패:", tableName, error);
+    }
+  }
+  return new Set();
+}
+
+async function loadDocumentIndexes() {
+  const [controlPlanSet, manufacturingSet, inspectionSet, workStandardSet] = await Promise.all([
+    fetchDocIndexByCandidates(DOC_SOURCES.controlPlan.tables),
+    fetchDocIndexByCandidates(DOC_SOURCES.manufacturing.tables),
+    fetchDocIndexByCandidates(DOC_SOURCES.inspectionStandard.tables),
+    fetchDocIndexByCandidates(DOC_SOURCES.workStandard.tables)
+  ]);
+  docIndex = {
+    controlPlan: controlPlanSet,
+    manufacturing: manufacturingSet,
+    inspectionStandard: inspectionSet,
+    workStandard: workStandardSet
+  };
+}
+
+function buildDocUrl(fileName, row) {
+  const params = new URLSearchParams({
+    customer_name: row.customer_name,
+    item_name: row.item_name,
+    item_number: row.item_number,
+    item_system_id: row.item_system_id || ""
+  });
+  return `./${fileName}?${params.toString()}`;
+}
+
+function makeStatusHtml(exists, fileName, row) {
+  if (!exists) return '<span class="status-missing">미작성</span>';
+  const url = buildDocUrl(fileName, row);
+  return `<a class="status-link status-complete" href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">작성완료</a>`;
+}
+
+function buildStatusRow(row) {
+  return {
+    ...row,
+    control_plan_status: makeStatusHtml(row.has_control_plan, DOC_SOURCES.controlPlan.file, row),
+    manufacturing_status: makeStatusHtml(row.has_manufacturing, DOC_SOURCES.manufacturing.file, row),
+    inspection_standard_status: makeStatusHtml(row.has_inspection_standard, DOC_SOURCES.inspectionStandard.file, row),
+    inspection_report_status: makeStatusHtml(row.has_inspection_report, DOC_SOURCES.inspectionReport.file, row),
+    work_standard_status: makeStatusHtml(row.has_work_standard, DOC_SOURCES.workStandard.file, row)
+  };
+}
+
+function compareDateAsc(a,b) {
+  const da = dateText(a.first_work_date);
+  const db = dateText(b.first_work_date);
+  if (da < db) return -1;
+  if (da > db) return 1;
+  const c1 = cmpText(a.customer_name, b.customer_name); if (c1) return c1;
+  const c2 = cmpText(a.item_name, b.item_name); if (c2) return c2;
+  return cmpText(a.item_number, b.item_number);
+}
+
+function sortCurrentRows() {
+  currentRows.sort((a,b) => sortAscending ? compareDateAsc(a,b) : compareDateAsc(b,a));
+  document.getElementById("sortFirstWorkDate").textContent = `최초작업일 ${sortAscending ? "▲" : "▼"}`;
+}
+
+async function searchData() {
+  if (!currentProfile) {
+    alert("로그인 회사 정보를 확인할 수 없습니다.");
+    return;
+  }
+
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+  const customer = document.getElementById("fCustomer").value;
+  const product = document.getElementById("fProduct").value;
+  const partNo = document.getElementById("fPartNo").value;
+  const material = document.getElementById("fMaterial").value;
+
+  updateTitle(from, to);
+  showLoading("조회 중입니다...");
+
+  try {
+    await loadDocumentIndexes();
+
+    const selectColumns = [
+      "production_system_id","created_at","work_date","customer_name","item_name","item_number","material_name",
+      "inspection_result","p1","p2","p3","hardening_depth","core_hardness",
+      "hardening_depth_p1","hardening_depth_p2","hardening_depth_p3",
+      "core_hardness_p1","core_hardness_p2","core_hardness_p3",
+      "inspection_structure_standard","inspection_distortion_standard","inspection_crack_standard",
+      "inspection_report_special_notes","inspected_by","is_active"
+    ].join(",");
+
+    const productionRows = await fetchAllRows(PRODUCTION_TABLE, selectColumns, (query) => {
+      let filtered = query.eq("is_active", true);
+      if (from) filtered = filtered.gte("work_date", from);
+      if (to) filtered = filtered.lte("work_date", to);
+      if (customer) filtered = filtered.eq("customer_name", customer);
+      if (product) filtered = filtered.eq("item_name", product);
+      if (partNo) filtered = filtered.eq("item_number", partNo);
+      if (material) filtered = filtered.eq("material_name", material);
+      return filtered.order("work_date", { ascending:true }).order("created_at", { ascending:true }).order("production_system_id", { ascending:true });
+    });
+
+    const grouped = new Map();
+    productionRows.forEach(row => {
+      const customerName = normalize(row.customer_name);
+      const itemName = normalize(row.item_name);
+      const itemNumber = normalize(row.item_number);
+      if (!customerName || !itemName || !itemNumber) return;
+      const key = companyItemKey(customerName, itemName, itemNumber);
+      const workDate = normalize(row.work_date);
+      const materialName = normalize(row.material_name);
+      const reportExists = hasInspectionReportData(row);
+      if (!grouped.has(key)) {
+        const itemInfo = itemIndexMap.get(key) || {};
+        grouped.set(key, {
+          customer_name: customerName,
+          item_name: itemName,
+          item_number: itemNumber,
+          material_name: materialName,
+          first_work_date: workDate,
+          item_system_id: normalize(itemInfo.item_system_id),
+          has_inspection_report: reportExists
+        });
+        return;
+      }
+      const current = grouped.get(key);
+      if (workDate && (!current.first_work_date || workDate < current.first_work_date)) {
+        current.first_work_date = workDate;
+        if (materialName) current.material_name = materialName;
+      } else if (!current.material_name && materialName) {
+        current.material_name = materialName;
+      }
+      current.has_inspection_report = current.has_inspection_report || reportExists;
+    });
+
+    currentRows = Array.from(grouped.values()).map(row => {
+      const itemSystemId = normalize(row.item_system_id);
+      const hasControlPlan = itemSystemId ? docIndex.controlPlan.has(itemSystemId) : false;
+      const hasManufacturing = itemSystemId ? docIndex.manufacturing.has(itemSystemId) : false;
+      const hasInspectionStandard = itemSystemId ? docIndex.inspectionStandard.has(itemSystemId) : false;
+      const hasWorkStandard = itemSystemId ? docIndex.workStandard.has(itemSystemId) : false;
+      return buildStatusRow({
+        ...row,
+        has_control_plan: hasControlPlan,
+        has_manufacturing: hasManufacturing,
+        has_inspection_standard: hasInspectionStandard,
+        has_work_standard: hasWorkStandard
+      });
+    });
+
+    sortCurrentRows();
+    renderTable();
+    setActionMessage(`조회 완료: ${currentRows.length}건`, "success");
+  } catch (error) {
+    console.error(error);
+    setActionMessage("조회 실패: " + dbErrorMessage(error), "error");
+    alert("조회 중 오류가 발생했습니다: " + dbErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderTable() {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  if (!currentRows.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-msg">조회된 데이터가 없습니다.</td></tr>';
+    updateSummary();
+    return;
+  }
+
+  currentRows.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${escapeHtml(row.first_work_date)}</td>
+      <td>${escapeHtml(row.customer_name)}</td>
+      <td>${escapeHtml(row.item_name)}</td>
+      <td>${escapeHtml(row.item_number)}</td>
+      <td>${escapeHtml(row.material_name)}</td>
+      <td>${row.control_plan_status}</td>
+      <td>${row.manufacturing_status}</td>
+      <td>${row.inspection_standard_status}</td>
+      <td>${row.inspection_report_status}</td>
+      <td>${row.work_standard_status}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateSummary();
+}
+
+function updateSummary() {
+  document.getElementById("summaryText").innerHTML = `총 <b>${currentRows.length}</b>건 조회됨`;
+  document.getElementById("tfootSummary").textContent = `총 ${currentRows.length}건`;
+}
+
+function csvEscape(v) {
+  const s = String(v == null ? "" : v);
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function exportCSV() {
+  if (!currentRows.length) {
+    alert("다운로드할 데이터가 없습니다.");
+    return;
+  }
+  const headers = ["번호","최초작업일","고객사","품명","품번","재질","관리계획서","제조공정도","검사기준서","열처리성적서","작업표준서"];
+  const lines = [headers.map(csvEscape).join(",")];
+  currentRows.forEach((row, index) => {
+    lines.push([
+      index + 1,
+      row.first_work_date,
+      row.customer_name,
+      row.item_name,
+      row.item_number,
+      row.material_name,
+      row.has_control_plan ? "작성완료" : "미작성",
+      row.has_manufacturing ? "작성완료" : "미작성",
+      row.has_inspection_standard ? "작성완료" : "미작성",
+      row.has_inspection_report ? "작성완료" : "미작성",
+      row.has_work_standard ? "작성완료" : "미작성"
+    ].map(csvEscape).join(","));
+  });
+  const csvContent = "\ufeff" + lines.join("\r\n");
+  const blob = new Blob([csvContent], { type:"text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const from = document.getElementById("fFrom").value || "";
+  const to = document.getElementById("fTo").value || "";
+  a.download = `관리문서현황_${from}_${to}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  setActionMessage("CSV 다운로드를 완료했습니다.", "success");
+}
+
+async function exportPDF() {
+  if (!currentRows.length) {
+    alert("다운로드할 데이터가 없습니다.");
+    return;
+  }
+
+  const btn = document.getElementById("btnPdf");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "PDF 생성 중...";
+  showLoading("PDF 생성 중입니다...");
+
+  try {
+    const titleText = document.getElementById("docTitle").textContent;
+    const printRoot = document.getElementById("printRoot");
+    printRoot.innerHTML = "";
+    const printWidthPx = 1500;
+    const pdf = new window.jspdf.jsPDF({ orientation:"landscape", unit:"mm", format:"a4" });
+    const pageWidthMm = pdf.internal.pageSize.getWidth();
+    const pageHeightMm = pdf.internal.pageSize.getHeight();
+    const marginMm = 8;
+    const usableWidthMm = pageWidthMm - marginMm * 2;
+    const usableHeightMm = pageHeightMm - marginMm * 2;
+    const usableHeightPx = usableHeightMm * (printWidthPx / usableWidthMm);
+
+    const measureWrap = document.createElement("div");
+    measureWrap.style.width = printWidthPx + "px";
+    measureWrap.innerHTML = `
+      <div class="print-title">${escapeHtml(titleText)}</div>
+      <table style="width:100%;">
+        <thead><tr>${buildPrintHeaderCells()}</tr></thead>
+        <tbody>${currentRows.map((row, index) => buildPrintRowHtml(row, index)).join("")}</tbody>
+      </table>`;
+    printRoot.appendChild(measureWrap);
+
+    const titleHeight = measureWrap.querySelector(".print-title").getBoundingClientRect().height;
+    const headHeight = measureWrap.querySelector("thead").getBoundingClientRect().height;
+    const bodyRows = Array.from(measureWrap.querySelectorAll("tbody tr"));
+    const rowHeights = bodyRows.map(row => row.getBoundingClientRect().height);
+
+    const sumWrap = document.createElement("div");
+    sumWrap.style.width = printWidthPx + "px";
+    sumWrap.innerHTML = `<table style="width:100%;"><tfoot>${buildPrintSumRowHtml()}</tfoot></table>`;
+    printRoot.appendChild(sumWrap);
+    const sumHeight = sumWrap.querySelector("tfoot").getBoundingClientRect().height;
+
+    const pages = [];
+    let currentPage = [];
+    let currentHeight = titleHeight + headHeight;
+    rowHeights.forEach((height, index) => {
+      if (currentHeight + height > usableHeightPx && currentPage.length) {
+        pages.push(currentPage);
+        currentPage = [];
+        currentHeight = titleHeight + headHeight;
+      }
+      currentPage.push(index);
+      currentHeight += height;
+    });
+    if (currentPage.length) pages.push(currentPage);
+    if (!pages.length) pages.push([]);
+
+    const lastPageIndexes = pages[pages.length - 1];
+    const lastPageHeight = titleHeight + headHeight + lastPageIndexes.reduce((sum, index) => sum + rowHeights[index], 0);
+    const sumOnNewPage = lastPageHeight + sumHeight > usableHeightPx;
+
+    printRoot.removeChild(measureWrap);
+    printRoot.removeChild(sumWrap);
+
+    const totalPages = pages.length + (sumOnNewPage ? 1 : 0);
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+      const indexes = pages[pageIndex];
+      const isLast = pageIndex === pages.length - 1;
+      const pageDiv = document.createElement("div");
+      pageDiv.style.width = printWidthPx + "px";
+      pageDiv.style.background = "#fff";
+      pageDiv.innerHTML = `
+        <div class="print-title">${escapeHtml(titleText)}</div>
+        <table style="width:100%;">
+          <thead><tr>${buildPrintHeaderCells()}</tr></thead>
+          <tbody>${indexes.map(index => buildPrintRowHtml(currentRows[index], index)).join("")}</tbody>
+          ${isLast && !sumOnNewPage ? `<tfoot>${buildPrintSumRowHtml()}</tfoot>` : ""}
+        </table>
+        <div class="print-page">${totalPages > 1 ? `${pageIndex + 1} / ${totalPages} 페이지` : ""}</div>`;
+      printRoot.appendChild(pageDiv);
+
+      const canvas = await html2canvas(pageDiv, { scale:2, backgroundColor:"#ffffff", useCORS:true, allowTaint:true, logging:false });
+      const imageData = canvas.toDataURL("image/png");
+      const imageHeightMm = canvas.height * usableWidthMm / canvas.width;
+      if (pageIndex > 0) pdf.addPage();
+      pdf.addImage(imageData, "PNG", marginMm, marginMm, usableWidthMm, imageHeightMm);
+      printRoot.removeChild(pageDiv);
+    }
+
+    if (sumOnNewPage) {
+      const pageDiv = document.createElement("div");
+      pageDiv.style.width = printWidthPx + "px";
+      pageDiv.style.background = "#fff";
+      pageDiv.innerHTML = `
+        <div class="print-title">${escapeHtml(titleText)}</div>
+        <table style="width:100%;">
+          <thead><tr>${buildPrintHeaderCells()}</tr></thead>
+          <tfoot>${buildPrintSumRowHtml()}</tfoot>
+        </table>
+        <div class="print-page">${totalPages} / ${totalPages} 페이지</div>`;
+      printRoot.appendChild(pageDiv);
+      const canvas = await html2canvas(pageDiv, { scale:2, backgroundColor:"#ffffff", useCORS:true, allowTaint:true, logging:false });
+      const imageData = canvas.toDataURL("image/png");
+      const imageHeightMm = canvas.height * usableWidthMm / canvas.width;
+      pdf.addPage();
+      pdf.addImage(imageData, "PNG", marginMm, marginMm, usableWidthMm, imageHeightMm);
+      printRoot.removeChild(pageDiv);
+    }
+
+    const from = document.getElementById("fFrom").value || "";
+    const to = document.getElementById("fTo").value || "";
+    pdf.save(`관리문서현황_${from}_${to}.pdf`);
+    setActionMessage("PDF 다운로드를 완료했습니다.", "success");
+  } catch (error) {
+    console.error(error);
+    setActionMessage("PDF 다운로드 실패: " + dbErrorMessage(error), "error");
+    alert("PDF 생성 오류: " + dbErrorMessage(error));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+    hideLoading();
+  }
+}
+
+function buildPrintHeaderCells() {
+  return ["번호","최초작업일","고객사","품명","품번","재질","관리계획서","제조공정도","검사기준서","열처리성적서","작업표준서"]
+    .map(label => `<th>${escapeHtml(label)}</th>`).join("");
+}
+
+function buildPrintRowHtml(row, index) {
+  return `<tr>
+    <td>${index + 1}</td>
+    <td>${escapeHtml(row.first_work_date)}</td>
+    <td>${escapeHtml(row.customer_name)}</td>
+    <td>${escapeHtml(row.item_name)}</td>
+    <td>${escapeHtml(row.item_number)}</td>
+    <td>${escapeHtml(row.material_name)}</td>
+    <td>${row.has_control_plan ? "작성완료" : "미작성"}</td>
+    <td>${row.has_manufacturing ? "작성완료" : "미작성"}</td>
+    <td>${row.has_inspection_standard ? "작성완료" : "미작성"}</td>
+    <td>${row.has_inspection_report ? "작성완료" : "미작성"}</td>
+    <td>${row.has_work_standard ? "작성완료" : "미작성"}</td>
+  </tr>`;
+}
+
+function buildPrintSumRowHtml() {
+  return `<tr><td colspan="11">총 ${currentRows.length}건</td></tr>`;
+}
+
+document.getElementById("btnSearch").addEventListener("click", searchData);
+document.getElementById("btnCsv").addEventListener("click", exportCSV);
+document.getElementById("btnPdf").addEventListener("click", exportPDF);
+document.getElementById("sortFirstWorkDate").addEventListener("click", () => { sortAscending = !sortAscending; sortCurrentRows(); renderTable(); });
+
+document.getElementById("btnReset").addEventListener("click", () => {
+  const range = monthRange();
+  document.getElementById("fFrom").value = range.from;
+  document.getElementById("fTo").value = range.to;
+  document.getElementById("fCustomer").value = "";
+  document.getElementById("fProduct").value = "";
+  document.getElementById("fPartNo").value = "";
+  document.getElementById("fMaterial").value = "";
+  refreshProductSelect();
+  refreshPartNoSelect();
+  sortAscending = true;
+  currentRows = [];
+  updateTitle(range.from, range.to);
+  document.getElementById("tbody").innerHTML = '<tr><td colspan="11" class="empty-msg">조회 버튼을 눌러 데이터를 불러오세요.</td></tr>';
+  document.getElementById("sortFirstWorkDate").textContent = "최초작업일 ▲";
+  updateSummary();
+  setActionMessage("초기화를 완료했습니다.", "success");
+});
+
+(async function init() {
+  const range = monthRange();
+  document.getElementById("fFrom").value = range.from;
+  document.getElementById("fTo").value = range.to;
+  updateTitle(range.from, range.to);
+  showLoading("로그인 및 회사 권한을 확인하는 중입니다...");
+  try {
+    const allowed = await verifyCompanyAccess();
+    if (!allowed) return;
+    await Promise.all([loadMasterData(), loadMaterialMaster()]);
+    document.getElementById("summaryText").textContent = "조회 버튼을 눌러 데이터를 불러오세요.";
+    setActionMessage("로그인 및 회사 권한 확인이 완료되었습니다.", "success");
+  } catch (error) {
+    console.error(error);
+    alert("초기 데이터 연결 중 오류가 발생했습니다: " + dbErrorMessage(error));
+  } finally {
+    hideLoading();
+  }
+})();
+</script>
+</body>
+</html>
