@@ -94,6 +94,16 @@ table.flow{
 table.flow th,table.flow td{
   border:1px solid var(--line);padding:9px 10px;vertical-align:middle;text-align:center;overflow:hidden
 }
+/* 전체 표 선: 화면에서는 동일한 1px 가는 실선으로 통일 */
+table.meta,
+table.meta td,
+table.flow,
+table.flow th,
+table.flow td{
+  border-style:solid!important;
+  border-width:1px!important;
+  border-color:var(--line)!important;
+}
 table.flow thead tr,table.flow thead th{height:42px;max-height:42px}
 table.flow thead th{background:var(--bg-head);color:#1c2530;font-weight:700;font-size:13px}
 table.flow td.rowlabel,table.flow th.rowlabel{background:var(--bg-head);color:#1c2530;font-weight:700;width:9%}
@@ -132,9 +142,16 @@ table.flow tbody tr:not(:first-child),table.flow tbody tr:not(:first-child)>td{h
   content:"사진 선택";position:absolute;right:7px;bottom:7px;z-index:2;padding:3px 7px;border:1px solid #7c9fc8;border-radius:4px;
   background:rgba(255,255,255,.94);color:#1b3a63;font-size:10px;font-weight:700
 }
+.photo-delete-btn{
+  display:none;position:absolute;right:7px;top:7px;z-index:4;height:25px;padding:0 8px;
+  border:1px solid #c77b7b;border-radius:4px;background:rgba(255,255,255,.96);color:#a52332;
+  font:700 10px inherit;line-height:23px;cursor:pointer;
+}
+.edit-mode .photo-delete-btn:not([hidden]){display:block}
+.photo-delete-btn:hover{background:#fff1f1;border-color:#a52332}
 
 .manufacturing-notice{
-  display:none;position:fixed;right:18px;bottom:18px;z-index:3000;min-width:230px;max-width:min(440px,calc(100vw - 36px));
+  display:none;position:fixed;right:18px;top:104px;bottom:auto;z-index:3000;min-width:230px;max-width:min(440px,calc(100vw - 36px));
   padding:11px 14px;border:1px solid #aeb7c4;border-radius:6px;background:rgba(255,255,255,.98);
   box-shadow:0 5px 18px rgba(0,0,0,.22);color:#263445;font-size:12px;font-weight:700;line-height:1.45;pointer-events:none
 }
@@ -193,13 +210,24 @@ table.flow tbody tr:not(:first-child),table.flow tbody tr:not(:first-child)>td{h
   .section-title{margin-top:3mm!important;padding:1.5mm 3mm!important;font-size:11px!important;line-height:1.2!important}
   .section-title .en{font-size:9px!important}
   table.flow{margin:0!important;font-size:9.5px!important;line-height:1.2!important;page-break-inside:avoid!important;break-inside:avoid-page!important;border-color:#66778d!important;border-width:.25mm!important}
-  table.flow th,table.flow td{padding:1px 2px!important;border-color:#66778d!important;border-width:.25mm!important;border-style:solid!important}
+  table.meta,table.meta td,table.flow,table.flow th,table.flow td{
+    border-color:#66778d!important;
+    border-width:.25mm!important;
+    border-style:solid!important;
+  }
+  table.flow th,table.flow td{padding:1px 2px!important}
   table.flow thead tr,table.flow thead th{height:7mm!important;min-height:7mm!important;max-height:7mm!important}
   table.flow tbody tr:first-child,table.flow tbody tr:first-child>td,.photo-field{height:24mm!important;min-height:24mm!important;max-height:24mm!important}
   table.flow tbody tr:not(:first-child),table.flow tbody tr:not(:first-child)>td{height:8.4mm!important;min-height:8.4mm!important;max-height:8.4mm!important}
   .fixed-text-editor{width:100%!important;height:100%!important;margin:0!important;padding:0 2px!important;border:0!important;background:#fff!important;overflow:hidden!important}
   .photo-field::before{display:none!important}
-  .photo-field .process-photo-preview{max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important}
+  /* PDF 변환 시 사진이 있는 셀의 안쪽 경계선이 사라지지 않도록 셀 내부에 선을 한 번 더 그린다. */
+  .photo-field{
+    border:.25mm solid #66778d!important;
+    box-shadow:inset 0 0 0 .18mm #66778d!important;
+  }
+  .photo-field .process-photo-preview{max-width:calc(100% - 12px)!important;max-height:calc(100% - 12px)!important}
+  .photo-delete-btn{display:none!important}
   .meta-entry-select{background:#fff!important;border:0!important}
 }
 </style>
@@ -328,6 +356,8 @@ let loadedSnapshot = null;
 let pendingPhotoFiles = new Map();
 let currentImagePaths = new Map();
 let previewObjectUrls = new Map();
+/* 기존 문서에서 사진 삭제 시 DB 저장 성공 후 Storage 정리를 위한 대기 목록 */
+let pendingDeletedPhotoPaths = new Set();
 
 let searchResultRecords = [];
 let searchResultPage = 1;
@@ -360,6 +390,7 @@ function makeFlowTable(slots){
     return '<td class="process-field photo-field" data-field-no="'+no+'" data-field-type="image" tabindex="-1">'+
       '<div class="photo-placeholder">NO'+no+' [ 공정 사진 ]</div>'+
       '<img class="process-photo-preview" alt="NO'+no+' 공정 사진" hidden>'+
+      '<button class="photo-delete-btn" type="button" hidden aria-label="NO'+no+' 공정 사진 삭제">사진 삭제</button>'+
       '<input class="process-photo-input" type="file" accept="image/*" tabindex="-1" aria-label="NO'+no+' 공정 사진 선택">'+
       '</td>';
   }).join("");
@@ -456,6 +487,15 @@ async function signedUrl(path){
   return r.data && r.data.signedUrl ? r.data.signedUrl : "";
 }
 
+function updatePhotoDeleteButton(no){
+  const cell = document.querySelector('[data-field-no="'+Number(no)+'"][data-field-type="image"]');
+  if(!cell) return;
+  const btn = cell.querySelector(".photo-delete-btn");
+  if(!btn) return;
+  const hasPhoto = pendingPhotoFiles.has(Number(no)) || !!currentImagePaths.get(Number(no));
+  btn.hidden = !hasPhoto;
+}
+
 async function setPhotoPath(no,path){
   const cell = document.querySelector('[data-field-no="'+Number(no)+'"][data-field-type="image"]');
   if(!cell) return;
@@ -467,6 +507,7 @@ async function setPhotoPath(no,path){
     img.hidden = true;
     img.removeAttribute("src");
     placeholder.hidden = false;
+    updatePhotoDeleteButton(no);
     return;
   }
 
@@ -474,6 +515,7 @@ async function setPhotoPath(no,path){
   img.src = url;
   img.hidden = false;
   placeholder.hidden = true;
+  updatePhotoDeleteButton(no);
 }
 
 function setPendingPhoto(no,file){
@@ -491,6 +533,41 @@ function setPendingPhoto(no,file){
   img.src = url;
   img.hidden = false;
   placeholder.hidden = true;
+  updatePhotoDeleteButton(no);
+}
+
+function deletePhotoFromField(no){
+  no = Number(no);
+  const cell = document.querySelector('[data-field-no="'+no+'"][data-field-type="image"]');
+  if(!cell) return;
+
+  const existingPath = currentImagePaths.get(no) || null;
+  const previewUrl = previewObjectUrls.get(no);
+
+  if(previewUrl){
+    try{ URL.revokeObjectURL(previewUrl); }catch(_){}
+    previewObjectUrls.delete(no);
+  }
+  pendingPhotoFiles.delete(no);
+
+  /*
+   * 기존 저장 문서의 사진은 저장 성공 후에만 Storage에서 삭제한다.
+   * 신규등록 화면의 기준문서 사진은 원본이므로 절대 삭제하지 않는다.
+   */
+  if(currentMode !== "new" && existingPath){
+    pendingDeletedPhotoPaths.add(existingPath);
+  }
+
+  currentImagePaths.set(no,null);
+
+  const img = cell.querySelector(".process-photo-preview");
+  const placeholder = cell.querySelector(".photo-placeholder");
+  img.hidden = true;
+  img.removeAttribute("src");
+  placeholder.hidden = false;
+  updatePhotoDeleteButton(no);
+
+  setNotice("NO"+no+" 사진을 삭제 대상으로 표시했습니다. 저장 버튼을 누르면 반영됩니다.","info");
 }
 
 function validateSelectedFile(file){
@@ -626,6 +703,7 @@ function resetNewIdentity(){
 function clearForm(){
   clearPreviewUrls();
   pendingPhotoFiles.clear();
+  pendingDeletedPhotoPaths.clear();
   currentImagePaths.clear();
   for(let no=1;no<=75;no++){
     if(fieldIsPhoto(no)){
@@ -779,6 +857,7 @@ async function loadDocument(record){
     currentCompleted = record.isCompleted === true;
     clearPreviewUrls();
     pendingPhotoFiles.clear();
+    pendingDeletedPhotoPaths.clear();
 
     renderViewIdentity({customerName:record.customerName,itemName:record.itemName,itemNumber:record.itemNumber});
     await applyValues(values);
@@ -970,6 +1049,7 @@ async function startNew(){
     resetNewIdentity();
     clearPreviewUrls();
     pendingPhotoFiles.clear();
+    pendingDeletedPhotoPaths.clear();
     currentImagePaths.clear();
 
     await applyValues(defaults);
@@ -1115,12 +1195,18 @@ async function saveExistingDocument(){
     });
     if(r.error) throw r.error;
 
-    const oldPaths = uploaded.map(function(x){return x.oldPath;}).filter(function(p){
-      return p && p.indexOf(currentProfile.company_id+"/DEFAULT/") !== 0;
+    const replacedOldPaths = uploaded.map(function(x){return x.oldPath;}).filter(Boolean);
+    const explicitlyDeletedPaths = Array.from(pendingDeletedPhotoPaths);
+    const oldPaths = Array.from(new Set(replacedOldPaths.concat(explicitlyDeletedPaths))).filter(function(p){
+      /* 기준문서용 DEFAULT 경로 또는 다른 문서 원본은 삭제하지 않는다. */
+      return p
+        && p.indexOf(currentProfile.company_id+"/DEFAULT/") !== 0
+        && p.indexOf(currentProfile.company_id+"/"+currentDocumentId+"/") === 0;
     });
     if(oldPaths.length){
       try{ await removeStoragePaths(oldPaths); }catch(removeError){ console.error("기존 사진 정리 실패",removeError); }
     }
+    pendingDeletedPhotoPaths.clear();
   }catch(error){
     try{ await removeStoragePaths(uploaded.map(function(x){return x.newPath;})); }catch(cleanupError){ console.error(cleanupError); }
     throw error;
@@ -1137,15 +1223,17 @@ async function saveCurrentDocument(){
       await loadDocumentIndex();
       const record = documents.find(function(r){return r.documentId === id;});
       pendingPhotoFiles.clear();
+      pendingDeletedPhotoPaths.clear();
       if(record) await loadDocument(record);
-      setNotice("제조공정도가 저장되었습니다.","success",true);
+      setNotice("제조공정도가 저장되었습니다.","success");
     }else{
       await saveExistingDocument();
       pendingPhotoFiles.clear();
+      pendingDeletedPhotoPaths.clear();
       await loadDocumentIndex();
       const record = documents.find(function(r){return r.documentId === currentDocumentId;});
       if(record) await loadDocument(record);
-      setNotice("제조공정도가 수정 저장되었습니다.","success",true);
+      setNotice("제조공정도가 수정 저장되었습니다.","success");
     }
   }catch(error){
     console.error(error);
@@ -1205,7 +1293,7 @@ async function completeCurrentDocument(){
     currentCompleted = true;
     await loadDocumentIndex();
     updateButtonStates();
-    setNotice("제조공정도를 완료 처리했습니다.","success",true);
+    setNotice("제조공정도를 완료 처리했습니다.","success");
   }catch(error){
     setNotice(errorMessage(error,"완료 처리에 실패했습니다."),"error",true);
   }finally{
@@ -1216,16 +1304,31 @@ async function completeCurrentDocument(){
 photoFields.forEach(function(cell){
   const no = Number(cell.dataset.fieldNo);
   const input = cell.querySelector(".process-photo-input");
-  cell.addEventListener("click",function(){
+  const deleteBtn = cell.querySelector(".photo-delete-btn");
+
+  cell.addEventListener("click",function(e){
+    if(e.target === deleteBtn) return;
     if(!editMode || busy) return;
     input.value = "";
     input.click();
   });
+
+  deleteBtn.addEventListener("click",function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if(!editMode || busy) return;
+    deletePhotoFromField(no);
+  });
+
   input.addEventListener("change",function(e){
     const file = e.target.files && e.target.files[0];
     if(!file) return;
     try{
       validateSelectedFile(file);
+      /*
+       * 기존 사진을 새 사진으로 교체하는 경우에는 기존 경로를 보존해 두고
+       * 저장 성공 후 Storage 정리 대상으로 처리한다.
+       */
       setPendingPhoto(no,file);
     }catch(error){
       setNotice(errorMessage(error,"사진을 선택하지 못했습니다."),"error",true);
@@ -1261,6 +1364,7 @@ document.getElementById("btnReset").addEventListener("click",async function(){
       resetNewIdentity();
       clearPreviewUrls();
       pendingPhotoFiles.clear();
+      pendingDeletedPhotoPaths.clear();
       currentImagePaths.clear();
       await applyValues(defaults);
       renderNewIdentity();
@@ -1273,6 +1377,7 @@ document.getElementById("btnReset").addEventListener("click",async function(){
       currentItemSystemId = loadedSnapshot.itemSystemId;
       currentCompleted = loadedSnapshot.isCompleted === true;
       pendingPhotoFiles.clear();
+      pendingDeletedPhotoPaths.clear();
       setEditMode(false);
       setNotice("조회된 제조공정도로 되돌렸습니다.","success");
     }else{
