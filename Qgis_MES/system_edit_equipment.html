@@ -84,20 +84,21 @@
     .file-name {
       margin-left: 5px;
       color: #667085;
-      font-size: 14px;
+      font-size: 12.5px;
       font-weight: 400;
     }
 
     .subtitle {
       margin-top: 5px;
       color: #5f6b7a;
-      font-size: 14px;
+      font-size: 11.5px;
     }
 
     .main-button {
-      min-width: 112px;
-      height: 42px;
-      padding: 0 16px;
+      min-width: 96px;
+      height: 34px;
+      padding: 0 12px;
+      font-size: 13px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
@@ -113,10 +114,10 @@
     /* 조회 프레임 */
     .search-frame {
       display: grid;
-      grid-template-columns: minmax(170px, 1fr) minmax(190px, 1fr) minmax(170px, 1fr) auto;
+      grid-template-columns: minmax(120px, 0.75fr) minmax(160px, 1.05fr) minmax(120px, 0.75fr) auto;
       align-items: end;
-      gap: 14px;
-      padding: 16px;
+      gap: 8px;
+      padding: 10px 12px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
       background: var(--card);
@@ -126,13 +127,13 @@
     .field {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
       min-width: 0;
     }
 
     .field label {
       color: #445267;
-      font-size: 14px;
+      font-size: 12.5px;
       font-weight: 700;
     }
 
@@ -140,8 +141,9 @@
     .field select,
     .field textarea {
       width: 100%;
-      min-height: 40px;
-      padding: 8px 10px;
+      min-height: 32px;
+      padding: 5px 8px;
+      font-size: 13px;
       border: 1px solid #c7d0dc;
       border-radius: 7px;
       background: #fff;
@@ -164,18 +166,19 @@
 
     .search-buttons {
       display: flex;
-      gap: 10px;
+      gap: 5px;
       justify-content: flex-end;
+      align-items: center;
     }
 
     .btn {
-      min-height: 40px;
-      padding: 8px 16px;
+      min-height: 32px;
+      padding: 5px 10px;
       border: 1px solid var(--line);
       border-radius: 7px;
       background: #fff;
       color: #1f2937;
-      font-size: 14px;
+      font-size: 12.5px;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -225,18 +228,18 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      padding: 12px 0;
+      gap: 8px;
+      padding: 7px 0;
     }
 
     .guide-text {
       color: #617087;
-      font-size: 14px;
+      font-size: 12.5px;
     }
 
     .action-buttons {
       display: flex;
-      gap: 9px;
+      gap: 5px;
       flex-wrap: wrap;
       justify-content: flex-end;
     }
@@ -325,24 +328,25 @@
     .table-wrap {
       width: 100%;
       max-height: 560px;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       border: 1px solid #cbd5e1;
       background: #fff;
     }
 
     table {
       width: 100%;
-      min-width: 980px;
+      min-width: 0;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 14px;
+      font-size: 11.5px;
     }
 
     thead th {
       position: sticky;
       top: 0;
       z-index: 3;
-      padding: 10px 8px;
+      padding: 7px 4px;
       border-right: 1px solid #1248a9;
       border-bottom: 1px solid #1248a9;
       background: #1e5bd7;
@@ -354,7 +358,7 @@
 
     tbody td,
     tfoot td {
-      padding: 9px 8px;
+      padding: 6px 4px;
       border-right: 1px solid #d8dee8;
       border-bottom: 1px solid #d8dee8;
       text-align: center;
@@ -479,9 +483,39 @@
     .equipment-table .col-remarks { width: 11%; }
     .equipment-table .col-status { width: 5.5%; }
 
+    .equipment-table {
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
     .equipment-table th,
     .equipment-table td {
+      white-space: normal;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+      line-height: 1.25;
+    }
+
+    /* 화면폭 안에 13개 열을 배치하여 하단 가로 스크롤 방지 */
+    .equipment-table th:nth-child(1),
+    .equipment-table td:nth-child(1),
+    .equipment-table th:nth-child(5),
+    .equipment-table td:nth-child(5),
+    .equipment-table th:nth-child(13),
+    .equipment-table td:nth-child(13) {
       white-space: nowrap;
+    }
+
+    @media (max-width: 1200px) and (min-width: 601px) {
+      .equipment-table {
+        font-size: 10px;
+      }
+
+      .equipment-table th,
+      .equipment-table td {
+        padding: 5px 2px;
+        line-height: 1.18;
+      }
     }
 
     @page {
@@ -594,10 +628,10 @@
       }
 
       .main-button {
-        min-width: 92px;
-        height: 38px;
-        padding: 0 10px;
-        font-size: 14px;
+        min-width: 82px;
+        height: 32px;
+        padding: 0 8px;
+        font-size: 12px;
       }
 
       .search-frame,
@@ -628,7 +662,14 @@
       }
 
       table {
-        min-width: 900px;
+        min-width: 0;
+        font-size: 8px;
+      }
+
+      .equipment-table th,
+      .equipment-table td {
+        padding: 4px 2px;
+        line-height: 1.15;
       }
     }
   </style>
@@ -692,7 +733,7 @@
   <h2 class="list-title screen-title">설비 상세현황</h2>
   <h2 class="print-title">Qgis 제조설비별 상세현황</h2>
   <div class="table-wrap">
-    <table class="equipment-table" style="min-width:1500px">
+    <table class="equipment-table">
       <colgroup>
         <col class="col-no"><col class="col-number"><col class="col-name"><col class="col-capacity">
         <col class="col-quantity"><col class="col-maker"><col class="col-date"><col class="col-line">
