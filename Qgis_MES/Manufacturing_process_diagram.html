@@ -1651,7 +1651,10 @@
     setMetaValue("itemName", "");
     setMetaValue("itemNumber", "");
     textFields.forEach(function(cell){ cell.textContent = ""; });
-    async function completeCurrentDocument(){
+    photoFields.forEach(function(cell){ clearPhotoDisplay(cell, true); });
+  }
+
+  async function completeCurrentDocument(){
     if(!canEdit()){ setNotice("완료 처리 권한이 없습니다.","error"); return; }
     if(!currentDocumentId){ setNotice("완료 처리할 제조공정도를 먼저 조회해 주세요.","error"); return; }
     if(editMode || currentMode === "new"){ setNotice("저장을 완료한 뒤 완료 버튼을 눌러 주세요.","error"); return; }
@@ -1681,9 +1684,6 @@
     }finally{
       setBusy(false);
     }
-  }
-
-  photoFields.forEach(function(cell){ clearPhotoDisplay(cell, true); });
   }
 
   function captureValues(){
