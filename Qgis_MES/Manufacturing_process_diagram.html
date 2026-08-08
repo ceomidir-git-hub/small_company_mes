@@ -1060,6 +1060,7 @@
 <button id="btnReset" type="button">초기화</button>
 <button class="danger" id="btnDelete" type="button">삭제</button>
 <button id="btnPdf" type="button">PDF 저장</button>
+<button id="btnComplete" type="button">완료</button>
 </div>
 </div>
 <div aria-live="polite" class="manufacturing-notice" id="manufacturingNotice" role="status"></div>
@@ -1343,6 +1344,7 @@
   let currentMode = "view"; // view | new
   let currentDocumentId = "";
   let currentItemSystemId = "";
+  let currentCompleted = false;
   let editMode = false;
   let busy = false;
   let noticeTimer = null;
@@ -1373,6 +1375,13 @@
   function isAdmin(){ return currentProfile && currentProfile.access_role === "admin"; }
   function canEdit(){ return currentProfile && ["admin","user"].includes(currentProfile.access_role); }
   function canPdf(){ return currentProfile && currentProfile.access_role !== "viewer"; }
+
+  function updateCompleteButton(){
+    const button = document.getElementById("btnComplete");
+    if(!button) return;
+    button.textContent = currentCompleted ? "완료됨" : "완료";
+    button.classList.toggle("active", currentCompleted);
+  }
 
   function errorMessage(error, fallback){
     const message = normalize(error && (error.message || error.error_description || error.details));
@@ -1642,7 +1651,39 @@
     setMetaValue("itemName", "");
     setMetaValue("itemNumber", "");
     textFields.forEach(function(cell){ cell.textContent = ""; });
-    photoFields.forEach(function(cell){ clearPhotoDisplay(cell, true); });
+    async function completeCurrentDocument(){
+    if(!canEdit()){ setNotice("완료 처리 권한이 없습니다.","error"); return; }
+    if(!currentDocumentId){ setNotice("완료 처리할 제조공정도를 먼저 조회해 주세요.","error"); return; }
+    if(editMode || currentMode === "new"){ setNotice("저장을 완료한 뒤 완료 버튼을 눌러 주세요.","error"); return; }
+    if(currentCompleted){ setNotice("이미 완료 처리된 제조공정도입니다.","info"); return; }
+    if(!window.confirm("현재 제조공정도를 완료 처리하시겠습니까?")) return;
+
+    setBusy(true,"제조공정도를 완료 처리하는 중입니다.");
+    try{
+      const result = await sb.from("manufacturing_process_diagrams")
+        .update({is_completed:true})
+        .eq("company_id",currentProfile.company_id)
+        .eq("manufacturing_process_system_id",currentDocumentId)
+        .eq("is_active",true)
+        .select("manufacturing_process_system_id,is_completed")
+        .single();
+      if(result.error) throw result.error;
+      if(!result.data || result.data.is_completed !== true) throw new Error("완료 상태가 DB에 저장되지 않았습니다.");
+
+      currentCompleted = true;
+      const record = documents.find(function(row){ return row.documentId === currentDocumentId; });
+      if(record) record.isCompleted = true;
+      updateCompleteButton();
+      setNotice("제조공정도가 완료 처리되었습니다.","success",true);
+    }catch(error){
+      console.error(error);
+      setNotice(errorMessage(error,"제조공정도 완료 처리에 실패했습니다."),"error",true);
+    }finally{
+      setBusy(false);
+    }
+  }
+
+  photoFields.forEach(function(cell){ clearPhotoDisplay(cell, true); });
   }
 
   function captureValues(){
@@ -1744,6 +1785,8 @@
     document.getElementById("btnReset").disabled = busy;
     document.getElementById("btnDelete").disabled = busy || !isAdmin() || !currentDocumentId || inEntryMode;
     document.getElementById("btnPdf").disabled = busy || !canPdf();
+    document.getElementById("btnComplete").disabled = busy || !canEdit() || !currentDocumentId || inEntryMode || currentCompleted;
+    updateCompleteButton();
     [customerSelect,itemNameInput,itemNumberInput].forEach(function(control){
       control.disabled = busy || currentMode === "new";
     });
@@ -1852,7 +1895,7 @@
 
   async function loadDocumentIndex(){
     const result = await sb.from("manufacturing_process_diagrams")
-      .select("manufacturing_process_system_id,company_id,customer_system_id,item_system_id,is_active,created_at,updated_at")
+      .select("manufacturing_process_system_id,company_id,customer_system_id,item_system_id,is_completed,is_active,created_at,updated_at")
       .eq("company_id",currentProfile.company_id)
       .eq("is_active",true)
       .order("created_at",{ascending:false});
@@ -1868,6 +1911,7 @@
         itemSystemId:row.item_system_id,
         itemName:item ? item.item_name : "",
         itemNumber:item ? item.item_number : "",
+        isCompleted:row.is_completed === true,
         createdAt:row.created_at,
         updatedAt:row.updated_at
       };
@@ -1900,6 +1944,7 @@
       currentMode = "view";
       currentDocumentId = record.documentId;
       currentItemSystemId = record.itemSystemId;
+      currentCompleted = record.isCompleted === true;
       const snapshot = {
         documentId:record.documentId,
         itemSystemId:record.itemSystemId,
@@ -2151,6 +2196,7 @@
 
       currentDocumentId = "";
       currentItemSystemId = "";
+      currentCompleted = false;
       currentMode = "view";
       loadedSnapshot = null;
       resetNewIdentity();
@@ -2246,6 +2292,7 @@
       currentMode = "new";
       currentDocumentId = "";
       currentItemSystemId = "";
+      currentCompleted = false;
       loadedSnapshot = null;
       clearForm();
       rebuildToolbarOptions({customerSystemId:"",itemName:"",itemSystemId:""});
@@ -2285,6 +2332,7 @@
         currentMode = "view";
         currentDocumentId = "";
         currentItemSystemId = "";
+        currentCompleted = false;
         loadedSnapshot = null;
         resetNewIdentity();
         clearForm();
@@ -2333,6 +2381,7 @@
       });
     });
   });
+  document.getElementById("btnComplete").addEventListener("click",completeCurrentDocument);
   document.getElementById("btnCloseSearchResult").addEventListener("click",closeSearchResultModal);
   searchResultPrev.addEventListener("click",function(){
     if(searchResultPage <= 1) return;
@@ -2356,6 +2405,7 @@
       await loadReferenceData();
       await loadDocumentIndex();
       currentMode = "view";
+      currentCompleted = false;
       resetNewIdentity();
       clearForm();
       setEditMode(false);
