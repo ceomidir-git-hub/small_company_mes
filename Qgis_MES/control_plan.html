@@ -48,63 +48,110 @@ table.hdr, table.bdy { width:287.0mm; }
   .page:last-child { page-break-after:auto; break-after:auto; }
 }
 </style><style>
+
 .form-toolbar {
   position: static;
   width: 297mm;
-  max-width: calc(100% - 12px);
+  max-width: 96vw;
   margin: 10px auto 0;
-  padding: 10px 12px;
-  background: #ffffff;
-  border: 1px solid #c7d4e3;
-  border-radius: 10px;
-  box-shadow: 0 3px 12px rgba(0,0,0,.18);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px 14px;
-  align-items: center;
-}
-.toolbar-title {
+  padding: 6px 8px;
+  background: #f7f7f7;
+  border: 1px solid #b7b7b7;
+  border-radius: 6px;
+  box-shadow: 0 1px 5px rgba(0,0,0,.18);
   display: flex;
-  gap: 10px;
-  align-items: baseline;
-  color: #1f2937;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
-.toolbar-title strong { font-size: 16px; }
-.toolbar-title span { font-size: 12px; color: #667085; }
+.toolbar-search-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.toolbar-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1 1 125px;
+  min-width: 100px;
+  color: #444;
+  font-size: 10px;
+  line-height: 1;
+}
+.toolbar-filter.plan-filter { flex-basis: 145px; }
+.toolbar-filter select,
+.toolbar-filter input {
+  width: 100%;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #aeb4bc;
+  border-radius: 4px;
+  background: #fff;
+  color: #111;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+}
 .toolbar-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 5px;
+  flex-wrap: nowrap;
 }
 .toolbar-actions button {
-  min-height: 32px;
-  padding: 0 11px;
-  border: 1px solid #9fb3c8;
-  border-radius: 6px;
-  background: #f8fafc;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background: #fff;
+  color: #1c2530;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
-.toolbar-actions button:hover { background: #eef4fa; }
-.toolbar-actions button.primary {
-  background: #1f4e78;
-  border-color: #1f4e78;
-  color: #fff;
-}
+.toolbar-actions button:hover { border-color:#555; background:#f0f0f0; }
+.toolbar-actions button.primary { background:#eaf3ff; border-color:#7c9fc8; color:#1c2530; }
 .toolbar-status {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 7px;
-  border-top: 1px solid #e5e7eb;
+  position: fixed;
+  right: 18px;
+  top: 64px;
+  z-index: 4500;
+  display: none;
+  max-width: min(520px, calc(100vw - 36px));
+  padding: 10px 13px;
+  border: 1px solid #9eb9dc;
+  border-radius: 6px;
+  background: rgba(245,249,255,.98);
+  box-shadow: 0 5px 18px rgba(0,0,0,.18);
+  color: #295993;
   font-size: 12px;
-  color: #475467;
+  font-weight: 700;
+  line-height: 1.45;
 }
+.toolbar-status.show { display:block; }
+#lengthStatus { display:none; }
 .form-scroll { width: 100%; overflow-x: auto; padding-bottom: 18px; }
+
+@media (max-width: 1180px) {
+  .form-toolbar { flex-wrap: wrap; }
+  .toolbar-search-group { flex-basis: 100%; }
+  .toolbar-actions { flex-wrap: wrap; }
+}
+@media (max-width: 640px) {
+  .toolbar-search-group { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+  .toolbar-filter { min-width:0; }
+}
+@media (max-width: 420px) {
+  .toolbar-search-group { grid-template-columns:1fr; }
+}
+
 
 .db-input {
   width: 100%;
@@ -213,11 +260,10 @@ table.hdr select.db-input {
     width: calc(100% - 12px);
   }
   .toolbar-actions { justify-content: flex-start; }
-  .toolbar-title { flex-direction: column; gap: 2px; }
   .toolbar-status { flex-direction: column; gap: 3px; }
 }
 @media print {
-  .form-toolbar { display: none !important; }
+  .form-toolbar, .toolbar-status { display: none !important; }
   .form-scroll { overflow: visible; padding: 0; }
 
   /*
@@ -483,24 +529,26 @@ table.hdr select.db-input {
 }
 </style>
 </head>
-<body><div class="form-toolbar">
-<div class="toolbar-title">
-<strong>관리계획서 입력폼</strong>
-<span>Supabase 연결형 · 회사별 데이터 저장</span>
+<body><div class="form-toolbar" id="controlPlanToolbar">
+<div class="toolbar-search-group" aria-label="관리계획서 조회 조건">
+  <label class="toolbar-filter"><span>고객사명</span><select id="toolbarCustomerSelect"><option value="">전체</option></select></label>
+  <label class="toolbar-filter"><span>품명</span><input id="toolbarItemNameInput" maxlength="120" placeholder="품명" type="search"/></label>
+  <label class="toolbar-filter"><span>품번</span><input id="toolbarItemNumberInput" maxlength="120" placeholder="품번" type="search"/></label>
+  <label class="toolbar-filter plan-filter"><span>관리계획번호</span><input id="toolbarPlanNoInput" maxlength="50" placeholder="관리계획번호" type="search"/></label>
 </div>
 <div class="toolbar-actions">
-<button id="btnLoad" type="button">조회</button>
-<button id="btnEdit" type="button">내용수정</button>
-<button id="btnCopy" type="button">복사등록</button>
-<button class="primary" id="btnSave" type="button">저장</button>
-<button id="btnNew" type="button">신규등록</button>
-<button id="btnReset" type="button">초기화</button>
-<button class="danger" id="btnDelete" type="button">삭제</button>
-<button id="btnPdf" type="button">PDF 저장</button>
+  <button id="btnLoad" type="button">조회</button>
+  <button id="btnEdit" type="button">내용수정</button>
+  <button id="btnCopy" type="button">복사등록</button>
+  <button class="primary" id="btnSave" type="button">저장</button>
+  <button id="btnNew" type="button">신규등록</button>
+  <button id="btnReset" type="button">초기화</button>
+  <button class="danger" id="btnDelete" type="button">삭제</button>
+  <button id="btnPdf" type="button">PDF 저장</button>
 </div>
-<div class="toolbar-status" aria-live="polite">
-<span id="formStatus">429개 입력항목 · No.20~429는 text / 최대 70자</span>
-<span id="lengthStatus"></span>
+<div class="toolbar-status" id="toolbarStatusBox" aria-live="polite">
+  <span id="formStatus">429개 입력항목 · No.20~429는 text / 최대 70자</span>
+  <span id="lengthStatus"></span>
 </div>
 </div>
 <div class="form-scroll">
@@ -513,8 +561,8 @@ table.hdr select.db-input {
       <button class="cp-modal-close" id="btnLookupCloseX" type="button" aria-label="닫기">×</button>
     </div>
     <div class="cp-modal-body">
-      <p class="cp-modal-guide">고객사명 → 품명 → 품번 순서로 선택한 뒤 조회할 관리계획서를 선택합니다. 로그인한 회사의 사용 중인 문서만 표시됩니다.</p>
-      <div class="cp-filter-grid">
+      <p class="cp-modal-guide">상단 조회조건에 해당하는 관리계획서입니다. 조회할 문서를 선택해 주세요.</p>
+      <div class="cp-filter-grid" style="display:none">
         <div class="cp-field">
           <label for="lookupCustomer">고객사명</label>
           <select id="lookupCustomer"><option value="">전체 고객사</option></select>
@@ -592,6 +640,12 @@ table.hdr select.db-input {
     customerName: 10,
     companyNumber: 13
   });
+  const DEFAULT_SOURCE_PLAN = Object.freeze({
+    planNo: "CO-A-001-03",
+    customerName: "(주)대호",
+    itemName: "DRIVE SHAFT",
+    itemNumber: "XL0884-0101"
+  });
 
   const controls = Array.from(document.querySelectorAll("[data-no]"));
   const controlByNo = new Map(
@@ -603,6 +657,11 @@ table.hdr select.db-input {
 
   const status = document.getElementById("formStatus");
   const lengthStatus = document.getElementById("lengthStatus");
+  const toolbarStatusBox = document.getElementById("toolbarStatusBox");
+  const toolbarCustomerSelect = document.getElementById("toolbarCustomerSelect");
+  const toolbarItemNameInput = document.getElementById("toolbarItemNameInput");
+  const toolbarItemNumberInput = document.getElementById("toolbarItemNumberInput");
+  const toolbarPlanNoInput = document.getElementById("toolbarPlanNoInput");
   const btnLoad = document.getElementById("btnLoad");
   const btnEdit = document.getElementById("btnEdit");
   const btnCopy = document.getElementById("btnCopy");
@@ -663,8 +722,21 @@ table.hdr select.db-input {
     "김종열": ["김종렬"]
   });
 
+  let statusTimerId = null;
   function setStatus(message) {
-    status.textContent = message;
+    status.textContent = message || "";
+    if (!toolbarStatusBox) return;
+
+    if (statusTimerId) {
+      clearTimeout(statusTimerId);
+      statusTimerId = null;
+    }
+
+    toolbarStatusBox.classList.add("show");
+    statusTimerId = window.setTimeout(() => {
+      toolbarStatusBox.classList.remove("show");
+      statusTimerId = null;
+    }, 5000);
   }
 
   function normalizeText(value) {
@@ -1043,8 +1115,15 @@ table.hdr select.db-input {
         btnLoad, btnEdit, btnCopy, btnSave,
         btnNew, btnReset, btnDelete, btnPdf
       ].forEach(button => { button.disabled = true; });
+      [toolbarCustomerSelect, toolbarItemNameInput, toolbarItemNumberInput, toolbarPlanNoInput]
+        .filter(Boolean)
+        .forEach(control => { control.disabled = true; });
       return;
     }
+
+    [toolbarCustomerSelect, toolbarItemNameInput, toolbarItemNumberInput, toolbarPlanNoInput]
+      .filter(Boolean)
+      .forEach(control => { control.disabled = false; });
 
     const selected = Boolean(currentPlanId);
     btnLoad.disabled = false;
@@ -1326,6 +1405,19 @@ table.hdr select.db-input {
       )).join("");
     ensureSelectOption(customerNameControl, previousCustomer);
     customerNameControl.value = previousCustomer || "";
+
+    const previousToolbarCustomer = normalizeText(toolbarCustomerSelect?.value);
+    if (toolbarCustomerSelect) {
+      toolbarCustomerSelect.innerHTML = '<option value="">전체</option>' +
+        referenceCustomers
+          .slice()
+          .sort((a, b) => normalizeText(a.customer_name).localeCompare(normalizeText(b.customer_name), "ko", { numeric:true, sensitivity:"base" }))
+          .map(customer => `<option value="${escapeHtml(customer.customer_name)}">${escapeHtml(customer.customer_name)}</option>`)
+          .join("");
+      toolbarCustomerSelect.value = referenceCustomers.some(customer => customer.customer_name === previousToolbarCustomer)
+        ? previousToolbarCustomer
+        : "";
+    }
   }
 
   async function findAnyPlanByNumber(planNo) {
@@ -1371,6 +1463,90 @@ table.hdr select.db-input {
       setControlValue(control, joinStoredValues(storedRows));
     });
     autoGrowAll();
+  }
+
+  function groupedStoredValue(valueRows, inputNo) {
+    const rows = valueRows.filter(row => Number(row.input_no) === Number(inputNo));
+    return rows.length ? joinStoredValues(rows) : "";
+  }
+
+  async function fetchDefaultSourcePlanValues() {
+    const { data: masterRows, error: masterError } = await sb
+      .from(MASTER_TABLE)
+      .select("control_plan_system_id,plan_no,is_active")
+      .eq("company_id", currentProfile.company_id)
+      .eq("plan_no", DEFAULT_SOURCE_PLAN.planNo)
+      .eq("is_active", true);
+
+    if (masterError) throw masterError;
+    if (!Array.isArray(masterRows) || masterRows.length !== 1) {
+      throw new Error(
+        `기준 관리계획서 ${DEFAULT_SOURCE_PLAN.planNo}는 정확히 1건이어야 합니다. 현재 ${masterRows?.length || 0}건`
+      );
+    }
+
+    const master = masterRows[0];
+    const valueRows = await fetchPlanValues(master.control_plan_system_id);
+    const distinctInputNos = new Set(valueRows.map(row => Number(row.input_no)));
+
+    if (distinctInputNos.size !== EXPECTED_INPUT_COUNT) {
+      throw new Error(
+        `기준 관리계획서 입력번호 검증 실패: ${distinctInputNos.size}개 / 정상 ${EXPECTED_INPUT_COUNT}개`
+      );
+    }
+
+    const minNo = Math.min(...distinctInputNos);
+    const maxNo = Math.max(...distinctInputNos);
+    if (minNo !== 1 || maxNo !== EXPECTED_INPUT_COUNT) {
+      throw new Error(
+        `기준 관리계획서 입력번호 범위 오류: 최소 ${minNo}, 최대 ${maxNo}`
+      );
+    }
+
+    const sourceIdentity = {
+      customerName: normalizeText(groupedStoredValue(valueRows, 10)),
+      itemName: normalizeText(groupedStoredValue(valueRows, 9)),
+      itemNumber: normalizeText(groupedStoredValue(valueRows, 8))
+    };
+
+    if (
+      sourceIdentity.customerName !== DEFAULT_SOURCE_PLAN.customerName ||
+      sourceIdentity.itemName !== DEFAULT_SOURCE_PLAN.itemName ||
+      sourceIdentity.itemNumber !== DEFAULT_SOURCE_PLAN.itemNumber
+    ) {
+      throw new Error(
+        `기준 관리계획서 식별정보 불일치: ` +
+        `${sourceIdentity.customerName} / ${sourceIdentity.itemName} / ${sourceIdentity.itemNumber}`
+      );
+    }
+
+    return { master, valueRows };
+  }
+
+  async function applyNewRegistrationDefaults() {
+    const { valueRows } = await fetchDefaultSourcePlanValues();
+
+    applyValueRows(valueRows);
+
+    // 신규 문서 고유정보 및 결재는 기준문서에서 복사하지 않는다.
+    clearIdentity();
+    setControlValue(planNoControl, "");
+    setControlValue(ownerApprovalControl, "");
+    setControlValue(approverApprovalControl, "");
+    approvalRowsByField.clear();
+    clearApprovalSignatureImage(6);
+    clearApprovalSignatureImage(7);
+
+    currentPlanId = null;
+    sourcePlanId = null;
+    sourcePlanNumber = "";
+    loadedIdentity = null;
+    setMode("new");
+
+    return {
+      storedRows: valueRows.length,
+      distinctInputs: new Set(valueRows.map(row => Number(row.input_no))).size
+    };
   }
 
   async function loadPlanById(controlPlanId) {
@@ -1509,14 +1685,18 @@ table.hdr select.db-input {
   }
 
   function filteredPlanCatalog() {
-    const customer = normalizeText(lookupCustomer.value);
-    const itemName = normalizeText(lookupItemName.value);
-    const itemNumber = normalizeText(lookupItemNumber.value);
-    return planCatalog.filter(row =>
-      (!customer || row.customerName === customer) &&
-      (!itemName || row.itemName === itemName) &&
-      (!itemNumber || row.itemNumber === itemNumber)
-    );
+    const customer = normalizeText(toolbarCustomerSelect?.value);
+    const itemName = normalizeText(toolbarItemNameInput?.value).toLocaleLowerCase("ko-KR");
+    const itemNumber = normalizeText(toolbarItemNumberInput?.value).toLocaleLowerCase("ko-KR");
+    const planNo = normalizeText(toolbarPlanNoInput?.value).toLocaleLowerCase("ko-KR");
+
+    return planCatalog.filter(row => {
+      if (customer && row.customerName !== customer) return false;
+      if (itemName && normalizeText(row.itemName).toLocaleLowerCase("ko-KR").indexOf(itemName) < 0) return false;
+      if (itemNumber && normalizeText(row.itemNumber).toLocaleLowerCase("ko-KR").indexOf(itemNumber) < 0) return false;
+      if (planNo && normalizeText(row.planNo).toLocaleLowerCase("ko-KR").indexOf(planNo) < 0) return false;
+      return true;
+    });
   }
 
   function renderLookupResults() {
@@ -1567,15 +1747,19 @@ table.hdr select.db-input {
 
   async function openLookupModal() {
     if (busy) return;
-    setBusy(true, "조회 팝업 데이터를 불러오고 있습니다.");
+    setBusy(true, "관리계획서 조회 데이터를 불러오고 있습니다.");
 
     try {
       await loadPlanCatalog();
-      const customers = uniqueSorted(planCatalog.map(row => row.customerName));
-      setSelectOptions(lookupCustomer, "전체 고객사", customers);
-      updateLookupItemNames();
+      const rows = filteredPlanCatalog();
+      if (!rows.length) {
+        setStatus("상단 조회조건에 해당하는 관리계획서가 없습니다.");
+        return;
+      }
+
+      renderLookupResults();
       openModal(lookupModal);
-      setStatus(`조회 팝업 열림 · 사용 중인 관리계획서 ${planCatalog.length}건`);
+      setStatus(`조회 결과 ${rows.length}건 · 조회할 관리계획서를 선택해 주세요.`);
     } catch (error) {
       console.error("조회 팝업 오류:", error);
       setStatus(`조회 준비 실패: ${dbMessage(error)}`);
@@ -1862,26 +2046,37 @@ table.hdr select.db-input {
     openItemModal();
   }
 
-  function startNewRegistration() {
+  async function startNewRegistration() {
+    if (busy) return;
+
     const hasCurrentData = controls.some(control =>
       control.type === "checkbox"
         ? control.checked
         : Boolean(normalizeText(getControlValue(control)))
     );
-    if (hasCurrentData && !window.confirm("현재 화면의 입력내용을 초기화하고 신규등록을 시작하시겠습니까?")) {
+    if (hasCurrentData && !window.confirm(
+      "현재 화면의 입력내용을 기준 관리계획서 값으로 덮어쓰고 신규등록을 시작하시겠습니까?"
+    )) {
       return;
     }
 
-    currentPlanId = null;
-    sourcePlanId = null;
-    sourcePlanNumber = "";
-    loadedIdentity = null;
-    clearAllControls();
-    setMode("new");
-    setStatus(
-      "신규등록 모드입니다. 고객사·품명·품번을 선택하고 관리계획 내용을 입력한 후 저장해 주세요."
-    );
-    openItemModal();
+    setBusy(true, `${DEFAULT_SOURCE_PLAN.planNo} 기준 관리계획서 429개 입력값을 다시 읽고 있습니다.`);
+
+    try {
+      const result = await applyNewRegistrationDefaults();
+      setStatus(
+        `기준 관리계획서 ${DEFAULT_SOURCE_PLAN.planNo}를 다시 읽어 화면에 덮어썼습니다. ` +
+        `입력번호 ${result.distinctInputs}개 / DB 저장행 ${result.storedRows}행 · ` +
+        "고객사 → 품명 → 품번을 선택하고 필요한 부분만 수정해 주세요."
+      );
+      openItemModal();
+    } catch (error) {
+      console.error("신규등록 기준 관리계획서 조회 오류:", error);
+      setMode("view");
+      setStatus(`신규등록 준비 실패: ${dbMessage(error)}`);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function resetForm() {
@@ -1916,10 +2111,20 @@ table.hdr select.db-input {
     }
 
     if (mode === "new") {
-      clearAllControls();
-      setMode("new");
-      setStatus("신규등록 입력값을 모두 초기화했습니다.");
-      openItemModal();
+      setBusy(true, `${DEFAULT_SOURCE_PLAN.planNo} 기준값으로 신규등록 화면을 초기화하고 있습니다.`);
+      try {
+        const result = await applyNewRegistrationDefaults();
+        setStatus(
+          `신규등록 화면을 기준 관리계획서 ${DEFAULT_SOURCE_PLAN.planNo} 값으로 다시 초기화했습니다. ` +
+          `입력번호 ${result.distinctInputs}개.`
+        );
+        openItemModal();
+      } catch (error) {
+        console.error("신규등록 초기화 오류:", error);
+        setStatus(`신규등록 초기화 실패: ${dbMessage(error)}`);
+      } finally {
+        setBusy(false);
+      }
       return;
     }
 
@@ -2027,6 +2232,16 @@ table.hdr select.db-input {
   }
 
   btnLoad.addEventListener("click", openLookupModal);
+  [toolbarItemNameInput, toolbarItemNumberInput, toolbarPlanNoInput]
+    .filter(Boolean)
+    .forEach(control => {
+      control.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          void openLookupModal();
+        }
+      });
+    });
   btnEdit.addEventListener("click", startContentEdit);
   btnCopy.addEventListener("click", startCopyRegistration);
   btnSave.addEventListener("click", savePlan);
