@@ -71,7 +71,12 @@ body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:12px;backgr
     -webkit-print-color-adjust:exact;
     print-color-adjust:exact;
   }
-  #toolbar,#toast,#loading{display:none!important;}
+  #toolbar,#toast,#loading,#v1-photo-modal{display:none!important;}
+  .v1-photo-actions,.v1-photo-empty{display:none!important;}
+  .v1-photo-box{
+    border:none!important;
+    background:#fff!important;
+  }
 
   /* A4 유효폭 200mm(210-좌우 5mm)에 정확히 맞춤 */
   .sheet{
@@ -213,9 +218,10 @@ body{min-width:844px;overflow-x:auto;}
   background:#fffbe6;
 }
 
-/* ── v1 개정 양식 1차 적용 영역 ──
-   현재 단계에서는 양식만 반영합니다.
-   No.1~No.6의 신규 DB/Storage 연결은 다음 단계에서 적용합니다. */
+/* ── v1 개정 양식 ──
+   No.1~No.3 : 팝업 이미지 추가/삭제 + 드래그앤드롭
+   No.4~No.6 : 최대 20자 문자 입력
+   ※ 이번 단계에서는 신규 DB/Storage 저장은 연결하지 않습니다. */
 .v1-photo-cell{
   padding:0!important;
   height:104px;
@@ -232,7 +238,7 @@ body{min-width:844px;overflow-x:auto;}
   position:absolute;
   top:4px;
   left:5px;
-  z-index:2;
+  z-index:4;
   font-weight:700;
   font-size:10px;
   color:#8a6d1a;
@@ -246,8 +252,8 @@ body{min-width:844px;overflow-x:auto;}
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:80%;
-  height:80%;
+  width:82%;
+  height:82%;
   border:1px dashed #c8a200;
   border-radius:3px;
   background:#fffbe6;
@@ -255,20 +261,186 @@ body{min-width:844px;overflow-x:auto;}
   align-items:center;
   justify-content:center;
   overflow:hidden;
+  cursor:pointer;
 }
-.v1-photo-plus{
+.v1-photo-box:hover{
+  background:#fff6cf;
+  border-color:#a88900;
+}
+.v1-photo-empty{
   color:#8a6d1a;
-  font-size:24px;
+  font-size:22px;
   font-weight:700;
   line-height:1;
   user-select:none;
 }
-.v1-pending-cell{
-  background:#fdece0;
-  color:#777;
+.v1-photo-image{
+  display:none;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:#fff;
+}
+.v1-photo-actions{
+  position:absolute;
+  right:4px;
+  bottom:4px;
+  z-index:5;
+  display:flex;
+  gap:3px;
+}
+.v1-photo-mini-btn{
+  width:21px;
+  height:21px;
+  border:1px solid #8a6d1a;
+  border-radius:3px;
+  background:#fff;
+  color:#8a6d1a;
+  font-size:15px;
+  line-height:18px;
+  font-weight:700;
+  cursor:pointer;
+  padding:0;
+}
+.v1-photo-mini-btn:hover{
+  background:#8a6d1a;
+  color:#fff;
+}
+.v1-photo-mini-btn:disabled{
+  opacity:.35;
+  cursor:not-allowed;
+}
+.v1-text-cell{
+  background:#fff;
+  padding:2px 3px!important;
+}
+.v1-text-input{
+  width:100%;
+  height:24px;
+  border:1px solid #d4bd65;
+  border-radius:2px;
+  background:#fffbe6;
+  color:#111;
+  font-family:'Noto Sans KR','Malgun Gothic',sans-serif;
   font-size:10px;
   text-align:center;
-  padding:6px 3px!important;
+  padding:2px 4px;
+}
+.v1-text-input:focus{
+  outline:1px solid #c8a200;
+}
+.v1-text-input::placeholder{
+  color:#aaa;
+  font-size:9px;
+}
+
+/* 이미지 관리 팝업 */
+#v1-photo-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:12000;
+  background:rgba(0,0,0,.48);
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+#v1-photo-modal.show{display:flex;}
+.v1-photo-modal-box{
+  width:440px;
+  max-width:94vw;
+  background:#fff;
+  border:1px solid #9aa7b4;
+  border-radius:8px;
+  box-shadow:0 12px 36px rgba(0,0,0,.26);
+  padding:16px;
+}
+.v1-photo-modal-title{
+  font-size:14px;
+  font-weight:700;
+  color:#1a3a5c;
+  margin-bottom:10px;
+}
+#v1-photo-dropzone{
+  min-height:180px;
+  border:2px dashed #9aa7b4;
+  border-radius:7px;
+  background:#f8fafc;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+  padding:14px;
+  cursor:pointer;
+  transition:.15s ease;
+}
+#v1-photo-dropzone.dragover{
+  border-color:#217346;
+  background:#eef9f2;
+}
+#v1-photo-dropzone .drop-main{
+  font-size:13px;
+  font-weight:700;
+  color:#31465c;
+}
+#v1-photo-dropzone .drop-sub{
+  font-size:11px;
+  color:#7a8794;
+}
+#v1-photo-modal-preview{
+  display:none;
+  max-width:100%;
+  max-height:220px;
+  object-fit:contain;
+  background:#fff;
+  margin:0 auto;
+}
+.v1-photo-modal-name{
+  min-height:18px;
+  margin-top:8px;
+  font-size:10px;
+  color:#667788;
+  text-align:center;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.v1-photo-modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:7px;
+  margin-top:12px;
+}
+.v1-photo-modal-btn{
+  min-width:82px;
+  height:31px;
+  border-radius:4px;
+  border:1px solid #1a3a5c;
+  background:#fff;
+  color:#1a3a5c;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+.v1-photo-modal-btn:hover{
+  background:#1a3a5c;
+  color:#fff;
+}
+.v1-photo-modal-btn.delete{
+  border-color:#b42318;
+  color:#b42318;
+}
+.v1-photo-modal-btn.delete:hover{
+  background:#b42318;
+  color:#fff;
+}
+.v1-photo-modal-btn.delete:disabled{
+  opacity:.35;
+  cursor:not-allowed;
+  background:#fff;
+  color:#b42318;
 }
 .signature-image{
   display:none;
@@ -507,19 +679,40 @@ body{min-width:844px;overflow-x:auto;}
     <td rowspan="4" class="v1-photo-cell">
       <div class="v1-photo-inner">
         <div class="v1-no-badge">No.1</div>
-        <div class="v1-photo-box"><span class="v1-photo-plus">+</span></div>
+        <div class="v1-photo-box" onclick="openV1PhotoModal(1)" title="사진 관리">
+          <span class="v1-photo-empty" id="v1-photo-empty-1">+</span>
+          <img class="v1-photo-image" id="v1-photo-img-1" alt="No.1 이미지">
+        </div>
+        <div class="v1-photo-actions">
+          <button type="button" class="v1-photo-mini-btn" onclick="openV1PhotoModal(1);event.stopPropagation();" title="사진 추가">+</button>
+          <button type="button" class="v1-photo-mini-btn" id="v1-photo-minus-1" onclick="openV1PhotoModal(1);event.stopPropagation();" title="사진 삭제" disabled>−</button>
+        </div>
       </div>
     </td>
     <td rowspan="4" class="v1-photo-cell">
       <div class="v1-photo-inner">
         <div class="v1-no-badge">No.2</div>
-        <div class="v1-photo-box"><span class="v1-photo-plus">+</span></div>
+        <div class="v1-photo-box" onclick="openV1PhotoModal(2)" title="사진 관리">
+          <span class="v1-photo-empty" id="v1-photo-empty-2">+</span>
+          <img class="v1-photo-image" id="v1-photo-img-2" alt="No.2 이미지">
+        </div>
+        <div class="v1-photo-actions">
+          <button type="button" class="v1-photo-mini-btn" onclick="openV1PhotoModal(2);event.stopPropagation();" title="사진 추가">+</button>
+          <button type="button" class="v1-photo-mini-btn" id="v1-photo-minus-2" onclick="openV1PhotoModal(2);event.stopPropagation();" title="사진 삭제" disabled>−</button>
+        </div>
       </div>
     </td>
     <td rowspan="4" class="v1-photo-cell" style="border-right:none;">
       <div class="v1-photo-inner">
         <div class="v1-no-badge">No.3</div>
-        <div class="v1-photo-box"><span class="v1-photo-plus">+</span></div>
+        <div class="v1-photo-box" onclick="openV1PhotoModal(3)" title="사진 관리">
+          <span class="v1-photo-empty" id="v1-photo-empty-3">+</span>
+          <img class="v1-photo-image" id="v1-photo-img-3" alt="No.3 이미지">
+        </div>
+        <div class="v1-photo-actions">
+          <button type="button" class="v1-photo-mini-btn" onclick="openV1PhotoModal(3);event.stopPropagation();" title="사진 추가">+</button>
+          <button type="button" class="v1-photo-mini-btn" id="v1-photo-minus-3" onclick="openV1PhotoModal(3);event.stopPropagation();" title="사진 삭제" disabled>−</button>
+        </div>
       </div>
     </td>
   </tr>
@@ -527,9 +720,9 @@ body{min-width:844px;overflow-x:auto;}
   <tr style="height:26px;"></tr>
   <tr style="height:26px;"></tr>
   <tr style="height:30px;">
-    <td class="v1-pending-cell">No.4 (내용 미확정)</td>
-    <td class="v1-pending-cell">No.5 (내용 미확정)</td>
-    <td class="v1-pending-cell" style="border-right:none;">No.6 (내용 미확정)</td>
+    <td class="v1-text-cell"><input type="text" id="v1-no4" class="inp v1-text-input" maxlength="20" placeholder="No.4 최대 20자"></td>
+    <td class="v1-text-cell"><input type="text" id="v1-no5" class="inp v1-text-input" maxlength="20" placeholder="No.5 최대 20자"></td>
+    <td class="v1-text-cell" style="border-right:none;"><input type="text" id="v1-no6" class="inp v1-text-input" maxlength="20" placeholder="No.6 최대 20자"></td>
   </tr>
 </table>
 
@@ -762,6 +955,40 @@ body{min-width:844px;overflow-x:auto;}
 <div id="toast"></div>
 <div id="loading"><div id="loading-box">처리 중입니다.</div></div>
 
+<!-- v1 No.1~No.3 이미지 관리 팝업 -->
+<div id="v1-photo-modal" onclick="v1PhotoModalBackdrop(event)">
+  <div class="v1-photo-modal-box" role="dialog" aria-modal="true" aria-labelledby="v1-photo-modal-title">
+    <div class="v1-photo-modal-title" id="v1-photo-modal-title">No.1 이미지 관리</div>
+
+    <div id="v1-photo-dropzone"
+         onclick="document.getElementById('v1-photo-file').click()"
+         ondragenter="v1PhotoDragEnter(event)"
+         ondragover="v1PhotoDragOver(event)"
+         ondragleave="v1PhotoDragLeave(event)"
+         ondrop="v1PhotoDrop(event)">
+      <img id="v1-photo-modal-preview" alt="선택 이미지 미리보기">
+      <div id="v1-photo-drop-help">
+        <div class="drop-main">이미지를 이곳에 드래그앤드롭 하세요.</div>
+        <div class="drop-sub">또는 이 영역을 클릭하여 사진을 선택하세요.</div>
+      </div>
+    </div>
+
+    <div class="v1-photo-modal-name" id="v1-photo-modal-name">등록된 이미지 없음</div>
+
+    <input type="file"
+           id="v1-photo-file"
+           accept="image/*"
+           style="display:none"
+           onchange="v1PhotoFileSelected(event)">
+
+    <div class="v1-photo-modal-actions">
+      <button type="button" class="v1-photo-modal-btn" onclick="document.getElementById('v1-photo-file').click()">+ 사진 선택</button>
+      <button type="button" class="v1-photo-modal-btn delete" id="v1-photo-delete-btn" onclick="deleteV1Photo()" disabled>− 사진 삭제</button>
+      <button type="button" class="v1-photo-modal-btn" onclick="closeV1PhotoModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 "use strict";
 
@@ -946,6 +1173,187 @@ async function loadCompanyHeader() {
     console.warn("회사 표시정보 조회 실패:", error);
   }
 }
+
+/* =========================================================
+   v1 No.1~No.3 이미지 팝업
+   - 현재 단계: 브라우저 화면 메모리에서만 관리
+   - 파일 선택 / 드래그앤드롭 / 추가(교체) / 삭제
+   ========================================================= */
+const v1PhotoStore = {
+  1: null,
+  2: null,
+  3: null
+};
+let v1ActivePhotoSlot = 1;
+
+function openV1PhotoModal(slot) {
+  const normalized = Number(slot);
+  if (![1, 2, 3].includes(normalized)) return;
+
+  v1ActivePhotoSlot = normalized;
+  document.getElementById("v1-photo-modal-title").textContent =
+    "No." + normalized + " 이미지 관리";
+  document.getElementById("v1-photo-file").value = "";
+  renderV1PhotoModal();
+  document.getElementById("v1-photo-modal").classList.add("show");
+}
+
+function closeV1PhotoModal() {
+  const modal = document.getElementById("v1-photo-modal");
+  if (modal) modal.classList.remove("show");
+
+  const zone = document.getElementById("v1-photo-dropzone");
+  if (zone) zone.classList.remove("dragover");
+
+  const fileInput = document.getElementById("v1-photo-file");
+  if (fileInput) fileInput.value = "";
+}
+
+function v1PhotoModalBackdrop(event) {
+  if (event && event.target && event.target.id === "v1-photo-modal") {
+    closeV1PhotoModal();
+  }
+}
+
+function v1PhotoDragEnter(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById("v1-photo-dropzone").classList.add("dragover");
+}
+
+function v1PhotoDragOver(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+  document.getElementById("v1-photo-dropzone").classList.add("dragover");
+}
+
+function v1PhotoDragLeave(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById("v1-photo-dropzone");
+  if (!zone.contains(event.relatedTarget)) zone.classList.remove("dragover");
+}
+
+function v1PhotoDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById("v1-photo-dropzone").classList.remove("dragover");
+
+  const files = event.dataTransfer && event.dataTransfer.files;
+  if (!files || !files.length) return;
+
+  setV1PhotoFile(files[0]);
+}
+
+function v1PhotoFileSelected(event) {
+  const files = event.target && event.target.files;
+  if (!files || !files.length) return;
+
+  setV1PhotoFile(files[0]);
+}
+
+function setV1PhotoFile(file) {
+  if (!file) return;
+
+  if (!String(file.type || "").startsWith("image/")) {
+    showToast("❌ 이미지 파일만 등록할 수 있습니다.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(loadEvent) {
+    v1PhotoStore[v1ActivePhotoSlot] = {
+      name: file.name || ("No." + v1ActivePhotoSlot + " 이미지"),
+      type: file.type || "",
+      dataUrl: loadEvent.target.result
+    };
+
+    renderV1PhotoSlot(v1ActivePhotoSlot);
+    renderV1PhotoModal();
+    showToast("✅ No." + v1ActivePhotoSlot + " 이미지가 추가되었습니다.");
+  };
+  reader.onerror = function() {
+    showToast("❌ 이미지 파일을 읽지 못했습니다.");
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteV1Photo() {
+  const current = v1PhotoStore[v1ActivePhotoSlot];
+  if (!current) return;
+
+  if (!window.confirm("No." + v1ActivePhotoSlot + " 이미지를 삭제하시겠습니까?")) {
+    return;
+  }
+
+  v1PhotoStore[v1ActivePhotoSlot] = null;
+  renderV1PhotoSlot(v1ActivePhotoSlot);
+  renderV1PhotoModal();
+  showToast("✅ No." + v1ActivePhotoSlot + " 이미지가 삭제되었습니다.");
+}
+
+function renderV1PhotoSlot(slot) {
+  const data = v1PhotoStore[slot];
+  const image = document.getElementById("v1-photo-img-" + slot);
+  const empty = document.getElementById("v1-photo-empty-" + slot);
+  const minus = document.getElementById("v1-photo-minus-" + slot);
+
+  if (!image || !empty || !minus) return;
+
+  if (data && data.dataUrl) {
+    image.src = data.dataUrl;
+    image.style.display = "block";
+    empty.style.display = "none";
+    minus.disabled = false;
+  } else {
+    image.removeAttribute("src");
+    image.style.display = "none";
+    empty.style.display = "";
+    minus.disabled = true;
+  }
+}
+
+function renderV1PhotoModal() {
+  const data = v1PhotoStore[v1ActivePhotoSlot];
+  const preview = document.getElementById("v1-photo-modal-preview");
+  const help = document.getElementById("v1-photo-drop-help");
+  const name = document.getElementById("v1-photo-modal-name");
+  const deleteButton = document.getElementById("v1-photo-delete-btn");
+
+  if (!preview || !help || !name || !deleteButton) return;
+
+  if (data && data.dataUrl) {
+    preview.src = data.dataUrl;
+    preview.style.display = "block";
+    help.style.display = "none";
+    name.textContent = data.name || ("No." + v1ActivePhotoSlot + " 이미지");
+    deleteButton.disabled = false;
+  } else {
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+    help.style.display = "";
+    name.textContent = "등록된 이미지 없음";
+    deleteButton.disabled = true;
+  }
+}
+
+function clearV1Photos() {
+  [1, 2, 3].forEach(function(slot) {
+    v1PhotoStore[slot] = null;
+    renderV1PhotoSlot(slot);
+  });
+  closeV1PhotoModal();
+}
+
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Escape") {
+    const modal = document.getElementById("v1-photo-modal");
+    if (modal && modal.classList.contains("show")) {
+      closeV1PhotoModal();
+    }
+  }
+});
 
 /* =========================================================
    공통 함수
@@ -1286,6 +1694,7 @@ async function loadRecord(productionRow) {
   currentProductionRow = productionRow;
   currentReportRow = null;
 
+  clearV1Photos();
   clearReportOnlyFields();
   applyProductionFields(productionRow);
 
@@ -1397,6 +1806,9 @@ function applyProductionFields(row) {
 
 function clearReportOnlyFields() {
   sv("f-method", "고주파열처리");
+  sv("v1-no4", "");
+  sv("v1-no5", "");
+  sv("v1-no6", "");
 
   for (let i = 1; i <= 5; i += 1) {
     sv("f-desc" + i, "");
@@ -1719,6 +2131,8 @@ function overallInspectionResult() {
    ========================================================= */
 function resetForm() {
   if (!window.confirm("모든 입력 내용을 초기화하시겠습니까?")) return;
+
+  clearV1Photos();
 
   document.querySelectorAll(".inp").forEach(function(element) {
     element.value = "";
