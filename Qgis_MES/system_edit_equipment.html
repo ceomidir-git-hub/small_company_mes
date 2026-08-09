@@ -470,15 +470,15 @@
     }
 
     .equipment-table .col-no { width: 2.5%; }
+    .equipment-table .col-process { width: 6%; }
     .equipment-table .col-number { width: 7%; }
     .equipment-table .col-name { width: 12%; }
     .equipment-table .col-capacity { width: 9%; }
     .equipment-table .col-quantity { width: 4%; }
     .equipment-table .col-maker { width: 10%; }
     .equipment-table .col-date { width: 7%; }
-    .equipment-table .col-line { width: 6%; }
-    .equipment-table .col-process { width: 6%; }
     .equipment-table .col-price { width: 8%; }
+    .equipment-table .col-line { width: 6%; }
     .equipment-table .col-special { width: 12%; }
     .equipment-table .col-remarks { width: 11%; }
     .equipment-table .col-status { width: 5.5%; }
@@ -499,8 +499,8 @@
     /* 화면폭 안에 13개 열을 배치하여 하단 가로 스크롤 방지 */
     .equipment-table th:nth-child(1),
     .equipment-table td:nth-child(1),
-    .equipment-table th:nth-child(5),
-    .equipment-table td:nth-child(5),
+    .equipment-table th:nth-child(6),
+    .equipment-table td:nth-child(6),
     .equipment-table th:nth-child(13),
     .equipment-table td:nth-child(13) {
       white-space: nowrap;
@@ -735,21 +735,21 @@
   <div class="table-wrap">
     <table class="equipment-table">
       <colgroup>
-        <col class="col-no"><col class="col-number"><col class="col-name"><col class="col-capacity">
-        <col class="col-quantity"><col class="col-maker"><col class="col-date"><col class="col-line">
-        <col class="col-process"><col class="col-price"><col class="col-special"><col class="col-remarks">
+        <col class="col-no"><col class="col-process"><col class="col-number"><col class="col-name">
+        <col class="col-capacity"><col class="col-quantity"><col class="col-maker"><col class="col-date">
+        <col class="col-price"><col class="col-line"><col class="col-special"><col class="col-remarks">
         <col class="col-status">
       </colgroup>
-      <thead><tr><th>NO</th><th>설비번호</th><th>제조설비명</th><th>용량/공칭능력</th><th>대수</th><th>제작사</th><th>설치일자</th><th>LINE명</th><th>공정</th><th>구입가격</th><th>특이사항</th><th>비고</th><th>상태</th></tr></thead>
+      <thead><tr><th>NO</th><th>공정</th><th>설비번호</th><th>설비명</th><th>용량능력</th><th>대수</th><th>제작사</th><th>설치일자</th><th>구입가격</th><th>LINE명</th><th>특이사항</th><th>비고</th><th>상태</th></tr></thead>
       <tbody id="tableBody"><tr><td class="empty" colspan="13">데이터를 불러오는 중입니다.</td></tr></tbody>
       <tfoot>
         <tr>
-          <td colspan="3">합계</td>
+          <td colspan="4">합계</td>
           <td>조회 <span id="totalCount">0건</span></td>
           <td id="totalQuantity">0대</td>
-          <td colspan="4"></td>
+          <td colspan="2"></td>
           <td id="totalPurchasePrice">0원</td>
-          <td colspan="3"></td>
+          <td colspan="4"></td>
         </tr>
       </tfoot>
     </table>
@@ -895,7 +895,7 @@ function resetSearch(){
 function render(){
  const quantityTotal=visibleRows.reduce((sum,r)=>sum+(Number(r.quantity)||0),0);
  const priceTotal=visibleRows.reduce((sum,r)=>sum+(Number(r.purchase_price)||0),0);
- tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`<tr data-id="${e(r.equipment_system_id)}" onclick="selectRow('${e(r.equipment_system_id)}')"><td>${i+1}</td><td>${e(r.equipment_number)}</td><td>${e(r.equipment_name)}</td><td>${e(r.capacity_spec)}</td><td>${r.quantity==null?"":Number(r.quantity).toLocaleString("ko-KR")}</td><td>${e(r.manufacturer)}</td><td>${e(r.installation_date)}</td><td>${e(r.line_name)}</td><td>${e(r.process_name)}</td><td>${r.purchase_price==null?"":Number(r.purchase_price).toLocaleString("ko-KR")}</td><td class="notes-cell">${e(r.special_notes)}</td><td class="notes-cell">${e(r.remarks)}</td><td>${r.is_active?"사용":"중지"}</td></tr>`).join(""):'<tr><td class="empty" colspan="13">표시할 설비가 없습니다.</td></tr>';
+ tableBody.innerHTML=visibleRows.length?visibleRows.map((r,i)=>`<tr data-id="${e(r.equipment_system_id)}" onclick="selectRow('${e(r.equipment_system_id)}')"><td>${i+1}</td><td>${e(r.process_name)}</td><td>${e(r.equipment_number)}</td><td>${e(r.equipment_name)}</td><td>${e(r.capacity_spec)}</td><td>${r.quantity==null?"":Number(r.quantity).toLocaleString("ko-KR")}</td><td>${e(r.manufacturer)}</td><td>${e(r.installation_date)}</td><td>${r.purchase_price==null?"":Number(r.purchase_price).toLocaleString("ko-KR")}</td><td>${e(r.line_name)}</td><td class="notes-cell">${e(r.special_notes)}</td><td class="notes-cell">${e(r.remarks)}</td><td>${r.is_active?"사용":"중지"}</td></tr>`).join(""):'<tr><td class="empty" colspan="13">표시할 설비가 없습니다.</td></tr>';
  totalCount.textContent=visibleRows.length+"건";
  totalQuantity.textContent=quantityTotal.toLocaleString("ko-KR")+"대";
  totalPurchasePrice.textContent=priceTotal.toLocaleString("ko-KR")+"원";
