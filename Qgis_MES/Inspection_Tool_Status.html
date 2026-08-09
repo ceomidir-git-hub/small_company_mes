@@ -30,7 +30,7 @@
   }
   .main-button:hover{background:#1e293b;border-color:#64748b}
   .toolbar{
-    display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+    display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap;
     padding:7px 9px;margin-bottom:12px;
     border:1px solid #b8c3d1;border-radius:var(--radius);
     background:#eef2f7;
@@ -63,7 +63,7 @@
   .editor-frame{display:none;margin-bottom:12px;padding:15px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
   .editor-frame.show{display:block}.editor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.editor-head h2{margin:0;color:#0e3f9d;font-size:17px}
   .mode-badge{padding:5px 10px;border-radius:999px;background:#e9eef7;color:#45556d;font-size:11px;font-weight:800}.mode-badge.new{background:#e6f7ef;color:#047857}.mode-badge.edit{background:#fff3df;color:#a35405}
-  .editor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.editor-grid .full{grid-column:1/-1}.section-label{grid-column:1/-1;padding:8px 10px;border-left:4px solid var(--blue);background:#eef4ff;color:#0e3f9d;font-size:14px;font-weight:800}
+  .editor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.editor-grid .full{grid-column:1/-1;width:100%}.editor-grid .full textarea{width:100%}.section-label{grid-column:1/-1;padding:8px 10px;border-left:4px solid var(--blue);background:#eef4ff;color:#0e3f9d;font-size:14px;font-weight:800}
   .list-frame{padding:14px 16px 16px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
   .screen-title{margin:2px 0 12px;color:#0e3f9d;font-size:18px;text-align:center}.sheet{width:100%;margin:0 auto;background:#fff}
   table.title-box{width:100%;border-collapse:collapse;margin-bottom:6px}table.title-box td{border:1px solid #000;text-align:center;vertical-align:middle;font-size:25px;font-weight:800;height:52px;letter-spacing:2px}
@@ -72,7 +72,9 @@
   table.main th,table.main td{border:1px solid #000;text-align:center;vertical-align:middle;font-size:12px;line-height:1.25;padding:4px 3px;overflow:hidden;word-break:break-word;white-space:pre-line}
   table.main thead th{font-weight:800;background:#f8fafc;height:36px}table.main thead tr.sub-header th{height:30px}.data-main td{height:38px}.data-sub td{height:32px}.grey{background:#ededed}.selected-row td{background:#e8f0ff!important}.clickable{cursor:pointer}.clickable:hover td{filter:brightness(.97)}
   .footer-line{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:11px}.list-footer{display:flex;justify-content:flex-end;padding-top:10px;color:#475569;font-size:14px;font-weight:700}
-  .photo-link{border:0;background:transparent;color:#1d4ed8;font-weight:800;font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:4px 5px;cursor:pointer}
+  .photo-link{border:0;background:transparent;font-weight:800;font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:4px 5px;cursor:pointer;white-space:nowrap}
+  .photo-link.has-photo{color:#1d4ed8}
+  .photo-link.no-photo{color:#64748b}
   .photo-link:hover{color:#0e3f9d}
   .photo-modal{display:none;position:fixed;inset:0;z-index:10020;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.58)}
   .photo-modal.show{display:flex}
@@ -87,17 +89,50 @@
   .photo-preview.show{display:block}
   .photo-empty{color:#64748b;font-size:14px;font-weight:700}
   .photo-control{margin-top:12px}
-  .photo-control label{display:block;margin-bottom:6px;color:#445267;font-size:13px;font-weight:800}
-  .photo-control input[type=file]{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}
+  .photo-control>label{display:block;margin-bottom:6px;color:#445267;font-size:13px;font-weight:800}
+  .photo-drop-zone{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+    min-height:112px;padding:15px;border:2px dashed #aeb9c8;border-radius:9px;
+    background:#f8fafc;color:#475569;text-align:center;cursor:pointer;
+    transition:border-color .15s ease,background .15s ease,box-shadow .15s ease
+  }
+  .photo-drop-zone:hover,.photo-drop-zone:focus{border-color:var(--blue);background:#f3f7ff;outline:none;box-shadow:0 0 0 3px rgba(31,94,219,.10)}
+  .photo-drop-zone.dragover{border-color:var(--blue);background:#eaf1ff;box-shadow:0 0 0 3px rgba(31,94,219,.12)}
+  .photo-drop-icon{font-size:26px;line-height:1}
+  .photo-drop-main{font-size:14px;font-weight:800;color:#334155}
+  .photo-drop-sub{font-size:12px;color:#64748b}
+  .photo-selected{margin-top:7px;min-height:18px;color:#1d4ed8;font-size:12px;font-weight:700;word-break:break-all}
   .photo-help{margin-top:6px;color:#64748b;font-size:12px}
   .photo-status{display:none;margin-top:10px;padding:9px 11px;border-radius:7px;font-size:13px;line-height:1.4}
   .photo-status.show{display:block}.photo-status.info{background:#eff6ff;color:#1d4ed8}.photo-status.success{background:#ecfdf5;color:#047857}.photo-status.error{background:#fff1f2;color:#be123c}
   .photo-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;margin-top:12px}
   .photo-actions .btn{min-width:76px}
   .loading{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(15,23,42,.42)}.loading.show{display:flex}.loading-box{padding:17px 22px;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.18);font-weight:800}
-  @page{size:A4 landscape;margin:8mm}
+  @page{size:A4 landscape;margin:5mm}
   @media print{
-    html,body{background:#fff!important;color:#000!important}.page{padding:0}.title-frame,.toolbar,.search-frame,.notice,.editor-frame,.screen-title,.list-footer,.loading,.photo-modal{display:none!important}.list-frame{padding:0;border:0;box-shadow:none;background:#fff!important}.table-wrap{overflow:visible;border:0}.sheet{width:281mm;max-width:281mm}.sheet table.main{min-width:0!important;width:100%!important}.sheet table.main th,.sheet table.main td{font-size:8.6pt!important;padding:1.2px 2px!important;background:#fff;color:#000}.sheet table.main .grey{background:#ededed!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet table.title-box td{font-size:17pt;height:10.5mm}.data-main td{height:7.9mm!important}.data-sub td{height:7.9mm!important}.selected-row td{background:inherit!important}.footer-line{font-size:8pt;margin-top:1.8mm}}
+    html,body{width:287mm!important;background:#fff!important;color:#000!important}
+    body{overflow:visible!important}
+    .page{width:287mm!important;padding:0!important;margin:0!important}
+    .title-frame,.toolbar,.search-frame,.notice,.editor-frame,.screen-title,.list-footer,.loading,.photo-modal{display:none!important}
+    .list-frame{width:287mm!important;padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;background:#fff!important;break-inside:avoid-page;page-break-inside:avoid}
+    .table-wrap{overflow:visible!important;border:0!important}
+    .sheet{width:287mm!important;max-width:287mm!important;margin:0!important;break-inside:avoid-page;page-break-inside:avoid}
+    .sheet table.title-box{margin:0 0 1mm 0!important}
+    .sheet table.title-box td{font-size:15.5pt!important;height:9mm!important;line-height:1!important;padding:0!important}
+    .sheet table.main{min-width:0!important;width:100%!important;break-inside:avoid-page;page-break-inside:avoid}
+    .sheet table.main th,.sheet table.main td{
+      font-size:7.9pt!important;line-height:1.08!important;padding:.7px 1.4px!important;
+      background:#fff;color:#000;word-break:break-word!important
+    }
+    .sheet table.main thead th{height:6.4mm!important}
+    .sheet table.main thead tr.sub-header th{height:5.6mm!important}
+    .sheet table.main .grey{background:#ededed!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .data-main td{height:6.2mm!important}
+    .data-sub td{height:6.0mm!important}
+    .selected-row td{background:inherit!important}
+    .photo-link{color:#000!important;text-decoration:none!important;font-size:7.8pt!important;padding:0!important}
+    .footer-line{font-size:7.4pt!important;line-height:1!important;margin-top:1mm!important}
+  }
   @media(max-width:900px){.search-frame{grid-template-columns:1fr 1fr}.editor-grid{grid-template-columns:1fr 1fr}}
   @media(max-width:600px){
     .page{padding:8px}
@@ -178,7 +213,6 @@
   </section>
 
   <section class="list-frame">
-    <h2 class="screen-title">측정장비 관리목록</h2>
     <div class="sheet">
       <table class="title-box"><tr><td>측정장비&nbsp;&nbsp;관리목록</td></tr></table>
       <div class="table-wrap">
@@ -202,7 +236,6 @@
       </div>
       <div class="footer-line"><span>QP06-QI610-F001</span><span id="companyCode"></span><span>A4(210×297)㎜</span></div>
     </div>
-    <div id="countLabel" class="list-footer">총 0건</div>
   </section>
 </main>
 
@@ -222,8 +255,14 @@
       </div>
 
       <div class="photo-control">
-        <label for="photoFile">이미지 선택</label>
-        <input id="photoFile" type="file" accept="image/jpeg,image/png,image/webp">
+        <label>이미지 추가</label>
+        <div id="photoDropZone" class="photo-drop-zone" tabindex="0" role="button" aria-label="사진 파일 선택 또는 드래그 앤 드롭">
+          <input id="photoFile" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <div class="photo-drop-icon">📷</div>
+          <div class="photo-drop-main">사진을 여기에 끌어 놓으세요</div>
+          <div class="photo-drop-sub">또는 이 영역을 클릭하여 사진 선택</div>
+        </div>
+        <div id="photoSelected" class="photo-selected"></div>
         <div class="photo-help">JPEG / PNG / WebP · 파일 1개 · 최대 5MB</div>
       </div>
 
@@ -262,6 +301,7 @@ let selectedId=null;
 let mode="view";
 let photoToolId=null;
 let photoObjectUrl=null;
+let selectedPhotoFile=null;
 
 const fieldIds=["displayOrder","lotNumber","toolName","modelSpec","manufacturer","quantity","deviceNumber","equipmentLocation","calibrationDate1","calibrationNumber1","calibrationAgency1","calibrationDate2","calibrationNumber2","calibrationAgency2","calibrationDate3","calibrationNumber3","calibrationAgency3","remarks"];
 const $=id=>document.getElementById(id);
@@ -477,6 +517,33 @@ function setPhotoPreviewEmpty(){
   $("photoPreview").classList.remove("show");
   $("photoEmpty").style.display="block";
 }
+function clearSelectedPhoto(){
+  selectedPhotoFile=null;
+  $("photoFile").value="";
+  $("photoSelected").textContent="";
+}
+function validatePhotoFile(file){
+  if(!file)return "사진 파일이 없습니다.";
+  if(!IMAGE_TYPES.has(file.type))return "JPEG, PNG, WebP 이미지만 선택할 수 있습니다.";
+  if(file.size>MAX_IMAGE_BYTES)return "이미지 용량은 5MB 이하만 선택할 수 있습니다.";
+  return "";
+}
+function previewSelectedPhoto(file){
+  const error=validatePhotoFile(file);
+  if(error){
+    clearSelectedPhoto();
+    return photoStatus(error,"error");
+  }
+
+  selectedPhotoFile=file;
+  $("photoSelected").textContent="선택된 사진: "+file.name;
+  revokePhotoObjectUrl();
+  photoObjectUrl=URL.createObjectURL(file);
+  $("photoPreview").src=photoObjectUrl;
+  $("photoPreview").classList.add("show");
+  $("photoEmpty").style.display="none";
+  photoStatus("저장 전 사진 미리보기입니다. 사진 저장 버튼을 눌러 저장해 주세요.","info");
+}
 function photoBackdropClick(event){
   if(event.target===$("photoModal"))closePhotoModal();
 }
@@ -486,7 +553,7 @@ async function openPhotoModal(event,id){
   if(!row)return notice("선택한 검사장비를 찾을 수 없습니다.","error");
 
   photoToolId=id;
-  $("photoFile").value="";
+  clearSelectedPhoto();
   clearPhotoStatus();
   $("photoInfo").textContent=`LOT 번호: ${row.lot_number||"-"} · 측정장비명: ${row.tool_name||"-"}`;
   $("photoModal").classList.add("show");
@@ -496,7 +563,7 @@ async function openPhotoModal(event,id){
 function closePhotoModal(){
   $("photoModal").classList.remove("show");
   document.body.style.overflow="";
-  $("photoFile").value="";
+  clearSelectedPhoto();
   clearPhotoStatus();
   setPhotoPreviewEmpty();
   photoToolId=null;
@@ -505,6 +572,7 @@ async function reloadPhoto(){
   const row=currentPhotoRow();
   if(!row)return photoStatus("검사장비 정보가 없습니다.","error");
 
+  clearSelectedPhoto();
   const path=row.inspection_tool_image_path;
   $("btnPhotoDelete").disabled=!path;
 
@@ -535,10 +603,10 @@ async function savePhoto(){
   const row=currentPhotoRow();
   if(!row)return photoStatus("검사장비 정보가 없습니다.","error");
 
-  const file=$("photoFile").files?.[0];
+  const file=selectedPhotoFile||$("photoFile").files?.[0];
   if(!file)return photoStatus("저장할 사진을 먼저 선택해 주세요.","error");
-  if(!IMAGE_TYPES.has(file.type))return photoStatus("JPEG, PNG, WebP 이미지만 저장할 수 있습니다.","error");
-  if(file.size>MAX_IMAGE_BYTES)return photoStatus("이미지 용량은 5MB 이하만 저장할 수 있습니다.","error");
+  const fileError=validatePhotoFile(file);
+  if(fileError)return photoStatus(fileError,"error");
 
   const fileName=safeFileName(file.name);
   const newPath=`${currentProfile.company_id}/${row.inspection_tool_system_id}/${Date.now()}_${fileName}`;
@@ -568,7 +636,7 @@ async function savePhoto(){
   }
 
   row.inspection_tool_image_path=newPath;
-  $("photoFile").value="";
+  clearSelectedPhoto();
   $("btnPhotoDelete").disabled=false;
   await reloadPhoto();
   notice("검사장비 사진 저장이 완료되었습니다.","success");
@@ -608,7 +676,7 @@ async function deletePhoto(){
 
   row.inspection_tool_image_path=null;
   $("btnPhotoDelete").disabled=true;
-  $("photoFile").value="";
+  clearSelectedPhoto();
   setPhotoPreviewEmpty();
   photoStatus("사진이 삭제되었습니다.","success");
   notice("검사장비 사진 삭제가 완료되었습니다.","success");
@@ -616,25 +684,89 @@ async function deletePhoto(){
 
 function dataRowsHtml(row){
   const id=escapeHtml(row.inspection_tool_system_id),selected=row.inspection_tool_system_id===selectedId?" selected-row":"";
+  const hasPhoto=Boolean(clean(row.inspection_tool_image_path));
+  const photoText=hasPhoto?"📷 사진 있음":"＋ 사진 등록";
+  const photoClass=hasPhoto?" has-photo":" no-photo";
   return `<tr class="data-main clickable${selected}" onclick="selectRow('${id}')">
     <td rowspan="2">${escapeHtml(row.display_order)}</td><td rowspan="2">${escapeHtml(row.lot_number)}</td><td rowspan="2">${escapeHtml(row.tool_name)}</td><td rowspan="2">${escapeHtml(row.model_spec)}</td><td rowspan="2">${escapeHtml(row.manufacturer)}</td><td rowspan="2">${escapeHtml(row.quantity)}</td><td rowspan="2">${escapeHtml(row.device_number)}</td><td rowspan="2">${escapeHtml(row.equipment_location)}</td>
-    <td colspan="2">${escapeHtml(row.calibration_date_1)}</td><td colspan="2">${escapeHtml(row.calibration_date_2)}</td><td colspan="2">${escapeHtml(row.calibration_date_3)}</td><td rowspan="2"><button class="photo-link" type="button" onclick="openPhotoModal(event,'${id}')">사진</button></td><td rowspan="2">${escapeHtml(row.remarks)}</td></tr>
+    <td colspan="2">${escapeHtml(row.calibration_date_1)}</td><td colspan="2">${escapeHtml(row.calibration_date_2)}</td><td colspan="2">${escapeHtml(row.calibration_date_3)}</td><td rowspan="2"><button class="photo-link${photoClass}" type="button" onclick="openPhotoModal(event,'${id}')">${photoText}</button></td><td rowspan="2">${escapeHtml(row.remarks)}</td></tr>
     <tr class="data-sub clickable${selected}" onclick="selectRow('${id}')"><td class="grey">${escapeHtml(row.calibration_number_1)}</td><td class="grey">${escapeHtml(row.calibration_agency_1)}</td><td class="grey">${escapeHtml(row.calibration_number_2)}</td><td class="grey">${escapeHtml(row.calibration_agency_2)}</td><td class="grey">${escapeHtml(row.calibration_number_3)}</td><td class="grey">${escapeHtml(row.calibration_agency_3)}</td></tr>`;
 }
-function blankRowsHtml(order){return `<tr class="data-main"><td rowspan="2">${order}</td>${'<td rowspan="2"></td>'.repeat(7)}<td colspan="2"></td><td colspan="2"></td><td colspan="2"></td><td rowspan="2">사진</td><td rowspan="2"></td></tr><tr class="data-sub">${'<td class="grey"></td>'.repeat(6)}</tr>`}
+function blankRowsHtml(order){return `<tr class="data-main"><td rowspan="2">${order}</td>${'<td rowspan="2"></td>'.repeat(7)}<td colspan="2"></td><td colspan="2"></td><td colspan="2"></td><td rowspan="2"></td><td rowspan="2"></td></tr><tr class="data-sub">${'<td class="grey"></td>'.repeat(6)}</tr>`}
 function renderRows(){
   let html=visibleRows.map(dataRowsHtml).join("");
   const blankCount=Math.max(0,10-visibleRows.length);for(let i=0;i<blankCount;i++)html+=blankRowsHtml(visibleRows.length+i+1);
   if(!html)html='<tr><td colspan="16" style="height:120px;color:#64748b">조회된 검사장비가 없습니다.</td></tr>';
-  $("tableBody").innerHTML=html;$("countLabel").textContent="총 "+visibleRows.length+"건";
+  $("tableBody").innerHTML=html;
 }
-function savePdf(){if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");notice("조회된 "+visibleRows.length+"건을 PDF 저장용 화면으로 변환했습니다.","success");setTimeout(()=>window.print(),100)}
+function localDateText(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=String(now.getMonth()+1).padStart(2,"0");
+  const d=String(now.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+function savePdf(){
+  if(!visibleRows.length)return notice("PDF로 저장할 조회 데이터가 없습니다.","error");
+
+  const originalTitle=document.title;
+  const pdfTitle=`검사장비현황-${localDateText()}`;
+  document.title=pdfTitle;
+  notice("조회된 "+visibleRows.length+"건을 A4 가로 1장 PDF 저장용 화면으로 변환했습니다.","success");
+
+  const restoreTitle=()=>{
+    document.title=originalTitle;
+    window.removeEventListener("afterprint",restoreTitle);
+  };
+  window.addEventListener("afterprint",restoreTitle);
+
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      if(document.title===pdfTitle)document.title=originalTitle;
+    },1500);
+  },120);
+}
 
 ["searchLot","searchName","searchLocation"].forEach(id=>{
   $(id).addEventListener("keydown",event=>{
     if(event.key==="Enter"){event.preventDefault();searchRows()}
   });
 });
+const photoDropZone=$("photoDropZone");
+const photoFileInput=$("photoFile");
+
+photoDropZone.addEventListener("click",()=>photoFileInput.click());
+photoDropZone.addEventListener("keydown",event=>{
+  if(event.key==="Enter"||event.key===" "){
+    event.preventDefault();
+    photoFileInput.click();
+  }
+});
+photoFileInput.addEventListener("change",()=>{
+  const file=photoFileInput.files?.[0];
+  if(file)previewSelectedPhoto(file);
+});
+
+["dragenter","dragover"].forEach(type=>{
+  photoDropZone.addEventListener(type,event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    photoDropZone.classList.add("dragover");
+  });
+});
+["dragleave","drop"].forEach(type=>{
+  photoDropZone.addEventListener(type,event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    photoDropZone.classList.remove("dragover");
+  });
+});
+photoDropZone.addEventListener("drop",event=>{
+  const file=event.dataTransfer?.files?.[0];
+  if(file)previewSelectedPhoto(file);
+});
+
 document.addEventListener("keydown",event=>{
   if(event.key==="Escape"&&$("photoModal").classList.contains("show"))closePhotoModal();
 });
