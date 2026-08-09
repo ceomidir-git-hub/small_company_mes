@@ -974,6 +974,7 @@ body{min-width:844px;overflow-x:auto;}
     </div>
 
     <div class="v1-photo-modal-name" id="v1-photo-modal-name">등록된 이미지 없음</div>
+    <div style="margin-top:3px;font-size:10px;color:#8a6d1a;text-align:center;">사진 추가·삭제 후 상단의 <b>성적서 저장</b>을 눌러야 DB에 반영됩니다.</div>
 
     <input type="file"
            id="v1-photo-file"
@@ -1001,6 +1002,14 @@ const PRODUCTION_TABLE = "Total_Production_DB";
 const REPORT_TABLE = "inspection_reports";
 const SIGNATURE_BUCKET = "employee_signatures";
 const SIGNATURE_URL_EXPIRES_IN = 60 * 60;
+const V1_IMAGE_BUCKET = "inspection-report-v1-images";
+const V1_IMAGE_URL_EXPIRES_IN = 60 * 60;
+const V1_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+const V1_IMAGE_COLUMN_BY_SLOT = {
+  1: "inspection_v1_no1_image_path",
+  2: "inspection_v1_no2_image_path",
+  3: "inspection_v1_no3_image_path"
+};
 const LOGIN_PAGE_URL = "../index.html";
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -1055,6 +1064,12 @@ const PRODUCTION_COLUMNS = [
   "inspection_crack_p2",
   "inspection_crack_p3",
   "inspection_crack_judgment",
+  "inspection_v1_no1_image_path",
+  "inspection_v1_no2_image_path",
+  "inspection_v1_no3_image_path",
+  "inspection_v1_no4_text",
+  "inspection_v1_no5_text",
+  "inspection_v1_no6_text",
   "inspected_by",
   "approved_by",
   "is_active"
@@ -1175,14 +1190,26 @@ async function loadCompanyHeader() {
 }
 
 /* =========================================================
-   v1 No.1~No.3 이미지 팝업
-   - 현재 단계: 브라우저 화면 메모리에서만 관리
-   - 파일 선택 / 드래그앤드롭 / 추가(교체) / 삭제
+   v1 No.1~No.3 이미지 팝업 + Supabase Storage 연결
+   - 파일 선택 / 드래그앤드롭
+   - 성적서 저장 시 Storage 업로드 + DB 경로 저장
+   - 조회 시 Private Storage Signed URL 복원
+   - 삭제는 성적서 저장 시 Storage + DB에 반영
    ========================================================= */
+function makeEmptyV1PhotoState() {
+  return {
+    file: null,
+    dataUrl: "",
+    name: "",
+    originalPath: "",
+    pendingDelete: false
+  };
+}
+
 const v1PhotoStore = {
-  1: null,
-  2: null,
-  3: null
+  1: makeEmptyV1PhotoState(),
+  2: makeEmptyV1PhotoState(),
+  3: makeEmptyV1PhotoState()
 };
 let v1ActivePhotoSlot = 1;
 
@@ -1242,15 +1269,42 @@ function v1PhotoDrop(event) {
 
   const files = event.dataTransfer && event.dataTransfer.files;
   if (!files || !files.length) return;
-
   setV1PhotoFile(files[0]);
 }
 
 function v1PhotoFileSelected(event) {
   const files = event.target && event.target.files;
   if (!files || !files.length) return;
-
   setV1PhotoFile(files[0]);
+}
+
+function v1ImageExtension(file) {
+  const type = String((file && file.type) || "").toLowerCase();
+  const mimeMap = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/heic": "heic",
+    "image/heif": "heif"
+  };
+  if (mimeMap[type]) return mimeMap[type];
+
+  const match = String((file && file.name) || "").toLowerCase().match(/\.([a-z0-9]{2,5})$/);
+  return match ? match[1] : "jpg";
+}
+
+function v1UniqueImagePath(slot, file) {
+  const companyId = currentProfile && currentProfile.company_id;
+  const productionId = currentProductionRow && currentProductionRow.production_system_id;
+  if (!companyId || !productionId) {
+    throw new Error("회사 또는 생산실적 ID를 확인할 수 없습니다.");
+  }
+
+  const token = (window.crypto && typeof window.crypto.randomUUID === "function")
+    ? window.crypto.randomUUID()
+    : (Date.now() + "_" + Math.random().toString(36).slice(2, 10));
+
+  return companyId + "/" + productionId + "/no" + slot + "/" + token + "." + v1ImageExtension(file);
 }
 
 function setV1PhotoFile(file) {
@@ -1261,17 +1315,27 @@ function setV1PhotoFile(file) {
     return;
   }
 
+  if (Number(file.size || 0) > V1_IMAGE_MAX_BYTES) {
+    showToast("❌ 이미지 크기는 10MB 이하만 등록할 수 있습니다.");
+    return;
+  }
+
+  const slot = v1ActivePhotoSlot;
+  const current = v1PhotoStore[slot] || makeEmptyV1PhotoState();
   const reader = new FileReader();
+
   reader.onload = function(loadEvent) {
-    v1PhotoStore[v1ActivePhotoSlot] = {
-      name: file.name || ("No." + v1ActivePhotoSlot + " 이미지"),
-      type: file.type || "",
-      dataUrl: loadEvent.target.result
+    v1PhotoStore[slot] = {
+      file: file,
+      dataUrl: loadEvent.target.result,
+      name: file.name || ("No." + slot + " 이미지"),
+      originalPath: current.originalPath || "",
+      pendingDelete: false
     };
 
-    renderV1PhotoSlot(v1ActivePhotoSlot);
+    renderV1PhotoSlot(slot);
     renderV1PhotoModal();
-    showToast("✅ No." + v1ActivePhotoSlot + " 이미지가 추가되었습니다.");
+    showToast("✅ No." + slot + " 사진이 선택되었습니다. 성적서 저장을 눌러 저장하세요.");
   };
   reader.onerror = function() {
     showToast("❌ 이미지 파일을 읽지 못했습니다.");
@@ -1280,28 +1344,40 @@ function setV1PhotoFile(file) {
 }
 
 function deleteV1Photo() {
-  const current = v1PhotoStore[v1ActivePhotoSlot];
-  if (!current) return;
+  const slot = v1ActivePhotoSlot;
+  const current = v1PhotoStore[slot];
+  if (!current || (!current.dataUrl && !current.file && !current.originalPath)) return;
 
-  if (!window.confirm("No." + v1ActivePhotoSlot + " 이미지를 삭제하시겠습니까?")) {
-    return;
-  }
+  if (!window.confirm("No." + slot + " 이미지를 삭제하시겠습니까?")) return;
 
-  v1PhotoStore[v1ActivePhotoSlot] = null;
-  renderV1PhotoSlot(v1ActivePhotoSlot);
+  const hadSavedPhoto = Boolean(current.originalPath);
+  v1PhotoStore[slot] = {
+    file: null,
+    dataUrl: "",
+    name: "",
+    originalPath: current.originalPath || "",
+    pendingDelete: hadSavedPhoto
+  };
+
+  renderV1PhotoSlot(slot);
   renderV1PhotoModal();
-  showToast("✅ No." + v1ActivePhotoSlot + " 이미지가 삭제되었습니다.");
+
+  if (hadSavedPhoto) {
+    showToast("✅ No." + slot + " 사진이 삭제 예정입니다. 성적서 저장을 눌러 반영하세요.");
+  } else {
+    showToast("✅ No." + slot + " 선택 사진이 취소되었습니다.");
+  }
 }
 
 function renderV1PhotoSlot(slot) {
-  const data = v1PhotoStore[slot];
+  const data = v1PhotoStore[slot] || makeEmptyV1PhotoState();
   const image = document.getElementById("v1-photo-img-" + slot);
   const empty = document.getElementById("v1-photo-empty-" + slot);
   const minus = document.getElementById("v1-photo-minus-" + slot);
 
   if (!image || !empty || !minus) return;
 
-  if (data && data.dataUrl) {
+  if (data.dataUrl && !data.pendingDelete) {
     image.src = data.dataUrl;
     image.style.display = "block";
     empty.style.display = "none";
@@ -1310,12 +1386,12 @@ function renderV1PhotoSlot(slot) {
     image.removeAttribute("src");
     image.style.display = "none";
     empty.style.display = "";
-    minus.disabled = true;
+    minus.disabled = !(data.originalPath || data.file);
   }
 }
 
 function renderV1PhotoModal() {
-  const data = v1PhotoStore[v1ActivePhotoSlot];
+  const data = v1PhotoStore[v1ActivePhotoSlot] || makeEmptyV1PhotoState();
   const preview = document.getElementById("v1-photo-modal-preview");
   const help = document.getElementById("v1-photo-drop-help");
   const name = document.getElementById("v1-photo-modal-name");
@@ -1323,7 +1399,7 @@ function renderV1PhotoModal() {
 
   if (!preview || !help || !name || !deleteButton) return;
 
-  if (data && data.dataUrl) {
+  if (data.dataUrl && !data.pendingDelete) {
     preview.src = data.dataUrl;
     preview.style.display = "block";
     help.style.display = "none";
@@ -1333,25 +1409,114 @@ function renderV1PhotoModal() {
     preview.removeAttribute("src");
     preview.style.display = "none";
     help.style.display = "";
-    name.textContent = "등록된 이미지 없음";
-    deleteButton.disabled = true;
+    name.textContent = data.pendingDelete ? "삭제 예정 - 성적서 저장 시 반영" : "등록된 이미지 없음";
+    deleteButton.disabled = !(data.originalPath || data.file);
   }
 }
 
 function clearV1Photos() {
   [1, 2, 3].forEach(function(slot) {
-    v1PhotoStore[slot] = null;
+    v1PhotoStore[slot] = makeEmptyV1PhotoState();
     renderV1PhotoSlot(slot);
   });
   closeV1PhotoModal();
 }
 
+async function loadV1PhotosFromProduction(row) {
+  clearV1Photos();
+  if (!row) return;
+
+  const loadJobs = [1, 2, 3].map(async function(slot) {
+    const column = V1_IMAGE_COLUMN_BY_SLOT[slot];
+    const path = cleanVal(row[column] || "");
+    if (!path) return;
+
+    v1PhotoStore[slot] = {
+      file: null,
+      dataUrl: "",
+      name: path.split("/").pop() || ("No." + slot + " 이미지"),
+      originalPath: path,
+      pendingDelete: false
+    };
+
+    const { data, error } = await sb.storage
+      .from(V1_IMAGE_BUCKET)
+      .createSignedUrl(path, V1_IMAGE_URL_EXPIRES_IN);
+
+    if (error) throw new Error("No." + slot + " 사진 조회 실패: " + formatDbError(error));
+
+    v1PhotoStore[slot].dataUrl = (data && data.signedUrl) || "";
+    renderV1PhotoSlot(slot);
+  });
+
+  const results = await Promise.allSettled(loadJobs);
+  const failed = results.filter(function(result) { return result.status === "rejected"; });
+  if (failed.length) {
+    failed.forEach(function(result) { console.error(result.reason); });
+    showToast("⚠️ 저장된 사진 일부를 불러오지 못했습니다.");
+  }
+}
+
+async function prepareV1PhotoSave() {
+  const dbPaths = {};
+  const uploadedPaths = [];
+  const oldPathsToRemove = [];
+
+  for (let slot = 1; slot <= 3; slot += 1) {
+    const column = V1_IMAGE_COLUMN_BY_SLOT[slot];
+    const state = v1PhotoStore[slot] || makeEmptyV1PhotoState();
+    const currentDbPath = cleanVal((currentProductionRow && currentProductionRow[column]) || state.originalPath || "");
+
+    if (state.pendingDelete) {
+      dbPaths[column] = null;
+      if (currentDbPath) oldPathsToRemove.push(currentDbPath);
+      continue;
+    }
+
+    if (state.file) {
+      const newPath = v1UniqueImagePath(slot, state.file);
+      const { error } = await sb.storage
+        .from(V1_IMAGE_BUCKET)
+        .upload(newPath, state.file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: state.file.type || undefined
+        });
+
+      if (error) throw new Error("No." + slot + " 사진 업로드 실패: " + formatDbError(error));
+
+      dbPaths[column] = newPath;
+      uploadedPaths.push(newPath);
+      if (currentDbPath && currentDbPath !== newPath) oldPathsToRemove.push(currentDbPath);
+      continue;
+    }
+
+    dbPaths[column] = currentDbPath || null;
+  }
+
+  return {
+    dbPaths: dbPaths,
+    uploadedPaths: uploadedPaths,
+    oldPathsToRemove: Array.from(new Set(oldPathsToRemove.filter(Boolean)))
+  };
+}
+
+async function removeV1StoragePaths(paths) {
+  const cleanPaths = Array.from(new Set((paths || []).filter(Boolean)));
+  if (!cleanPaths.length) return;
+
+  const { error } = await sb.storage.from(V1_IMAGE_BUCKET).remove(cleanPaths);
+  if (error) throw error;
+}
+
+function v1Text20(id) {
+  return cleanVal(v(id)).slice(0, 20);
+}
+
 document.addEventListener("keydown", function(event) {
   if (event.key === "Escape") {
     const modal = document.getElementById("v1-photo-modal");
-    if (modal && modal.classList.contains("show")) {
-      closeV1PhotoModal();
-    }
+    if (modal && modal.classList.contains("show")) closeV1PhotoModal();
   }
 });
 
@@ -1694,9 +1859,9 @@ async function loadRecord(productionRow) {
   currentProductionRow = productionRow;
   currentReportRow = null;
 
-  clearV1Photos();
   clearReportOnlyFields();
   applyProductionFields(productionRow);
+  await loadV1PhotosFromProduction(productionRow);
 
   if (reportTableAvailable) {
     try {
@@ -1751,6 +1916,11 @@ function applyProductionFields(row) {
   sv("f-dwg", row.item_number || "");
   sv("f-material", row.material_name || "");
   sv("f-lotsize", lotSizeFromProduction(row));
+
+  /* v1 사진 하단 문자항목은 생산실적 1건에 직접 저장합니다. */
+  sv("v1-no4", row.inspection_v1_no4_text || "");
+  sv("v1-no5", row.inspection_v1_no5_text || "");
+  sv("v1-no6", row.inspection_v1_no6_text || "");
 
   sv("f-std1", normalizeHardnessStandard(row.tempering_hardness_hrc));
   sv("p01", row.p1);
@@ -1862,6 +2032,10 @@ function applyReportData(data) {
   sv("f-material", data.material || v("f-material"));
   sv("f-lotsize", data.lot_size || v("f-lotsize"));
 
+  if (!v("v1-no4") && data.inspection_v1_no4_text) sv("v1-no4", data.inspection_v1_no4_text);
+  if (!v("v1-no5") && data.inspection_v1_no5_text) sv("v1-no5", data.inspection_v1_no5_text);
+  if (!v("v1-no6") && data.inspection_v1_no6_text) sv("v1-no6", data.inspection_v1_no6_text);
+
   for (let i = 1; i <= 5; i += 1) {
     sv("f-desc" + i, data["cycle_desc" + i]);
     sv("f-chg" + i, data["cycle_chg" + i]);
@@ -1951,10 +2125,12 @@ async function saveToDb() {
     button.textContent = "⏳ 저장 중...";
   }
 
-  showLoading("검사성적서를 저장하는 중입니다.");
+  showLoading("사진과 검사성적서 v1을 저장하는 중입니다.");
 
+  let v1PhotoSave = null;
   try {
     const reportData = collectReportData();
+    v1PhotoSave = await prepareV1PhotoSave();
     let savedReport = currentReportRow;
     let reportOnlyFieldsSaved = false;
 
@@ -2024,6 +2200,12 @@ async function saveToDb() {
       inspection_crack_p2: cleanVal(v("f-res6-p02")) || null,
       inspection_crack_p3: cleanVal(v("f-res6-p03")) || null,
       inspection_crack_judgment: cleanVal(v("f-jdg6")) || null,
+      inspection_v1_no1_image_path: v1PhotoSave.dbPaths.inspection_v1_no1_image_path,
+      inspection_v1_no2_image_path: v1PhotoSave.dbPaths.inspection_v1_no2_image_path,
+      inspection_v1_no3_image_path: v1PhotoSave.dbPaths.inspection_v1_no3_image_path,
+      inspection_v1_no4_text: v1Text20("v1-no4") || null,
+      inspection_v1_no5_text: v1Text20("v1-no5") || null,
+      inspection_v1_no6_text: v1Text20("v1-no6") || null,
       inspected_by: cleanVal(v("f-inspected")) || null,
       approved_by: cleanVal(v("f-approved")) || null,
       inspection_result: overallInspectionResult(),
@@ -2038,23 +2220,48 @@ async function saveToDb() {
       .select(PRODUCTION_COLUMNS)
       .single();
 
-    if (productionError) throw productionError;
+    if (productionError) {
+      /* DB 저장 실패 시 이번 저장에서 새로 올린 파일은 회수합니다. */
+      try { await removeV1StoragePaths(v1PhotoSave.uploadedPaths); } catch (cleanupError) {
+        console.warn("DB 저장 실패 후 신규 이미지 정리 실패:", cleanupError);
+      }
+      throw productionError;
+    }
 
     currentReportRow = savedReport || null;
     currentProductionRow = updatedProduction;
     queryResults[queryIndex] = updatedProduction;
 
-    if (reportOnlyFieldsSaved || reportTableAvailable) {
-      setQueryMessage("성적서 저장이 완료되었습니다.", "ok");
-      showToast("✅ 성적서 저장 완료");
+    let oldImageCleanupFailed = false;
+    try {
+      await removeV1StoragePaths(v1PhotoSave.oldPathsToRemove);
+    } catch (cleanupError) {
+      oldImageCleanupFailed = true;
+      console.warn("이전 v1 이미지 정리 실패:", cleanupError);
+    }
+
+    /* DB에 저장된 경로를 기준으로 다시 Signed URL을 만들어 화면을 확정합니다. */
+    await loadV1PhotosFromProduction(updatedProduction);
+    sv("v1-no4", updatedProduction.inspection_v1_no4_text || "");
+    sv("v1-no5", updatedProduction.inspection_v1_no5_text || "");
+    sv("v1-no6", updatedProduction.inspection_v1_no6_text || "");
+
+    if (oldImageCleanupFailed) {
+      setQueryMessage("검사성적서 v1 저장 완료. 이전 이미지 정리 상태를 확인해 주세요.", "ok");
+      showToast("⚠️ 검사성적서 v1 저장 완료 / 이전 이미지 정리 확인 필요");
     } else {
-      setQueryMessage("검사값과 검사성적서 특이사항 저장이 완료되었습니다.", "ok");
-      showToast("✅ 검사성적서 특이사항 저장 완료");
+      setQueryMessage("검사성적서 v1 저장이 완료되었습니다.", "ok");
+      showToast("✅ 검사성적서 v1 저장 완료");
     }
   } catch (error) {
+    if (v1PhotoSave && v1PhotoSave.uploadedPaths && v1PhotoSave.uploadedPaths.length) {
+      try { await removeV1StoragePaths(v1PhotoSave.uploadedPaths); } catch (cleanupError) {
+        console.warn("저장 실패 후 신규 v1 이미지 정리 실패:", cleanupError);
+      }
+    }
     console.error(error);
     setQueryMessage("저장 실패: " + formatDbError(error), "err");
-    showToast("❌ 성적서 저장 실패");
+    showToast("❌ 검사성적서 v1 저장 실패");
   } finally {
     hideLoading();
     if (button) {
@@ -2082,7 +2289,10 @@ function collectReportData() {
     insp_jdg1: cleanVal(v("f-jdg1")),
     insp_jdg2: cleanVal(v("f-jdg2")),
     inspected_by: cleanVal(v("f-inspected")),
-    approved_by: cleanVal(v("f-approved"))
+    approved_by: cleanVal(v("f-approved")),
+    inspection_v1_no4_text: v1Text20("v1-no4") || null,
+    inspection_v1_no5_text: v1Text20("v1-no5") || null,
+    inspection_v1_no6_text: v1Text20("v1-no6") || null
   };
 
   for (let i = 1; i <= 8; i += 1) {
