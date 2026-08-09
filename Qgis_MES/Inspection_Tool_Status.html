@@ -72,10 +72,32 @@
   table.main th,table.main td{border:1px solid #000;text-align:center;vertical-align:middle;font-size:12px;line-height:1.25;padding:4px 3px;overflow:hidden;word-break:break-word;white-space:pre-line}
   table.main thead th{font-weight:800;background:#f8fafc;height:36px}table.main thead tr.sub-header th{height:30px}.data-main td{height:38px}.data-sub td{height:32px}.grey{background:#ededed}.selected-row td{background:#e8f0ff!important}.clickable{cursor:pointer}.clickable:hover td{filter:brightness(.97)}
   .footer-line{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:11px}.list-footer{display:flex;justify-content:flex-end;padding-top:10px;color:#475569;font-size:14px;font-weight:700}
+  .photo-link{border:0;background:transparent;color:#1d4ed8;font-weight:800;font-size:12px;text-decoration:underline;text-underline-offset:2px;padding:4px 5px;cursor:pointer}
+  .photo-link:hover{color:#0e3f9d}
+  .photo-modal{display:none;position:fixed;inset:0;z-index:10020;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.58)}
+  .photo-modal.show{display:flex}
+  .photo-dialog{width:min(760px,96vw);max-height:92vh;overflow:auto;border-radius:12px;background:#fff;box-shadow:0 20px 60px rgba(15,23,42,.30)}
+  .photo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid #d9e0e9}
+  .photo-head h3{margin:0;color:#0e3f9d;font-size:18px}
+  .photo-close{width:34px;height:34px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#334155;font-size:20px;line-height:1}
+  .photo-body{padding:15px}
+  .photo-info{margin-bottom:10px;padding:9px 11px;border-radius:7px;background:#f1f5f9;color:#334155;font-size:13px;line-height:1.45}
+  .photo-preview-wrap{display:flex;align-items:center;justify-content:center;min-height:330px;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;overflow:hidden}
+  .photo-preview{display:none;max-width:100%;max-height:56vh;object-fit:contain}
+  .photo-preview.show{display:block}
+  .photo-empty{color:#64748b;font-size:14px;font-weight:700}
+  .photo-control{margin-top:12px}
+  .photo-control label{display:block;margin-bottom:6px;color:#445267;font-size:13px;font-weight:800}
+  .photo-control input[type=file]{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:7px;background:#fff}
+  .photo-help{margin-top:6px;color:#64748b;font-size:12px}
+  .photo-status{display:none;margin-top:10px;padding:9px 11px;border-radius:7px;font-size:13px;line-height:1.4}
+  .photo-status.show{display:block}.photo-status.info{background:#eff6ff;color:#1d4ed8}.photo-status.success{background:#ecfdf5;color:#047857}.photo-status.error{background:#fff1f2;color:#be123c}
+  .photo-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .photo-actions .btn{min-width:76px}
   .loading{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:rgba(15,23,42,.42)}.loading.show{display:flex}.loading-box{padding:17px 22px;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(15,23,42,.18);font-weight:800}
   @page{size:A4 landscape;margin:8mm}
   @media print{
-    html,body{background:#fff!important;color:#000!important}.page{padding:0}.title-frame,.toolbar,.search-frame,.notice,.editor-frame,.screen-title,.list-footer,.loading{display:none!important}.list-frame{padding:0;border:0;box-shadow:none;background:#fff!important}.table-wrap{overflow:visible;border:0}.sheet{width:281mm;max-width:281mm}.sheet table.main{min-width:0!important;width:100%!important}.sheet table.main th,.sheet table.main td{font-size:8.6pt!important;padding:1.2px 2px!important;background:#fff;color:#000}.sheet table.main .grey{background:#ededed!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet table.title-box td{font-size:17pt;height:10.5mm}.data-main td{height:7.9mm!important}.data-sub td{height:7.9mm!important}.selected-row td{background:inherit!important}.footer-line{font-size:8pt;margin-top:1.8mm}}
+    html,body{background:#fff!important;color:#000!important}.page{padding:0}.title-frame,.toolbar,.search-frame,.notice,.editor-frame,.screen-title,.list-footer,.loading,.photo-modal{display:none!important}.list-frame{padding:0;border:0;box-shadow:none;background:#fff!important}.table-wrap{overflow:visible;border:0}.sheet{width:281mm;max-width:281mm}.sheet table.main{min-width:0!important;width:100%!important}.sheet table.main th,.sheet table.main td{font-size:8.6pt!important;padding:1.2px 2px!important;background:#fff;color:#000}.sheet table.main .grey{background:#ededed!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet table.title-box td{font-size:17pt;height:10.5mm}.data-main td{height:7.9mm!important}.data-sub td{height:7.9mm!important}.selected-row td{background:inherit!important}.footer-line{font-size:8pt;margin-top:1.8mm}}
   @media(max-width:900px){.search-frame{grid-template-columns:1fr 1fr}.editor-grid{grid-template-columns:1fr 1fr}}
   @media(max-width:600px){
     .page{padding:8px}
@@ -87,6 +109,11 @@
     .toolbar .btn{width:100%;min-width:0;min-height:30px;padding:4px 5px;font-size:11px}
     .search-frame,.editor-grid{grid-template-columns:1fr}
     .list-frame{padding:10px}
+    .photo-modal{padding:8px}
+    .photo-dialog{width:100%;max-height:95vh}
+    .photo-preview-wrap{min-height:240px}
+    .photo-actions{display:grid;grid-template-columns:1fr 1fr}
+    .photo-actions .btn{width:100%;min-width:0}
   }
 </style>
 </head>
@@ -128,7 +155,6 @@
         <div class="field"><label for="modelSpec">규격 &amp; 모델명</label><input id="modelSpec" maxlength="120" disabled></div>
         <div class="field"><label for="manufacturer">제작회사</label><input id="manufacturer" maxlength="160" disabled></div>
         <div class="field"><label for="quantity">수량</label><input id="quantity" type="number" min="1" step="1" disabled></div>
-        <div class="field"><label for="unit">단위</label><input id="unit" maxlength="30" disabled></div>
         <div class="field"><label for="deviceNumber">기기번호</label><input id="deviceNumber" maxlength="100" disabled></div>
         <div class="field"><label for="equipmentLocation">장비위치</label><input id="equipmentLocation" maxlength="120" disabled></div>
 
@@ -158,16 +184,16 @@
       <div class="table-wrap">
         <table class="main">
           <colgroup>
-            <col style="width:2.40%"><col style="width:5.00%"><col style="width:7.80%"><col style="width:6.40%">
-            <col style="width:8.00%"><col style="width:2.60%"><col style="width:3.40%"><col style="width:4.20%">
-            <col style="width:5.30%"><col style="width:5.90%"><col style="width:7.60%"><col style="width:5.90%">
-            <col style="width:7.60%"><col style="width:5.90%"><col style="width:7.60%"><col style="width:14.40%">
+            <col style="width:2.40%"><col style="width:5.00%"><col style="width:7.60%"><col style="width:6.20%">
+            <col style="width:7.80%"><col style="width:2.60%"><col style="width:4.00%"><col style="width:5.00%">
+            <col style="width:5.80%"><col style="width:7.20%"><col style="width:5.80%"><col style="width:7.20%">
+            <col style="width:5.80%"><col style="width:7.20%"><col style="width:5.00%"><col style="width:15.40%">
           </colgroup>
           <thead>
             <tr>
               <th rowspan="2">순번</th><th rowspan="2">LOT<br>번호</th><th rowspan="2">측정장비명</th><th rowspan="2">규격&amp;모델명</th>
-              <th rowspan="2">제작회사</th><th rowspan="2">수량</th><th rowspan="2">단위</th><th rowspan="2">기기번호</th><th rowspan="2">장비위치</th>
-              <th colspan="2">교정(년,월,일)</th><th colspan="2">교정(년,월,일)</th><th colspan="2">교정(년,월,일)</th><th rowspan="2">특이사항<br>(500자)</th>
+              <th rowspan="2">제작회사</th><th rowspan="2">수량</th><th rowspan="2">기기번호</th><th rowspan="2">장비위치</th>
+              <th colspan="2">교정(년,월,일)</th><th colspan="2">교정(년,월,일)</th><th colspan="2">교정(년,월,일)</th><th rowspan="2">이미지</th><th rowspan="2">특이사항<br>(500자)</th>
             </tr>
             <tr class="sub-header"><th>교정번호</th><th>교정기관</th><th>교정번호</th><th>교정기관</th><th>교정번호</th><th>교정기관</th></tr>
           </thead>
@@ -180,6 +206,39 @@
   </section>
 </main>
 
+
+<div id="photoModal" class="photo-modal" role="dialog" aria-modal="true" aria-labelledby="photoModalTitle" onclick="photoBackdropClick(event)">
+  <div class="photo-dialog">
+    <div class="photo-head">
+      <h3 id="photoModalTitle">검사장비 이미지</h3>
+      <button class="photo-close" type="button" aria-label="닫기" onclick="closePhotoModal()">×</button>
+    </div>
+    <div class="photo-body">
+      <div id="photoInfo" class="photo-info"></div>
+
+      <div class="photo-preview-wrap">
+        <img id="photoPreview" class="photo-preview" alt="검사장비 사진">
+        <div id="photoEmpty" class="photo-empty">저장된 사진이 없습니다.</div>
+      </div>
+
+      <div class="photo-control">
+        <label for="photoFile">이미지 선택</label>
+        <input id="photoFile" type="file" accept="image/jpeg,image/png,image/webp">
+        <div class="photo-help">JPEG / PNG / WebP · 파일 1개 · 최대 5MB</div>
+      </div>
+
+      <div id="photoStatus" class="photo-status" role="status" aria-live="polite"></div>
+
+      <div class="photo-actions">
+        <button class="btn btn-green" type="button" onclick="savePhoto()">사진 저장</button>
+        <button class="btn btn-blue" type="button" onclick="reloadPhoto()">사진 조회</button>
+        <button id="btnPhotoDelete" class="btn btn-red" type="button" onclick="deletePhoto()" disabled>사진 삭제</button>
+        <button class="btn" type="button" onclick="closePhotoModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="loadingOverlay" class="loading"><div id="loadingText" class="loading-box">처리 중입니다...</div></div>
 
 <script>
@@ -189,7 +248,10 @@ const SUPABASE_KEY="sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
 const LOGIN_PAGE_URL="../index.html";
 const MAIN_PAGE_URL="main1.html";
 const TABLE_NAME="inspection_tools";
-const SELECT_FIELDS="inspection_tool_system_id,company_id,display_order,lot_number,tool_name,model_spec,manufacturer,quantity,unit,device_number,equipment_location,calibration_date_1,calibration_number_1,calibration_agency_1,calibration_date_2,calibration_number_2,calibration_agency_2,calibration_date_3,calibration_number_3,calibration_agency_3,remarks,is_active";
+const IMAGE_BUCKET="inspection-tool-images";
+const MAX_IMAGE_BYTES=5*1024*1024;
+const IMAGE_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
+const SELECT_FIELDS="inspection_tool_system_id,company_id,display_order,lot_number,tool_name,model_spec,manufacturer,quantity,device_number,equipment_location,calibration_date_1,calibration_number_1,calibration_agency_1,calibration_date_2,calibration_number_2,calibration_agency_2,calibration_date_3,calibration_number_3,calibration_agency_3,inspection_tool_image_path,remarks,is_active";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 
 let currentProfile=null;
@@ -198,8 +260,10 @@ let rows=[];
 let visibleRows=[];
 let selectedId=null;
 let mode="view";
+let photoToolId=null;
+let photoObjectUrl=null;
 
-const fieldIds=["displayOrder","lotNumber","toolName","modelSpec","manufacturer","quantity","unit","deviceNumber","equipmentLocation","calibrationDate1","calibrationNumber1","calibrationAgency1","calibrationDate2","calibrationNumber2","calibrationAgency2","calibrationDate3","calibrationNumber3","calibrationAgency3","remarks"];
+const fieldIds=["displayOrder","lotNumber","toolName","modelSpec","manufacturer","quantity","deviceNumber","equipmentLocation","calibrationDate1","calibrationNumber1","calibrationAgency1","calibrationDate2","calibrationNumber2","calibrationAgency2","calibrationDate3","calibrationNumber3","calibrationAgency3","remarks"];
 const $=id=>document.getElementById(id);
 const clean=value=>String(value??"").trim();
 const valueOrNull=value=>clean(value)||null;
@@ -260,7 +324,7 @@ async function startNew(){
   showLoading("신규 등록 순번을 확인하는 중입니다...");
   try{
     $("displayOrder").value=await getNextDisplayOrder();
-    $("quantity").value="1";$("unit").value="EA";
+    $("quantity").value="1";
     setMode("new");renderRows();$("lotNumber").focus();
   }catch(error){
     notice("신규 등록 준비 실패: "+dbError(error),"error");
@@ -275,13 +339,13 @@ function startEdit(){
 }
 function fillForm(row){
   $("displayOrder").value=row.display_order??"";$("lotNumber").value=row.lot_number??"";$("toolName").value=row.tool_name??"";$("modelSpec").value=row.model_spec??"";
-  $("manufacturer").value=row.manufacturer??"";$("quantity").value=row.quantity??"";$("unit").value=row.unit??"";$("deviceNumber").value=row.device_number??"";$("equipmentLocation").value=row.equipment_location??"";
+  $("manufacturer").value=row.manufacturer??"";$("quantity").value=row.quantity??"";$("deviceNumber").value=row.device_number??"";$("equipmentLocation").value=row.equipment_location??"";
   $("calibrationDate1").value=row.calibration_date_1??"";$("calibrationNumber1").value=row.calibration_number_1??"";$("calibrationAgency1").value=row.calibration_agency_1??"";
   $("calibrationDate2").value=row.calibration_date_2??"";$("calibrationNumber2").value=row.calibration_number_2??"";$("calibrationAgency2").value=row.calibration_agency_2??"";
   $("calibrationDate3").value=row.calibration_date_3??"";$("calibrationNumber3").value=row.calibration_number_3??"";$("calibrationAgency3").value=row.calibration_agency_3??"";$("remarks").value=row.remarks??"";
 }
 function payload(){return{
-  company_id:currentProfile.company_id,display_order:Number($("displayOrder").value),lot_number:clean($("lotNumber").value),tool_name:clean($("toolName").value),model_spec:valueOrNull($("modelSpec").value),manufacturer:valueOrNull($("manufacturer").value),quantity:$("quantity").value?Number($("quantity").value):null,unit:valueOrNull($("unit").value),device_number:valueOrNull($("deviceNumber").value),equipment_location:valueOrNull($("equipmentLocation").value),calibration_date_1:valueOrNull($("calibrationDate1").value),calibration_number_1:valueOrNull($("calibrationNumber1").value),calibration_agency_1:valueOrNull($("calibrationAgency1").value),calibration_date_2:valueOrNull($("calibrationDate2").value),calibration_number_2:valueOrNull($("calibrationNumber2").value),calibration_agency_2:valueOrNull($("calibrationAgency2").value),calibration_date_3:valueOrNull($("calibrationDate3").value),calibration_number_3:valueOrNull($("calibrationNumber3").value),calibration_agency_3:valueOrNull($("calibrationAgency3").value),remarks:valueOrNull($("remarks").value),is_active:true
+  company_id:currentProfile.company_id,display_order:Number($("displayOrder").value),lot_number:clean($("lotNumber").value),tool_name:clean($("toolName").value),model_spec:valueOrNull($("modelSpec").value),manufacturer:valueOrNull($("manufacturer").value),quantity:$("quantity").value?Number($("quantity").value):null,device_number:valueOrNull($("deviceNumber").value),equipment_location:valueOrNull($("equipmentLocation").value),calibration_date_1:valueOrNull($("calibrationDate1").value),calibration_number_1:valueOrNull($("calibrationNumber1").value),calibration_agency_1:valueOrNull($("calibrationAgency1").value),calibration_date_2:valueOrNull($("calibrationDate2").value),calibration_number_2:valueOrNull($("calibrationNumber2").value),calibration_agency_2:valueOrNull($("calibrationAgency2").value),calibration_date_3:valueOrNull($("calibrationDate3").value),calibration_number_3:valueOrNull($("calibrationNumber3").value),calibration_agency_3:valueOrNull($("calibrationAgency3").value),remarks:valueOrNull($("remarks").value),is_active:true
 }}
 
 async function saveRecord(){
@@ -294,9 +358,42 @@ async function saveRecord(){
 }
 
 async function deleteSelected(){
-  if(!selectedId)return notice("삭제할 검사장비를 선택해 주세요.","error");if(!confirm("선택한 검사장비를 삭제하시겠습니까?"))return;
-  showLoading("삭제 중입니다...");const {error}=await sb.from(TABLE_NAME).delete().eq("inspection_tool_system_id",selectedId).eq("company_id",currentProfile.company_id);hideLoading();
-  if(error)return notice("삭제 실패: "+dbError(error),"error");selectedId=null;updateSelectionButtons();setMode("view");clearForm();await loadRows(false,false);notice("검사장비 삭제가 완료되었습니다.","success");
+  if(!selectedId)return notice("삭제할 검사장비를 선택해 주세요.","error");
+  if(!confirm("선택한 검사장비를 삭제하시겠습니까?"))return;
+
+  const row=rows.find(item=>item.inspection_tool_system_id===selectedId);
+  const imagePath=row?.inspection_tool_image_path||null;
+
+  showLoading("삭제 중입니다...");
+  const {error}=await sb.from(TABLE_NAME)
+    .delete()
+    .eq("inspection_tool_system_id",selectedId)
+    .eq("company_id",currentProfile.company_id);
+
+  if(error){
+    hideLoading();
+    return notice("삭제 실패: "+dbError(error),"error");
+  }
+
+  let imageCleanupError=null;
+  if(imagePath){
+    const result=await sb.storage.from(IMAGE_BUCKET).remove([imagePath]);
+    imageCleanupError=result.error||null;
+  }
+
+  hideLoading();
+  selectedId=null;
+  updateSelectionButtons();
+  setMode("view");
+  clearForm();
+  await loadRows(false,false);
+
+  notice(
+    imageCleanupError
+      ?"검사장비는 삭제되었습니다. 다만 연결 사진 삭제에 실패했습니다: "+dbError(imageCleanupError)
+      :"검사장비 삭제가 완료되었습니다.",
+    imageCleanupError?"error":"success"
+  );
 }
 
 async function loadRows(useFilters=false,showSuccess=true){
@@ -356,14 +453,175 @@ async function resetPage(){
 }
 function selectRow(id){selectedId=id;updateSelectionButtons();setMode("view");clearForm();renderRows();notice("선택한 검사장비를 수정하거나 삭제할 수 있습니다.","info")}
 
+
+function photoStatus(message,type="info"){
+  $("photoStatus").textContent=message||"";
+  $("photoStatus").className=message?"photo-status show "+type:"photo-status";
+}
+function clearPhotoStatus(){
+  $("photoStatus").textContent="";
+  $("photoStatus").className="photo-status";
+}
+function revokePhotoObjectUrl(){
+  if(photoObjectUrl){
+    URL.revokeObjectURL(photoObjectUrl);
+    photoObjectUrl=null;
+  }
+}
+function currentPhotoRow(){
+  return rows.find(item=>item.inspection_tool_system_id===photoToolId)||null;
+}
+function setPhotoPreviewEmpty(){
+  revokePhotoObjectUrl();
+  $("photoPreview").removeAttribute("src");
+  $("photoPreview").classList.remove("show");
+  $("photoEmpty").style.display="block";
+}
+function photoBackdropClick(event){
+  if(event.target===$("photoModal"))closePhotoModal();
+}
+async function openPhotoModal(event,id){
+  if(event)event.stopPropagation();
+  const row=rows.find(item=>item.inspection_tool_system_id===id);
+  if(!row)return notice("선택한 검사장비를 찾을 수 없습니다.","error");
+
+  photoToolId=id;
+  $("photoFile").value="";
+  clearPhotoStatus();
+  $("photoInfo").textContent=`LOT 번호: ${row.lot_number||"-"} · 측정장비명: ${row.tool_name||"-"}`;
+  $("photoModal").classList.add("show");
+  document.body.style.overflow="hidden";
+  await reloadPhoto();
+}
+function closePhotoModal(){
+  $("photoModal").classList.remove("show");
+  document.body.style.overflow="";
+  $("photoFile").value="";
+  clearPhotoStatus();
+  setPhotoPreviewEmpty();
+  photoToolId=null;
+}
+async function reloadPhoto(){
+  const row=currentPhotoRow();
+  if(!row)return photoStatus("검사장비 정보가 없습니다.","error");
+
+  const path=row.inspection_tool_image_path;
+  $("btnPhotoDelete").disabled=!path;
+
+  if(!path){
+    setPhotoPreviewEmpty();
+    return photoStatus("저장된 사진이 없습니다.","info");
+  }
+
+  photoStatus("저장된 사진을 조회하는 중입니다...","info");
+  const {data,error}=await sb.storage.from(IMAGE_BUCKET).download(path);
+  if(error){
+    setPhotoPreviewEmpty();
+    return photoStatus("사진 조회 실패: "+dbError(error),"error");
+  }
+
+  revokePhotoObjectUrl();
+  photoObjectUrl=URL.createObjectURL(data);
+  $("photoPreview").src=photoObjectUrl;
+  $("photoPreview").classList.add("show");
+  $("photoEmpty").style.display="none";
+  photoStatus("저장된 사진을 조회했습니다.","success");
+}
+function safeFileName(name){
+  const cleanName=String(name||"image").trim().replace(/[^a-zA-Z0-9._-]+/g,"_");
+  return cleanName||"image";
+}
+async function savePhoto(){
+  const row=currentPhotoRow();
+  if(!row)return photoStatus("검사장비 정보가 없습니다.","error");
+
+  const file=$("photoFile").files?.[0];
+  if(!file)return photoStatus("저장할 사진을 먼저 선택해 주세요.","error");
+  if(!IMAGE_TYPES.has(file.type))return photoStatus("JPEG, PNG, WebP 이미지만 저장할 수 있습니다.","error");
+  if(file.size>MAX_IMAGE_BYTES)return photoStatus("이미지 용량은 5MB 이하만 저장할 수 있습니다.","error");
+
+  const fileName=safeFileName(file.name);
+  const newPath=`${currentProfile.company_id}/${row.inspection_tool_system_id}/${Date.now()}_${fileName}`;
+  const oldPath=row.inspection_tool_image_path||null;
+
+  photoStatus("사진을 저장하는 중입니다...","info");
+
+  const {error:uploadError}=await sb.storage.from(IMAGE_BUCKET).upload(newPath,file,{
+    contentType:file.type,
+    cacheControl:"3600",
+    upsert:false
+  });
+  if(uploadError)return photoStatus("사진 업로드 실패: "+dbError(uploadError),"error");
+
+  const {error:updateError}=await sb.from(TABLE_NAME)
+    .update({inspection_tool_image_path:newPath})
+    .eq("inspection_tool_system_id",row.inspection_tool_system_id)
+    .eq("company_id",currentProfile.company_id);
+
+  if(updateError){
+    await sb.storage.from(IMAGE_BUCKET).remove([newPath]);
+    return photoStatus("사진 경로 DB 저장 실패: "+dbError(updateError),"error");
+  }
+
+  if(oldPath && oldPath!==newPath){
+    await sb.storage.from(IMAGE_BUCKET).remove([oldPath]);
+  }
+
+  row.inspection_tool_image_path=newPath;
+  $("photoFile").value="";
+  $("btnPhotoDelete").disabled=false;
+  await reloadPhoto();
+  notice("검사장비 사진 저장이 완료되었습니다.","success");
+}
+async function deletePhoto(){
+  const row=currentPhotoRow();
+  if(!row)return photoStatus("검사장비 정보가 없습니다.","error");
+  const path=row.inspection_tool_image_path;
+  if(!path)return photoStatus("삭제할 저장 사진이 없습니다.","info");
+  if(!confirm("저장된 검사장비 사진을 삭제하시겠습니까?"))return;
+
+  photoStatus("사진을 삭제하는 중입니다...","info");
+
+  const {error:dbClearError}=await sb.from(TABLE_NAME)
+    .update({inspection_tool_image_path:null})
+    .eq("inspection_tool_system_id",row.inspection_tool_system_id)
+    .eq("company_id",currentProfile.company_id);
+
+  if(dbClearError)return photoStatus("사진 DB 연결 해제 실패: "+dbError(dbClearError),"error");
+
+  const {error:removeError}=await sb.storage.from(IMAGE_BUCKET).remove([path]);
+  if(removeError){
+    const {error:rollbackError}=await sb.from(TABLE_NAME)
+      .update({inspection_tool_image_path:path})
+      .eq("inspection_tool_system_id",row.inspection_tool_system_id)
+      .eq("company_id",currentProfile.company_id);
+
+    row.inspection_tool_image_path=rollbackError?null:path;
+    $("btnPhotoDelete").disabled=Boolean(rollbackError);
+    return photoStatus(
+      rollbackError
+        ?"사진 파일 삭제 및 DB 복구에 실패했습니다: "+dbError(removeError)
+        :"사진 파일 삭제에 실패하여 DB 연결을 원래대로 복구했습니다: "+dbError(removeError),
+      "error"
+    );
+  }
+
+  row.inspection_tool_image_path=null;
+  $("btnPhotoDelete").disabled=true;
+  $("photoFile").value="";
+  setPhotoPreviewEmpty();
+  photoStatus("사진이 삭제되었습니다.","success");
+  notice("검사장비 사진 삭제가 완료되었습니다.","success");
+}
+
 function dataRowsHtml(row){
   const id=escapeHtml(row.inspection_tool_system_id),selected=row.inspection_tool_system_id===selectedId?" selected-row":"";
   return `<tr class="data-main clickable${selected}" onclick="selectRow('${id}')">
-    <td rowspan="2">${escapeHtml(row.display_order)}</td><td rowspan="2">${escapeHtml(row.lot_number)}</td><td rowspan="2">${escapeHtml(row.tool_name)}</td><td rowspan="2">${escapeHtml(row.model_spec)}</td><td rowspan="2">${escapeHtml(row.manufacturer)}</td><td rowspan="2">${escapeHtml(row.quantity)}</td><td rowspan="2">${escapeHtml(row.unit)}</td><td rowspan="2">${escapeHtml(row.device_number)}</td><td rowspan="2">${escapeHtml(row.equipment_location)}</td>
-    <td colspan="2">${escapeHtml(row.calibration_date_1)}</td><td colspan="2">${escapeHtml(row.calibration_date_2)}</td><td colspan="2">${escapeHtml(row.calibration_date_3)}</td><td rowspan="2">${escapeHtml(row.remarks)}</td></tr>
+    <td rowspan="2">${escapeHtml(row.display_order)}</td><td rowspan="2">${escapeHtml(row.lot_number)}</td><td rowspan="2">${escapeHtml(row.tool_name)}</td><td rowspan="2">${escapeHtml(row.model_spec)}</td><td rowspan="2">${escapeHtml(row.manufacturer)}</td><td rowspan="2">${escapeHtml(row.quantity)}</td><td rowspan="2">${escapeHtml(row.device_number)}</td><td rowspan="2">${escapeHtml(row.equipment_location)}</td>
+    <td colspan="2">${escapeHtml(row.calibration_date_1)}</td><td colspan="2">${escapeHtml(row.calibration_date_2)}</td><td colspan="2">${escapeHtml(row.calibration_date_3)}</td><td rowspan="2"><button class="photo-link" type="button" onclick="openPhotoModal(event,'${id}')">사진</button></td><td rowspan="2">${escapeHtml(row.remarks)}</td></tr>
     <tr class="data-sub clickable${selected}" onclick="selectRow('${id}')"><td class="grey">${escapeHtml(row.calibration_number_1)}</td><td class="grey">${escapeHtml(row.calibration_agency_1)}</td><td class="grey">${escapeHtml(row.calibration_number_2)}</td><td class="grey">${escapeHtml(row.calibration_agency_2)}</td><td class="grey">${escapeHtml(row.calibration_number_3)}</td><td class="grey">${escapeHtml(row.calibration_agency_3)}</td></tr>`;
 }
-function blankRowsHtml(order){return `<tr class="data-main"><td rowspan="2">${order}</td>${'<td rowspan="2"></td>'.repeat(8)}<td colspan="2"></td><td colspan="2"></td><td colspan="2"></td><td rowspan="2"></td></tr><tr class="data-sub">${'<td class="grey"></td>'.repeat(6)}</tr>`}
+function blankRowsHtml(order){return `<tr class="data-main"><td rowspan="2">${order}</td>${'<td rowspan="2"></td>'.repeat(7)}<td colspan="2"></td><td colspan="2"></td><td colspan="2"></td><td rowspan="2">사진</td><td rowspan="2"></td></tr><tr class="data-sub">${'<td class="grey"></td>'.repeat(6)}</tr>`}
 function renderRows(){
   let html=visibleRows.map(dataRowsHtml).join("");
   const blankCount=Math.max(0,10-visibleRows.length);for(let i=0;i<blankCount;i++)html+=blankRowsHtml(visibleRows.length+i+1);
@@ -376,6 +634,9 @@ function savePdf(){if(!visibleRows.length)return notice("PDF로 저장할 조회
   $(id).addEventListener("keydown",event=>{
     if(event.key==="Enter"){event.preventDefault();searchRows()}
   });
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&$("photoModal").classList.contains("show"))closePhotoModal();
 });
 
 async function init(){try{if(await auth()){setMode("view");updateSelectionButtons();await loadRows(false,true)}}catch(error){document.documentElement.classList.remove("auth-pending");hideLoading();notice("화면 초기화 오류: "+dbError(error),"error")}}
