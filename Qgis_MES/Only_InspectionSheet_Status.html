@@ -65,6 +65,14 @@ tbody tr:hover td{background:#FAFAF8;}
 .td-no{color:var(--text-sub);font-size:12px;font-weight:600;}
 .td-ro{font-size:13px;color:var(--text);padding:2px 4px;font-weight:500;}
 .td-lot{white-space:nowrap;}
+.lot-link{
+  color:var(--blue-dk);
+  text-decoration:underline;
+  text-underline-offset:2px;
+  font-weight:700;
+  cursor:pointer;
+}
+.lot-link:hover{color:var(--blue);}
 /* 수정 가능 셀 스타일 */
 .td-input{border:1px solid transparent;border-radius:4px;padding:2px 4px;font-size:12px;width:100%;background:transparent;color:var(--text);text-align:center;outline:none;font-family:inherit;font-weight:500;}
 .td-input:hover{border-color:var(--gray-bd);background:var(--gray-lt);}
@@ -355,6 +363,7 @@ const SUPABASE_KEY = "sb_publishable_9w9ktk0x4D8I6QodkWOthA_4FcxzMwD";
 const TABLE_NAME = "Total_Production_DB";
 const CUSTOMER_TABLE = "customers";
 const LOGIN_PAGE_URL = "../index.html";
+const INSPECTION_REPORT_PAGE = "Inspection_Report.html";
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
@@ -641,6 +650,20 @@ function tdSelect(field,value,options,index){
     '" onchange="markModified(this);updateCertBadge(this)">'+optionHtml+"</select>";
 }
 
+function buildInspectionReportUrl(row){
+  if(!row) return INSPECTION_REPORT_PAGE;
+
+  const params = new URLSearchParams();
+  if(row.work_date) params.set("work_date", String(row.work_date));
+  if(row.lot_no) params.set("lot_no", String(row.lot_no));
+  if(row.customer_name) params.set("customer_name", String(row.customer_name));
+  if(row.item_name) params.set("item_name", String(row.item_name));
+  if(row.item_number) params.set("item_number", String(row.item_number));
+
+  const query = params.toString();
+  return INSPECTION_REPORT_PAGE + (query ? "?" + query : "");
+}
+
 function renderTable(rows){
   document.getElementById("tCount").textContent = rows.length.toLocaleString("ko-KR")+"건";
   const tbody = document.getElementById("tbody");
@@ -653,7 +676,11 @@ function renderTable(rows){
     const result = row.inspection_result || "대기";
     return '<tr data-idx="'+index+'">'+
       '<td class="td-no">'+(index+1)+'</td>'+
-      '<td class="td-lot"><span class="td-ro">'+escapeHtml(row.lot_no||"")+'</span></td>'+
+      '<td class="td-lot">'+
+        (row.lot_no
+          ? '<a class="td-ro lot-link" href="'+escapeAttr(buildInspectionReportUrl(row))+'" title="해당 검사성적서 열기">'+escapeHtml(row.lot_no)+'</a>'
+          : '<span class="td-ro"></span>')+
+      '</td>'+
       '<td><span class="td-ro">'+escapeHtml(row.work_date||"")+'</span></td>'+
       '<td><span class="td-ro">'+escapeHtml(row.customer_name||"")+'</span></td>'+
       '<td><span class="td-ro">'+escapeHtml(row.item_name||"")+'</span></td>'+
