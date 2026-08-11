@@ -249,8 +249,12 @@ let masterProducts = {};
 let currentRows = [];
 let sortAscending = true;
 let itemIndexMap = new Map();
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
+const INACTIVITY_LIMIT_MS = 20 * 60 * 1000; // 20분
 let currentPage = 1;
+let inactivityLogoutTimer = null;
+let lastActivityAt = Date.now();
+let inactivityLogoutStarted = false;
 let docIndex = {
   controlPlan:{ exists:new Set(), completed:new Set() },
   manufacturing:{ exists:new Set(), completed:new Set() },
@@ -313,6 +317,73 @@ async function verifyCompanyAccess() {
 sb.auth.onAuthStateChange((event) => {
   if (event === "SIGNED_OUT") redirectToLogin();
 });
+
+function scheduleInactivityLogout() {
+  if (!currentUser || inactivityLogoutStarted) return;
+
+  if (inactivityLogoutTimer) {
+    window.clearTimeout(inactivityLogoutTimer);
+  }
+
+  const elapsed = Date.now() - lastActivityAt;
+  const remaining = Math.max(0, INACTIVITY_LIMIT_MS - elapsed);
+
+  inactivityLogoutTimer = window.setTimeout(() => {
+    void handleInactivityLogout();
+  }, remaining);
+}
+
+async function handleInactivityLogout() {
+  if (!currentUser || inactivityLogoutStarted) return;
+
+  const elapsed = Date.now() - lastActivityAt;
+  if (elapsed < INACTIVITY_LIMIT_MS) {
+    scheduleInactivityLogout();
+    return;
+  }
+
+  inactivityLogoutStarted = true;
+
+  try {
+    await sb.auth.signOut({ scope:"local" });
+  } catch (error) {
+    console.error("자동 로그아웃 처리 오류:", error);
+  } finally {
+    redirectToLogin();
+  }
+}
+
+function resetInactivityTimer() {
+  if (!currentUser || inactivityLogoutStarted) return;
+  lastActivityAt = Date.now();
+  scheduleInactivityLogout();
+}
+
+function checkInactivityNow() {
+  if (!currentUser || inactivityLogoutStarted) return;
+
+  if (Date.now() - lastActivityAt >= INACTIVITY_LIMIT_MS) {
+    void handleInactivityLogout();
+  } else {
+    scheduleInactivityLogout();
+  }
+}
+
+function initInactivityLogout() {
+  lastActivityAt = Date.now();
+
+  const activityEvents = ["mousedown", "mousemove", "keydown", "touchstart", "scroll", "click"];
+  activityEvents.forEach(eventName => {
+    window.addEventListener(eventName, resetInactivityTimer, { passive:true });
+  });
+
+  window.addEventListener("focus", checkInactivityNow);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) checkInactivityNow();
+  });
+
+  scheduleInactivityLogout();
+}
 
 async function fetchAllRows(tableName, selectColumns, applyQuery) {
   const pageSize = 1000;
@@ -1201,6 +1272,7 @@ document.getElementById("btnReset").addEventListener("click", () => {
   try {
     const allowed = await verifyCompanyAccess();
     if (!allowed) return;
+    initInactivityLogout();
     await Promise.all([loadMasterData(), loadMaterialMaster()]);
     document.getElementById("summaryText").textContent = "조회 버튼을 눌러 데이터를 불러오세요.";
     setActionMessage("로그인 및 회사 권한 확인이 완료되었습니다.", "success");
