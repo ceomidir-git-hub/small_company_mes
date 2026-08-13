@@ -336,8 +336,97 @@
 }
 </style>
 
+
+<style id="dashboard-reorder-style">
+  /* =========================================================
+     대시보드 그래프 순서 편집 — 2026-08-13
+     기존 그래프 DOM ID와 렌더 함수는 변경하지 않고 CSS order만 변경한다.
+     ========================================================= */
+  .dashboard-reorder-btn{
+    min-height:32px;
+    padding:5px 11px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel-2);
+    color:var(--text);
+    cursor:pointer;
+    font-family:var(--font-body);
+    font-size:.78rem;
+    font-weight:700;
+    white-space:nowrap;
+    transition:border-color .15s ease,background .15s ease,color .15s ease;
+  }
+  .dashboard-reorder-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .dashboard-reorder-btn.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    box-shadow:0 0 0 2px var(--accent-glow);
+  }
+  .dashboard-reorder-btn.active:hover{color:#fff;}
+
+  .dashboard-reorder-grid .chart-link{position:relative;}
+  body.dashboard-reorder-editing .dashboard-reorder-grid .chart-link{
+    cursor:grab;
+    border-style:dashed;
+    border-color:rgba(255,107,53,.72);
+    user-select:none;
+  }
+  body.dashboard-reorder-editing .dashboard-reorder-grid .chart-link:hover{
+    transform:none;
+    box-shadow:0 0 0 1px var(--accent-glow);
+  }
+  body.dashboard-reorder-editing .dashboard-reorder-grid .chart-link::after{
+    content:'⠿ DRAG';
+    position:absolute;
+    top:9px;
+    right:11px;
+    z-index:2;
+    padding:2px 7px;
+    border:1px solid var(--accent);
+    border-radius:6px;
+    background:rgba(255,107,53,.14);
+    color:var(--accent);
+    font-family:var(--font-mono);
+    font-size:.60rem;
+    font-weight:700;
+    pointer-events:none;
+  }
+  body.dashboard-reorder-editing .dashboard-reorder-grid .chart-link.dashboard-dragging{opacity:.38;cursor:grabbing;}
+  body.dashboard-reorder-editing .dashboard-reorder-grid .chart-link.dashboard-drop-before{box-shadow:-4px 0 0 var(--accent),0 0 0 1px var(--accent-glow);}
+  body.dashboard-reorder-editing .dashboard-reorder-grid .chart-link.dashboard-drop-after{box-shadow:4px 0 0 var(--accent),0 0 0 1px var(--accent-glow);}
+  body.dashboard-reorder-editing .dashboard-reorder-grid.one-column .chart-link.dashboard-drop-before{box-shadow:0 -4px 0 var(--accent),0 0 0 1px var(--accent-glow);}
+  body.dashboard-reorder-editing .dashboard-reorder-grid.one-column .chart-link.dashboard-drop-after{box-shadow:0 4px 0 var(--accent),0 0 0 1px var(--accent-glow);}
+
+  /* 편집 중에는 차트와 '순서 종료' 버튼을 제외한 화면 전체를 잠근다. */
+  #dashboardReorderLock{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:9000;
+    background:rgba(8,10,13,.58);
+    cursor:not-allowed;
+  }
+  body.dashboard-reorder-editing #dashboardReorderLock{display:block;}
+  body.dashboard-reorder-editing #dashboardReorderBtn{
+    position:relative;
+    z-index:9002;
+    pointer-events:auto;
+  }
+  body.dashboard-reorder-editing #dashboardReorderGrid{
+    position:relative;
+    z-index:9001;
+    pointer-events:auto;
+  }
+
+  @media(max-width:760px){
+    .dashboard-reorder-btn{min-height:30px;padding:4px 8px;font-size:.68rem;}
+  }
+</style>
+
 </head>
 <body>
+<div id="dashboardReorderLock" aria-hidden="true"></div>
 <div class="app">
   <header class="topbar">
     <div class="brand">
@@ -464,6 +553,7 @@
           <span class="date-label" id="selectedDateLabel">-</span>
           <button id="nextDateBtn" onclick="changeDate(1)" title="다음 날짜">▶</button>
         </div>
+        <button type="button" id="dashboardReorderBtn" class="dashboard-reorder-btn" onclick="toggleDashboardReorder()" aria-pressed="false">✏ 순서 편집</button>
       </div>
       <div class="crumb">HOME / 대시보드 · 날짜 : <span id="crumbDate"></span></div>
     </div>
@@ -491,17 +581,15 @@
             <div class="kpi-foot">DB DATA 2026 기준</div>
           </div>
         </section>
-        <div class="chart-grid-3">
-          <a class="panel chart-link" href="./Monthly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="월별생산실적 상세 화면 열기" title="월별생산실적 상세 화면 열기"><h3>월별생산실적 <span class="tag">개</span></h3><div class="bars" id="bar-prod"></div><div class="chart-axis" id="axis-prod"></div></a>
+        <div class="chart-grid-3 dashboard-reorder-grid" id="dashboardReorderGrid">
+          <a class="panel chart-link" data-dashboard-block="prod" href="./Monthly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="월별생산실적 상세 화면 열기" title="월별생산실적 상세 화면 열기"><h3>월별생산실적 <span class="tag">개</span></h3><div class="bars" id="bar-prod"></div><div class="chart-axis" id="axis-prod"></div></a>
           <!-- ── 2026-07-17 변경: 월 가동률 → 이번달 일별 가동률(전체 설비 합산) SVG 꺾은선, 목표% 헤더 표기 ── -->
-          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="설비가동률 그래프 상세 화면 열기" title="설비가동률 그래프 상세 화면 열기"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><svg class="linechart" viewBox="0 0 240 156" preserveAspectRatio="none" aria-label="일별 설비가동률 꺾은선 그래프"><g id="line-rate"></g></svg><div class="chart-axis" id="axis-rate"></div></a>
+          <a class="panel chart-link" data-dashboard-block="rate" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="설비가동률 그래프 상세 화면 열기" title="설비가동률 그래프 상세 화면 열기"><h3><span id="rate-panel-title">설비가동률</span> <span class="tag" id="rate-target-tag">목표 -</span></h3><svg class="linechart" viewBox="0 0 240 156" preserveAspectRatio="none" aria-label="일별 설비가동률 꺾은선 그래프"><g id="line-rate"></g></svg><div class="chart-axis" id="axis-rate"></div></a>
           <!-- ── 2026-07-31 변경: 선택 월 일별 생산실적 현황 그래프 ── -->
-          <a class="panel chart-link" href="Daily_Work_Check.html" target="_blank" rel="noopener noreferrer" aria-label="생산실적 상세현황 열기" title="생산실적 상세현황 열기"><h3><span id="inout-panel-title">생산실적 현황</span> <span class="tag">ea</span></h3><svg class="linechart" viewBox="0 0 240 156" preserveAspectRatio="none" aria-label="일별 생산실적 수량 꺾은선 그래프"><g id="line-inout"></g></svg><div class="chart-axis" id="axis-inout"></div></a>
-        </div>
-        <div class="chart-grid-3">
-          <a class="panel chart-link" href="./Yearly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="누적 생산실적 상세 화면 열기" title="누적 생산실적 상세 화면 열기"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></a>
-          <a class="panel chart-link" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월별 설비가동률 그래프 상세 화면 열기" title="월별 설비가동률 그래프 상세 화면 열기"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--bad)">-</span></div></a>
-          <a class="panel chart-link" href="Defect_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월누적 불량률 그래프 상세 화면 열기" title="월누적 불량률 그래프 상세 화면 열기"><h3>월누적 불량률 <span class="tag">%</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></a>
+          <a class="panel chart-link" data-dashboard-block="inout" href="Daily_Work_Check.html" target="_blank" rel="noopener noreferrer" aria-label="생산실적 상세현황 열기" title="생산실적 상세현황 열기"><h3><span id="inout-panel-title">생산실적 현황</span> <span class="tag">ea</span></h3><svg class="linechart" viewBox="0 0 240 156" preserveAspectRatio="none" aria-label="일별 생산실적 수량 꺾은선 그래프"><g id="line-inout"></g></svg><div class="chart-axis" id="axis-inout"></div></a>
+          <a class="panel chart-link" data-dashboard-block="cumprod" href="./Yearly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="누적 생산실적 상세 화면 열기" title="누적 생산실적 상세 화면 열기"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></a>
+          <a class="panel chart-link" data-dashboard-block="cumrate" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월별 설비가동률 그래프 상세 화면 열기" title="월별 설비가동률 그래프 상세 화면 열기"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--bad)">-</span></div></a>
+          <a class="panel chart-link" data-dashboard-block="defect" href="Defect_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월누적 불량률 그래프 상세 화면 열기" title="월누적 불량률 그래프 상세 화면 열기"><h3>월누적 불량률 <span class="tag">%</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></a>
         </div>
         <section>
           <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:14px;">주요 모듈 구성(개발예정)</h3>
@@ -1826,10 +1914,516 @@ function confirmSendReportNow() {
   );
 }
 
+
+/* =========================================================
+   대시보드 그래프 순서 편집 — 2026-08-13
+   - 편집 중: 그래프 드래그 + 순서 종료 버튼만 사용 가능
+   - 종료 후: 기존 메뉴/버튼/그래프 링크 기능 복구
+   - 저장: 로그인 회사별 localStorage
+   - DOM 순서는 유지하고 CSS order만 변경
+   ========================================================= */
+const DASHBOARD_REORDER_DEFAULT = [
+  "prod",
+  "rate",
+  "inout",
+  "cumprod",
+  "cumrate",
+  "defect"
+];
+
+let dashboardReorderOrder = DASHBOARD_REORDER_DEFAULT.slice();
+let dashboardReorderEditing = false;
+let dashboardReorderDragId = null;
+let dashboardReorderInitialized = false;
+
+function getDashboardReorderStorageKey() {
+  const companyId =
+    currentProfile && currentProfile.company_id
+      ? currentProfile.company_id
+      : "unknown_company";
+
+  return "heatpro_dashboard_chart_order_" + companyId;
+}
+
+function getDashboardReorderPanels() {
+  return Array.from(
+    document.querySelectorAll(
+      "#dashboardReorderGrid .chart-link[data-dashboard-block]"
+    )
+  );
+}
+
+function validateDashboardReorderOrder(value) {
+  if (!Array.isArray(value)) {
+    return DASHBOARD_REORDER_DEFAULT.slice();
+  }
+
+  const valid = value.filter(function (id) {
+    return DASHBOARD_REORDER_DEFAULT.includes(id);
+  });
+
+  DASHBOARD_REORDER_DEFAULT.forEach(function (id) {
+    if (!valid.includes(id)) {
+      valid.push(id);
+    }
+  });
+
+  return valid.slice(0, DASHBOARD_REORDER_DEFAULT.length);
+}
+
+function loadDashboardReorderOrder() {
+  try {
+    const raw = localStorage.getItem(
+      getDashboardReorderStorageKey()
+    );
+
+    if (!raw) {
+      dashboardReorderOrder =
+        DASHBOARD_REORDER_DEFAULT.slice();
+      return;
+    }
+
+    dashboardReorderOrder =
+      validateDashboardReorderOrder(
+        JSON.parse(raw)
+      );
+  } catch (error) {
+    console.warn(
+      "대시보드 순서 불러오기 실패:",
+      error
+    );
+
+    dashboardReorderOrder =
+      DASHBOARD_REORDER_DEFAULT.slice();
+  }
+}
+
+function saveDashboardReorderOrder() {
+  try {
+    localStorage.setItem(
+      getDashboardReorderStorageKey(),
+      JSON.stringify(dashboardReorderOrder)
+    );
+  } catch (error) {
+    console.warn(
+      "대시보드 순서 저장 실패:",
+      error
+    );
+  }
+}
+
+function applyDashboardReorderOrder() {
+  getDashboardReorderPanels().forEach(
+    function (panel) {
+      const id = panel.dataset.dashboardBlock;
+      const index =
+        dashboardReorderOrder.indexOf(id);
+
+      panel.style.order =
+        index >= 0 ? String(index) : "99";
+    }
+  );
+}
+
+function clearDashboardDropMarks() {
+  getDashboardReorderPanels().forEach(
+    function (panel) {
+      panel.classList.remove(
+        "dashboard-drop-before",
+        "dashboard-drop-after"
+      );
+    }
+  );
+}
+
+function updateDashboardReorderColumnMode() {
+  const grid =
+    document.getElementById(
+      "dashboardReorderGrid"
+    );
+
+  if (!grid) {
+    return;
+  }
+
+  const columns =
+    getComputedStyle(grid)
+      .gridTemplateColumns
+      .split(" ")
+      .filter(Boolean)
+      .length;
+
+  grid.classList.toggle(
+    "one-column",
+    columns <= 1
+  );
+}
+
+function setDashboardReorderEditing(enabled) {
+  dashboardReorderEditing = Boolean(enabled);
+
+  const button =
+    document.getElementById(
+      "dashboardReorderBtn"
+    );
+
+  document.body.classList.toggle(
+    "dashboard-reorder-editing",
+    dashboardReorderEditing
+  );
+
+  getDashboardReorderPanels().forEach(
+    function (panel) {
+      panel.setAttribute(
+        "draggable",
+        dashboardReorderEditing
+          ? "true"
+          : "false"
+      );
+    }
+  );
+
+  if (button) {
+    button.classList.toggle(
+      "active",
+      dashboardReorderEditing
+    );
+
+    button.setAttribute(
+      "aria-pressed",
+      String(dashboardReorderEditing)
+    );
+
+    button.textContent =
+      dashboardReorderEditing
+        ? "✓ 순서 종료"
+        : "✏ 순서 편집";
+  }
+
+  if (dashboardReorderEditing) {
+    updateDashboardReorderColumnMode();
+
+    if (typeof closeMailStatusModal === "function") {
+      closeMailStatusModal();
+    }
+
+    if (button) {
+      button.focus();
+    }
+  } else {
+    dashboardReorderDragId = null;
+    clearDashboardDropMarks();
+    saveDashboardReorderOrder();
+  }
+}
+
+function toggleDashboardReorder() {
+  setDashboardReorderEditing(
+    !dashboardReorderEditing
+  );
+}
+
+function bindDashboardReorderDrag() {
+  getDashboardReorderPanels().forEach(
+    function (panel) {
+      panel.setAttribute(
+        "draggable",
+        "false"
+      );
+
+      panel.addEventListener(
+        "click",
+        function (event) {
+          if (!dashboardReorderEditing) {
+            return;
+          }
+
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      );
+
+      panel.addEventListener(
+        "contextmenu",
+        function (event) {
+          if (!dashboardReorderEditing) {
+            return;
+          }
+
+          event.preventDefault();
+        }
+      );
+
+      panel.addEventListener(
+        "dragstart",
+        function (event) {
+          if (!dashboardReorderEditing) {
+            event.preventDefault();
+            return;
+          }
+
+          dashboardReorderDragId =
+            panel.dataset.dashboardBlock;
+
+          panel.classList.add(
+            "dashboard-dragging"
+          );
+
+          if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed =
+              "move";
+
+            try {
+              event.dataTransfer.setData(
+                "text/plain",
+                dashboardReorderDragId
+              );
+            } catch (error) {
+              // 일부 브라우저의 dataTransfer 제한은 무시한다.
+            }
+          }
+        }
+      );
+
+      panel.addEventListener(
+        "dragend",
+        function () {
+          panel.classList.remove(
+            "dashboard-dragging"
+          );
+
+          dashboardReorderDragId = null;
+          clearDashboardDropMarks();
+        }
+      );
+
+      panel.addEventListener(
+        "dragover",
+        function (event) {
+          if (
+            !dashboardReorderEditing ||
+            !dashboardReorderDragId ||
+            panel.dataset.dashboardBlock ===
+              dashboardReorderDragId
+          ) {
+            return;
+          }
+
+          event.preventDefault();
+
+          if (event.dataTransfer) {
+            event.dataTransfer.dropEffect =
+              "move";
+          }
+
+          updateDashboardReorderColumnMode();
+          clearDashboardDropMarks();
+
+          const rect =
+            panel.getBoundingClientRect();
+          const grid =
+            document.getElementById(
+              "dashboardReorderGrid"
+            );
+          const oneColumn =
+            grid &&
+            grid.classList.contains(
+              "one-column"
+            );
+
+          const before = oneColumn
+            ? event.clientY - rect.top <
+              rect.height / 2
+            : event.clientX - rect.left <
+              rect.width / 2;
+
+          panel.classList.add(
+            before
+              ? "dashboard-drop-before"
+              : "dashboard-drop-after"
+          );
+        }
+      );
+
+      panel.addEventListener(
+        "dragleave",
+        function () {
+          panel.classList.remove(
+            "dashboard-drop-before",
+            "dashboard-drop-after"
+          );
+        }
+      );
+
+      panel.addEventListener(
+        "drop",
+        function (event) {
+          if (
+            !dashboardReorderEditing ||
+            !dashboardReorderDragId ||
+            panel.dataset.dashboardBlock ===
+              dashboardReorderDragId
+          ) {
+            return;
+          }
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          updateDashboardReorderColumnMode();
+
+          const targetId =
+            panel.dataset.dashboardBlock;
+          const rect =
+            panel.getBoundingClientRect();
+          const grid =
+            document.getElementById(
+              "dashboardReorderGrid"
+            );
+          const oneColumn =
+            grid &&
+            grid.classList.contains(
+              "one-column"
+            );
+
+          const before = oneColumn
+            ? event.clientY - rect.top <
+              rect.height / 2
+            : event.clientX - rect.left <
+              rect.width / 2;
+
+          const fromIndex =
+            dashboardReorderOrder.indexOf(
+              dashboardReorderDragId
+            );
+
+          if (fromIndex < 0) {
+            return;
+          }
+
+          dashboardReorderOrder.splice(
+            fromIndex,
+            1
+          );
+
+          let targetIndex =
+            dashboardReorderOrder.indexOf(
+              targetId
+            );
+
+          if (targetIndex < 0) {
+            targetIndex =
+              dashboardReorderOrder.length;
+          }
+
+          dashboardReorderOrder.splice(
+            before
+              ? targetIndex
+              : targetIndex + 1,
+            0,
+            dashboardReorderDragId
+          );
+
+          clearDashboardDropMarks();
+          applyDashboardReorderOrder();
+
+          /* 놓는 즉시 임시 저장하고, 순서 종료 시 한 번 더 확정 저장한다. */
+          saveDashboardReorderOrder();
+        }
+      );
+    }
+  );
+}
+
+/* 편집 모드에서는 차트 드래그와 '순서 종료' 버튼 이외의 클릭을 전부 차단한다. */
+document.addEventListener(
+  "click",
+  function (event) {
+    if (!dashboardReorderEditing) {
+      return;
+    }
+
+    const button =
+      document.getElementById(
+        "dashboardReorderBtn"
+      );
+    const grid =
+      document.getElementById(
+        "dashboardReorderGrid"
+      );
+
+    if (
+      button &&
+      (
+        event.target === button ||
+        button.contains(event.target)
+      )
+    ) {
+      return;
+    }
+
+    if (
+      grid &&
+      grid.contains(event.target)
+    ) {
+      const link =
+        event.target.closest(
+          ".chart-link"
+        );
+
+      if (link) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  },
+  true
+);
+
+window.addEventListener(
+  "resize",
+  function () {
+    if (dashboardReorderEditing) {
+      updateDashboardReorderColumnMode();
+    }
+  }
+);
+
+function initDashboardReorder() {
+  if (dashboardReorderInitialized) {
+    return;
+  }
+
+  const grid =
+    document.getElementById(
+      "dashboardReorderGrid"
+    );
+
+  const button =
+    document.getElementById(
+      "dashboardReorderBtn"
+    );
+
+  if (!grid || !button) {
+    return;
+  }
+
+  dashboardReorderInitialized = true;
+  loadDashboardReorderOrder();
+  applyDashboardReorderOrder();
+  bindDashboardReorderDrag();
+}
+
 async function initializeDashboard() {
   restoreTheme();
   updateSystemDate();
   updateDateDisplay();
+  initDashboardReorder();
   await loadDashboardData();
 }
 
