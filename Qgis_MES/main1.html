@@ -454,15 +454,30 @@
      기존 문서자동생성 패널의 외곽 크기는 유지하고 내부만 LIST로 교체한다.
      ========================================================= */
   .production-status-panel{overflow:hidden;}
-  .production-status-titlebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px;flex:0 0 auto;}
-  .production-status-titlebar h3{margin:0!important;}
+  .production-status-titlebar{display:flex;align-items:center;gap:10px;margin-bottom:5px;flex:0 0 auto;min-width:0;}
+  /* 기존 0.98rem × 1.10 = 1.078rem */
+  .production-status-titlebar h3{margin:0!important;font-size:1.078rem!important;white-space:nowrap;}
+  .production-status-title-actions{margin-left:auto;display:flex;align-items:center;gap:7px;min-width:0;}
+  .production-status-date-nav{display:flex;align-items:center;gap:5px;flex:0 0 auto;}
+  .production-status-date-nav button{
+    width:26px;height:26px;padding:0;border:1px solid var(--line);border-radius:7px;
+    background:var(--panel-2);color:var(--text);font-family:var(--font-mono);font-size:.77rem;
+    font-weight:800;line-height:1;cursor:pointer;
+  }
+  .production-status-date-nav button:hover{border-color:var(--accent);color:var(--accent);}
+  .production-status-date-nav button:disabled{opacity:.38;cursor:default;color:var(--muted);border-color:var(--line);}
+  .production-status-date-label{
+    min-width:116px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;
+    background:var(--panel);color:var(--text);text-align:center;white-space:nowrap;
+    font-family:var(--font-mono);font-size:.704rem;font-weight:800;line-height:1.15;
+  }
   .production-status-pdf-btn{
     flex:0 0 auto;border:1px solid var(--line);background:var(--panel-2);color:var(--text);
-    border-radius:7px;padding:5px 9px;font-family:var(--font-body);font-size:.68rem;font-weight:700;
+    border-radius:7px;padding:5px 9px;font-family:var(--font-body);font-size:.748rem;font-weight:700;
     cursor:pointer;line-height:1.2;
   }
   .production-status-pdf-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .production-status-caption{font-family:var(--font-mono);font-size:.62rem;color:var(--muted);margin-bottom:7px;flex:0 0 auto;}
+  .production-status-caption{font-family:var(--font-mono);font-size:.682rem;color:var(--muted);margin-bottom:7px;flex:0 0 auto;}
   .production-status-table-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:9px;background:var(--panel);}
   .production-status-table-head,.production-status-row{
     display:grid;
@@ -471,12 +486,12 @@
   }
   .production-status-table-head{
     position:sticky;top:0;z-index:2;background:var(--panel-2);border-bottom:1px solid var(--line);
-    min-height:31px;font-size:.64rem;font-weight:800;color:var(--text);
+    min-height:31px;font-size:.704rem;font-weight:800;color:var(--text);
   }
   .production-status-table-head>div,.production-status-row>div{padding:6px 5px;min-width:0;}
   .production-status-table-head>div{text-align:center;white-space:nowrap;}
   .production-status-table-body{min-width:0;}
-  .production-status-row{min-height:39px;border-bottom:1px solid var(--line);font-size:.66rem;color:var(--text);}
+  .production-status-row{min-height:39px;border-bottom:1px solid var(--line);font-size:.726rem;color:var(--text);}
   .production-status-row:last-child{border-bottom:none;}
   .production-status-row:hover{background:rgba(127,127,127,.055);}
   .production-status-row .ps-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -501,12 +516,18 @@
   @media (min-width:1281px) and (max-width:1680px){
     .production-status-table-head,.production-status-row{grid-template-columns:60px 68px minmax(0,1.05fr) minmax(0,1.12fr) minmax(0,.88fr) 54px;}
     .production-status-table-head>div,.production-status-row>div{padding-left:4px;padding-right:4px;}
-    .production-status-row{font-size:.64rem;}
+    .production-status-row{font-size:.704rem;}
   }
   @media (max-width:760px){
+    .production-status-titlebar{gap:6px;}
+    .production-status-titlebar h3{font-size:1.10rem!important;} /* 1.00 × 1.10 */
+    .production-status-title-actions{gap:5px;}
+    .production-status-date-nav{gap:3px;}
+    .production-status-date-nav button{width:24px;height:24px;font-size:.72rem;}
+    .production-status-date-label{min-width:105px;padding:4px 6px;font-size:.682rem;}
     .production-status-table-wrap{overflow:auto;}
     .production-status-table-head,.production-status-row{grid-template-columns:68px 78px 100px 120px 100px 64px;min-width:530px;}
-    .production-status-pdf-btn{font-size:.66rem;padding:5px 8px;}
+    .production-status-pdf-btn{font-size:.726rem;padding:5px 8px;}
   }
 
   /* 브라우저 인쇄 엔진을 사용해 텍스트/선/표를 벡터 PDF로 출력한다. */
@@ -739,7 +760,14 @@
         <div class="panel doc-section production-status-panel" id="productionStatusPanel" style="flex:1;display:flex;flex-direction:column;min-height:0;">
           <div class="production-status-titlebar">
             <h3>생산 현황 LIST</h3>
-            <button type="button" class="production-status-pdf-btn" onclick="printProductionStatusPdf()" title="현재 조회된 생산 현황을 PDF로 저장">PDF 저장</button>
+            <div class="production-status-title-actions">
+              <div class="production-status-date-nav" aria-label="생산 현황 기준일 이동">
+                <button type="button" onclick="changeDate(-1)" title="이전 날짜">◀</button>
+                <span class="production-status-date-label" id="productionStatusDateLabel">-</span>
+                <button type="button" id="productionStatusNextDateBtn" onclick="changeDate(1)" title="다음 날짜">▶</button>
+              </div>
+              <button type="button" class="production-status-pdf-btn" onclick="printProductionStatusPdf()" title="현재 조회된 생산 현황을 PDF로 저장">PDF 저장</button>
+            </div>
           </div>
           <div class="production-status-caption" id="productionStatusCaption">기준일 -</div>
           <div class="production-status-table-wrap" id="productionStatusTableWrap">
@@ -998,12 +1026,18 @@ function updateSystemDate() {
 function updateDateDisplay() {
   const dateText = formatDateYMD(selectedDate);
   const selectedDateLabel = document.getElementById("selectedDateLabel");
+  const productionStatusDateLabel = document.getElementById("productionStatusDateLabel");
   const crumbDate = document.getElementById("crumbDate");
   const kpiDate = document.getElementById("kpiDate");
   const nextDateButton = document.getElementById("nextDateBtn");
+  const productionStatusNextDateButton = document.getElementById("productionStatusNextDateBtn");
 
   if (selectedDateLabel) {
     selectedDateLabel.textContent = formatDateLabel(selectedDate);
+  }
+
+  if (productionStatusDateLabel) {
+    productionStatusDateLabel.textContent = formatDateLabel(selectedDate);
   }
 
   if (crumbDate) {
@@ -1014,15 +1048,21 @@ function updateDateDisplay() {
     kpiDate.textContent = dateText;
   }
 
-  if (nextDateButton) {
+  {
     const today = getSystemTodayDateOnly();
     const selected = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
       selectedDate.getDate()
     );
+    const disableNext = selected.getTime() >= today.getTime();
 
-    nextDateButton.disabled = selected.getTime() >= today.getTime();
+    if (nextDateButton) {
+      nextDateButton.disabled = disableNext;
+    }
+    if (productionStatusNextDateButton) {
+      productionStatusNextDateButton.disabled = disableNext;
+    }
   }
 }
 
