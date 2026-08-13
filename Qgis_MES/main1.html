@@ -447,6 +447,97 @@
   }
 </style>
 
+
+<style id="production-status-style">
+  /* =========================================================
+     생산 현황 LIST — 2026-08-13
+     기존 문서자동생성 패널의 외곽 크기는 유지하고 내부만 LIST로 교체한다.
+     ========================================================= */
+  .production-status-panel{overflow:hidden;}
+  .production-status-titlebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:5px;flex:0 0 auto;}
+  .production-status-titlebar h3{margin:0!important;}
+  .production-status-pdf-btn{
+    flex:0 0 auto;border:1px solid var(--line);background:var(--panel-2);color:var(--text);
+    border-radius:7px;padding:5px 9px;font-family:var(--font-body);font-size:.68rem;font-weight:700;
+    cursor:pointer;line-height:1.2;
+  }
+  .production-status-pdf-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .production-status-caption{font-family:var(--font-mono);font-size:.62rem;color:var(--muted);margin-bottom:7px;flex:0 0 auto;}
+  .production-status-table-wrap{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:9px;background:var(--panel);}
+  .production-status-table-head,.production-status-row{
+    display:grid;
+    grid-template-columns:64px 72px minmax(0,1.05fr) minmax(0,1.15fr) minmax(0,.9fr) 58px;
+    align-items:center;
+  }
+  .production-status-table-head{
+    position:sticky;top:0;z-index:2;background:var(--panel-2);border-bottom:1px solid var(--line);
+    min-height:31px;font-size:.64rem;font-weight:800;color:var(--text);
+  }
+  .production-status-table-head>div,.production-status-row>div{padding:6px 5px;min-width:0;}
+  .production-status-table-head>div{text-align:center;white-space:nowrap;}
+  .production-status-table-body{min-width:0;}
+  .production-status-row{min-height:39px;border-bottom:1px solid var(--line);font-size:.66rem;color:var(--text);}
+  .production-status-row:last-child{border-bottom:none;}
+  .production-status-row:hover{background:rgba(127,127,127,.055);}
+  .production-status-row .ps-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .production-status-row .ps-date{text-align:center;font-family:var(--font-mono);font-weight:700;}
+  .production-status-row .ps-qty{text-align:right;font-family:var(--font-mono);font-weight:800;padding-right:8px;}
+  .production-status-row.ps-empty .ps-cell:not(.ps-category){color:var(--muted);}
+  .ps-badge{
+    display:block;width:100%;text-align:center;padding:4px 3px;border-radius:6px;border:1px solid currentColor;
+    font-weight:800;line-height:1.15;white-space:nowrap;
+  }
+  .ps-prev-receive{color:#2F7CC0;background:rgba(47,124,192,.12);}
+  .ps-prev-work{color:#7A46C5;background:rgba(122,70,197,.12);}
+  .ps-today-receive{color:#218A38;background:rgba(33,138,56,.12);}
+  .ps-today-work{color:#D96A00;background:rgba(217,106,0,.13);}
+  .ps-today-ship{color:#D33B32;background:rgba(211,59,50,.12);}
+  .ps-tomorrow-ship{color:#0C8296;background:rgba(12,130,150,.12);}
+
+  body.light-theme .production-status-table-wrap{background:#fff;}
+  body.light-theme .production-status-table-head{background:#F4F7FA;}
+  body.light-theme .production-status-row:hover{background:#F8FAFC;}
+
+  @media (min-width:1281px) and (max-width:1680px){
+    .production-status-table-head,.production-status-row{grid-template-columns:60px 68px minmax(0,1.05fr) minmax(0,1.12fr) minmax(0,.88fr) 54px;}
+    .production-status-table-head>div,.production-status-row>div{padding-left:4px;padding-right:4px;}
+    .production-status-row{font-size:.64rem;}
+  }
+  @media (max-width:760px){
+    .production-status-table-wrap{overflow:auto;}
+    .production-status-table-head,.production-status-row{grid-template-columns:68px 78px 100px 120px 100px 64px;min-width:530px;}
+    .production-status-pdf-btn{font-size:.66rem;padding:5px 8px;}
+  }
+
+  /* 브라우저 인쇄 엔진을 사용해 텍스트/선/표를 벡터 PDF로 출력한다. */
+  .production-status-print-sheet{display:none;}
+  @media print{
+    @page{size:A4 landscape;margin:10mm;}
+    html,body{background:#fff!important;color:#111!important;width:auto!important;height:auto!important;overflow:visible!important;}
+    body.production-status-printing>*{display:none!important;}
+    body.production-status-printing>#productionStatusPrintSheet{display:block!important;}
+    #productionStatusPrintSheet{
+      font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif!important;
+      color:#111!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+    }
+    #productionStatusPrintSheet .ps-print-title{font-size:20pt;font-weight:800;margin:0 0 4mm;}
+    #productionStatusPrintSheet .ps-print-meta{font-size:9pt;color:#555;margin-bottom:4mm;}
+    #productionStatusPrintSheet table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9pt;}
+    #productionStatusPrintSheet th,#productionStatusPrintSheet td{border:.35mm solid #B8C3CF;padding:2.2mm 2mm;vertical-align:middle;overflow-wrap:anywhere;}
+    #productionStatusPrintSheet th{background:#F1F5F9;font-weight:800;text-align:center;}
+    #productionStatusPrintSheet td.ps-print-date{text-align:center;font-weight:700;white-space:nowrap;}
+    #productionStatusPrintSheet td.ps-print-qty{text-align:right;font-weight:800;white-space:nowrap;}
+    #productionStatusPrintSheet tr{break-inside:avoid;page-break-inside:avoid;}
+    #productionStatusPrintSheet .ps-print-badge{display:inline-block;min-width:23mm;text-align:center;padding:1.2mm 1.5mm;border-radius:2mm;border:.35mm solid currentColor;font-weight:800;}
+    #productionStatusPrintSheet .ps-prev-receive{color:#2F7CC0;background:#EAF4FC;}
+    #productionStatusPrintSheet .ps-prev-work{color:#7A46C5;background:#F2ECFB;}
+    #productionStatusPrintSheet .ps-today-receive{color:#218A38;background:#EBF8EE;}
+    #productionStatusPrintSheet .ps-today-work{color:#D96A00;background:#FFF1E3;}
+    #productionStatusPrintSheet .ps-today-ship{color:#D33B32;background:#FDECEA;}
+    #productionStatusPrintSheet .ps-tomorrow-ship{color:#0C8296;background:#E9F8FA;}
+  }
+</style>
+
 </head>
 <body>
 <div id="dashboardReorderLock" aria-hidden="true"></div>
@@ -645,39 +736,26 @@
             <div class="flow-step"><div class="node">🚚</div><div class="label">출하</div></div>
           </div>
         </div>
-        <div class="panel doc-section" style="flex:1;display:flex;flex-direction:column;">
-          <h3>문서자동생성</h3>
-          <div class="doc-sub">AUTO-GENERATED DOCUMENTS · ISO 9001</div>
-          <div class="doc-grid">
-            <!-- ✅ 신규 추가: 생산실적조회 (2026-07-04) -->
-            <a class="doc-card" href="Daily_Work_Check.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📊</div><div class="doc-preview"></div><div class="doc-title">생산실적조회</div><div class="doc-meta">PRODUCTION STATUS</div></a>
-            <a class="doc-card" href="Supabase_Worksheet.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📑</div><div class="doc-preview"></div><div class="doc-title">작업일보</div><div class="doc-meta">DAILY REPORT</div></a>
-            <a class="doc-card" href="./Drawing_Inventory_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📐</div><div class="doc-preview"></div><div class="doc-title">도면관리대장</div><div class="doc-meta">DRAWING LOG</div></a>
-            <a class="doc-card" href="Coil_List_Management.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🔗</div><div class="doc-preview"></div><div class="doc-title">코일List관리대장</div><div class="doc-meta">COIL LIST</div></a>
-            <a class="doc-card" href="Coil_History_Management.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📜</div><div class="doc-preview"></div><div class="doc-title">코일이력관리대장</div><div class="doc-meta">COIL HISTORY</div></a>
-            <!-- ── 2026-07-04 이동: 도면관리 묶음 다음으로 위치 변경 ── -->
-            <a class="doc-card" href="InOut_Management_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📥</div><div class="doc-preview"></div><div class="doc-title">입출고관리대장</div><div class="doc-meta">I/O LEDGER</div></a>
-            <a class="doc-card" href="./Yearly_Production_Record.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📅</div><div class="doc-preview"></div><div class="doc-title">년생산실적</div><div class="doc-meta">YEARLY OUTPUT</div></a>
-            <a class="doc-card" href="./Monthly_Production_Record.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🗓️</div><div class="doc-preview"></div><div class="doc-title">월생산달성율</div><div class="doc-meta">MONTHLY ACHIEVEMENT</div></a>
-            <a class="doc-card" href="Defect_Rate_Graph.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📉</div><div class="doc-preview"></div><div class="doc-title">불량률(G)</div><div class="doc-meta">DEFECT RATE GRAPH</div></a>
-            <a class="doc-card" href="./Work_Condition_Management.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">⚙️</div><div class="doc-preview"></div><div class="doc-title">작업조건관리대장</div><div class="doc-meta">WORK CONDITION</div></a>
-            <a class="doc-card" href="Operating_Rate_Graph.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">⏱️</div><div class="doc-preview"></div><div class="doc-title">설비가동률(G)</div><div class="doc-meta">OPERATING RATE GRAPH</div></a>
-            <a class="doc-card" href="Machine_Repair_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🔧</div><div class="doc-preview"></div><div class="doc-title">설비수리현황</div><div class="doc-meta">REPAIR STATUS</div></a>
-            <!-- ── 2026-07-04 순서 변경: 제조설비 등록대장 → 검사장비현황 ── -->
-            <a class="doc-card" href="Machine_operation_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🏭</div><div class="doc-preview"></div><div class="doc-title">제조설비 등록대장</div><div class="doc-meta">MANUFACTURING EQUIPMENT</div></a>
-            <a class="doc-card" href="./Inspection_Tool_Status.html" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;"><div class="doc-icon">🧰</div><div class="doc-preview"></div><div class="doc-title">검사장비현황</div><div class="doc-meta">EQUIP. STATUS</div></a>
-            <a class="doc-card" href="Only_InspectionSheet_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📋</div><div class="doc-preview"></div><div class="doc-title">검사성적서관리현황</div><div class="doc-meta">INSPECTION SHEET</div></a>
-            <a class="doc-card" href="Inspection_Report.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">📝</div><div class="doc-preview"></div><div class="doc-title">검사성적서보고서</div><div class="doc-meta">INSPECTION REPORT</div></a>
-            <!-- ── 2026-07-04 이동: 검사성적서보고서 다음으로 위치 변경 ── -->
-            <a class="doc-card" href="InOut_Inspection_Status.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🔍</div><div class="doc-preview"></div><div class="doc-title">입출고검사현황</div><div class="doc-meta">I/O INSPECTION</div></a>
-            <a class="doc-card" href="Customer_Managerment_Log.html" target="_blank" style="text-decoration:none;color:inherit;"><div class="doc-icon">🤝</div><div class="doc-preview"></div><div class="doc-title">고객관리대장</div><div class="doc-meta">CUSTOMER LOG</div></a>
-            <a class="doc-card" href="./Work_Standards_Document.html" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;"><div class="doc-icon">📘</div><div class="doc-preview"></div><div class="doc-title">작업표준서</div><div class="doc-meta">WORK STANDARD</div></a>
+        <div class="panel doc-section production-status-panel" id="productionStatusPanel" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+          <div class="production-status-titlebar">
+            <h3>생산 현황 LIST</h3>
+            <button type="button" class="production-status-pdf-btn" onclick="printProductionStatusPdf()" title="현재 조회된 생산 현황을 PDF로 저장">PDF 저장</button>
+          </div>
+          <div class="production-status-caption" id="productionStatusCaption">기준일 -</div>
+          <div class="production-status-table-wrap" id="productionStatusTableWrap">
+            <div class="production-status-table-head">
+              <div>구분</div><div>날짜</div><div>고객사</div><div>품명</div><div>품번</div><div>수량</div>
+            </div>
+            <div class="production-status-table-body" id="productionStatusTableBody"></div>
           </div>
         </div>
       </div>
     </div>
   </main>
 </div>
+
+
+<section id="productionStatusPrintSheet" class="production-status-print-sheet" aria-hidden="true"></section>
 
 <!-- ── 메일 발송 현황 모달 (2026-07-02 추가) ── -->
 <div class="modal-overlay" id="mailStatusOverlay" onclick="if(event.target===this)closeMailStatusModal()">
@@ -877,6 +955,7 @@ const DASHBOARD_HOLIDAYS = new Set([
 let selectedDate = new Date();
 let currentProfile = null;
 let dashboardRequestSerial = 0;
+let dashboardProductionStatusItems = [];
 const openMenus = {};
 
 function pad2(value) {
@@ -1045,6 +1124,8 @@ function initializeEmptyDashboard() {
     mailStatusDot.className = "mdot fail";
   }
 
+  dashboardRenderProductionStatus([]);
+
   [
     "bar-prod",
     "axis-prod",
@@ -1162,6 +1243,199 @@ async function dashboardFetchProductionRows(year) {
         .order("production_system_id", { ascending:true });
     }
   );
+}
+
+
+function dashboardCloneDate(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function dashboardShiftDate(date, offsetDays) {
+  const result = dashboardCloneDate(date);
+  result.setDate(result.getDate() + offsetDays);
+  return result;
+}
+
+function dashboardFormatStatusDate(dateText) {
+  if (!dateText) return "-";
+  const parts = String(dateText).split("-").map(Number);
+  if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return String(dateText);
+  const date = new Date(parts[0], parts[1] - 1, parts[2]);
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  return pad2(parts[1]) + "-" + pad2(parts[2]) + "(" + days[date.getDay()] + ")";
+}
+
+function dashboardEscapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+async function dashboardFetchProductionStatusRows(baseDate) {
+  const previousText = formatDateYMD(dashboardShiftDate(baseDate, -1));
+  const currentText = formatDateYMD(baseDate);
+  const tomorrowText = formatDateYMD(dashboardShiftDate(baseDate, 1));
+
+  return dashboardFetchAllRows(
+    DASHBOARD_PRODUCTION_TABLE,
+    [
+      "production_system_id",
+      "work_date",
+      "receiving_date",
+      "receiving_quantity",
+      "customer_name",
+      "item_name",
+      "item_number",
+      "input_quantity",
+      "good_quantity",
+      "defect_quantity",
+      "shipping_date",
+      "shipping_quantity",
+      "is_active"
+    ].join(","),
+    function (query) {
+      return query
+        .eq("is_active", true)
+        .or([
+          "receiving_date.eq." + previousText,
+          "receiving_date.eq." + currentText,
+          "work_date.eq." + previousText,
+          "work_date.eq." + currentText,
+          "shipping_date.eq." + currentText,
+          "shipping_date.eq." + tomorrowText
+        ].join(","));
+    }
+  );
+}
+
+function dashboardBuildProductionStatusItems(rows) {
+  const previousText = formatDateYMD(dashboardShiftDate(selectedDate, -1));
+  const currentText = formatDateYMD(selectedDate);
+  const tomorrowText = formatDateYMD(dashboardShiftDate(selectedDate, 1));
+
+  const definitions = [
+    { key:"prev-receive", label:"전일입고", className:"ps-prev-receive", dateField:"receiving_date", dateText:previousText, quantity:function(row){ return dashboardToNumber(row.receiving_quantity); } },
+    { key:"prev-work", label:"전일작업", className:"ps-prev-work", dateField:"work_date", dateText:previousText, quantity:function(row){ return dashboardProductionQuantity(row); } },
+    { key:"today-receive", label:"금일입고", className:"ps-today-receive", dateField:"receiving_date", dateText:currentText, quantity:function(row){ return dashboardToNumber(row.receiving_quantity); } },
+    { key:"today-work", label:"금일작업", className:"ps-today-work", dateField:"work_date", dateText:currentText, quantity:function(row){ return dashboardProductionQuantity(row); } },
+    { key:"today-ship", label:"금일반출", className:"ps-today-ship", dateField:"shipping_date", dateText:currentText, quantity:function(row){ return dashboardToNumber(row.shipping_quantity); } },
+    { key:"tomorrow-ship", label:"명일반출", className:"ps-tomorrow-ship", dateField:"shipping_date", dateText:tomorrowText, quantity:function(row){ return dashboardToNumber(row.shipping_quantity); } }
+  ];
+
+  const items = [];
+  definitions.forEach(function (definition) {
+    const matched = (rows || [])
+      .filter(function (row) {
+        return String(row[definition.dateField] || "") === definition.dateText && definition.quantity(row) > 0;
+      })
+      .sort(function (a, b) {
+        const aKey = [a.customer_name, a.item_name, a.item_number].map(function(v){ return String(v || ""); }).join("|");
+        const bKey = [b.customer_name, b.item_name, b.item_number].map(function(v){ return String(v || ""); }).join("|");
+        return aKey.localeCompare(bKey, "ko");
+      });
+
+    if (!matched.length) {
+      items.push({
+        key:definition.key,
+        label:definition.label,
+        className:definition.className,
+        dateText:definition.dateText,
+        customer:"조회 없음",
+        itemName:"-",
+        itemNumber:"-",
+        quantity:0,
+        empty:true
+      });
+      return;
+    }
+
+    matched.forEach(function (row) {
+      items.push({
+        key:definition.key,
+        label:definition.label,
+        className:definition.className,
+        dateText:definition.dateText,
+        customer:String(row.customer_name || "-"),
+        itemName:String(row.item_name || "-"),
+        itemNumber:String(row.item_number || "-"),
+        quantity:definition.quantity(row),
+        empty:false
+      });
+    });
+  });
+
+  return items;
+}
+
+function dashboardRenderProductionStatus(rows) {
+  const body = document.getElementById("productionStatusTableBody");
+  const caption = document.getElementById("productionStatusCaption");
+  if (!body) return;
+
+  const items = dashboardBuildProductionStatusItems(rows || []);
+  dashboardProductionStatusItems = items;
+
+  if (caption) {
+    caption.textContent = "기준일 " + formatDateLabel(selectedDate) + " · 전일/금일/명일 현황";
+  }
+
+  body.innerHTML = items.map(function (item) {
+    return '<div class="production-status-row' + (item.empty ? ' ps-empty' : '') + '">' +
+      '<div class="ps-cell ps-category"><span class="ps-badge ' + item.className + '">' + dashboardEscapeHtml(item.label) + '</span></div>' +
+      '<div class="ps-cell ps-date">' + dashboardEscapeHtml(dashboardFormatStatusDate(item.dateText)) + '</div>' +
+      '<div class="ps-cell" title="' + dashboardEscapeHtml(item.customer) + '">' + dashboardEscapeHtml(item.customer) + '</div>' +
+      '<div class="ps-cell" title="' + dashboardEscapeHtml(item.itemName) + '">' + dashboardEscapeHtml(item.itemName) + '</div>' +
+      '<div class="ps-cell" title="' + dashboardEscapeHtml(item.itemNumber) + '">' + dashboardEscapeHtml(item.itemNumber) + '</div>' +
+      '<div class="ps-cell ps-qty">' + (item.empty ? '-' : dashboardFormatNumber(item.quantity)) + '</div>' +
+    '</div>';
+  }).join("");
+}
+
+function dashboardBuildProductionStatusPrintHtml() {
+  const rowsHtml = (dashboardProductionStatusItems || []).map(function (item) {
+    return '<tr>' +
+      '<td><span class="ps-print-badge ' + item.className + '">' + dashboardEscapeHtml(item.label) + '</span></td>' +
+      '<td class="ps-print-date">' + dashboardEscapeHtml(dashboardFormatStatusDate(item.dateText)) + '</td>' +
+      '<td>' + dashboardEscapeHtml(item.customer) + '</td>' +
+      '<td>' + dashboardEscapeHtml(item.itemName) + '</td>' +
+      '<td>' + dashboardEscapeHtml(item.itemNumber) + '</td>' +
+      '<td class="ps-print-qty">' + (item.empty ? '-' : dashboardFormatNumber(item.quantity)) + '</td>' +
+    '</tr>';
+  }).join("");
+
+  return '<h1 class="ps-print-title">생산 현황 LIST</h1>' +
+    '<div class="ps-print-meta">기준일 ' + dashboardEscapeHtml(formatDateLabel(selectedDate)) + '</div>' +
+    '<table>' +
+      '<colgroup><col style="width:15%"><col style="width:14%"><col style="width:20%"><col style="width:22%"><col style="width:18%"><col style="width:11%"></colgroup>' +
+      '<thead><tr><th>구분</th><th>날짜</th><th>고객사</th><th>품명</th><th>품번</th><th>수량</th></tr></thead>' +
+      '<tbody>' + rowsHtml + '</tbody>' +
+    '</table>';
+}
+
+function printProductionStatusPdf() {
+  const sheet = document.getElementById("productionStatusPrintSheet");
+  if (!sheet) return;
+
+  sheet.innerHTML = dashboardBuildProductionStatusPrintHtml();
+  sheet.setAttribute("aria-hidden", "false");
+
+  const originalTitle = document.title;
+  const currentFileDate = formatDateYMD(new Date());
+  document.title = "생산현황 LIST_" + currentFileDate;
+  document.body.classList.add("production-status-printing");
+
+  try {
+    window.print();
+  } finally {
+    setTimeout(function () {
+      document.body.classList.remove("production-status-printing");
+      sheet.setAttribute("aria-hidden", "true");
+      document.title = originalTitle;
+    }, 100);
+  }
 }
 
 async function dashboardFetchDowntimeDetails(productionIds) {
@@ -1775,8 +2049,19 @@ async function loadDashboardData() {
 
   try {
     const year = selectedDate.getFullYear();
-    const productionRows = await dashboardFetchProductionRows(year);
+    const productionPromise = dashboardFetchProductionRows(year);
+    const productionStatusPromise = dashboardFetchProductionStatusRows(selectedDate)
+      .then(function (rows) { return { rows:rows, error:null }; })
+      .catch(function (error) { return { rows:[], error:error }; });
+
+    const productionRows = await productionPromise;
     if (requestSerial !== dashboardRequestSerial) return;
+
+    const productionStatusResult = await productionStatusPromise;
+    const productionStatusRows = productionStatusResult.rows || [];
+    if (productionStatusResult.error) {
+      console.warn("생산 현황 LIST 조회 실패:", productionStatusResult.error);
+    }
 
     const productionIds = productionRows
       .map(function (row) { return row.production_system_id; })
@@ -1791,6 +2076,7 @@ async function loadDashboardData() {
 
     if (requestSerial !== dashboardRequestSerial) return;
     dashboardRenderAll(productionRows, detailRows);
+    dashboardRenderProductionStatus(productionStatusRows);
   } catch (error) {
     console.error("대시보드 데이터 조회 실패:", error);
     initializeEmptyDashboard();
