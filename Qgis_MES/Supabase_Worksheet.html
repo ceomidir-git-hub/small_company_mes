@@ -1161,6 +1161,8 @@ let openDdId = null;
 let openQfId = null;
 let masterRefreshInProgress = false;
 let lastMasterRefreshAt = 0;
+// 신규입력/초기화 중 비동기 기준정보 갱신이 이전 선택값을 다시 복원하지 못하도록 하는 버전값
+let formSelectionEpoch = 0;
 
 
 const DEFECT_TYPES = ["외관", "오염", "찍힘", "탈락", "경도", "변형"];
@@ -1478,23 +1480,34 @@ function setMode(nextMode) {
 
 function clearFormValues() {
   closeAllDetailModals();
+  closeDd();
   const form = document.getElementById("report-form");
 
+  // 작업일보 입력 영역의 문자/숫자/날짜 값을 전부 초기화합니다.
   form.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]')
     .forEach((element) => { element.value = ""; });
 
+  // 모든 체크박스를 해제합니다.
   form.querySelectorAll('input[type="checkbox"]')
     .forEach((element) => { element.checked = false; });
 
   form.querySelectorAll("textarea")
     .forEach((element) => { element.value = ""; });
 
-  document.getElementById("work-date").value = todayLocal();
+  // 커스텀 드롭다운은 일반 input 초기화와 별도로 명시적으로 초기화합니다.
+  setValue("worker", "");
+  setValue("customer", "");
+  setValue("product-name", "");
+  setValue("product-no", "");
+  setValue("material", "");
+  setValue("equip-name", "");
+  setValue("equip-no", "");
 
-  document.getElementById("product-name").classList.add("disabled");
-  document.getElementById("product-name").placeholder = "고객사 먼저 선택";
-  document.getElementById("product-no").classList.add("disabled");
-  document.getElementById("product-no").placeholder = "품명 먼저 선택";
+  // 고객사 미선택 상태에 맞춰 품명/품번 드롭다운 목록과 안내문구도 초기화합니다.
+  refreshInputItemDropdowns("");
+
+  // 신규 작업일보의 작업일은 오늘 날짜를 기본값으로 유지합니다.
+  document.getElementById("work-date").value = todayLocal();
 
   selectedRecordId = null;
   resetDetailState();
@@ -1506,11 +1519,14 @@ async function startNew() {
   if (formDirty && !confirm("저장하지 않은 입력 내용이 있습니다. 신규 입력으로 전환하시겠습니까?")) {
     return;
   }
+
+  // 이전 기준정보 비동기 조회가 끝나면서 고객사 등의 예전 선택값을 복원하지 못하게 합니다.
+  formSelectionEpoch += 1;
   clearFormValues();
   setMode("new");
   await loadNextLotNo();
   document.getElementById("work-date").focus();
-  showWarning("신규 작업일보를 입력한 후 저장 버튼을 누르세요. LOT NO는 자동 설정됩니다.", "info");
+  showWarning("신규 작업일보 입력을 위해 작업일(오늘)과 새 LOT NO를 제외한 입력값을 모두 초기화했습니다.", "info");
 }
 
 function startEdit() {
@@ -1524,16 +1540,15 @@ function startEdit() {
 }
 
 async function resetCurrentForm() {
-  if (!confirm("현재 입력 내용을 초기화하시겠습니까?")) return;
+  if (!confirm("현재 입력 내용을 모두 초기화하시겠습니까?")) return;
 
-  if (mode === "view" && queryResults[queryIndex]) {
-    await loadRecordToForm(queryResults[queryIndex]);
-    return;
-  }
-
+  // 조회 상태에서도 조회 데이터를 다시 불러오지 않고 완전히 신규입력 상태로 초기화합니다.
+  formSelectionEpoch += 1;
   clearFormValues();
   setMode("new");
   await loadNextLotNo();
+  document.getElementById("work-date").focus();
+  showWarning("초기화가 완료되었습니다. 작업일(오늘)과 새 LOT NO를 제외한 입력값을 모두 비웠습니다.", "info");
 }
 
 /* =========================================================
@@ -1577,6 +1592,7 @@ async function loadMasterData() {
   if (!currentProfile) return;
 
   const preservedSelections = captureMasterSelections();
+  const selectionEpochAtStart = formSelectionEpoch;
   const companyId = currentProfile.company_id;
 
   const [
@@ -1673,7 +1689,13 @@ async function loadMasterData() {
 
   applyDataToForm();
   initQueryFilters();
-  restoreMasterSelections(preservedSelections);
+
+  // 기준정보를 불러오는 동안 사용자가 신규입력/초기화를 실행했다면
+  // 이전 고객사·품명·품번 선택값을 다시 살리지 않습니다.
+  if (selectionEpochAtStart === formSelectionEpoch) {
+    restoreMasterSelections(preservedSelections);
+  }
+
   lastMasterRefreshAt = Date.now();
 
   document.getElementById("source-label").textContent =
