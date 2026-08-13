@@ -424,6 +424,29 @@
   }
 </style>
 
+
+<style id="dashboard-flow-align-style">
+  /* =========================================================
+     상단 높이 정렬 — 2026-08-13
+     데스크톱에서 생산 흐름도 높이를 왼쪽 KPI 행의 실제 높이에 맞춘다.
+     오른쪽 문서자동생성 시작선 = 왼쪽 그래프 시작선이 되도록 유지한다.
+     ========================================================= */
+  @media (min-width:1281px){
+    #dashboardFlowCard{
+      flex:0 0 auto;
+      overflow:hidden;
+      padding:12px 14px 9px;
+    }
+    #dashboardFlowCard h3{margin-bottom:2px;}
+    #dashboardFlowCard .flow-sub{margin-bottom:5px;line-height:1.1;}
+    #dashboardFlowCard .flow-track{flex:1;min-height:0;padding-bottom:0;align-items:start;}
+    #dashboardFlowCard .flow-step{gap:3px;}
+    #dashboardFlowCard .flow-step .node{width:31px;height:31px;font-size:.82rem;}
+    #dashboardFlowCard .flow-step .label{font-size:.59rem;line-height:1.05;}
+    #dashboardFlowCard .flow-arrow{margin-top:9px;margin-bottom:0;line-height:1;}
+  }
+</style>
+
 </head>
 <body>
 <div id="dashboardReorderLock" aria-hidden="true"></div>
@@ -453,7 +476,6 @@
     <div class="sub-menu" id="sub-prod">
       <a class="sub-item" href="Supabase_Worksheet.html">작업일보작성</a>
       <a class="sub-item" href="Daily_Work_Check.html">생산실적조회</a>
-      <a class="sub-item" href="./Monthly_Production_Record.html">월생산실적(달성율)</a>
       <a class="sub-item" href="./Yearly_Production_Record.html">년생산실적</a>
       <a class="sub-item" href="./Defect_Rate.html">불량률</a>
       <a class="sub-item" href="./Work_Condition_Management.html">작업조건관리대장</a>
@@ -602,7 +624,7 @@
         </section>
       </div>
       <div style="display:flex;flex-direction:column;gap:20px;height:100%;">
-        <div class="flow-card">
+        <div class="flow-card" id="dashboardFlowCard">
           <h3>생산 흐름도</h3>
           <div class="flow-sub">PRODUCTION FLOW · 고주파 진행중</div>
           <div class="flow-track">
@@ -2462,5 +2484,65 @@ window.addEventListener(
   initializeProtectedPage
 );
 </script>
+
+<script id="dashboard-flow-align-script">
+(function(){
+  'use strict';
+
+  var DESKTOP_MIN = 1281;
+  var resizeTimer = null;
+
+  function syncDashboardTopHeight(){
+    var kpiRow = document.querySelector('.grid > div:first-child .kpi-row');
+    var flowCard = document.getElementById('dashboardFlowCard');
+    if(!kpiRow || !flowCard) return;
+
+    if(window.innerWidth < DESKTOP_MIN){
+      flowCard.style.height = '';
+      flowCard.style.minHeight = '';
+      flowCard.style.maxHeight = '';
+      flowCard.style.flexBasis = '';
+      return;
+    }
+
+    var h = Math.ceil(kpiRow.getBoundingClientRect().height);
+    if(!h) return;
+
+    flowCard.style.height = h + 'px';
+    flowCard.style.minHeight = h + 'px';
+    flowCard.style.maxHeight = h + 'px';
+    flowCard.style.flexBasis = h + 'px';
+  }
+
+  function scheduleSync(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(syncDashboardTopHeight, 60);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', syncDashboardTopHeight, {once:true});
+  }else{
+    syncDashboardTopHeight();
+  }
+
+  window.addEventListener('load', syncDashboardTopHeight);
+  window.addEventListener('resize', scheduleSync, {passive:true});
+
+  if('ResizeObserver' in window){
+    var startObserver = function(){
+      var kpiRow = document.querySelector('.grid > div:first-child .kpi-row');
+      if(!kpiRow) return;
+      var observer = new ResizeObserver(syncDashboardTopHeight);
+      observer.observe(kpiRow);
+    };
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', startObserver, {once:true});
+    }else{
+      startObserver();
+    }
+  }
+})();
+</script>
+
 </body>
 </html>
