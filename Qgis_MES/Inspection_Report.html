@@ -756,7 +756,6 @@ const PRODUCTION_COLUMNS = [
   "hardening_depth_p2",
   "hardening_depth_p3",
   "hardening_depth_judgment",
-  "core_hardness",
   "core_hardness_standard",
   "core_hardness_p1",
   "core_hardness_p2",
@@ -1395,7 +1394,7 @@ function applyProductionFields(row) {
 
   sv("f-std3", row.core_hardness_standard || "-");
   // 작업일보 심부경도 P01~P08 → 성적서 심부경도 P01~P08
-  sv("f-res3", row.core_hardness_p1 || (row.core_hardness === "-" ? "" : (row.core_hardness || "")));
+  sv("f-res3", row.core_hardness_p1 || "");
   sv("f-res3-p02", row.core_hardness_p2 || "");
   sv("f-res3-p03", row.core_hardness_p3 || "");
   sv("f-res3-p04", row.core_hardness_p4 || "");
@@ -1651,7 +1650,8 @@ async function saveToDb() {
       hardening_depth_p2: cleanVal(v("hd02")) || null,
       hardening_depth_p3: cleanVal(v("hd03")) || null,
       hardening_depth_judgment: cleanVal(v("f-jdg2")) || null,
-      core_hardness: cleanVal(v("f-res3")) || null,
+      // legacy 단일 core_hardness 컬럼은 더 이상 사용하지 않습니다.
+      // 심부경도는 core_hardness_p1~p8에만 저장합니다.
       core_hardness_standard: cleanVal(v("f-std3")) || null,
       // 심부경도 P01~P08
       core_hardness_p1: cleanVal(v("f-res3")) || null,
