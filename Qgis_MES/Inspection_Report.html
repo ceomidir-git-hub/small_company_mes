@@ -801,8 +801,9 @@ const signatureEmployees = new Map();
 const WORKSHEET_PAGE_URL = "Supabase_Worksheet.html";
 
 function savedApprovedByName() {
-  const reportData = currentReportRow && currentReportRow.report_data;
-  return cleanVal(reportData && reportData.approved_by);
+  // 성적서 작성완료 판정은 실제 작업일보/생산실적 레코드의 approved_by를 기준으로 합니다.
+  // 성적서 저장 시 Total_Production_DB.approved_by에 동일하게 저장됩니다.
+  return cleanVal(currentProductionRow && currentProductionRow.approved_by);
 }
 
 function hasSignatureForEmployee(employeeName) {
@@ -818,7 +819,11 @@ function hasSignatureForEmployee(employeeName) {
 }
 
 function isSavedApprovedReport() {
-  if (!currentProductionRow || !currentReportRow) return false;
+  // 작성완료 조건
+  // 1. Total_Production_DB 레코드가 조회되어 있음
+  // 2. approved_by 값이 저장되어 있음
+  // 3. 해당 승인자의 실제 사인 Signed URL이 확인됨
+  if (!currentProductionRow) return false;
 
   const approvedBy = savedApprovedByName();
   if (!approvedBy) return false;
@@ -834,13 +839,13 @@ function updateWorksheetButtonState() {
   button.disabled = !enabled;
 
   if (enabled) {
-    button.title = "현재 승인 완료된 성적서의 작업일보를 조회합니다.";
-  } else if (!currentReportRow) {
-    button.title = "성적서 저장 이력이 없습니다.";
+    button.title = "Approved By 서명까지 저장 완료된 성적서입니다. 연결된 작업일보를 조회합니다.";
+  } else if (!currentProductionRow) {
+    button.title = "먼저 검사성적서를 조회해 주세요.";
   } else if (!savedApprovedByName()) {
-    button.title = "Approved By 서명이 저장되지 않아 아직 미완료 성적서입니다.";
+    button.title = "Total_Production_DB에 Approved By가 저장되지 않아 아직 미완료 성적서입니다.";
   } else {
-    button.title = "저장된 Approved By의 서명 이미지를 확인할 수 없어 아직 미완료 성적서입니다.";
+    button.title = "Approved By는 저장되어 있으나 해당 승인자의 실제 서명 이미지를 확인할 수 없습니다.";
   }
 }
 
