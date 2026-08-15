@@ -2146,6 +2146,86 @@ function resetQueryFilters() {
 /* =========================================================
    작업일보 조회
    ========================================================= */
+
+function getInspectionLinkParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    source: params.get("from") || "",
+    productionSystemId: params.get("production_system_id") || "",
+    workDate: params.get("work_date") || "",
+    customer: params.get("customer") || "",
+    itemName: params.get("item_name") || "",
+    itemNumber: params.get("item_number") || ""
+  };
+}
+
+async function openLinkedInspectionWorksheet() {
+  const link = getInspectionLinkParams();
+  if (link.source !== "inspection-report") return false;
+
+  document.getElementById("query-date-input").value = link.workDate;
+  document.getElementById("q-customer").value = link.customer;
+  document.getElementById("q-product").value = link.itemName;
+  document.getElementById("q-partno").value = link.itemNumber;
+
+  const message = document.getElementById("query-result-msg");
+  message.style.color = "#1a3a5c";
+  message.textContent = "⏳ 검사성적서와 연결된 작업일보를 조회 중입니다...";
+
+  try {
+    let query = sb
+      .from(TABLE_NAME)
+      .select(SELECT_COLUMNS)
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true);
+
+    if (link.productionSystemId) {
+      query = query.eq("production_system_id", link.productionSystemId);
+    } else {
+      if (link.workDate) query = query.eq("work_date", link.workDate);
+      if (link.customer) query = query.eq("customer_name", link.customer);
+      if (link.itemName) query = query.eq("item_name", link.itemName);
+      if (link.itemNumber) query = query.eq("item_number", link.itemNumber);
+    }
+
+    const { data, error } = await query.limit(2);
+    if (error) throw error;
+
+    const rows = data || [];
+    if (rows.length !== 1) {
+      queryResults = [];
+      queryIndex = 0;
+      document.getElementById("query-nav").style.display = "none";
+      message.style.color = "#b91c1c";
+      message.textContent = rows.length === 0
+        ? "연결된 작업일보를 찾을 수 없습니다."
+        : "연결 조건에 해당하는 작업일보가 2건 이상입니다.";
+      showToast("⚠️ 연결된 작업일보를 정확히 찾지 못했습니다.");
+      return true;
+    }
+
+    queryResults = rows;
+    queryIndex = 0;
+    await loadRecord(rows[0]);
+
+    document.getElementById("query-nav").style.display = "flex";
+    document.getElementById("query-counter").textContent = "1 / 1건";
+    document.getElementById("prev-btn").disabled = true;
+    document.getElementById("next-btn").disabled = true;
+
+    message.style.color = "#217346";
+    message.textContent = "✅ 검사성적서와 연결된 작업일보 1건을 불러왔습니다.";
+    showToast("✅ 작업일보 조회 완료");
+    return true;
+  } catch (error) {
+    console.error(error);
+    message.style.color = "#b91c1c";
+    message.textContent = "연결 작업일보 조회 실패: " + dbErrorMessage(error);
+    showToast("❌ 작업일보 조회 실패");
+    return true;
+  }
+}
+
 async function queryByDate() {
   const dateValue = val("query-date-input");
   const customerValue = val("q-customer");
@@ -3586,11 +3666,21 @@ document.addEventListener("visibilitychange", () => {
     bindExclusiveCheckboxes();
     clearFormValues();
     setMode("new");
-    await loadNextLotNo();
-    showWarning(
-      "작업일보는 Total_Production_DB에서 입력·조회·수정·저장됩니다. LOT NO는 회사별 마지막 번호 다음 값으로 자동 설정되며, 동일 작업일자·고객사·품명·품번의 중복 저장은 차단됩니다.",
-      "info"
-    );
+
+    const openedFromInspection = await openLinkedInspectionWorksheet();
+
+    if (!openedFromInspection) {
+      await loadNextLotNo();
+      showWarning(
+        "작업일보는 Total_Production_DB에서 입력·조회·수정·저장됩니다. LOT NO는 회사별 마지막 번호 다음 값으로 자동 설정되며, 동일 작업일자·고객사·품명·품번의 중복 저장은 차단됩니다.",
+        "info"
+      );
+    } else {
+      showWarning(
+        "검사성적서에서 연결된 작업일보입니다. 내용을 변경하려면 [수정] 버튼을 누른 후 저장하세요.",
+        "info"
+      );
+    }
   } catch (error) {
     console.error(error);
     document.getElementById("data-source-bar").style.display = "flex";
