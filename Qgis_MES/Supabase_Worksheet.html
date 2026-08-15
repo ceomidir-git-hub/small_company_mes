@@ -2206,7 +2206,7 @@ async function openLinkedInspectionWorksheet() {
 
     queryResults = rows;
     queryIndex = 0;
-    await loadRecord(rows[0]);
+    await loadRecordToForm(rows[0]);
 
     document.getElementById("query-nav").style.display = "flex";
     document.getElementById("query-counter").textContent = "1 / 1건";
