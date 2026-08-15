@@ -821,11 +821,14 @@ body{min-width:844px;overflow-x:auto;}
       <input class="inp center" id="f-std3" value="-" placeholder="-">
     </td>
     <td style="font-size:9px;">시편</td>
-    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3"></td>
-    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p02"></td>
-    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p03"></td>
-    <td class="dash-cell"></td><td class="dash-cell"></td><td class="dash-cell"></td>
-    <td class="dash-cell"></td><td class="dash-cell"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3" oninput="updateHvGraph()"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p02" oninput="updateHvGraph()"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p03" oninput="updateHvGraph()"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p04" oninput="updateHvGraph()"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p05" oninput="updateHvGraph()"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p06" oninput="updateHvGraph()"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p07" oninput="updateHvGraph()"></td>
+    <td class="ycell" style="padding:1px;"><input class="inp center measure-input" id="f-res3-p08" oninput="updateHvGraph()"></td>
     <td class="ycell" style="padding:1px;border-right:none;">
       <select class="sel" id="f-jdg3">
         <option value="">-</option>
@@ -1036,6 +1039,11 @@ const PRODUCTION_COLUMNS = [
   "p1",
   "p2",
   "p3",
+  "p4",
+  "p5",
+  "p6",
+  "p7",
+  "p8",
   "hardening_depth",
   "hardening_depth_p1",
   "hardening_depth_p2",
@@ -1046,6 +1054,11 @@ const PRODUCTION_COLUMNS = [
   "core_hardness_p1",
   "core_hardness_p2",
   "core_hardness_p3",
+  "core_hardness_p4",
+  "core_hardness_p5",
+  "core_hardness_p6",
+  "core_hardness_p7",
+  "core_hardness_p8",
   "core_hardness_judgment",
   "inspection_result",
   "inspection_report_special_notes",
@@ -1923,9 +1936,15 @@ function applyProductionFields(row) {
   sv("v1-no6", row.inspection_v1_no6_text || "");
 
   sv("f-std1", normalizeHardnessStandard(row.tempering_hardness_hrc));
+  // 작업일보 표면경도 P01~P08 → 성적서 표면경도 P01~P08
   sv("p01", row.p1);
   sv("p02", row.p2);
   sv("p03", row.p3);
+  sv("p04", row.p4);
+  sv("p05", row.p5);
+  sv("p06", row.p6);
+  sv("p07", row.p7);
+  sv("p08", row.p8);
 
   sv("f-std2", row.hardening_depth || "");
   sv("hd01", row.hardening_depth_p1);
@@ -1934,9 +1953,15 @@ function applyProductionFields(row) {
   for (let i = 4; i <= 8; i += 1) sv("hd0" + i, "");
 
   sv("f-std3", row.core_hardness_standard || "-");
+  // 작업일보 심부경도 P01~P08 → 성적서 심부경도 P01~P08
   sv("f-res3", row.core_hardness_p1 || (row.core_hardness === "-" ? "" : (row.core_hardness || "")));
   sv("f-res3-p02", row.core_hardness_p2 || "");
   sv("f-res3-p03", row.core_hardness_p3 || "");
+  sv("f-res3-p04", row.core_hardness_p4 || "");
+  sv("f-res3-p05", row.core_hardness_p5 || "");
+  sv("f-res3-p06", row.core_hardness_p6 || "");
+  sv("f-res3-p07", row.core_hardness_p7 || "");
+  sv("f-res3-p08", row.core_hardness_p8 || "");
   ss("f-std4", row.inspection_structure_standard || "");
   sv("f-res4", row.inspection_structure_p1 || "");
   sv("f-res4-p02", row.inspection_structure_p2 || "");
@@ -1997,6 +2022,11 @@ function clearReportOnlyFields() {
   sv("f-res3", "");
   sv("f-res3-p02", "");
   sv("f-res3-p03", "");
+  sv("f-res3-p04", "");
+  sv("f-res3-p05", "");
+  sv("f-res3-p06", "");
+  sv("f-res3-p07", "");
+  sv("f-res3-p08", "");
   sv("f-std4", "육안");
   sv("f-res4", "");
   sv("f-res4-p02", "");
@@ -2044,7 +2074,10 @@ function applyReportData(data) {
 
   if (data.insp_std1) sv("f-std1", data.insp_std1);
   for (let i = 1; i <= 8; i += 1) {
-    if (data["insp_p0" + i] !== null &&
+    // Total_Production_DB(작업일보)의 표면경도 값을 우선합니다.
+    // 과거 inspection_reports 값은 생산실적 값이 비어 있을 때만 보조 복원합니다.
+    if (!v("p0" + i) &&
+        data["insp_p0" + i] !== null &&
         data["insp_p0" + i] !== undefined &&
         data["insp_p0" + i] !== "") {
       sv("p0" + i, data["insp_p0" + i]);
@@ -2170,9 +2203,17 @@ async function saveToDb() {
     }
 
     const productionUpdate = {
+      // 표면경도 P01~P08
       p1: nv("p01"),
       p2: nv("p02"),
       p3: nv("p03"),
+      p4: nv("p04"),
+      p5: nv("p05"),
+      p6: nv("p06"),
+      p7: nv("p07"),
+      p8: nv("p08"),
+
+      // 경화깊이는 기존 연결 그대로 유지
       hardening_depth: cleanVal(v("f-std2")) || null,
       hardening_depth_p1: cleanVal(v("hd01")) || null,
       hardening_depth_p2: cleanVal(v("hd02")) || null,
@@ -2180,9 +2221,15 @@ async function saveToDb() {
       hardening_depth_judgment: cleanVal(v("f-jdg2")) || null,
       core_hardness: cleanVal(v("f-res3")) || null,
       core_hardness_standard: cleanVal(v("f-std3")) || null,
+      // 심부경도 P01~P08
       core_hardness_p1: cleanVal(v("f-res3")) || null,
       core_hardness_p2: cleanVal(v("f-res3-p02")) || null,
       core_hardness_p3: cleanVal(v("f-res3-p03")) || null,
+      core_hardness_p4: cleanVal(v("f-res3-p04")) || null,
+      core_hardness_p5: cleanVal(v("f-res3-p05")) || null,
+      core_hardness_p6: cleanVal(v("f-res3-p06")) || null,
+      core_hardness_p7: cleanVal(v("f-res3-p07")) || null,
+      core_hardness_p8: cleanVal(v("f-res3-p08")) || null,
       core_hardness_judgment: cleanVal(v("f-jdg3")) || null,
       inspection_report_special_notes: cleanVal(v("f-note")),
       inspection_structure_standard: cleanVal(v("f-std4")) || null,
@@ -2359,6 +2406,11 @@ function resetForm() {
   sv("f-res3", "");
   sv("f-res3-p02", "");
   sv("f-res3-p03", "");
+  sv("f-res3-p04", "");
+  sv("f-res3-p05", "");
+  sv("f-res3-p06", "");
+  sv("f-res3-p07", "");
+  sv("f-res3-p08", "");
   sv("f-std4", "육안");
   sv("f-res4", "");
   sv("f-res4-p02", "");
@@ -2541,12 +2593,23 @@ function updateMainGraph() {
   document.getElementById("main-line").setAttribute("points", points.join(" "));
   document.getElementById("main-pts").innerHTML = circles;
   document.getElementById("main-lbl").innerHTML = labels;
-  document.getElementById("hv-line").setAttribute("points", "");
-  document.getElementById("hv-pts").innerHTML = "";
+
+  // 아래 Hv 그래프는 표면경도가 아니라 심부경도 P01~P08을 항상 표시합니다.
+  updateHvGraph();
 }
 
 function updateHvGraph() {
-  const values = ["p01","p02","p03","p04","p05","p06","p07","p08"].map(nv);
+  const coreIds = [
+    "f-res3",
+    "f-res3-p02",
+    "f-res3-p03",
+    "f-res3-p04",
+    "f-res3-p05",
+    "f-res3-p06",
+    "f-res3-p07",
+    "f-res3-p08"
+  ];
+  const values = coreIds.map(nv);
   const xCoordinates = [80,128,176,224,272,320,368,416];
   const points = [];
   let circles = "";
