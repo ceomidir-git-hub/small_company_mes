@@ -770,7 +770,7 @@
   <!-- 3. 주요공정 파라미터 -->
   <div class="section-title">3. 주요공정 파라미터</div>
   <table>
-    <!-- 설정값 헤더 → 경화깊이와 표면경도 모두 P1·P2·P3 입력 -->
+    <!-- 설정값 헤더 → 경화깊이 P1·P2·P3 입력 / 우측 열은 예비항목 -->
     <tr>
       <th style="width:70px">항목</th>
       <th><span class="th-with-btn">전압(V)<button class="std-btn" onclick="setStd('volt-set','12.5')">표준</button></span></th>
@@ -778,9 +778,9 @@
       <th><span class="th-with-btn">출력(kW)<button class="std-btn" onclick="setStd('kw-set','1.25')">표준</button></span></th>
       <th><span class="th-with-btn">주파수(kHz)<button class="std-btn" onclick="setStd('khz-set','120')">표준</button></span></th>
       <th>경화깊이</th>
-      <th>표면경도</th>
+      <th>예비항목</th>
     </tr>
-    <!-- 설정값 입력 → 경화깊이 P1 / 표면경도 P1 -->
+    <!-- 설정값 입력 → 경화깊이 P1 / 예비항목 P1 -->
     <tr>
       <td class="label">설정값</td>
       <td><div class="preset"><span>st 12.5/</span><input type="text" id="volt-set"></div></td>
@@ -790,7 +790,7 @@
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P1 /</span>
-          <input type="text" id="hardening-depth-p1" value="a" style="flex:1;text-align:center;">
+          <input type="text" id="hardening-depth-p1" style="flex:1;text-align:center;">
         </div>
       </td>
       <td style="padding:3px 5px;">
@@ -800,14 +800,14 @@
         </div>
       </td>
     </tr>
-    <!-- 가열조건 헤더 → 경화깊이 P2 / 표면경도 P2 -->
+    <!-- 가열조건 헤더 → 경화깊이 P2 / 예비항목 P2 -->
     <tr>
       <th>항목</th><th>가열시간(sec)</th><th>이동속도(mm/s)</th>
       <th>코일-제품간격(mm)</th><th>회전수(RPM)</th>
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P2 /</span>
-          <input type="text" id="hardening-depth-p2" value="b" style="flex:1;text-align:center;">
+          <input type="text" id="hardening-depth-p2" style="flex:1;text-align:center;">
         </div>
       </td>
       <td style="padding:3px 5px;">
@@ -817,7 +817,7 @@
         </div>
       </td>
     </tr>
-    <!-- 가열조건 입력 → 경화깊이 P3 / 표면경도 P3 -->
+    <!-- 가열조건 입력 → 경화깊이 P3 / 예비항목 P3 -->
     <tr>
       <td class="label">가열조건</td>
       <td><input type="text" id="heat-time" style="text-align:center;"></td>
@@ -827,7 +827,7 @@
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P3 /</span>
-          <input type="text" id="hardening-depth-p3" value="c" style="flex:1;text-align:center;">
+          <input type="text" id="hardening-depth-p3" style="flex:1;text-align:center;">
         </div>
       </td>
       <td style="padding:3px 5px;">
@@ -1349,12 +1349,11 @@ function setValue(id, value) {
   element.value = value === null || value === undefined ? "" : String(value);
 }
 
-function restoreLegacyParameterMarkers() {
-  // 기존 상단 경화깊이/표면경도 P1~P3는 DB 연결을 해제하고
-  // 향후 다른 용도로 사용할 셀 위치 확인용 문자만 유지합니다.
-  setValue("hardening-depth-p1", "a");
-  setValue("hardening-depth-p2", "b");
-  setValue("hardening-depth-p3", "c");
+function restoreReserveParameterMarkers() {
+  // 우측 예비항목 P1~P3는 향후 다른 용도로 사용할 수 있도록
+  // 현재 화면 확인용 문자 d/e/f만 유지합니다.
+  // 경화깊이 P1~P3는 실제 DB 값(hardening_depth_p1~p3)을 사용하므로
+  // 여기에서 임의 값을 넣지 않습니다.
   setValue("p1-val", "d");
   setValue("p2-val", "e");
   setValue("p3-val", "f");
@@ -1563,7 +1562,7 @@ function clearFormValues() {
   // 고객사 미선택 상태에 맞춰 품명/품번 드롭다운 목록과 안내문구도 초기화합니다.
   refreshInputItemDropdowns("");
 
-  restoreLegacyParameterMarkers();
+  restoreReserveParameterMarkers();
 
   // 신규 작업일보의 작업일은 오늘 날짜를 기본값으로 유지합니다.
   document.getElementById("work-date").value = todayLocal();
@@ -2316,10 +2315,16 @@ async function loadRecordToForm(record) {
   setValue("core-hardness-p07", record.core_hardness_p7);
   setValue("core-hardness-p08", record.core_hardness_p8);
 
-  // 검사성적서 경화깊이 DB(hardening_depth_p1~p8)는 이번 작업에서 건드리지 않습니다.
+  // 작업일보 경화깊이 P1~P3 ← DB hardening_depth_p1~p3
+  // 이 값은 검사성적서 경화깊이 P01~P03에서 사용하는 동일 DB 값입니다.
+  setValue("hardening-depth-p1", record.hardening_depth_p1);
+  setValue("hardening-depth-p2", record.hardening_depth_p2);
+  setValue("hardening-depth-p3", record.hardening_depth_p3);
+
+  // 도면경화깊이(mm) 및 교정시간은 기존 연결 유지
   setValue("surface-hard", record.hardening_depth);
   setValue("correction-time-hr", record.correction_time_hr);
-  restoreLegacyParameterMarkers();
+  restoreReserveParameterMarkers();
 
   setValue("coil-no", record.coil_number);
   setChoice("wash-done","wash-skip",record.coil_cleaning,"완료","미시행");
@@ -3120,6 +3125,9 @@ const TEXT_NUMERIC_FIELDS = [
   ["temper-time","템퍼링시간"],
   ["correct-val","교정값"],
   ["correction-time-hr","교정시간"],
+  ["hardening-depth-p1","경화깊이 P01"],
+  ["hardening-depth-p2","경화깊이 P02"],
+  ["hardening-depth-p3","경화깊이 P03"],
   ["cool-conc","냉각수농도"],
   ["non-hr1","비가동 상세시간"],
   ["surface-hardness-p01","표면경도 P01"],
@@ -3337,8 +3345,13 @@ function buildPayload() {
     core_hardness_p7: textOrNull("core-hardness-p07"),
     core_hardness_p8: textOrNull("core-hardness-p08"),
 
+    // 작업일보 경화깊이 P1~P3 → 검사성적서 경화깊이 P01~P03 공용 DB
+    hardening_depth_p1: textOrNull("hardening-depth-p1"),
+    hardening_depth_p2: textOrNull("hardening-depth-p2"),
+    hardening_depth_p3: textOrNull("hardening-depth-p3"),
+
+    // P04~P08은 아직 작업일보에서 입력하지 않으므로 이번 저장에서 건드리지 않습니다.
     // 도면경화깊이(mm) 1개 값은 기존 연결 유지.
-    // 경화깊이 측정 P01~P08(hardening_depth_p1~p8)은 이번 작업에서 저장하지 않습니다.
     hardening_depth: textOrNull("surface-hard"),
     correction_time_hr: textOrNull("correction-time-hr"),
 
