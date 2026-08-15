@@ -22,6 +22,8 @@ body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:12px;backgr
 .tb-btn.green:hover{background:#2a9158;}
 .tb-btn.purple{background:#6b3fa0;color:#fff;border-color:#6b3fa0;}
 .tb-btn.purple:hover{background:#8050b8;}
+.tb-btn.worksheet{background:#c55a11;color:#fff;border-color:#c55a11;}
+.tb-btn.worksheet:hover:not(:disabled){background:#df6a16;}
 .tb-btn:disabled{opacity:.4;cursor:not-allowed;}
 .nbtn{padding:3px 8px;font-size:12px;border:1.5px solid #1a3a5c;border-radius:3px;background:#eaf1fb;color:#1a3a5c;cursor:pointer;font-weight:700;height:26px;line-height:1;transition:background .15s,color .15s;}
 .nbtn:hover:not(:disabled){background:#1a3a5c;color:#fff;}
@@ -252,6 +254,9 @@ body{min-width:844px;overflow-x:auto;}
     <button class="tb-btn" onclick="resetForm()">↺ 초기화</button>
     <button class="tb-btn green" onclick="saveToDb()">💾 성적서 저장</button>
     <button class="tb-btn purple" onclick="exportPDF()">📄 PDF 변환</button>
+    <button class="tb-btn worksheet" id="worksheet-view-btn" type="button"
+      onclick="openLinkedWorksheet()" disabled
+      title="Approved By 서명까지 저장 완료된 성적서에서만 사용할 수 있습니다.">📋 작업일보 보기</button>
   </div>
 
 </div>
@@ -693,7 +698,7 @@ body{min-width:844px;overflow-x:auto;}
     <td class="ycell" style="padding:1px;"><select class="sel" id="f-inspected" onchange="updateSignature('f-inspected','inspected-signature')"><option value="">-</option><option value="최석현">최석현</option><option value="김종렬">김종렬</option></select></td>
     <td class="signature-cell"><img id="inspected-signature" class="signature-image" crossorigin="anonymous" referrerpolicy="no-referrer" alt="INSPECTED BY 서명"></td>
     <td style="font-size:9px;">APPROVED BY :</td>
-    <td class="ycell" style="padding:1px;"><select class="sel" id="f-approved" onchange="updateSignature('f-approved','approved-signature')"><option value="">-</option><option value="최석현">최석현</option></select></td>
+    <td class="ycell" style="padding:1px;"><select class="sel" id="f-approved" onchange="updateSignature('f-approved','approved-signature'); updateWorksheetButtonState();"><option value="">-</option><option value="최석현">최석현</option></select></td>
     <td class="signature-cell"><img id="approved-signature" class="signature-image" crossorigin="anonymous" referrerpolicy="no-referrer" alt="APPROVED BY 서명"></td>
     <td style="border-right:none;"></td>
   </tr>
@@ -793,6 +798,76 @@ let currentProductionRow = null;
 let currentReportRow = null;
 let reportTableAvailable = true;
 const signatureEmployees = new Map();
+const WORKSHEET_PAGE_URL = "Supabase_Worksheet.html";
+
+function savedApprovedByName() {
+  const reportData = currentReportRow && currentReportRow.report_data;
+  return cleanVal(reportData && reportData.approved_by);
+}
+
+function hasSignatureForEmployee(employeeName) {
+  const name = cleanVal(employeeName);
+  if (!name) return false;
+
+  const lookupNames = signatureLookupNames(name);
+  for (const lookupName of lookupNames) {
+    const signature = signatureEmployees.get(lookupName);
+    if (signature && cleanVal(signature.signedUrl)) return true;
+  }
+  return false;
+}
+
+function isSavedApprovedReport() {
+  if (!currentProductionRow || !currentReportRow) return false;
+
+  const approvedBy = savedApprovedByName();
+  if (!approvedBy) return false;
+
+  return hasSignatureForEmployee(approvedBy);
+}
+
+function updateWorksheetButtonState() {
+  const button = document.getElementById("worksheet-view-btn");
+  if (!button) return;
+
+  const enabled = isSavedApprovedReport();
+  button.disabled = !enabled;
+
+  if (enabled) {
+    button.title = "현재 승인 완료된 성적서의 작업일보를 조회합니다.";
+  } else if (!currentReportRow) {
+    button.title = "성적서 저장 이력이 없습니다.";
+  } else if (!savedApprovedByName()) {
+    button.title = "Approved By 서명이 저장되지 않아 아직 미완료 성적서입니다.";
+  } else {
+    button.title = "저장된 Approved By의 서명 이미지를 확인할 수 없어 아직 미완료 성적서입니다.";
+  }
+}
+
+function openLinkedWorksheet() {
+  if (!isSavedApprovedReport()) {
+    updateWorksheetButtonState();
+    showToast("Approved By 서명까지 저장 완료된 성적서에서만 작업일보를 열 수 있습니다.");
+    return;
+  }
+
+  if (!currentProductionRow) {
+    showToast("연결할 작업일보 생산실적을 확인할 수 없습니다.");
+    return;
+  }
+
+  const params = new URLSearchParams({
+    from: "inspection-report",
+    production_system_id: cleanVal(currentProductionRow.production_system_id),
+    work_date: cleanVal(currentProductionRow.work_date || v("f-date")),
+    customer: cleanVal(currentProductionRow.customer_name || v("f-customer")),
+    item_name: cleanVal(currentProductionRow.item_name || v("f-product")),
+    item_number: cleanVal(currentProductionRow.item_number || v("f-dwg"))
+  });
+
+  window.location.href = WORKSHEET_PAGE_URL + "?" + params.toString();
+}
+
 
 /* =========================================================
    초기 실행
@@ -816,6 +891,7 @@ async function initializePage() {
     ]);
 
     updateAllSignatures();
+    updateWorksheetButtonState();
     document.documentElement.classList.remove("auth-pending");
     setQueryMessage("조회 조건을 입력한 후 조회 버튼을 눌러주세요.", "info");
   } catch (error) {
@@ -1271,6 +1347,7 @@ async function loadRecord(productionRow) {
 
   detectUnit();
   updateMainGraph();
+  updateWorksheetButtonState();
   showToast("✅ " + (queryIndex + 1) + "번째 성적서를 불러왔습니다.");
 }
 
@@ -1617,12 +1694,17 @@ async function saveToDb() {
     currentProductionRow = updatedProduction;
     queryResults[queryIndex] = updatedProduction;
 
-    if (reportOnlyFieldsSaved || reportTableAvailable) {
-      setQueryMessage("성적서 저장이 완료되었습니다.", "ok");
-      showToast("✅ 성적서 저장 완료");
+    updateWorksheetButtonState();
+
+    if (isSavedApprovedReport()) {
+      setQueryMessage("Approved By 서명까지 확인되어 성적서 작성완료로 저장되었습니다.", "ok");
+      showToast("✅ 성적서 작성완료 저장");
+    } else if (reportOnlyFieldsSaved || reportTableAvailable) {
+      setQueryMessage("임시저장 완료: Approved By 서명이 없어 아직 미완료 성적서입니다.", "info");
+      showToast("💾 성적서 임시저장 완료");
     } else {
-      setQueryMessage("검사값과 검사성적서 특이사항 저장이 완료되었습니다.", "ok");
-      showToast("✅ 검사성적서 특이사항 저장 완료");
+      setQueryMessage("검사값은 저장되었지만 성적서 전용 저장정보를 확인할 수 없어 미완료 상태입니다.", "info");
+      showToast("💾 검사값 저장 완료");
     }
   } catch (error) {
     console.error(error);
@@ -1755,6 +1837,7 @@ function resetForm() {
   queryIndex = 0;
   currentProductionRow = null;
   currentReportRow = null;
+  updateWorksheetButtonState();
   document.getElementById("counter").textContent = "—";
   document.getElementById("prev-btn").disabled = true;
   document.getElementById("next-btn").disabled = true;
