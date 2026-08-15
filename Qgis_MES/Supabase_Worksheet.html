@@ -790,13 +790,13 @@
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P1 /</span>
-          <input type="text" id="hardening-depth-p1" style="flex:1;text-align:center;">
+          <input type="text" id="hardening-depth-p1" value="a" style="flex:1;text-align:center;">
         </div>
       </td>
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P1 /</span>
-          <input type="text" id="p1-val" style="flex:1;text-align:center;">
+          <input type="text" id="p1-val" value="d" style="flex:1;text-align:center;">
         </div>
       </td>
     </tr>
@@ -807,13 +807,13 @@
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P2 /</span>
-          <input type="text" id="hardening-depth-p2" style="flex:1;text-align:center;">
+          <input type="text" id="hardening-depth-p2" value="b" style="flex:1;text-align:center;">
         </div>
       </td>
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P2 /</span>
-          <input type="text" id="p2-val" style="flex:1;text-align:center;">
+          <input type="text" id="p2-val" value="e" style="flex:1;text-align:center;">
         </div>
       </td>
     </tr>
@@ -827,24 +827,24 @@
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P3 /</span>
-          <input type="text" id="hardening-depth-p3" style="flex:1;text-align:center;">
+          <input type="text" id="hardening-depth-p3" value="c" style="flex:1;text-align:center;">
         </div>
       </td>
       <td style="padding:3px 5px;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span style="font-size:11px;color:#1a3a5c;font-weight:600;white-space:nowrap;">P3 /</span>
-          <input type="text" id="p3-val" style="flex:1;text-align:center;">
+          <input type="text" id="p3-val" value="f" style="flex:1;text-align:center;">
         </div>
       </td>
     </tr>
-    <!-- 냉각조건 헤더 → 기존 경화깊이 위치에 심부경도 배치 -->
+    <!-- 냉각조건 헤더 → 기존 심부경도 위치를 교정시간(hr)로 변경 -->
     <tr>
       <th>항목</th><th>냉각수압력(bar)</th><th>냉각수온도(℃)</th>
       <th>냉각시간(sec)</th><th>LOT NO</th>
       <th style="font-size:8.4px;">NO6</th>
-      <th>심부경도</th>
+      <th>교정시간(hr)</th>
     </tr>
-    <!-- 냉각조건 입력 → 심부경도 입력칸 -->
+    <!-- 냉각조건 입력 → 교정시간(hr) 입력칸 -->
     <tr>
       <td class="label">냉각조건</td>
       <td><input type="text" id="cool-bar" style="text-align:center;"></td>
@@ -853,13 +853,13 @@
       <td><input type="text" id="lot-no" readonly style="text-align:center;background:#f3f6fa;color:#1a3a5c;font-weight:700;" title="신규입력 시 회사별 다음 LOT NO가 자동 표시됩니다."></td>
       <td style="text-align:center;"><input type="text" id="no5-set" placeholder="NO7" style="text-align:center;font-size:8.4px;"></td>
       <td style="padding:3px 5px;">
-        <input type="text" id="depth-hard" style="width:100%;text-align:center;">
+        <input type="text" id="correction-time-hr" style="width:100%;text-align:center;" placeholder="시간">
       </td>
     </tr>
-    <!-- 조건값 헤더 → 도면경도(Hrc,Hs,Hv), 도면경화깊이(mm), 교정값 배치 -->
+    <!-- 조건값 헤더 → 도면경도(Hrc,Hs), 도면경화깊이(mm), 교정값 배치 -->
     <tr>
       <th>항목</th><th>템퍼링온도(℃)</th><th>템퍼링시간(sec)</th>
-      <th>도면경도(Hrc,Hs,Hv)</th><th>도면경화깊이(mm)</th>
+      <th>도면경도(Hrc,Hs)</th><th>도면경화깊이(mm)</th>
       <th style="font-size:8.4px;">NO8</th>
       <th>교정값(mm)</th>
     </tr>
@@ -877,7 +877,7 @@
     </tr>
   </table>
 
-  <!-- 주요공정 파라미터 추가 측정값 표 (화면 배치 확인용 / DB 미연결) -->
+  <!-- 주요공정 파라미터 추가 측정값 표 (실제 DB 연결) -->
   <table id="process-parameter-extra-table" style="margin-top:8px; table-layout:fixed;">
     <colgroup>
       <col style="width:70px;">
@@ -896,25 +896,25 @@
     </tr>
     <tr>
       <td class="label" style="background:#fff3bf;">표면경도</td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">a</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">b</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">c</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">d</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">e</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">f</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">g</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">h</div></td>
+      <td><input type="text" id="surface-hardness-p01" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hardness-p02" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hardness-p03" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hardness-p04" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hardness-p05" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hardness-p06" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hardness-p07" style="text-align:center;"></td>
+      <td><input type="text" id="surface-hardness-p08" style="text-align:center;"></td>
     </tr>
     <tr>
-      <td class="label" style="background:#fff3bf;">경화깊이</td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">i</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">j</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">k</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">l</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">m</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">n</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">o</div></td>
-      <td style="text-align:center;"><div style="border-bottom:1px solid #aaa; padding:2px 3px; min-height:23px;">p</div></td>
+      <td class="label" style="background:#fff3bf;">심부경도</td>
+      <td><input type="text" id="core-hardness-p01" style="text-align:center;"></td>
+      <td><input type="text" id="core-hardness-p02" style="text-align:center;"></td>
+      <td><input type="text" id="core-hardness-p03" style="text-align:center;"></td>
+      <td><input type="text" id="core-hardness-p04" style="text-align:center;"></td>
+      <td><input type="text" id="core-hardness-p05" style="text-align:center;"></td>
+      <td><input type="text" id="core-hardness-p06" style="text-align:center;"></td>
+      <td><input type="text" id="core-hardness-p07" style="text-align:center;"></td>
+      <td><input type="text" id="core-hardness-p08" style="text-align:center;"></td>
     </tr>
   </table>
 
@@ -1238,8 +1238,13 @@ const SELECT_COLUMNS = [
   "downtime_type","downtime_hr","part_replacement","spare_part","action_notes",
   "receiving_quantity","receiving_appearance","receiving_drawing",
   "receiving_heat_treatment_qt","shipping_date","shipping_quantity",
-  "rust_prevention_work","inspection_result","working_hours","p1","p2","p3",
-  "hardening_depth","hardening_depth_p1","hardening_depth_p2","hardening_depth_p3","core_hardness","special_notes","is_active"
+  "rust_prevention_work","inspection_result","working_hours",
+  "p1","p2","p3","p4","p5","p6","p7","p8",
+  "hardening_depth","hardening_depth_p1","hardening_depth_p2","hardening_depth_p3",
+  "hardening_depth_p4","hardening_depth_p5","hardening_depth_p6","hardening_depth_p7","hardening_depth_p8",
+  "core_hardness","core_hardness_p1","core_hardness_p2","core_hardness_p3",
+  "core_hardness_p4","core_hardness_p5","core_hardness_p6","core_hardness_p7","core_hardness_p8",
+  "correction_time_hr","special_notes","is_active"
 ].join(",");
 
 /* =========================================================
@@ -1342,6 +1347,17 @@ function setValue(id, value) {
   const element = document.getElementById(id);
   if (!element) return;
   element.value = value === null || value === undefined ? "" : String(value);
+}
+
+function restoreLegacyParameterMarkers() {
+  // 기존 상단 경화깊이/표면경도 P1~P3는 DB 연결을 해제하고
+  // 향후 다른 용도로 사용할 셀 위치 확인용 문자만 유지합니다.
+  setValue("hardening-depth-p1", "a");
+  setValue("hardening-depth-p2", "b");
+  setValue("hardening-depth-p3", "c");
+  setValue("p1-val", "d");
+  setValue("p2-val", "e");
+  setValue("p3-val", "f");
 }
 
 function updateGoodQuantity() {
@@ -1546,6 +1562,8 @@ function clearFormValues() {
 
   // 고객사 미선택 상태에 맞춰 품명/품번 드롭다운 목록과 안내문구도 초기화합니다.
   refreshInputItemDropdowns("");
+
+  restoreLegacyParameterMarkers();
 
   // 신규 작업일보의 작업일은 오늘 날짜를 기본값으로 유지합니다.
   document.getElementById("work-date").value = todayLocal();
@@ -2278,14 +2296,30 @@ async function loadRecordToForm(record) {
   setValue("temper-time", record.tempering_time_sec);
   setValue("temper-hard", record.tempering_hardness_hrc);
   setValue("correct-val", record.straightening_value_mm);
-  setValue("p1-val", record.p1);
-  setValue("p2-val", record.p2);
-  setValue("p3-val", record.p3);
-  setValue("hardening-depth-p1", record.hardening_depth_p1);
-  setValue("hardening-depth-p2", record.hardening_depth_p2);
-  setValue("hardening-depth-p3", record.hardening_depth_p3);
+  // 신규 표면경도 P01~P08 ← DB p1~p8
+  setValue("surface-hardness-p01", record.p1);
+  setValue("surface-hardness-p02", record.p2);
+  setValue("surface-hardness-p03", record.p3);
+  setValue("surface-hardness-p04", record.p4);
+  setValue("surface-hardness-p05", record.p5);
+  setValue("surface-hardness-p06", record.p6);
+  setValue("surface-hardness-p07", record.p7);
+  setValue("surface-hardness-p08", record.p8);
+
+  // 신규 심부경도 P01~P08 ← DB core_hardness_p1~p8
+  setValue("core-hardness-p01", record.core_hardness_p1);
+  setValue("core-hardness-p02", record.core_hardness_p2);
+  setValue("core-hardness-p03", record.core_hardness_p3);
+  setValue("core-hardness-p04", record.core_hardness_p4);
+  setValue("core-hardness-p05", record.core_hardness_p5);
+  setValue("core-hardness-p06", record.core_hardness_p6);
+  setValue("core-hardness-p07", record.core_hardness_p7);
+  setValue("core-hardness-p08", record.core_hardness_p8);
+
+  // 검사성적서 경화깊이 DB(hardening_depth_p1~p8)는 이번 작업에서 건드리지 않습니다.
   setValue("surface-hard", record.hardening_depth);
-  setValue("depth-hard", record.core_hardness);
+  setValue("correction-time-hr", record.correction_time_hr);
+  restoreLegacyParameterMarkers();
 
   setValue("coil-no", record.coil_number);
   setChoice("wash-done","wash-skip",record.coil_cleaning,"완료","미시행");
@@ -3085,14 +3119,25 @@ const TEXT_NUMERIC_FIELDS = [
   ["temper-temp","템퍼링온도"],
   ["temper-time","템퍼링시간"],
   ["correct-val","교정값"],
+  ["correction-time-hr","교정시간"],
   ["cool-conc","냉각수농도"],
   ["non-hr1","비가동 상세시간"],
-  ["p1-val","표면경도 P1"],
-  ["p2-val","표면경도 P2"],
-  ["p3-val","표면경도 P3"],
-  ["hardening-depth-p1","경화깊이 P1"],
-  ["hardening-depth-p2","경화깊이 P2"],
-  ["hardening-depth-p3","경화깊이 P3"]
+  ["surface-hardness-p01","표면경도 P01"],
+  ["surface-hardness-p02","표면경도 P02"],
+  ["surface-hardness-p03","표면경도 P03"],
+  ["surface-hardness-p04","표면경도 P04"],
+  ["surface-hardness-p05","표면경도 P05"],
+  ["surface-hardness-p06","표면경도 P06"],
+  ["surface-hardness-p07","표면경도 P07"],
+  ["surface-hardness-p08","표면경도 P08"],
+  ["core-hardness-p01","심부경도 P01"],
+  ["core-hardness-p02","심부경도 P02"],
+  ["core-hardness-p03","심부경도 P03"],
+  ["core-hardness-p04","심부경도 P04"],
+  ["core-hardness-p05","심부경도 P05"],
+  ["core-hardness-p06","심부경도 P06"],
+  ["core-hardness-p07","심부경도 P07"],
+  ["core-hardness-p08","심부경도 P08"]
 ];
 
 function validateRecord() {
@@ -3271,14 +3316,31 @@ function buildPayload() {
     tempering_time_sec: textOrNull("temper-time"),
     tempering_hardness_hrc: textOrNull("temper-hard"),
     straightening_value_mm: textOrNull("correct-val"),
-    p1: textOrNull("p1-val"),
-    p2: textOrNull("p2-val"),
-    p3: textOrNull("p3-val"),
-    hardening_depth_p1: textOrNull("hardening-depth-p1"),
-    hardening_depth_p2: textOrNull("hardening-depth-p2"),
-    hardening_depth_p3: textOrNull("hardening-depth-p3"),
+
+    // 신규 표면경도 P01~P08 → DB p1~p8
+    p1: textOrNull("surface-hardness-p01"),
+    p2: textOrNull("surface-hardness-p02"),
+    p3: textOrNull("surface-hardness-p03"),
+    p4: textOrNull("surface-hardness-p04"),
+    p5: textOrNull("surface-hardness-p05"),
+    p6: textOrNull("surface-hardness-p06"),
+    p7: textOrNull("surface-hardness-p07"),
+    p8: textOrNull("surface-hardness-p08"),
+
+    // 신규 심부경도 P01~P08 → 검사성적서 심부경도용 DB
+    core_hardness_p1: textOrNull("core-hardness-p01"),
+    core_hardness_p2: textOrNull("core-hardness-p02"),
+    core_hardness_p3: textOrNull("core-hardness-p03"),
+    core_hardness_p4: textOrNull("core-hardness-p04"),
+    core_hardness_p5: textOrNull("core-hardness-p05"),
+    core_hardness_p6: textOrNull("core-hardness-p06"),
+    core_hardness_p7: textOrNull("core-hardness-p07"),
+    core_hardness_p8: textOrNull("core-hardness-p08"),
+
+    // 도면경화깊이(mm) 1개 값은 기존 연결 유지.
+    // 경화깊이 측정 P01~P08(hardening_depth_p1~p8)은 이번 작업에서 저장하지 않습니다.
     hardening_depth: textOrNull("surface-hard"),
-    core_hardness: textOrNull("depth-hard"),
+    correction_time_hr: textOrNull("correction-time-hr"),
 
     coil_number: textOrNull("coil-no"),
     coil_cleaning: choice("wash-done","완료","wash-skip","미시행"),
