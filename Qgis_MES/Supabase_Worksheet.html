@@ -1231,7 +1231,7 @@ const SELECT_COLUMNS = [
   "straightening_work","voltage_v","current_a","output_kw","frequency_khz",
   "heating_time_sec","moving_speed_mm_sec","coil_product_gap_mm","rotation_rpm",
   "cooling_water_pressure_bar","cooling_water_temperature_c","cooling_time_sec",
-  "lot_no","tempering_temperature_c","tempering_time_sec",
+  "lot_no","tempering_temperature_c","tempering_time_hr",
   "tempering_hardness_hrc","straightening_value_mm","coil_number",
   "coil_cleaning","deformation_spark_mark","cooling_water_concentration_pct",
   "cooling_water_contamination","sensor_status","sensor_abnormal_detail",
@@ -2373,7 +2373,7 @@ async function loadRecordToForm(record) {
   setValue("cool-time", record.cooling_time_sec);
   setValue("lot-no", record.lot_no);
   setValue("temper-temp", record.tempering_temperature_c);
-  setValue("temper-time", record.tempering_time_sec);
+  setValue("temper-time", record.tempering_time_hr);
   setValue("temper-hard", record.tempering_hardness_hrc);
   setValue("correct-val", record.straightening_value_mm);
   // 신규 표면경도 P01~P08 ← DB p1~p8
@@ -3407,7 +3407,7 @@ function buildPayload() {
     cooling_time_sec: textOrNull("cool-time"),
     lot_no: textOrNull("lot-no"),
     tempering_temperature_c: textOrNull("temper-temp"),
-    tempering_time_sec: textOrNull("temper-time"),
+    tempering_time_hr: textOrNull("temper-time"),
     tempering_hardness_hrc: textOrNull("temper-hard"),
     straightening_value_mm: textOrNull("correct-val"),
 
