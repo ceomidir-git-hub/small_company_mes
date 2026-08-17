@@ -317,7 +317,7 @@ body{min-width:844px;overflow-x:auto;}
         <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-material" placeholder="⑥"></td>
       </tr>
       <tr style="height:24px;">
-        <td style="border:1px solid #000;border-left:none;border-bottom:none;font-size:9px;background:#f0f0f0;font-weight:700;">수량<br><span style="font-size:8px;font-weight:400;">LOTSIZE</span></td>
+        <td style="border:1px solid #000;border-left:none;border-bottom:none;font-size:9px;background:#f0f0f0;font-weight:700;">수량<br><span style="font-size:8px;font-weight:400;">LOT SIZE (EA)</span></td>
         <td class="ycell" style="border:1px solid #000;border-right:none;border-bottom:none;padding:1px;"><input class="inp center" id="f-lotsize" placeholder="⑦"></td>
       </tr>
     </table>
@@ -398,19 +398,19 @@ body{min-width:844px;overflow-x:auto;}
       <g id="hv-lbl"></g>
     </svg>
 
-    <!-- 단위 선택: HRC / Hv / Hs -->
+    <!-- 측정단위 상태표시: 표면경도와 심부경도는 동시에 존재할 수 있으므로 독립 표시 -->
     <div style="display:flex;align-items:center;gap:6px;margin-top:3px;font-size:9px;color:#555;">
       <span>측정단위:</span>
-      <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
-        <input type="radio" name="unit" id="unit-hrc" value="hrc" checked onchange="onUnitChange()"> HRC
+      <label style="display:flex;align-items:center;gap:2px;cursor:default;">
+        <input type="radio" name="unit-hrc-indicator" id="unit-hrc" value="hrc" tabindex="-1" style="pointer-events:none;"> HRC
       </label>
-      <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
-        <input type="radio" name="unit" id="unit-hv" value="hv" onchange="onUnitChange()"> Hv
+      <label style="display:flex;align-items:center;gap:2px;cursor:default;">
+        <input type="radio" name="unit-hv-indicator" id="unit-hv" value="hv" tabindex="-1" style="pointer-events:none;"> Hv
       </label>
-      <label style="display:flex;align-items:center;gap:2px;cursor:pointer;">
-        <input type="radio" name="unit" id="unit-hs" value="hs" onchange="onUnitChange()"> Hs
+      <label style="display:flex;align-items:center;gap:2px;cursor:default;">
+        <input type="radio" name="unit-hs-indicator" id="unit-hs" value="hs" tabindex="-1" style="pointer-events:none;"> Hs
       </label>
-      <span id="unit-hint" style="color:#aaa;font-size:8px;">→ HRC 그래프에 반영</span>
+      <span id="unit-hint" style="color:#aaa;font-size:8px;"></span>
     </div>
   </div>
 </div>
@@ -1488,7 +1488,11 @@ function clearReportOnlyFields() {
   ss("f-inspected", "");
   ss("f-approved", "");
   updateAllSignatures();
-  document.getElementById("unit-hrc").checked = true;
+  document.getElementById("unit-hrc").checked = false;
+  document.getElementById("unit-hv").checked = false;
+  document.getElementById("unit-hs").checked = false;
+  const unitContainer = document.getElementById("doc-container");
+  if (unitContainer && unitContainer.dataset) unitContainer.dataset.surfaceUnit = "hrc";
 }
 
 function applyReportData(data) {
@@ -1573,9 +1577,9 @@ function applyReportData(data) {
   }
   updateAllSignatures();
 
-  const unit = data.measure_unit || "hrc";
-  const unitElement = document.getElementById("unit-" + unit);
-  if (unitElement) unitElement.checked = true;
+  const unit = ["hrc", "hv", "hs"].includes(data.measure_unit) ? data.measure_unit : "hrc";
+  const container = document.getElementById("doc-container");
+  if (container && container.dataset) container.dataset.surfaceUnit = unit;
 }
 
 /* =========================================================
@@ -1747,9 +1751,7 @@ function collectReportData() {
     dwg_no: cleanVal(v("f-dwg")),
     material: cleanVal(v("f-material")),
     lot_size: cleanVal(v("f-lotsize")),
-    measure_unit:
-      (document.querySelector('input[name="unit"]:checked') || {}).value ||
-      "hrc",
+    measure_unit: getSurfaceUnit(),
     insp_std1: cleanVal(v("f-std1")),
     insp_std2: cleanVal(v("f-std2")),
     insp_jdg1: cleanVal(v("f-jdg1")),
@@ -1844,7 +1846,11 @@ function resetForm() {
   document.getElementById("hv-pts").innerHTML = "";
   document.getElementById("hv-lbl").innerHTML = "";
 
-  document.getElementById("unit-hrc").checked = true;
+  document.getElementById("unit-hrc").checked = false;
+  document.getElementById("unit-hv").checked = false;
+  document.getElementById("unit-hs").checked = false;
+  const unitContainer = document.getElementById("doc-container");
+  if (unitContainer && unitContainer.dataset) unitContainer.dataset.surfaceUnit = "hrc";
   onUnitChange();
 
   const today = localDateText(new Date());
@@ -1867,39 +1873,48 @@ function resetForm() {
 /* =========================================================
    측정 단위 및 그래프
    ========================================================= */
-function detectUnit() {
+function getSurfaceUnit() {
   const standard = v("f-std1").toUpperCase();
+  if (standard.includes("HRC")) return "hrc";
+  if (standard.includes("HS")) return "hs";
+  if (standard.includes("HV")) return "hv";
+
+  const container = document.getElementById("doc-container");
+  const savedUnit = container && container.dataset ? container.dataset.surfaceUnit : "";
+  return ["hrc", "hv", "hs"].includes(savedUnit) ? savedUnit : "hrc";
+}
+
+function detectUnit() {
+  const unit = getSurfaceUnit();
+  const container = document.getElementById("doc-container");
+  if (container && container.dataset) container.dataset.surfaceUnit = unit;
+  updateMainGraph();
+}
+
+/*
+ * HRC/Hs 표면경도 그래프와 Hv 심부경도 그래프는 서로 독립입니다.
+ * 이 함수는 과거 onclick 호환용으로 남겨 두며 두 그래프를 동시에 갱신합니다.
+ */
+function onUnitChange() {
+  updateMainGraph();
+}
+
+function updateUnitIndicators(surfaceUnit, hasSurfaceData, hasHvData) {
   const hrcElement = document.getElementById("unit-hrc");
   const hvElement = document.getElementById("unit-hv");
   const hsElement = document.getElementById("unit-hs");
 
-  if (standard.includes("HRC")) {
-    hrcElement.checked = true;
-  } else if (standard.includes("HS")) {
-    hsElement.checked = true;
-  } else if (standard.includes("HV")) {
-    hvElement.checked = true;
-  }
+  if (hrcElement) hrcElement.checked = !!(hasSurfaceData && surfaceUnit === "hrc");
+  if (hsElement) hsElement.checked = !!(hasSurfaceData && surfaceUnit === "hs");
+  if (hvElement) hvElement.checked = !!(hasHvData || (hasSurfaceData && surfaceUnit === "hv"));
 
-  onUnitChange();
-  updateMainGraph();
-}
+  const activeUnits = [];
+  if (hrcElement && hrcElement.checked) activeUnits.push("HRC");
+  if (hvElement && hvElement.checked) activeUnits.push("Hv");
+  if (hsElement && hsElement.checked) activeUnits.push("Hs");
 
-function onUnitChange() {
-  const selected = document.querySelector('input[name="unit"]:checked');
-  if (!selected) return;
-
-  const unit = selected.value;
-  const hints = {
-    hrc: "→ HRC 그래프에 반영",
-    hv: "→ Hv 그래프에 반영",
-    hs: "→ Hs 그래프에 반영"
-  };
-  const labels = { hrc: "HRC", hv: "Hv", hs: "Hs" };
-
-  document.getElementById("unit-hint").textContent = hints[unit] || "";
-  document.getElementById("graph-label").textContent = labels[unit] || unit;
-  updateMainGraph();
+  const hint = document.getElementById("unit-hint");
+  if (hint) hint.textContent = activeUnits.length ? "→ " + activeUnits.join(" / ") + " 그래프 표시" : "";
 }
 
 const MAIN_XS = [79,126,173,220,267,314,361,408];
@@ -1981,14 +1996,14 @@ function drawYAxis(unit, values) {
 }
 
 function updateMainGraph() {
-  const selected = document.querySelector('input[name="unit"]:checked');
-  const unit = selected ? selected.value : "hrc";
-
-  if (unit === "hv") {
-    clearMainGraph();
-    updateHvGraph();
-    return;
-  }
+  /*
+   * 상단 그래프는 표면경도 P01~P08 전용입니다.
+   * 하단 Hv 그래프의 데이터/상태와 무관하게 항상 독립적으로 그립니다.
+   */
+  const unit = getSurfaceUnit();
+  const labelsByUnit = { hrc: "HRC", hv: "Hv", hs: "Hs" };
+  const graphLabel = document.getElementById("graph-label");
+  if (graphLabel) graphLabel.textContent = labelsByUnit[unit] || "HRC";
 
   const values = ["p01","p02","p03","p04","p05","p06","p07","p08"].map(nv);
   const range = drawYAxis(unit, values);
@@ -2010,7 +2025,7 @@ function updateMainGraph() {
   document.getElementById("main-pts").innerHTML = circles;
   document.getElementById("main-lbl").innerHTML = labels;
 
-  // 아래 Hv 그래프는 표면경도가 아니라 심부경도 P01~P08을 항상 표시합니다.
+  // 하단 Hv 그래프도 같은 시점에 독립 갱신합니다.
   updateHvGraph();
 }
 
@@ -2057,13 +2072,13 @@ function updateHvGraph() {
   document.getElementById("hv-pts").innerHTML = circles;
   document.getElementById("hv-lbl").innerHTML = labels;
 
-  /* 심부경도 데이터가 1개라도 있으면 측정단위 라디오의 Hv를 자동 선택합니다. */
-  if (hasHvData) {
-    const hvRadio = document.getElementById("unit-hv");
-    if (hvRadio) hvRadio.checked = true;
-    const unitHint = document.getElementById("unit-hint");
-    if (unitHint) unitHint.textContent = "→ Hv 그래프에 반영";
-  }
+  /*
+   * 단위 표시는 그래프 선택기가 아니라 데이터 존재 상태입니다.
+   * 표면경도(HRC/Hs/Hv)와 심부경도(Hv)가 동시에 있으면 두 단위에 동시에 점을 표시합니다.
+   */
+  const surfaceValues = ["p01","p02","p03","p04","p05","p06","p07","p08"].map(nv);
+  const hasSurfaceData = surfaceValues.some(function(value) { return value !== null; });
+  updateUnitIndicators(getSurfaceUnit(), hasSurfaceData, hasHvData);
 }
 
 function clearMainGraph() {
