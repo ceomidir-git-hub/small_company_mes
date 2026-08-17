@@ -74,7 +74,7 @@ body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:12px;backgr
     print-color-adjust:exact;
   }
   #toolbar,#toast,#loading,#v1-photo-modal{display:none!important;}
-  .v1-photo-actions,.v1-photo-empty{display:none!important;}
+  .v1-photo-actions,.v1-photo-empty,.v1-no-badge{display:none!important;}
   .v1-photo-box{
     border:none!important;
     background:#fff!important;
@@ -605,14 +605,14 @@ body{min-width:844px;overflow-x:auto;}
       <text x="28" y="73" font-size="7" text-anchor="end" fill="#555">200</text>
       <text x="28" y="93" font-size="7" text-anchor="end" fill="#555">0</text>
       <text x="32"  y="100" font-size="6" text-anchor="middle">0</text>
-      <text x="80"  y="100" font-size="6" text-anchor="middle">0.3</text>
-      <text x="128" y="100" font-size="6" text-anchor="middle">0.5</text>
+      <text x="80"  y="100" font-size="6" text-anchor="middle">0.2</text>
+      <text x="128" y="100" font-size="6" text-anchor="middle">0.4</text>
       <text x="176" y="100" font-size="6" text-anchor="middle">0.6</text>
       <text x="224" y="100" font-size="6" text-anchor="middle">0.8</text>
-      <text x="272" y="100" font-size="6" text-anchor="middle">0.9</text>
+      <text x="272" y="100" font-size="6" text-anchor="middle">1.0</text>
       <text x="320" y="100" font-size="6" text-anchor="middle">1.2</text>
       <text x="368" y="100" font-size="6" text-anchor="middle">1.4</text>
-      <text x="416" y="100" font-size="6" text-anchor="middle">1.5</text>
+      <text x="416" y="100" font-size="6" text-anchor="middle">1.6</text>
       <text x="32"  y="110" font-size="7" fill="#777">Depth(mm)</text>
       <text x="120" y="110" font-size="8" fill="#777">→</text>
       <line x1="80"  y1="10" x2="80"  y2="90" stroke="#eee" stroke-width="0.4"/>
@@ -625,6 +625,7 @@ body{min-width:844px;overflow-x:auto;}
       <line x1="416" y1="10" x2="416" y2="90" stroke="#eee" stroke-width="0.4"/>
       <polyline id="hv-line" points="" fill="none" stroke="#1a3a5c" stroke-width="1.5"/>
       <g id="hv-pts"></g>
+      <g id="hv-lbl"></g>
     </svg>
 
     <!-- 단위 선택: HRC / Hv / Hs -->
@@ -2534,6 +2535,7 @@ function resetForm() {
   clearMainGraph();
   document.getElementById("hv-line").setAttribute("points", "");
   document.getElementById("hv-pts").innerHTML = "";
+  document.getElementById("hv-lbl").innerHTML = "";
 
   document.getElementById("unit-hrc").checked = true;
   onUnitChange();
@@ -2716,21 +2718,45 @@ function updateHvGraph() {
     "f-res3-p07",
     "f-res3-p08"
   ];
-  const values = coreIds.map(nv);
+
+  /*
+   * P01~P08 실제 측정 깊이(mm) 고정 기준
+   * P01=0.2 / P02=0.4 / ... / P08=1.6
+   * SVG에서도 0.2 mm당 48 px로 동일하게 배치하므로 X축 거리와 실제 깊이가 비례합니다.
+   */
+  const depthMm = [0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6];
   const xCoordinates = [80,128,176,224,272,320,368,416];
+  const values = coreIds.map(nv);
   const points = [];
   let circles = "";
+  let labels = "";
+  let hasHvData = false;
 
   values.forEach(function(value, index) {
     if (value === null) return;
+    hasHvData = true;
+
     const clamped = Math.max(0, Math.min(800, value));
     const y = 90 - (clamped / 800) * 80;
-    points.push(xCoordinates[index] + "," + y.toFixed(1));
-    circles += '<circle cx="' + xCoordinates[index] + '" cy="' + y.toFixed(1) + '" r="3" fill="#1a3a5c"/>';
+    const x = xCoordinates[index];
+    const labelY = Math.max(8, y - 5);
+
+    points.push(x + "," + y.toFixed(1));
+    circles += '<circle cx="' + x + '" cy="' + y.toFixed(1) + '" r="3" fill="#1a3a5c"/>';
+    labels += '<text x="' + x + '" y="' + labelY.toFixed(1) + '" font-size="8" text-anchor="middle" font-weight="700" fill="#1a3a5c">' + value + '</text>';
   });
 
   document.getElementById("hv-line").setAttribute("points", points.join(" "));
   document.getElementById("hv-pts").innerHTML = circles;
+  document.getElementById("hv-lbl").innerHTML = labels;
+
+  /* 심부경도 데이터가 1개라도 있으면 측정단위 라디오의 Hv를 자동 선택합니다. */
+  if (hasHvData) {
+    const hvRadio = document.getElementById("unit-hv");
+    if (hvRadio) hvRadio.checked = true;
+    const unitHint = document.getElementById("unit-hint");
+    if (unitHint) unitHint.textContent = "→ Hv 그래프에 반영";
+  }
 }
 
 function clearMainGraph() {
