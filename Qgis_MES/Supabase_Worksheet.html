@@ -858,9 +858,9 @@
     </tr>
     <!-- 조건값 헤더 → 도면경도(Hrc,Hs), 도면경화깊이(mm), 교정값 배치 -->
     <tr>
-      <th>항목</th><th>템퍼링온도(℃)</th><th>템퍼링시간(sec)</th>
+      <th>항목</th><th>템퍼링온도(℃)</th><th>템퍼링시간(hr)</th>
       <th>도면경도(Hrc,Hs)</th><th>도면경화깊이(mm)</th>
-      <th>심부경도(Hv)</th>
+      <th>도면심부경도(hv)</th>
       <th>교정값(mm)</th>
     </tr>
     <!-- 조건값 입력 → 도면경화깊이(mm) / 교정값 입력칸 -->
@@ -1206,7 +1206,7 @@ let lastMasterRefreshAt = 0;
 let formSelectionEpoch = 0;
 
 
-const DEFECT_TYPES = ["외관", "오염", "찍힘", "탈락", "경도", "변형"];
+const DEFECT_TYPES = ["외관", "융착", "찍힘", "탈락", "경도", "변형"];
 const DOWNTIME_TYPES = [
   "교육", "공사", "개발", "방문", "기타1",
   "전기", "냉각", "코일", "기타2",
@@ -2405,7 +2405,7 @@ async function loadRecordToForm(record) {
   // 도면경화깊이(mm) 및 교정시간은 기존 연결 유지
   setValue("surface-hard", record.hardening_depth);
 
-  // 심부경도(Hv) 관리기준 ← DB core_hardness_standard
+  // 도면심부경도(hv) 관리기준 ← DB core_hardness_standard
   // 검사성적서의 심부경도 관리기준(규격) f-std3와 동일한 DB 값을 사용합니다.
   setValue("core-hardness-standard", record.core_hardness_standard);
 
@@ -3431,7 +3431,7 @@ function buildPayload() {
     core_hardness_p7: textOrNull("core-hardness-p07"),
     core_hardness_p8: textOrNull("core-hardness-p08"),
 
-    // 심부경도(Hv) 입력값 → 검사성적서 심부경도 관리기준(규격) 공용 DB
+    // 도면심부경도(hv) 입력값 → 검사성적서 심부경도 관리기준(규격) 공용 DB
     core_hardness_standard: textOrNull("core-hardness-standard"),
 
     // 작업일보 경화깊이 P1~P3 → 검사성적서 경화깊이 P01~P03 공용 DB
