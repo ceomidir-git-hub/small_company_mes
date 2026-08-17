@@ -55,6 +55,15 @@ body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:12px;backgr
 .inp-date:focus{outline:1px solid #c8a200;}
 .sel{background:#fffbe6;border:none;width:100%;font-family:'Malgun Gothic',sans-serif;font-size:9px;outline:none;text-align:left;}
 .sel:focus{outline:1px solid #c8a200;}
+/* 서명자 이름은 화면/PDF 모두 가운데 정렬 */
+#f-inspected,#f-approved{
+  text-align:center;
+  text-align-last:center;
+}
+#f-inspected option,#f-approved option{
+  text-align:center;
+}
+
 
 /* ── 토스트 ── */
 #toast{display:none;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#1a3a5c;color:#fff;padding:11px 26px;border-radius:28px;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:9999;}
@@ -524,7 +533,7 @@ body{min-width:844px;overflow-x:auto;}
       <colgroup><col style="width:48%"><col style="width:52%"></colgroup>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;border-top:none;font-size:9px;background:#f0f0f0;font-weight:700;">LOT NO<br><span style="font-size:8px;font-weight:400;">(발행번호)</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;border-top:none;padding:1px;"><input class="inp center" id="f-lot" placeholder="①"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;border-top:none;padding:1px;"><input class="inp center" id="f-lot" readonly placeholder="①"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">열처리방법<br><span style="font-size:8px;font-weight:400;">HEAT TREATMENT METHOD</span></td>
@@ -532,23 +541,23 @@ body{min-width:844px;overflow-x:auto;}
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">거래처<br><span style="font-size:8px;font-weight:400;">CUSTOMER</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-customer" placeholder="③"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-customer" readonly placeholder="③"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">품명<br><span style="font-size:8px;font-weight:400;">DESCRIPTION</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-product" placeholder="④"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-product" readonly placeholder="④"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">품번<br><span style="font-size:8px;font-weight:400;">D.W.G NO</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-dwg" placeholder="⑤"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-dwg" readonly placeholder="⑤"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;font-size:9px;background:#f0f0f0;font-weight:700;">재질<br><span style="font-size:8px;font-weight:400;">MATERIAL</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-material" placeholder="⑥"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;padding:1px;"><input class="inp center" id="f-material" readonly placeholder="⑥"></td>
       </tr>
       <tr style="height:24px;">
         <td style="border:1px solid #000;border-left:none;border-bottom:none;font-size:9px;background:#f0f0f0;font-weight:700;">수량<br><span style="font-size:8px;font-weight:400;">LOT SIZE (EA)</span></td>
-        <td class="ycell" style="border:1px solid #000;border-right:none;border-bottom:none;padding:1px;"><input class="inp center" id="f-lotsize" placeholder="⑦"></td>
+        <td class="ycell" style="border:1px solid #000;border-right:none;border-bottom:none;padding:1px;"><input class="inp center" id="f-lotsize" readonly placeholder="⑦"></td>
       </tr>
     </table>
   </div>
