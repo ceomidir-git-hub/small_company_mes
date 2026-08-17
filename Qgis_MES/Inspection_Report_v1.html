@@ -2033,7 +2033,10 @@ function applyProductionFields(row) {
   sv("hd03", row.hardening_depth_p3);
   for (let i = 4; i <= 8; i += 1) sv("hd0" + i, "");
 
-  sv("f-std3", row.core_hardness_standard || "-");
+  // 작업일보 NO9의 심부경도(Hv) 관리기준을 성적서 관리기준(규격)에 자동 반영합니다.
+  // 이 값은 Total_Production_DB.core_hardness_standard를 단일 기준으로 사용합니다.
+  const worksheetCoreHardnessStandard = cleanVal(row.core_hardness_standard);
+  sv("f-std3", worksheetCoreHardnessStandard || "-");
   // 작업일보 심부경도 P01~P08 → 성적서 심부경도 P01~P08
   sv("f-res3", row.core_hardness_p1 || "");
   sv("f-res3-p02", row.core_hardness_p2 || "");
@@ -2184,7 +2187,16 @@ function applyReportData(data) {
      * 심부경도·조직·변형·균열은 Total_Production_DB 값을 우선합니다.
      * 과거 inspection_reports 데이터만 존재할 때만 보조값으로 복원합니다.
      */
-    if (!v("f-std" + i) && stdValue) {
+    if (i === 3) {
+      // 심부경도 관리기준은 작업일보 값을 최우선으로 고정합니다.
+      // 과거 inspection_reports.report_data가 있어도 작업일보 값이 있으면 덮어쓰지 않습니다.
+      const worksheetStandard = cleanVal(currentProductionRow?.core_hardness_standard);
+      if (worksheetStandard) {
+        sv("f-std3", worksheetStandard);
+      } else {
+        sv("f-std3", "-");
+      }
+    } else if (!v("f-std" + i) && stdValue) {
       sv("f-std" + i, stdValue);
     }
     if (!v("f-res" + i) && resultValue && resultValue !== "-") {
