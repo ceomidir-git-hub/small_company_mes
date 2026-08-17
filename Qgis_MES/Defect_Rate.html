@@ -218,14 +218,14 @@ tbody td{font-size:12px;font-weight:600;color:#26313F;padding:7px 5px;}
 .pdf-table thead th{
   position:static;
   background:#E5E7EB;
-  font-size:11px;
+  font-size:9.5px;
   font-weight:900;
 }
 .pdf-table thead th.pdf-db{background:#DBEAFE;color:#1E3A8A;}
 .pdf-table thead th.pdf-type{background:#FEF3C7;color:#78350F;}
 .pdf-table thead th.pdf-calc{background:#FCE7F3;color:#831843;}
 .pdf-table tbody td{
-  font-size:11px;
+  font-size:9.5px;
   font-weight:700;
   background:#fff;
 }
@@ -238,6 +238,216 @@ tbody td{font-size:12px;font-weight:600;color:#26313F;padding:7px 5px;}
   font-weight:700;
   color:#64748B;
 }
+
+
+/* =========================================================
+   A4 가로형 화면 최적화
+   기준 비율 : 297mm : 210mm = 1.414 : 1
+   PC 화면 기준 최대폭 1485px (= 297mm × 5px/mm 가상환산)
+   조회표는 17열 합계 100%로 고정하여 내부 스크롤을 제거합니다.
+   ========================================================= */
+@media screen and (min-width:901px){
+  html,body{
+    width:100%;
+    overflow-x:hidden;
+  }
+
+  .top-header{
+    height:44px;
+    padding:0 16px;
+  }
+
+  .container{
+    width:calc(100vw - 16px);
+    max-width:1485px;
+    margin:0 auto;
+    padding:8px 0 12px;
+  }
+
+  .page-title{
+    margin-bottom:7px;
+  }
+  .page-title h1{
+    font-size:18px;
+  }
+  .page-title .sub{
+    font-size:11px;
+  }
+
+  .filter-card{
+    padding:8px 10px;
+    margin-bottom:7px;
+    border-radius:7px;
+  }
+  .filter-label{
+    margin-bottom:5px;
+    font-size:10px;
+  }
+  .filter-row{
+    gap:5px;
+    margin-bottom:5px;
+  }
+  .fg{
+    gap:3px;
+  }
+  .fg label{
+    font-size:10px;
+  }
+  .fg input[type=date],
+  .fg select{
+    height:27px;
+    font-size:10px;
+    padding:0 5px;
+  }
+  .fg input[type=date]{
+    width:116px;
+  }
+  .fg select{
+    min-width:82px;
+  }
+  .btn{
+    height:27px;
+    padding:0 9px;
+    font-size:10px;
+  }
+
+  .dash-card{
+    padding:7px 9px;
+    margin-bottom:7px;
+    border-radius:7px;
+  }
+  .dash-header{
+    margin-bottom:6px;
+  }
+  .dash-title{
+    font-size:11px;
+  }
+  .period-badge{
+    font-size:9px;
+  }
+  .kpi-grid{
+    gap:5px;
+  }
+  .kpi-item{
+    padding:6px 8px;
+    border-radius:6px;
+  }
+  .kpi-label{
+    font-size:9px;
+    margin-bottom:1px;
+  }
+  .kpi-val{
+    font-size:16px;
+    line-height:1.1;
+  }
+  .kpi-unit{
+    font-size:8px;
+  }
+
+  .table-card{
+    border-radius:7px;
+  }
+  .table-toolbar{
+    padding:6px 9px;
+    min-height:34px;
+  }
+  .t-title{
+    font-size:11px;
+  }
+  .cnt-badge{
+    font-size:9px;
+  }
+  .toolbar-buttons .btn{
+    height:25px !important;
+    font-size:9px !important;
+  }
+
+  /* 내부 스크롤 완전 제거 */
+  .table-wrap{
+    width:100%;
+    max-height:none;
+    overflow:visible;
+    -webkit-overflow-scrolling:auto;
+  }
+
+  #defectTable{
+    width:100%;
+    min-width:0 !important;
+    table-layout:fixed;
+    border-collapse:collapse;
+  }
+
+  #defectTable thead th{
+    padding:4px 2px;
+    height:26px;
+    font-size:9px;
+    line-height:1.15;
+    white-space:normal;
+    word-break:keep-all;
+  }
+
+  #defectTable tbody td{
+    padding:3px 2px;
+    min-height:25px;
+    font-size:9px;
+    line-height:1.15;
+  }
+
+  #defectTable .td-input{
+    width:100%;
+    min-width:0 !important;
+    height:22px;
+    padding:1px;
+    font-size:9px;
+  }
+
+  #defectTable .save-btn{
+    height:21px;
+    padding:0 4px;
+    font-size:9px;
+  }
+
+  #defectTable .defect-note-cell{
+    text-align:left;
+    white-space:normal;
+    word-break:break-all;
+    overflow:visible;
+    text-overflow:clip;
+    padding:3px 5px;
+    font-size:8.5px;
+    line-height:1.25;
+    color:#7C2D12;
+    background:#FFF9F5;
+  }
+
+  .status-bar{
+    padding:5px 9px;
+    font-size:9px;
+  }
+}
+
+/* 화면 열 폭 합계 = 100%
+   작업일 6
+   고객사 7
+   품명 8
+   품번 8
+   DB 3열 = 14.1
+   불량 6열 = 21
+   불량합계 5
+   PPM 6
+   불량내용 20
+   저장 4.9
+*/
+#defectTable col.c-date{width:6%;}
+#defectTable col.c-cust{width:7%;}
+#defectTable col.c-prod{width:8%;}
+#defectTable col.c-part{width:8%;}
+#defectTable col.c-db{width:4.7%;}
+#defectTable col.c-type{width:3.5%;}
+#defectTable col.c-sum{width:5%;}
+#defectTable col.c-ppm{width:6%;}
+#defectTable col.c-note{width:20%;}
+#defectTable col.c-save{width:4.9%;}
 
 </style>
 </head>
@@ -343,17 +553,30 @@ tbody td{font-size:12px;font-weight:600;color:#26313F;padding:7px 5px;}
 
     <div class="table-wrap" id="tableWrap">
       <table id="defectTable">
+        <colgroup>
+          <col class="c-date">
+          <col class="c-cust">
+          <col class="c-prod">
+          <col class="c-part">
+          <col class="c-db"><col class="c-db"><col class="c-db">
+          <col class="c-type"><col class="c-type"><col class="c-type">
+          <col class="c-type"><col class="c-type"><col class="c-type">
+          <col class="c-sum">
+          <col class="c-ppm">
+          <col class="c-note">
+          <col class="c-save">
+        </colgroup>
         <thead>
           <tr>
             <th rowspan="2">작업일</th>
             <th rowspan="2">고객사</th>
             <th rowspan="2">품명</th>
             <th rowspan="2">품번</th>
-            <th rowspan="2">설비명</th>
             <th colspan="3" class="th-db">DB 합산</th>
             <th colspan="6" class="th-input">불량 유형 입력 (ea)</th>
             <th colspan="2" class="th-calc">자동 계산</th>
-            <th rowspan="2" style="width:44px;">저장</th>
+            <th rowspan="2">불량내용</th>
+            <th rowspan="2">저장</th>
           </tr>
           <tr>
             <th class="th-db" style="width:54px;">투입수량</th>
@@ -691,17 +914,41 @@ async function doQuery(){
 
     details.forEach(function(d){
       if(!detailMap[d.production_system_id]){
-        detailMap[d.production_system_id] = {};
+        detailMap[d.production_system_id] = {
+          quantities:{},
+          remarks:{}
+        };
       }
-      detailMap[d.production_system_id][d.defect_type] = toN(d.defect_quantity);
+
+      const target = detailMap[d.production_system_id];
+      target.quantities[d.defect_type] = toN(d.defect_quantity);
+
+      const remark = String(d.remarks || "").trim();
+      if(remark){
+        target.remarks[d.defect_type] = remark;
+      }
     });
 
     queryRows = productionRows.map(function(r){
-      const detail = detailMap[r.production_system_id] || {};
+      const detail = detailMap[r.production_system_id] || {
+        quantities:{},
+        remarks:{}
+      };
       const row = Object.assign({},r);
+
       DEFECT_TYPES.forEach(function(type){
-        row[type] = toN(detail[type]);
+        row[type] = toN(detail.quantities[type]);
       });
+
+      row.defect_content = DEFECT_TYPES
+        .filter(function(type){
+          return detail.remarks[type];
+        })
+        .map(function(type){
+          return type + " : " + detail.remarks[type];
+        })
+        .join(" / ");
+
       return row;
     });
 
@@ -767,13 +1014,13 @@ function renderTable(from,to,cust,prod,partNo,eq,rows){
       +'<td>'+esc(r.customer_name)+'</td>'
       +'<td>'+esc(r.item_name)+'</td>'
       +'<td>'+esc(r.item_number)+'</td>'
-      +'<td>'+esc(r.equipment_name)+'</td>'
       +'<td class="td-db">'+dbInput.toLocaleString()+'</td>'
       +'<td class="td-db">'+dbGood.toLocaleString()+'</td>'
       +'<td class="td-db">'+dbBad.toLocaleString()+'</td>'
       +DEFECT_TYPES.map(function(type){ return makeInput(idx,type,r[type]); }).join("")
       +'<td class="td-calc" id="c-sum-'+idx+'">'+badSum.toLocaleString()+'</td>'
       +'<td class="'+(ppm>0 ? "td-calc-bad" : "td-calc")+'" id="c-ppm-'+idx+'">'+ppm.toLocaleString()+'</td>'
+      +'<td class="defect-note-cell" title="'+esc(r.defect_content || "")+'">'+esc(r.defect_content || "-")+'</td>'
       +'<td><button class="save-btn" id="sbtn-'+idx+'" type="button" onclick="saveRow('+idx+')">저장</button></td>'
       +'</tr>';
   }).join("");
@@ -1008,10 +1255,10 @@ function exportCSV(){
   }
 
   const headers = [
-    "작업일","고객사","품명","품번","설비명",
+    "작업일","고객사","품명","품번",
     "투입수량(DB)","양품수량(DB)","불량수량(DB)",
     "외관","융착","찍힘","탈락","경도","변형",
-    "불량합계","불량률(PPM)"
+    "불량합계","불량률(PPM)","불량내용"
   ];
 
   const lines = [headers.map(csvEscape).join(",")];
@@ -1023,7 +1270,6 @@ function exportCSV(){
       tr.dataset.cust,
       tr.dataset.prod,
       tr.dataset.partno,
-      tr.dataset.eq,
       tr.dataset.dbinput,
       tr.dataset.dbgood,
       tr.dataset.dbbad
@@ -1035,7 +1281,8 @@ function exportCSV(){
 
     cells.push(
       document.getElementById("c-sum-"+idx).textContent.replace(/,/g,""),
-      document.getElementById("c-ppm-"+idx).textContent.replace(/,/g,"")
+      document.getElementById("c-ppm-"+idx).textContent.replace(/,/g,""),
+      queryRows[Number(idx)] ? (queryRows[Number(idx)].defect_content || "") : ""
     );
 
     lines.push(cells.map(csvEscape).join(","));
@@ -1076,10 +1323,10 @@ function buildPdfTableHeader(){
         <th rowspan="2" style="width:104px;">고객사</th>
         <th rowspan="2" style="width:92px;">품명</th>
         <th rowspan="2" style="width:104px;">품번</th>
-        <th rowspan="2" style="width:112px;">설비명</th>
         <th colspan="3" class="pdf-db">DB 합산</th>
         <th colspan="6" class="pdf-type">불량 유형 (ea)</th>
         <th colspan="2" class="pdf-calc">자동 계산</th>
+        <th rowspan="2" style="width:260px;">불량내용</th>
       </tr>
       <tr>
         <th class="pdf-db">투입</th>
@@ -1109,13 +1356,13 @@ function buildPdfTableRow(tr){
       <td>${esc(tr.dataset.cust)}</td>
       <td>${esc(tr.dataset.prod)}</td>
       <td>${esc(tr.dataset.partno)}</td>
-      <td>${esc(tr.dataset.eq)}</td>
       <td class="pdf-db">${toN(tr.dataset.dbinput).toLocaleString()}</td>
       <td class="pdf-db">${toN(tr.dataset.dbgood).toLocaleString()}</td>
       <td class="pdf-db">${toN(tr.dataset.dbbad).toLocaleString()}</td>
       ${defectValues.map(function(value){ return "<td>"+value+"</td>"; }).join("")}
       <td class="pdf-calc">${esc(document.getElementById("c-sum-"+idx).textContent)}</td>
       <td class="pdf-calc">${esc(document.getElementById("c-ppm-"+idx).textContent)}</td>
+      <td style="text-align:left;white-space:normal;font-size:9px;">${esc(queryRows[Number(idx)] ? (queryRows[Number(idx)].defect_content || "-") : "-")}</td>
     </tr>`;
 }
 
