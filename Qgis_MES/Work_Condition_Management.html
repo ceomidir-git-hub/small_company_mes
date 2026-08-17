@@ -471,7 +471,7 @@ tr.editing td{
           <th class="cond cond-narrow">냉각수온도(℃)</th>
           <th class="cond cond-narrow">냉각시간(sec)</th>
           <th class="cond cond-narrow">템퍼링온도(℃)</th>
-          <th class="cond cond-narrow">템퍼링시간(sec)</th>
+          <th class="cond cond-narrow">템퍼링시간(hr)</th>
           <th class="cond cond-narrow">템퍼링경도(HRC)</th>
           <th class="cond cond-narrow">교정값(mm)</th>
         </tr>
@@ -513,7 +513,7 @@ tr.editing td{
   <div class="edit-section-label">▶ 템퍼링 / 교정 조건</div>
   <div class="edit-grid-4">
     <div class="edit-field"><label>템퍼링온도(℃)</label><input id="e_ttemp" type="number" step="0.01" class="empty-input"></div>
-    <div class="edit-field"><label>템퍼링시간(sec)</label><input id="e_ttime" type="number" step="0.01" class="empty-input"></div>
+    <div class="edit-field"><label>템퍼링시간(hr)</label><input id="e_ttime" type="number" step="0.01" class="empty-input"></div>
     <div class="edit-field"><label>템퍼링경도(HRC)</label><input id="e_thrc" type="text" class="empty-input"></div>
     <div class="edit-field"><label>교정값(mm)</label><input id="e_calib" type="number" step="0.001" class="empty-input"></div>
   </div>
@@ -577,7 +577,7 @@ const CONDITION_FIELDS = [
   { id:"e_wtemp",  key:"cooling_water_temperature_c",     label:"냉각수온도(℃)",        type:"number" },
   { id:"e_wcool",  key:"cooling_time_sec",                label:"냉각시간(sec)",        type:"number" },
   { id:"e_ttemp",  key:"tempering_temperature_c",         label:"템퍼링온도(℃)",        type:"number", temper:true },
-  { id:"e_ttime",  key:"tempering_time_sec",              label:"템퍼링시간(sec)",      type:"number", temper:true },
+  { id:"e_ttime",  key:"tempering_time_hr",              label:"템퍼링시간(hr)",      type:"number", temper:true },
   { id:"e_thrc",   key:"tempering_hardness_hrc",          label:"템퍼링경도(HRC)",      type:"text",   temper:true },
   { id:"e_calib",  key:"straightening_value_mm",          label:"교정값(mm)",           type:"number", temper:true }
 ];
@@ -604,7 +604,7 @@ const SELECT_COLUMNS = [
   "cooling_water_temperature_c",
   "cooling_time_sec",
   "tempering_temperature_c",
-  "tempering_time_sec",
+  "tempering_time_hr",
   "tempering_hardness_hrc",
   "straightening_value_mm"
 ].join(",");
