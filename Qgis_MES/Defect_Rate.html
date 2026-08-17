@@ -360,7 +360,7 @@ tbody td{font-size:12px;font-weight:600;color:#26313F;padding:7px 5px;}
             <th class="th-db" style="width:54px;">양품수량</th>
             <th class="th-db" style="width:54px;">불량수량</th>
             <th class="th-input" style="width:40px;">외관</th>
-            <th class="th-input" style="width:40px;">오염</th>
+            <th class="th-input" style="width:40px;">융착</th>
             <th class="th-input" style="width:40px;">찍힘</th>
             <th class="th-input" style="width:40px;">탈락</th>
             <th class="th-input" style="width:40px;">경도</th>
@@ -396,7 +396,7 @@ const PRODUCTION_TABLE = "Total_Production_DB";
 const DEFECT_TABLE = "production_defect_details";
 const LOGIN_PAGE_URL = "../index.html";
 
-const DEFECT_TYPES = ["외관","오염","찍힘","탈락","경도","변형"];
+const DEFECT_TYPES = ["외관","융착","찍힘","탈락","경도","변형"];
 const PAGE_SIZE = 1000;
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -864,26 +864,56 @@ async function saveRow(idx){
   }
 
   const quantities = {};
+  let invalidType = "";
+
   DEFECT_TYPES.forEach(function(type){
-    quantities[type] = getDefectValue(tr,type);
+    const input = tr.querySelector('[data-field="'+type+'"]');
+    const raw = input ? String(input.value || "").trim() : "0";
+    const numberValue = raw === "" ? 0 : Number(raw);
+
+    if(
+      !Number.isFinite(numberValue) ||
+      numberValue < 0 ||
+      !Number.isInteger(numberValue)
+    ){
+      invalidType = type;
+      return;
+    }
+
+    quantities[type] = numberValue;
   });
+
+  if(invalidType){
+    showToast(invalidType+" 불량수량은 0 이상의 정수로 입력해 주세요.");
+    return;
+  }
 
   const badSum = DEFECT_TYPES.reduce(function(sum,type){
     return sum + quantities[type];
   },0);
 
   const inputQuantity = toN(tr.dataset.dbinput);
-  const goodQuantity = Math.max(0,inputQuantity-badSum);
 
-  const detailRows = DEFECT_TYPES.map(function(type){
-    return {
-      company_id: currentProfile.company_id,
-      production_system_id: productionId,
-      defect_type: type,
-      defect_quantity: quantities[type],
-      is_active: true
-    };
-  });
+  if(badSum > inputQuantity){
+    showToast("불량합계("+badSum.toLocaleString()+")는 투입수량("+inputQuantity.toLocaleString()+")보다 클 수 없습니다.");
+    return;
+  }
+
+  const goodQuantity = inputQuantity-badSum;
+
+  const detailRows = DEFECT_TYPES
+    .filter(function(type){
+      return quantities[type] > 0;
+    })
+    .map(function(type){
+      return {
+        company_id: currentProfile.company_id,
+        production_system_id: productionId,
+        defect_type: type,
+        defect_quantity: quantities[type],
+        is_active: true
+      };
+    });
 
   btn.classList.add("saving");
   btn.textContent = "저장중";
@@ -891,13 +921,21 @@ async function saveRow(idx){
   showLoading("불량유형을 저장하는 중입니다...");
 
   try{
-    const {error:detailError} = await sb
+    const {error:deleteDetailError} = await sb
       .from(DEFECT_TABLE)
-      .upsert(detailRows,{
-        onConflict:"company_id,production_system_id,defect_type"
-      });
+      .delete()
+      .eq("company_id",currentProfile.company_id)
+      .eq("production_system_id",productionId);
 
-    if(detailError) throw detailError;
+    if(deleteDetailError) throw deleteDetailError;
+
+    if(detailRows.length > 0){
+      const {error:detailError} = await sb
+        .from(DEFECT_TABLE)
+        .insert(detailRows);
+
+      if(detailError) throw detailError;
+    }
 
     const {data:updatedProduction,error:productionError} = await sb
       .from(PRODUCTION_TABLE)
@@ -972,7 +1010,7 @@ function exportCSV(){
   const headers = [
     "작업일","고객사","품명","품번","설비명",
     "투입수량(DB)","양품수량(DB)","불량수량(DB)",
-    "외관","오염","찍힘","탈락","경도","변형",
+    "외관","융착","찍힘","탈락","경도","변형",
     "불량합계","불량률(PPM)"
   ];
 
@@ -1048,7 +1086,7 @@ function buildPdfTableHeader(){
         <th class="pdf-db">양품</th>
         <th class="pdf-db">불량</th>
         <th class="pdf-type">외관</th>
-        <th class="pdf-type">오염</th>
+        <th class="pdf-type">융착</th>
         <th class="pdf-type">찍힘</th>
         <th class="pdf-type">탈락</th>
         <th class="pdf-type">경도</th>
