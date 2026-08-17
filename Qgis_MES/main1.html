@@ -723,7 +723,7 @@
           <a class="panel chart-link" data-dashboard-block="inout" href="Daily_Work_Check.html" target="_blank" rel="noopener noreferrer" aria-label="생산실적 상세현황 열기" title="생산실적 상세현황 열기"><h3><span id="inout-panel-title">생산실적 현황</span> <span class="tag">ea</span></h3><svg class="linechart" viewBox="0 0 240 156" preserveAspectRatio="none" aria-label="일별 생산실적 수량 꺾은선 그래프"><g id="line-inout"></g></svg><div class="chart-axis" id="axis-inout"></div></a>
           <a class="panel chart-link" data-dashboard-block="cumprod" href="./Yearly_Production_Record.html" target="_blank" rel="noopener noreferrer" aria-label="누적 생산실적 상세 화면 열기" title="누적 생산실적 상세 화면 열기"><h3>누적 생산실적</h3><div class="bars" id="bar-cumprod"></div><div class="chart-axis" id="axis-cumprod"></div><div class="chart-foot"><span>합계</span><span class="big" id="foot-cumprod">-</span></div></a>
           <a class="panel chart-link" data-dashboard-block="cumrate" href="Operating_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월별 설비가동률 그래프 상세 화면 열기" title="월별 설비가동률 그래프 상세 화면 열기"><h3>월별 설비가동률</h3><div class="bars" id="bar-cumrate"></div><div class="chart-axis" id="axis-cumrate"></div><div class="chart-foot"><span>평균</span><span class="big" id="foot-cumrate" style="color:var(--bad)">-</span></div></a>
-          <a class="panel chart-link" data-dashboard-block="defect" href="Defect_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월누적 불량률 그래프 상세 화면 열기" title="월누적 불량률 그래프 상세 화면 열기"><h3>월누적 불량률 <span class="tag">%</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></a>
+          <a class="panel chart-link" data-dashboard-block="defect" href="Defect_Rate_Graph.html" target="_blank" rel="noopener noreferrer" aria-label="월누적 불량률 그래프 상세 화면 열기" title="월누적 불량률 그래프 상세 화면 열기"><h3>월누적 불량률 <span class="tag">PPM</span></h3><svg class="linechart" viewBox="0 0 240 140" preserveAspectRatio="none"><g id="line-defect"></g></svg><div class="chart-axis" id="axis-cumdefect"></div><div class="chart-foot"><span>현재</span><span class="big" id="foot-cumdefect" style="color:var(--bad)">-</span></div></a>
         </div>
         <section>
           <h3 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:14px;">주요 모듈 구성(개발예정)</h3>
@@ -1139,7 +1139,7 @@ function initializeEmptyDashboard() {
   }
 
   if (cumulativeDefect) {
-    cumulativeDefect.textContent = "0%";
+    cumulativeDefect.textContent = "0 PPM";
   }
 
   if (rateTitle) {
@@ -2025,7 +2025,7 @@ function dashboardRenderAll(rows, detailRows) {
     }
   );
 
-  const cumulativeDefectRate = [];
+  const cumulativeDefectPpm = [];
   let inputRunning = 0;
   let defectRunning = 0;
 
@@ -2034,29 +2034,44 @@ function dashboardRenderAll(rows, detailRows) {
     defectRunning += selectedMonthDailyDefect[day - 1] || 0;
 
     if (day > selectedDay) {
-      cumulativeDefectRate.push(null);
+      cumulativeDefectPpm.push(null);
     } else {
-      cumulativeDefectRate.push(inputRunning > 0 ? defectRunning / inputRunning * 100 : 0);
+      cumulativeDefectPpm.push(
+        inputRunning > 0
+          ? Math.round(defectRunning / inputRunning * 1000000)
+          : 0
+      );
     }
   }
 
-  const currentDefectRate = inputRunning > 0 ? defectRunning / inputRunning * 100 : 0;
-  document.getElementById("foot-cumdefect").textContent = Math.round(currentDefectRate) + "%";
+  const currentDefectPpm =
+    inputRunning > 0
+      ? Math.round(defectRunning / inputRunning * 1000000)
+      : 0;
 
-  const visibleCumulativeDefectRate = cumulativeDefectRate.slice(0, selectedDay);
+  document.getElementById("foot-cumdefect").textContent =
+    currentDefectPpm.toLocaleString("ko-KR") + " PPM";
+
+  const visibleCumulativeDefectPpm = cumulativeDefectPpm.slice(0, selectedDay);
   const visibleDefectLabels = dailyLabels.slice(0, selectedDay);
-  const validDefectRates = visibleCumulativeDefectRate.filter(function (value) {
+
+  const validDefectPpm = visibleCumulativeDefectPpm.filter(function (value) {
     return value != null && Number.isFinite(Number(value));
   });
-  const defectMaximum = validDefectRates.length
-    ? Math.max.apply(null, validDefectRates)
+
+  const defectMaximum = validDefectPpm.length
+    ? Math.max.apply(null, validDefectPpm)
     : 0;
-  const defectSuggestedMax = Math.max(1, Math.ceil(defectMaximum));
+
+  const defectSuggestedMax = Math.max(100, Math.ceil(defectMaximum / 100) * 100);
   const defectTicks = [];
-  const defectTickStep = defectSuggestedMax <= 5 ? 1 : Math.ceil(defectSuggestedMax / 5);
+  const rawTickStep = defectSuggestedMax / 5;
+  const defectTickStep = Math.max(100, Math.ceil(rawTickStep / 100) * 100);
+
   for (let tick = 0; tick <= defectSuggestedMax; tick += defectTickStep) {
     defectTicks.push(tick);
   }
+
   if (defectTicks[defectTicks.length - 1] !== defectSuggestedMax) {
     defectTicks.push(defectSuggestedMax);
   }
@@ -2064,16 +2079,24 @@ function dashboardRenderAll(rows, detailRows) {
   dashboardRenderLine(
     "line-defect",
     "axis-cumdefect",
-    visibleCumulativeDefectRate,
+    visibleCumulativeDefectPpm,
     visibleDefectLabels,
     {
       yMin:0,
       suggestedMax:defectSuggestedMax,
       yTicks:defectTicks,
       color:"var(--bad)",
-      showPointLabels:false,
-      formatter:function (value) { return Math.round(value) + "%"; },
-      yAxisFormatter:function (value) { return Math.round(value) + "%"; }
+
+      /* 0 PPM은 레이블을 표시하지 않고, 1 PPM 이상만 표시 */
+      showPointLabels:true,
+      pointLabelMin:1,
+
+      formatter:function (value) {
+        return Math.round(value).toLocaleString("ko-KR") + " PPM";
+      },
+      yAxisFormatter:function (value) {
+        return Math.round(value).toLocaleString("ko-KR");
+      }
     }
   );
 }
