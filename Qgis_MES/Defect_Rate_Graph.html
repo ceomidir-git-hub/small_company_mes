@@ -43,7 +43,16 @@ thead th { background: #1a3a5c; color: #fff; font-weight: 600; }
 .td-holiday { background: #fff5f5 !important; }
 .td-none    { background: #eeeeee !important; color: #bbb !important; }
 td.col-label { background: #f5f7fa; font-weight: 600; color: #1a3a5c; text-align: left; padding-left: 5px; }
-td.col-group { background: #e8ecf5; font-weight: 700; color: #1a3a5c; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); font-size: 10px; }
+td.col-group {
+  background: #e8ecf5;
+  font-weight: 700;
+  color: #1a3a5c;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  transform: none;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
 td.col-sub   { background: #f5f7fa; color: #1a3a5c; text-align: left; padding-left: 12px; }
 td.total-col { background: #fff8e1 !important; font-weight: 700; }
 tr.row-ppm td { color: #cc0000; font-weight: 700; }
@@ -135,7 +144,7 @@ const LOGIN_PAGE_URL = "./index.html";
 const YEAR = 2026;
 const MAX_DAYS = 31;
 const PAGE_SIZE = 1000;
-const DEFECT_TYPES = ["외관", "오염", "찍힘", "탈락", "경도", "변형"];
+const DEFECT_TYPES = ["외관", "융착", "찍힘", "탈락", "경도", "변형"]; // cont 내부 변수는 융착 수량을 의미
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
@@ -389,7 +398,7 @@ function exportCSV() {
     { key: "bad", label: "불량수량" },
     { key: "ppm", label: "불량률(PPM)" },
     { key: "out", label: "외관" },
-    { key: "cont", label: "오염" },
+    { key: "cont", label: "융착" },
     { key: "scratch", label: "찍힘" },
     { key: "drop", label: "탈락" },
     { key: "hard", label: "경도" },
@@ -543,7 +552,7 @@ function makeDefectPrintTable() {
     { key: "bad", label: "불량수량", group: "" },
     { key: "ppm", label: "불량률(PPM)", group: "", emphasis: true },
     { key: "out", label: "외관", group: "불량" },
-    { key: "cont", label: "오염", group: "불량" },
+    { key: "cont", label: "융착", group: "불량" },
     { key: "scratch", label: "찍힘", group: "불량" },
     { key: "drop", label: "탈락", group: "불량" },
     { key: "hard", label: "경도", group: "불량" },
@@ -746,7 +755,7 @@ function processData(productionRows, detailRows, month, equipment) {
     if (!detailMap[productionId]) {
       detailMap[productionId] = {
         "외관": 0,
-        "오염": 0,
+        "융착": 0,
         "찍힘": 0,
         "탈락": 0,
         "경도": 0,
@@ -772,7 +781,7 @@ function processData(productionRows, detailRows, month, equipment) {
     target.good += toNumber(row.good_quantity);
     target.bad += toNumber(row.defect_quantity);
     target.out += toNumber(detail["외관"]);
-    target.cont += toNumber(detail["오염"]);
+    target.cont += toNumber(detail["융착"]);
     target.scratch += toNumber(detail["찍힘"]);
     target.drop += toNumber(detail["탈락"]);
     target.hard += toNumber(detail["경도"]);
@@ -961,7 +970,7 @@ function buildTable(dayData, month, actualDays) {
     { key: 'bad',     label: '불량수량',    sub: false, ppm: false },
     { key: 'ppm',     label: '불량률(PPM)', sub: false, ppm: true  },
     { key: 'out',     label: '외관',        sub: true,  ppm: false },
-    { key: 'cont',    label: '오염',        sub: true,  ppm: false },
+    { key: 'cont',    label: '융착',        sub: true,  ppm: false },
     { key: 'scratch', label: '찍힘',        sub: true,  ppm: false },
     { key: 'drop',    label: '탈락',        sub: true,  ppm: false },
     { key: 'hard',    label: '경도',        sub: true,  ppm: false },
@@ -986,7 +995,7 @@ function buildTable(dayData, month, actualDays) {
 
     // 구분열 — 일반 행은 colspan=2로 병합(라벨 잘림 방지), 불량 소항목 행만 분리 유지
     if (isFirstSub) {
-      html += '<td class="col-group" rowspan="' + SUB_COUNT + '">불&nbsp;량</td>';
+      html += '<td class="col-group" rowspan="' + SUB_COUNT + '">불량</td>';
       html += '<td class="col-sub">' + f.label + '</td>';
     } else if (f.sub) {
       html += '<td class="col-sub">' + f.label + '</td>';
