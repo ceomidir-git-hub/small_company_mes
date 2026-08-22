@@ -10,8 +10,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --navy:#1a3a5c;
-  --navy-light:#dce8f5;
+  --navy:#2f6fa3;
+  --navy-light:#e8f3fb;
   --blue:#1565c0;
   --green:#1a6e2e;
   --orange:#e65100;
@@ -29,7 +29,7 @@
 }
 body{
   font-family:'Malgun Gothic','맑은 고딕',sans-serif;
-  font-size:12px;
+  font-size:13px;
   background:var(--page);
   min-height:100vh;
   color:#263238;
@@ -48,7 +48,7 @@ body{
   top:0;
   z-index:100;
 }
-.topbar-title{font-size:15px;font-weight:700;letter-spacing:.3px;}
+.topbar-title{font-size:16px;font-weight:700;letter-spacing:.3px;}
 .topbar-right{display:flex;gap:6px;align-items:center;}
 
 /* ── 툴바 ── */
@@ -62,7 +62,7 @@ body{
   flex-wrap:wrap;
 }
 .toolbar label{
-  font-size:11px;
+  font-size:12px;
   color:#444;
   white-space:nowrap;
   font-weight:600;
@@ -74,7 +74,7 @@ body{
   border:1px solid #b0b8c1;
   border-radius:3px;
   padding:0 7px;
-  font-size:11px;
+  font-size:12px;
   color:#222;
   background:#fff;
 }
@@ -96,7 +96,7 @@ body{
   padding:0 13px;
   border-radius:3px;
   border:none;
-  font-size:11px;
+  font-size:12px;
   cursor:pointer;
   font-weight:700;
   transition:opacity .15s;
@@ -113,7 +113,7 @@ body{
   color:#fff;
   padding:2px 9px;
   height:22px;
-  font-size:10px;
+  font-size:11px;
   border-radius:2px;
   border:none;
   cursor:pointer;
@@ -125,7 +125,7 @@ body{
   color:#fff;
   padding:2px 9px;
   height:22px;
-  font-size:10px;
+  font-size:11px;
   border-radius:2px;
   border:none;
   cursor:default;
@@ -136,7 +136,7 @@ body{
 .notice{
   border-left:3px solid var(--blue);
   padding:7px 12px;
-  font-size:11px;
+  font-size:12px;
   margin:8px 14px 0;
   background:var(--info-bg);
   color:var(--info-text);
@@ -158,7 +158,7 @@ body{
 .card-header{
   background:var(--navy);
   color:#fff;
-  font-size:12px;
+  font-size:13px;
   font-weight:700;
   padding:6px 12px;
   border-radius:3px 3px 0 0;
@@ -169,7 +169,7 @@ body{
 .tag{
   border-radius:2px;
   padding:2px 8px;
-  font-size:10px;
+  font-size:11px;
   font-weight:700;
 }
 .tag-blue{background:#d0e4f7;color:var(--navy);}
@@ -192,15 +192,15 @@ body{
 table{
   border-collapse:collapse;
   width:100%;
-  min-width:1540px;
-  font-size:10px;
+  min-width:1640px;
+  font-size:11px;
   table-layout:fixed;
 }
 thead{position:sticky;top:0;z-index:3;}
 thead tr:first-child th{
   background:var(--navy);
   color:#fff;
-  font-size:10px;
+  font-size:11px;
   font-weight:700;
   padding:5px 3px;
   border:1px solid #2a5070;
@@ -210,7 +210,7 @@ thead tr:first-child th{
 thead tr:last-child th{
   background:#e8ecf1;
   color:var(--navy);
-  font-size:10px;
+  font-size:11px;
   font-weight:700;
   padding:4px 2px;
   border:1px solid var(--border);
@@ -277,7 +277,7 @@ tr.editing td{
   flex-wrap:wrap;
 }
 .edit-section-label{
-  font-size:10px;
+  font-size:11px;
   color:#666;
   font-weight:700;
   margin:8px 0 5px;
@@ -292,7 +292,7 @@ tr.editing td{
 }
 .edit-grid-4{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(5,1fr);
   gap:6px 10px;
 }
 .edit-field{
@@ -301,7 +301,7 @@ tr.editing td{
   gap:2px;
 }
 .edit-field label{
-  font-size:10px;
+  font-size:11px;
   color:#555;
   font-weight:700;
 }
@@ -310,7 +310,7 @@ tr.editing td{
   border:1px solid #90a4ae;
   border-radius:3px;
   padding:0 7px;
-  font-size:11px;
+  font-size:12px;
   background:#fff;
 }
 .edit-field input:focus{
@@ -330,7 +330,7 @@ tr.editing td{
   align-items:center;
 }
 .edit-info{
-  font-size:10px;
+  font-size:11px;
   color:#666;
   margin-right:auto;
   font-weight:600;
@@ -340,7 +340,7 @@ tr.editing td{
 .statusbar{
   background:var(--navy);
   color:#d0e4f7;
-  font-size:10px;
+  font-size:11px;
   padding:6px 16px;
   display:flex;
   gap:16px;
@@ -400,7 +400,7 @@ tr.editing td{
 <div class="toolbar">
   <label>작업일</label>
   <input type="date" id="dateFrom" value="" aria-label="작업 시작일">
-  <span style="color:#888;font-size:11px;">~</span>
+  <span style="color:#888;font-size:12px;">~</span>
   <input type="date" id="dateTo" value="" aria-label="작업 종료일">
 
   <div class="sep"></div>
@@ -456,7 +456,7 @@ tr.editing td{
           <th rowspan="2" class="col-qty">투입<br>수량</th>
           <th rowspan="2" class="col-time">가동<br>시간</th>
           <th colspan="11">고주파 조건</th>
-          <th colspan="4">템퍼링 / 교정</th>
+          <th colspan="5">템퍼링 / 교정</th>
         </tr>
         <tr>
           <th class="cond cond-wide">전압(V)</th>
@@ -474,11 +474,12 @@ tr.editing td{
           <th class="cond cond-narrow">템퍼링시간(hr)</th>
           <th class="cond cond-narrow">템퍼링경도(HRC)</th>
           <th class="cond cond-narrow">교정값(mm)</th>
+          <th class="cond cond-narrow">교정시간(hr)</th>
         </tr>
       </thead>
       <tbody id="tableBody">
         <tr>
-          <td colspan="24" style="text-align:center;color:#999;padding:30px;">
+          <td colspan="25" style="text-align:center;color:#999;padding:30px;">
             조회 버튼을 클릭하여 데이터를 불러오세요.
           </td>
         </tr>
@@ -516,6 +517,7 @@ tr.editing td{
     <div class="edit-field"><label>템퍼링시간(hr)</label><input id="e_ttime" type="number" step="0.01" class="empty-input"></div>
     <div class="edit-field"><label>템퍼링경도(HRC)</label><input id="e_thrc" type="text" class="empty-input"></div>
     <div class="edit-field"><label>교정값(mm)</label><input id="e_calib" type="number" step="0.001" class="empty-input"></div>
+    <div class="edit-field"><label>교정시간(hr)</label><input id="e_ctime" type="number" step="0.01" min="0" class="empty-input"></div>
   </div>
 
   <div class="edit-actions">
@@ -579,7 +581,8 @@ const CONDITION_FIELDS = [
   { id:"e_ttemp",  key:"tempering_temperature_c",         label:"템퍼링온도(℃)",        type:"number", temper:true },
   { id:"e_ttime",  key:"tempering_time_hr",              label:"템퍼링시간(hr)",      type:"number", temper:true },
   { id:"e_thrc",   key:"tempering_hardness_hrc",          label:"템퍼링경도(HRC)",      type:"text",   temper:true },
-  { id:"e_calib",  key:"straightening_value_mm",          label:"교정값(mm)",           type:"number", temper:true }
+  { id:"e_calib",  key:"straightening_value_mm",          label:"교정값(mm)",           type:"number", temper:true },
+  { id:"e_ctime",   key:"correction_time_hr",             label:"교정시간(hr)",         type:"number", temper:true }
 ];
 
 const SELECT_COLUMNS = [
@@ -606,7 +609,8 @@ const SELECT_COLUMNS = [
   "tempering_temperature_c",
   "tempering_time_hr",
   "tempering_hardness_hrc",
-  "straightening_value_mm"
+  "straightening_value_mm",
+  "correction_time_hr"
 ].join(",");
 
 /* ══════════════════════════════════════════════
@@ -891,7 +895,7 @@ function renderTable(){
 
   if(filteredRows.length === 0){
     tbody.innerHTML =
-      '<tr><td colspan="24" style="text-align:center;color:#999;padding:24px;">' +
+      '<tr><td colspan="25" style="text-align:center;color:#999;padding:24px;">' +
       '조회된 데이터가 없습니다.' +
       '</td></tr>';
 
