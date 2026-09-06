@@ -209,10 +209,11 @@
     <div class="pagination" id="pagination" aria-label="조회 결과 페이지"></div>
     <div class="note-box">
       <b>안내사항</b><br>
-      · 최초작업일은 <b>조회기간 내</b> 동일 고객사·품명·품번의 생산실적 중 가장 빠른 작업일입니다.<br>
+      · 최초작업일은 <b>회사 전체 생산이력</b>에서 동일 고객사·품명·품번의 가장 빠른 작업일이며, 조회기간은 이 최초작업일을 기준으로 적용됩니다.<br>
+      · 관리계획서 · 제조공정도 · 검사기준서 · 작업표준서는 <b>1 ITEM당 각각 1개</b>의 관리문서로 관리합니다.<br>
       · <b>미작성</b>을 클릭하면 해당 문서의 작성 양식이 열립니다.<br>
       · <b>작성완료</b>를 클릭하면 해당 고객사·품명·품번의 저장된 문서를 조회하여 엽니다.<br>
-      · 열처리성적서는 작업일별 문서이므로 작성완료 클릭 시 해당 작업일의 성적서를 조회합니다.
+      · 열처리성적서는 작업일마다 작성하지만, 본 화면에서는 <b>최초작업일의 최초 열처리성적서</b> 작성 여부를 표시하고 해당 최초작업일 성적서를 조회합니다.
     </div>
   </div>
 </div>
@@ -658,29 +659,48 @@ async function searchData() {
       "inspection_report_special_notes","inspected_by","approved_by","is_active"
     ].join(",");
 
+    /*
+      중요 기준
+      1) 최초작업일은 조회기간 안에서 다시 계산하지 않는다.
+      2) 회사 전체 생산이력에서 고객사 + 품명 + 품번별 실제 MIN(work_date)를 먼저 확정한다.
+      3) 그 다음 확정된 최초작업일에 조회기간(from ~ to)을 적용한다.
+      4) 관리계획서/제조공정도/검사기준서/작업표준서는 ITEM당 1개 상태를 표시한다.
+      5) 열처리성적서는 매 작업일 작성 대상이지만, 본 화면에서는 최초작업일 성적서의 작성 여부만 표시한다.
+    */
     const productionRows = await fetchAllRows(PRODUCTION_TABLE, selectColumns, (query) => {
       let filtered = query.eq("is_active", true);
-      if (from) filtered = filtered.gte("work_date", from);
-      if (to) filtered = filtered.lte("work_date", to);
+
+      /* 고객사·품명·품번은 ITEM 식별 조건이므로 전체 이력 조회 전에 적용해도 최초작업일 계산이 변하지 않는다. */
       if (customer) filtered = filtered.eq("customer_name", customer);
       if (product) filtered = filtered.eq("item_name", product);
       if (partNo) filtered = filtered.eq("item_number", partNo);
-      if (material) filtered = filtered.eq("material_name", material);
-      return filtered.order("work_date", { ascending:true }).order("created_at", { ascending:true }).order("production_system_id", { ascending:true });
+
+      /*
+        날짜와 재질은 여기서 필터하지 않는다.
+        날짜를 먼저 자르면 6/1 최초작업 ITEM이 9/3에 다시 신규 ITEM처럼 계산되는 오류가 발생한다.
+        재질 역시 최초작업일 행의 재질을 확정한 뒤 화면 조건으로 적용한다.
+      */
+      return filtered
+        .order("work_date", { ascending:true })
+        .order("created_at", { ascending:true })
+        .order("production_system_id", { ascending:true });
     });
 
     const grouped = new Map();
+
     productionRows.forEach(row => {
       const customerName = normalize(row.customer_name);
       const itemName = normalize(row.item_name);
       const itemNumber = normalize(row.item_number);
-      if (!customerName || !itemName || !itemNumber) return;
-      const key = companyItemKey(customerName, itemName, itemNumber);
       const workDate = normalize(row.work_date);
+      if (!customerName || !itemName || !itemNumber || !workDate) return;
+
+      const key = companyItemKey(customerName, itemName, itemNumber);
       const materialName = normalize(row.material_name);
-      const reportExists = hasApprovedHeatReport(row);
+      const reportCompleted = hasApprovedHeatReport(row);
+      const itemInfo = itemIndexMap.get(key) || {};
+
       if (!grouped.has(key)) {
-        const itemInfo = itemIndexMap.get(key) || {};
         grouped.set(key, {
           customer_name: customerName,
           item_name: itemName,
@@ -688,21 +708,37 @@ async function searchData() {
           material_name: materialName,
           first_work_date: workDate,
           item_system_id: normalize(itemInfo.item_system_id),
-          has_inspection_report: reportExists
+          has_inspection_report: reportCompleted
         });
         return;
       }
+
       const current = grouped.get(key);
-      if (workDate && (!current.first_work_date || workDate < current.first_work_date)) {
+
+      /* 더 과거 작업일이 발견되면 그 행을 진짜 최초작업으로 교체한다. */
+      if (workDate < current.first_work_date) {
         current.first_work_date = workDate;
-        current.has_inspection_report = reportExists;
-        if (materialName) current.material_name = materialName;
-      } else if (!current.material_name && materialName) {
         current.material_name = materialName;
+        current.has_inspection_report = reportCompleted;
+        return;
+      }
+
+      /* 같은 최초작업일에 복수 행이 있을 경우 최초일 성적서가 하나라도 승인되면 작성완료로 본다. */
+      if (workDate === current.first_work_date) {
+        if (!current.material_name && materialName) current.material_name = materialName;
+        if (reportCompleted) current.has_inspection_report = true;
       }
     });
 
-    currentRows = Array.from(grouped.values()).map(row => {
+    /* 전체 이력으로 최초작업일을 확정한 뒤 조회기간과 재질 조건을 적용한다. */
+    const firstWorkRows = Array.from(grouped.values()).filter(row => {
+      if (from && row.first_work_date < from) return false;
+      if (to && row.first_work_date > to) return false;
+      if (material && normalize(row.material_name) !== normalize(material)) return false;
+      return true;
+    });
+
+    currentRows = firstWorkRows.map(row => {
       const itemSystemId = normalize(row.item_system_id);
       const itemInfo = itemIndexMap.get(companyItemKey(row.customer_name, row.item_name, row.item_number)) || {};
       const controlPlanNumber = normalize(itemInfo.control_plan_number);
@@ -714,6 +750,7 @@ async function searchData() {
       const hasInspectionStandard = itemSystemId ? docIndex.inspectionStandard.completed.has(itemSystemId) : false;
       const existsWorkStandard = itemSystemId ? docIndex.workStandard.exists.has(itemSystemId) : false;
       const hasWorkStandard = itemSystemId ? docIndex.workStandard.completed.has(itemSystemId) : false;
+
       return buildStatusRow({
         ...row,
         control_plan_number: controlPlanNumber,
