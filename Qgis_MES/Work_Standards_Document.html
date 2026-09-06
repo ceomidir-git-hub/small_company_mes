@@ -1596,7 +1596,9 @@ body.pdf-capture-mode .form-identity-select{
   }
 
   function rebuildToolbarSearchOptions() {
-    const source = savedReferenceItems();
+    // 상단 연동 조회는 작성완료 문서만이 아니라 아이템관리에 등록된 전체 활성 품목을 표시한다.
+    // 미작성 품목도 여기서 선택할 수 있어야 신규 작업표준서 작성으로 이어질 수 있다.
+    const source = referenceItems;
     const selected = toolbarSearchFilters();
 
     const customerSource = source.filter(row => matchesToolbarSearch(row, selected, "customerId"));
@@ -1620,10 +1622,12 @@ body.pdf-capture-mode .form-identity-select{
 
   function initializeToolbarCascade() {
     toolbarSelectedItemId = "";
-    fillSelect("toolbarCustomerSelect", "고객사명 선택", customerOptions(savedReferenceItems()));
-    fillSelect("toolbarItemNameSelect", "품명 선택", uniqueSorted(savedReferenceItems().map(row => row.item_name)));
-    fillSelect("toolbarItemNumberSelect", "품번 선택", uniqueSorted(savedReferenceItems().map(row => row.item_number)));
-    fillSelect("toolbarManagementSelect", "관리번호 선택", toolbarManagementSearchOptions(savedReferenceItems()));
+    // 전체 활성 품목을 기준으로 고객사 → 품명 → 품번 → 관리번호를 구성한다.
+    // 작업표준서 미작성 품목도 반드시 표시한다.
+    fillSelect("toolbarCustomerSelect", "고객사명 선택", customerOptions(referenceItems));
+    fillSelect("toolbarItemNameSelect", "품명 선택", uniqueSorted(referenceItems.map(row => row.item_name)));
+    fillSelect("toolbarItemNumberSelect", "품번 선택", uniqueSorted(referenceItems.map(row => row.item_number)));
+    fillSelect("toolbarManagementSelect", "관리번호 선택", toolbarManagementSearchOptions(referenceItems));
     ["toolbarCustomerSelect","toolbarItemNameSelect","toolbarItemNumberSelect","toolbarManagementSelect"]
       .forEach(id => setSelectEnabled(id, true));
   }
@@ -1670,7 +1674,7 @@ body.pdf-capture-mode .form-identity-select{
       });
       const choose = () => {
         closeSearchResultModal();
-        void loadDocumentByItem(row.item_system_id);
+        openSelectedItemByDocumentStatus(row);
       };
       tr.addEventListener("click", choose);
       tr.addEventListener("keydown", event => {
@@ -1687,6 +1691,41 @@ body.pdf-capture-mode .form-identity-select{
     window.setTimeout(() => $("searchResultTitle")?.focus?.(), 0);
   }
 
+  function prepareNewDocumentForItem(row, noticePrefix = "") {
+    if (!row?.item_system_id) {
+      setNotice("선택한 품목 정보를 찾을 수 없습니다.", "error");
+      return false;
+    }
+    if (!hasWritePermission()) {
+      setNotice("선택한 품목의 작업표준서는 미작성 상태이며 현재 계정에는 등록 권한이 없습니다.", "error");
+      return false;
+    }
+
+    applyDefaultSnapshot();
+    syncFormIdentityFromItem(row);
+    selectedWorkStandardId = "";
+    setValue("work_standard_system_id", "");
+    loadedSnapshot = captureFormState();
+    setMode("new");
+    setNotice(
+      `${noticePrefix}${row.customer_name} / ${row.item_name} / ${row.item_number} · 작업표준서 미작성 품목입니다. 신규등록 상태로 불러왔습니다.`,
+      "success"
+    );
+    return true;
+  }
+
+  function openSelectedItemByDocumentStatus(row) {
+    if (!row?.item_system_id) {
+      setNotice("선택한 품목 정보를 찾을 수 없습니다.", "error");
+      return;
+    }
+    if (documentByItem.has(row.item_system_id)) {
+      void loadDocumentByItem(row.item_system_id);
+      return;
+    }
+    prepareNewDocumentForItem(row);
+  }
+
   function querySelectedWorkStandard() {
     const filters = toolbarSearchFilters();
     const selectedCount = [filters.customerId, filters.itemName, filters.itemNumber, filters.itemId]
@@ -1695,7 +1734,8 @@ body.pdf-capture-mode .form-identity-select{
       return setNotice("고객사명, 품명, 품번, 관리번호 중 하나 이상을 선택해 주세요.", "error");
     }
 
-    const matches = savedReferenceItems()
+    // 작성완료/미작성 여부와 관계없이 전체 활성 품목에서 조회한다.
+    const matches = referenceItems
       .filter(row => matchesToolbarSearch(row, filters))
       .sort((a,b) => {
         const byCustomer = compareText(a.customer_name,b.customer_name);
@@ -1708,10 +1748,10 @@ body.pdf-capture-mode .form-identity-select{
       });
 
     if (matches.length === 0) {
-      return setNotice("선택한 단독 또는 연합 조건에 해당하는 작업표준서가 없습니다.", "error");
+      return setNotice("선택한 조건에 해당하는 품목이 없습니다.", "error");
     }
     if (matches.length === 1) {
-      void loadDocumentByItem(matches[0].item_system_id);
+      openSelectedItemByDocumentStatus(matches[0]);
       return;
     }
     openSearchResultModal(matches);
@@ -2288,19 +2328,11 @@ body.pdf-capture-mode .form-identity-select{
     }
 
     /* 실제 문서가 없는 미작성 품목은 신규등록 모드로 자동 연결한다. */
-    applyDefaultSnapshot();
-    syncFormIdentityFromItem(linkedItem);
-    selectedWorkStandardId = "";
-    setValue("work_standard_system_id", "");
-    loadedSnapshot = captureFormState();
-
     if (hasWritePermission()) {
-      setMode("new");
-      setNotice(
-        `관리문서현황 연계 · ${linkedItem.customer_name} / ${linkedItem.item_name} / ${linkedItem.item_number} · 미작성 작업표준서를 신규등록 상태로 불러왔습니다.`,
-        "success"
-      );
+      prepareNewDocumentForItem(linkedItem, "관리문서현황 연계 · ");
     } else {
+      applyDefaultSnapshot();
+      syncFormIdentityFromItem(linkedItem);
       setMode("view");
       setNotice(
         `관리문서현황 연계 · ${linkedItem.customer_name} / ${linkedItem.item_name} / ${linkedItem.item_number} · 작업표준서가 미작성 상태이며 현재 계정에는 등록 권한이 없습니다.`,
