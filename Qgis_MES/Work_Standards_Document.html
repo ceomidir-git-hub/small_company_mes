@@ -2198,6 +2198,118 @@ body.pdf-capture-mode .form-identity-select{
 
 
 
+
+  /* =========================================================
+     관리문서현황 → 작업표준서 자동 연계
+     - 작성완료/저장 문서: 해당 품목 작업표준서를 자동 조회
+     - 미작성/문서 없음: 해당 품목을 자동 선택한 신규등록 상태로 시작
+     - URL 파라미터 연계와 기존 window.opener 연계를 모두 지원
+     ========================================================= */
+  function managementLaunchContextFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const source = normalize(params.get("from") || params.get("source"));
+    const itemSystemId = normalize(params.get("item_system_id"));
+    const customerName = normalize(params.get("customer_name"));
+    const itemName = normalize(params.get("item_name"));
+    const itemNumber = normalize(params.get("item_number"));
+    const mode = normalize(params.get("mode")).toLowerCase();
+
+    const isManagementSource = ["processmanagement", "process_management", "process-management", "management"]
+      .includes(source.toLowerCase());
+    if (!isManagementSource && !itemSystemId && !(customerName && itemName && itemNumber)) return null;
+
+    return {
+      itemSystemId,
+      customerName,
+      itemName,
+      itemNumber,
+      existsWorkStandard: mode === "view" || mode === "edit" || mode === "existing"
+    };
+  }
+
+  function managementLaunchContextFromOpener() {
+    try {
+      if (!window.opener || window.opener.closed) return null;
+      const openerDocument = window.opener.document;
+      const focused = openerDocument.activeElement;
+      const focusedButton = focused?.closest?.('.doc-status-button[data-doc-type="workStandard"]') || null;
+      const button = focusedButton || openerDocument.querySelector('.doc-status-button[data-doc-type="workStandard"]:focus');
+      if (!button) return null;
+
+      const key = normalize(button.dataset.rowKey);
+      if (!key || typeof window.opener.findCurrentRowByKey !== "function") return null;
+      const sourceRow = window.opener.findCurrentRowByKey(key);
+      if (!sourceRow) return null;
+
+      return {
+        itemSystemId: normalize(sourceRow.item_system_id),
+        customerName: normalize(sourceRow.customer_name),
+        itemName: normalize(sourceRow.item_name),
+        itemNumber: normalize(sourceRow.item_number),
+        existsWorkStandard: sourceRow.exists_work_standard === true
+      };
+    } catch (error) {
+      console.warn("관리문서현황 연계 정보 확인 실패:", error);
+      return null;
+    }
+  }
+
+  function managementLaunchContext() {
+    return managementLaunchContextFromUrl() || managementLaunchContextFromOpener();
+  }
+
+  function findReferenceItemForLaunch(context) {
+    if (!context) return null;
+    if (context.itemSystemId) {
+      const byId = itemMap.get(context.itemSystemId) || referenceItems.find(row => row.item_system_id === context.itemSystemId);
+      if (byId) return byId;
+    }
+    return referenceItems.find(row =>
+      (!context.customerName || normalize(row.customer_name) === context.customerName) &&
+      (!context.itemName || normalize(row.item_name) === context.itemName) &&
+      (!context.itemNumber || normalize(row.item_number) === context.itemNumber)
+    ) || null;
+  }
+
+  async function openFromManagementStatusIfNeeded() {
+    const context = managementLaunchContext();
+    if (!context) return false;
+
+    const linkedItem = findReferenceItemForLaunch(context);
+    if (!linkedItem) {
+      setNotice("관리문서현황에서 선택한 고객사·품명·품번을 아이템관리에서 찾을 수 없습니다.", "error");
+      return true;
+    }
+
+    const alreadySaved = documentByItem.has(linkedItem.item_system_id);
+    if (alreadySaved || context.existsWorkStandard) {
+      await loadDocumentByItem(linkedItem.item_system_id);
+      return true;
+    }
+
+    /* 실제 문서가 없는 미작성 품목은 신규등록 모드로 자동 연결한다. */
+    applyDefaultSnapshot();
+    syncFormIdentityFromItem(linkedItem);
+    selectedWorkStandardId = "";
+    setValue("work_standard_system_id", "");
+    loadedSnapshot = captureFormState();
+
+    if (hasWritePermission()) {
+      setMode("new");
+      setNotice(
+        `관리문서현황 연계 · ${linkedItem.customer_name} / ${linkedItem.item_name} / ${linkedItem.item_number} · 미작성 작업표준서를 신규등록 상태로 불러왔습니다.`,
+        "success"
+      );
+    } else {
+      setMode("view");
+      setNotice(
+        `관리문서현황 연계 · ${linkedItem.customer_name} / ${linkedItem.item_name} / ${linkedItem.item_number} · 작업표준서가 미작성 상태이며 현재 계정에는 등록 권한이 없습니다.`,
+        "error"
+      );
+    }
+    return true;
+  }
+
   function safeFilePart(text) {
     return normalize(text).replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ");
   }
@@ -2386,8 +2498,11 @@ body.pdf-capture-mode .form-identity-select{
       await refreshDocumentIndex();
       applyDefaultSnapshot();
       document.documentElement.classList.remove("auth-pending");
+      const openedFromManagement = await openFromManagementStatusIfNeeded();
       window.requestAnimationFrame(updateAllValueHighlights);
-      setNotice(`작업표준서 DB 연결 완료 · 품목 ${referenceItems.length}건 · 설비 ${referenceEquipment.length}건 · 사원 ${referenceEmployees.length}건`,"success");
+      if (!openedFromManagement) {
+        setNotice(`작업표준서 DB 연결 완료 · 품목 ${referenceItems.length}건 · 설비 ${referenceEquipment.length}건 · 사원 ${referenceEmployees.length}건`,"success");
+      }
     } catch (error) {
       document.documentElement.classList.remove("auth-pending");
       setMode("view");
