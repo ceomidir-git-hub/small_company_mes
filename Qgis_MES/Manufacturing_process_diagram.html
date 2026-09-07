@@ -327,6 +327,12 @@ const DEFAULT_SOURCE_DOCUMENT = Object.freeze({
   itemName:"ROTOR SHAFT",
   itemNumber:"40950602F"
 });
+/* 신규등록 시 기준 제조공정도 위에 항상 적용할 고정 기본값 */
+const DEFAULT_VALUE_OVERRIDES = Object.freeze({
+  38:"저온템퍼링 장입.소입후 1Hr 이내처리, 인성향상, 잔류오스테나이트 안정화",
+  39:"온도 180±10℃유지, 60±5min. 로내편차 <±10℃후 경도 HRC58~62",
+  40:"온도기록계. 경도계, 설비게이지"
+});
 const ALLOWED_IMAGE_TYPES = Object.freeze(["image/jpeg","image/png","image/webp"]);
 
 if(!window.supabase){
@@ -1049,6 +1055,20 @@ async function loadDefaultValues(){
   if(typeMismatchCount !== 0){
     throw new Error("기준 제조공정도 field_type 매핑 오류 "+typeMismatchCount+"건");
   }
+
+  /*
+   * 기준 제조공정도에서 NO1~NO75를 읽은 뒤 지정된 기본값을 최종 적용한다.
+   * 신규등록, 관리문서현황 연계 신규등록, 신규등록 중 초기화 모두 동일하게 적용된다.
+   */
+  values.forEach(function(row){
+    const no = Number(row.field_no);
+    if(Object.prototype.hasOwnProperty.call(DEFAULT_VALUE_OVERRIDES,no)){
+      if(row.field_type !== "text"){
+        throw new Error("기본값 지정 NO"+no+"의 field_type이 text가 아닙니다.");
+      }
+      row.text_value = DEFAULT_VALUE_OVERRIDES[no];
+    }
+  });
 
   defaultSourceRecord = sourceRecord;
   defaultSourceValuesCache = cloneData(values);
