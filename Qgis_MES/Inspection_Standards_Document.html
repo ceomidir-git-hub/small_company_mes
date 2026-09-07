@@ -1619,6 +1619,104 @@ body.search-modal-open{overflow:hidden!important}
     );
   }
 
+
+  async function applyManagementRegistrationPrefill() {
+    const params = new URLSearchParams(window.location.search);
+    const source = normalize(params.get("source"));
+    const requestedMode = normalize(params.get("mode"));
+
+    if (source !== "Process_Management_Docu_List" || requestedMode !== "new") {
+      return false;
+    }
+
+    const firstWorkDate = normalize(params.get("first_work_date"));
+    const customerName = normalize(params.get("customer_name"));
+    const itemName = normalize(params.get("item_name"));
+    const itemNumber = normalize(params.get("item_number"));
+    const materialName = normalize(params.get("material_name"));
+
+    startNew();
+
+    /* 관리문서현황의 최초작업일은 검사기준서 제정일자와 동일한 기준으로 적용한다. */
+    if (firstWorkDate) {
+      formEstablishedDate.value = firstWorkDate;
+      syncAutomaticDates();
+    }
+
+    const customer = customers.find(row =>
+      row.is_active !== false &&
+      normalize(row.customer_name) === customerName
+    );
+
+    if (!customer) {
+      updateAllHintStates();
+      setNotice(
+        `관리문서현황에서 전달된 고객사 '${customerName}'를 고객사 관리에서 찾지 못했습니다. 고객사를 확인해 주세요.`,
+        "error"
+      );
+      return true;
+    }
+
+    const item = items.find(row =>
+      row.is_active !== false &&
+      row.customer_system_id === customer.customer_system_id &&
+      normalize(row.item_name) === itemName &&
+      normalize(row.item_number) === itemNumber
+    );
+
+    if (!item) {
+      formCustomerId.value = customer.customer_system_id;
+      updateFormItemNames(itemName);
+      updateAllHintStates();
+      setNotice(
+        `관리문서현황에서 전달된 품목 '${itemName} / ${itemNumber}'을 아이템 관리에서 찾지 못했습니다. 품목정보를 확인해 주세요.`,
+        "error"
+      );
+      return true;
+    }
+
+    formCustomerId.value = customer.customer_system_id;
+    updateFormItemNames(item.item_name);
+    updateFormItemNumbers(item.item_system_id);
+
+    const material = materials.find(row =>
+      row.is_active !== false &&
+      normalize(row.material_name) === materialName
+    );
+
+    if (material) {
+      formMaterialId.value = material.material_system_id;
+    }
+
+    /* 상단 조회조건에도 전달된 품목을 표시해 사용자가 현재 ITEM을 바로 확인할 수 있게 한다. */
+    searchCustomerId.value = customer.customer_system_id;
+    searchItemName.value = item.item_name;
+    searchItemNumber.value = item.item_number;
+
+    try {
+      await applyLatestDrawingHardness({ notify: false });
+    } catch (error) {
+      console.error("관리문서현황 연계 도면규격 자동적용 오류:", error);
+    }
+
+    updateAllHintStates();
+
+    if (!material && materialName) {
+      setNotice(
+        `신규등록 모드로 열었습니다. 최초작업일 ${firstWorkDate || "-"}을 제정일자로 적용하고 고객사·품명·품번을 자동 입력했습니다. 재질 '${materialName}'은 재질 관리에서 찾지 못했으므로 재질을 확인한 후 저장해 주세요.`,
+        "error"
+      );
+      return true;
+    }
+
+    setNotice(
+      `관리문서현황의 미작성 검사기준서를 신규등록으로 열었습니다. 최초작업일 ${firstWorkDate || "-"}을 제정일자로 적용하고 고객사·품명·품번·재질을 자동 입력했습니다. 검사내용·약도·담당·승인 정보를 확인 또는 입력한 후 저장해 주세요.`,
+      "success"
+    );
+    formCustomerId.focus();
+    return true;
+  }
+
   function startEdit() {
     if (!selectedDocumentId) {
       setNotice("수정할 검사기준서를 먼저 조회해 주세요.", "error");
@@ -2510,12 +2608,18 @@ body.search-modal-open{overflow:hidden!important}
       startInactivityWatch();
       clearFormData({ keepSearch: false });
       setMode("view");
+
+      const openedFromManagement = await applyManagementRegistrationPrefill();
+
       updateAllHintStates();
       document.documentElement.classList.remove("auth-pending");
-      setNotice(
-        "고객사·품명·품번을 단독 또는 복합으로 조회할 수 있습니다. 최초 작성은 등록 버튼을 누르세요.",
-        "info"
-      );
+
+      if (!openedFromManagement) {
+        setNotice(
+          "고객사·품명·품번을 단독 또는 복합으로 조회할 수 있습니다. 최초 작성은 등록 버튼을 누르세요.",
+          "info"
+        );
+      }
     } catch (error) {
       console.error(error);
       document.documentElement.classList.remove("auth-pending");
