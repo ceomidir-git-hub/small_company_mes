@@ -712,6 +712,19 @@ table.hdr select.db-input {
   const itemNameControl = controlByNo.get(IDENTITY_INPUTS.itemName);
   const customerNameControl = controlByNo.get(IDENTITY_INPUTS.customerName);
   const companyNumberControl = controlByNo.get(IDENTITY_INPUTS.companyNumber);
+  const firstIssuedAtControl = controlByNo.get(5);
+  const materialControl = controlByNo.get(11);
+  const workStandardNoControl = controlByNo.get(19);
+
+  // 관리문서현황/신규등록 시 품목별 실제값으로 반드시 치환하는 관리계획서 항목
+  const LINKED_INPUTS = Object.freeze({
+    materialDetail: 30,
+    cycleTime: 80,
+    movingSpeed: 110,
+    productGap: 120,
+    processSurfaceHardness: 210,
+    finalSurfaceHardness: 360
+  });
 
   [itemNumberControl, itemNameControl, companyNumberControl]
     .filter(Boolean)
@@ -1406,7 +1419,7 @@ table.hdr select.db-input {
         .order("company_number", { ascending: true }),
       sb
         .from("items")
-        .select("item_system_id,customer_system_id,item_name,item_number,control_plan_number,is_active")
+        .select("item_system_id,customer_system_id,item_name,item_number,control_plan_number,work_standard_number,is_active")
         .eq("company_id", currentProfile.company_id)
         .eq("is_active", true)
         .order("item_name", { ascending: true })
@@ -1568,6 +1581,213 @@ table.hdr select.db-input {
       storedRows: valueRows.length,
       distinctInputs: new Set(valueRows.map(row => Number(row.input_no))).size
     };
+  }
+
+  function managedNewContextFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (normalizeText(params.get("source")) !== "Process_Management_Docu_List") return null;
+    if (normalizeText(params.get("mode")) !== "new") return null;
+
+    return {
+      firstWorkDate: normalizeText(params.get("first_work_date")),
+      customerName: normalizeText(params.get("customer_name")),
+      itemName: normalizeText(params.get("item_name")),
+      itemNumber: normalizeText(params.get("item_number")),
+      materialName: normalizeText(params.get("material_name"))
+    };
+  }
+
+  function withUnit(value, unit, unitPattern) {
+    const raw = normalizeText(value);
+    if (!raw) return "";
+    return unitPattern.test(raw) ? raw : `${raw} ${unit}`;
+  }
+
+  function formatCoolingTime(value) {
+    return withUnit(value, "sec", /(?:sec|초)\b/i);
+  }
+
+  function formatMovingSpeed(value) {
+    return withUnit(value, "mm/sec", /(?:mm\s*\/\s*s|mm\s*\/\s*sec|mm\/s|mm\/sec)/i);
+  }
+
+  function formatProductGap(value) {
+    return withUnit(value, "mm", /mm\b/i);
+  }
+
+  async function fetchProductionActuals(customer, item, preferredWorkDate = "") {
+    const selectColumns = "work_date,material_name,moving_speed_mm_sec,coil_product_gap_mm,created_at,production_system_id";
+
+    const runQuery = async (workDate = "") => {
+      let query = sb
+        .from("Total_Production_DB")
+        .select(selectColumns)
+        .eq("company_id", currentProfile.company_id)
+        .eq("is_active", true)
+        .eq("customer_name", customer.customer_name)
+        .eq("item_name", item.item_name)
+        .eq("item_number", item.item_number)
+        .order("work_date", { ascending:true, nullsFirst:false })
+        .order("created_at", { ascending:true, nullsFirst:false })
+        .order("production_system_id", { ascending:true })
+        .limit(100);
+      if (workDate) query = query.eq("work_date", workDate);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    };
+
+    let rows = await runQuery(preferredWorkDate);
+    if (!rows.length && preferredWorkDate) rows = await runQuery("");
+
+    const firstNonBlank = field => {
+      const row = rows.find(candidate => normalizeText(candidate?.[field]));
+      return normalizeText(row?.[field]);
+    };
+
+    return {
+      firstWorkDate: preferredWorkDate || normalizeText(rows[0]?.work_date),
+      materialName: firstNonBlank("material_name"),
+      movingSpeed: firstNonBlank("moving_speed_mm_sec"),
+      productGap: firstNonBlank("coil_product_gap_mm")
+    };
+  }
+
+  async function fetchWorkStandardActuals(item) {
+    const result = { coolingTime:"", surfaceHardness:"" };
+
+    const { data: documentRows, error: documentError } = await sb
+      .from("work_standard_documents")
+      .select("work_standard_system_id")
+      .eq("company_id", currentProfile.company_id)
+      .eq("item_system_id", item.item_system_id)
+      .eq("is_active", true)
+      .order("created_at", { ascending:true })
+      .limit(1);
+    if (documentError) throw documentError;
+
+    const workStandardId = normalizeText(documentRows?.[0]?.work_standard_system_id);
+    if (!workStandardId) return result;
+
+    const [conditionResult, hardnessResult] = await Promise.all([
+      sb
+        .from("work_standard_conditions")
+        .select("specification,display_order")
+        .eq("company_id", currentProfile.company_id)
+        .eq("work_standard_system_id", workStandardId)
+        .eq("is_active", true)
+        .eq("condition_code", "COOLING_TIME")
+        .order("display_order", { ascending:true })
+        .limit(1),
+      sb
+        .from("work_standard_finished_inspections")
+        .select("inspection_item,management_standard,display_order")
+        .eq("company_id", currentProfile.company_id)
+        .eq("work_standard_system_id", workStandardId)
+        .eq("is_active", true)
+        .ilike("inspection_item", "%표면경도%")
+        .order("display_order", { ascending:true })
+        .limit(1)
+    ]);
+
+    if (conditionResult.error) throw conditionResult.error;
+    if (hardnessResult.error) throw hardnessResult.error;
+
+    result.coolingTime = normalizeText(conditionResult.data?.[0]?.specification);
+    result.surfaceHardness = normalizeText(hardnessResult.data?.[0]?.management_standard);
+    return result;
+  }
+
+  async function applyItemLinkedActuals(customer, item, options = {}) {
+    const preferredWorkDate = normalizeText(options.firstWorkDate);
+    const preferredMaterial = normalizeText(options.materialName);
+
+    // 기준 관리계획서의 품목 고정값을 실제 선택 ITEM 값으로 덮어쓴다.
+    setIdentity(customer, item);
+    setControlValue(planNoControl, normalizeText(item.control_plan_number));
+    setControlValue(workStandardNoControl, normalizeText(item.work_standard_number));
+
+    // 관리계획서는 양산 문서로 등록한다: 시작품/양산선행 해제, 양산 체크.
+    setControlValue(controlByNo.get(1), false);
+    setControlValue(controlByNo.get(2), false);
+    setControlValue(controlByNo.get(3), true);
+
+    const [production, workStandard] = await Promise.all([
+      fetchProductionActuals(customer, item, preferredWorkDate),
+      fetchWorkStandardActuals(item)
+    ]);
+
+    const firstWorkDate = preferredWorkDate || production.firstWorkDate;
+    const materialName = preferredMaterial || production.materialName;
+    const coolingTime = formatCoolingTime(workStandard.coolingTime);
+    const movingSpeed = formatMovingSpeed(production.movingSpeed);
+    const productGap = formatProductGap(production.productGap);
+    const surfaceHardness = normalizeText(workStandard.surfaceHardness);
+
+    // 값이 없을 때 기준문서의 타 ITEM 값이 남지 않도록 공란으로 만든다.
+    setControlValue(firstIssuedAtControl, firstWorkDate);
+    setControlValue(materialControl, materialName);
+    setControlValue(controlByNo.get(LINKED_INPUTS.materialDetail), materialName);
+    setControlValue(controlByNo.get(LINKED_INPUTS.cycleTime), coolingTime);
+    setControlValue(controlByNo.get(LINKED_INPUTS.movingSpeed), movingSpeed);
+    setControlValue(controlByNo.get(LINKED_INPUTS.productGap), productGap);
+    setControlValue(
+      controlByNo.get(LINKED_INPUTS.processSurfaceHardness),
+      surfaceHardness ? `${surfaceHardness} / 측정부위 3점 평균` : ""
+    );
+    setControlValue(controlByNo.get(LINKED_INPUTS.finalSurfaceHardness), surfaceHardness);
+
+    autoGrowAll();
+
+    return {
+      firstWorkDate,
+      materialName,
+      coolingTime,
+      movingSpeed,
+      productGap,
+      surfaceHardness
+    };
+  }
+
+  function linkedValueSummary(values) {
+    const missing = [];
+    if (!values.firstWorkDate) missing.push("최초작업일");
+    if (!values.materialName) missing.push("재질");
+    if (!values.coolingTime) missing.push("작업표준서 냉각시간");
+    if (!values.movingSpeed) missing.push("생산실적 이송속도");
+    if (!values.productGap) missing.push("생산실적 제품간격");
+    if (!values.surfaceHardness) missing.push("작업표준서 표면경도");
+    return missing;
+  }
+
+  async function startManagedNewRegistration(context) {
+    const customer = referenceCustomers.find(row =>
+      normalizeText(row.customer_name) === context.customerName
+    );
+    if (!customer) throw new Error(`고객사를 찾지 못했습니다: ${context.customerName}`);
+
+    const item = referenceItems.find(row =>
+      row.customer_system_id === customer.customer_system_id &&
+      normalizeText(row.item_name) === context.itemName &&
+      normalizeText(row.item_number) === context.itemNumber
+    );
+    if (!item) {
+      throw new Error(`품목을 찾지 못했습니다: ${context.customerName} / ${context.itemName} / ${context.itemNumber}`);
+    }
+
+    await applyNewRegistrationDefaults();
+    const linkedValues = await applyItemLinkedActuals(customer, item, {
+      firstWorkDate: context.firstWorkDate,
+      materialName: context.materialName
+    });
+    const missing = linkedValueSummary(linkedValues);
+
+    setStatus(
+      `관리문서현황 → 관리계획서 신규등록 · 양산 체크 · ` +
+      `${context.customerName} / ${context.itemName} / ${context.itemNumber} · ` +
+      `관리계획번호 ${normalizeText(item.control_plan_number) || "DB 빈값"}` +
+      (missing.length ? ` · 미확인값: ${missing.join(", ")}` : " · 연계값 자동입력 완료")
+    );
   }
 
   async function loadPlanById(controlPlanId) {
@@ -1854,7 +2074,7 @@ table.hdr select.db-input {
     openModal(itemModal);
   }
 
-  function applySelectedItem() {
+  async function applySelectedItem() {
     const customerId = normalizeText(itemCustomer.value);
     const itemName = normalizeText(itemNameSelect.value);
     const itemNumber = normalizeText(itemNumberSelect.value);
@@ -1870,14 +2090,23 @@ table.hdr select.db-input {
       return;
     }
 
-    setIdentity(customer, item);
-    const itemControlPlanNumber = normalizeText(item.control_plan_number);
-    setControlValue(planNoControl, itemControlPlanNumber);
     closeModal(itemModal);
-    setStatus(
-      `${mode === "copy" ? "복사등록" : "신규등록"} 품목 선택 완료 · ` +
-      `${identityText()} · 관리계획번호 ${itemControlPlanNumber || "DB 빈값"}`
-    );
+    setBusy(true, "선택한 ITEM의 관리계획서 연계값을 확인하고 있습니다.");
+    try {
+      const linkedValues = await applyItemLinkedActuals(customer, item);
+      const itemControlPlanNumber = normalizeText(item.control_plan_number);
+      const missing = linkedValueSummary(linkedValues);
+      setStatus(
+        `${mode === "copy" ? "복사등록" : "신규등록"} 품목 선택 완료 · ` +
+        `${identityText()} · 관리계획번호 ${itemControlPlanNumber || "DB 빈값"}` +
+        (missing.length ? ` · 미확인값: ${missing.join(", ")}` : " · 연계값 자동입력 완료")
+      );
+    } catch (error) {
+      console.error("품목 연계값 조회 오류:", error);
+      setStatus(`품목 선택은 완료했지만 연계값 조회에 실패했습니다: ${dbMessage(error)}`);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function savePlan() {
@@ -2359,12 +2588,17 @@ table.hdr select.db-input {
       const dbState = await verifyDatabaseTables();
       await updateAllApprovalSignatures();
 
-      setMode("view");
-      setStatus(
-        `Supabase DB 연결 완료 · 관리계획서 테이블 3개 확인 · 입력항목 429개 · ` +
-        `사인 ${signatureCount}명 · 사용 중인 관리계획서 ${dbState.activePlanCount}건 · ` +
-        `조회 또는 신규등록을 선택해 주세요.`
-      );
+      const managedContext = managedNewContextFromUrl();
+      if (managedContext) {
+        await startManagedNewRegistration(managedContext);
+      } else {
+        setMode("view");
+        setStatus(
+          `Supabase DB 연결 완료 · 관리계획서 테이블 3개 확인 · 입력항목 429개 · ` +
+          `사인 ${signatureCount}명 · 사용 중인 관리계획서 ${dbState.activePlanCount}건 · ` +
+          `조회 또는 신규등록을 선택해 주세요.`
+        );
+      }
     } catch (error) {
       console.error("초기화 오류:", error);
       setStatus(`초기화 실패: ${dbMessage(error)}`);
