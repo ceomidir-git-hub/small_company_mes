@@ -1045,12 +1045,13 @@ async function openManagedDocument(docType, row) {
   const targetUrl = new URL(`./${source.file}`, window.location.href);
 
   /*
-    미작성 제조공정도/검사기준서는 관리문서현황의 최초작업 ITEM 정보를 전달하여
+    미작성 관리계획서/제조공정도/검사기준서는 관리문서현황의 최초작업 ITEM 정보를 전달하여
     각 문서 화면이 즉시 신규등록 모드로 열리도록 한다.
-    검사기준서는 최초작업일을 제정일자로 사용하고,
-    제조공정도는 현재 양식의 기본정보(고객사·품명·품번)를 자동 선택한다.
+    - 관리계획서: 양산 체크 + 최초작업일/고객사/품명/품번/재질 및 연계 실제값 자동입력
+    - 검사기준서: 최초작업일을 제정일자로 사용
+    - 제조공정도: 현재 양식의 기본정보(고객사·품명·품번)를 자동 선택
   */
-  if ((docType === "manufacturing" || docType === "inspectionStandard") && !documentExists) {
+  if (["controlPlan", "manufacturing", "inspectionStandard"].includes(docType) && !documentExists) {
     targetUrl.searchParams.set("source", "Process_Management_Docu_List");
     targetUrl.searchParams.set("mode", "new");
     targetUrl.searchParams.set("first_work_date", normalize(row.first_work_date));
@@ -1070,11 +1071,13 @@ async function openManagedDocument(docType, row) {
   if (docType === "inspectionReport" && !documentExists) return;
 
   /*
-    미작성 제조공정도와 검사기준서는 새 창이 자체적으로 신규등록 모드와 기본값을 적용한다.
+    미작성 관리계획서/제조공정도/검사기준서는 새 창이 자체적으로 신규등록 모드와 기본값을 적용한다.
     그 외 미작성 관리문서는 기존 기준대로 빈 양식만 연다.
   */
-  if ((docType === "manufacturing" || docType === "inspectionStandard") && !documentExists) {
-    const docName = docType === "manufacturing" ? "제조공정도" : "검사기준서";
+  if (["controlPlan", "manufacturing", "inspectionStandard"].includes(docType) && !documentExists) {
+    const docName = docType === "controlPlan"
+      ? "관리계획서"
+      : (docType === "manufacturing" ? "제조공정도" : "검사기준서");
     setActionMessage(
       `미작성 ${docName}를 신규등록으로 열었습니다: ${row.first_work_date} / ${row.customer_name} / ${row.item_name} / ${row.item_number}`,
       "success"
