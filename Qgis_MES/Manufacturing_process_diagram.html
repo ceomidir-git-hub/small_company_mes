@@ -1095,6 +1095,95 @@ async function startNew(){
   }
 }
 
+async function applyManagementRegistrationPrefill(){
+  const params = new URLSearchParams(window.location.search);
+  const source = normalize(params.get("source"));
+  const requestedMode = normalize(params.get("mode"));
+
+  if(source !== "Process_Management_Docu_List" || requestedMode !== "new"){
+    return false;
+  }
+
+  const firstWorkDate = normalize(params.get("first_work_date"));
+  const customerName = normalize(params.get("customer_name"));
+  const itemName = normalize(params.get("item_name"));
+  const itemNumber = normalize(params.get("item_number"));
+  const materialName = normalize(params.get("material_name"));
+
+  /* 기존 신규등록 로직을 그대로 실행하여 기준 제조공정도 NO1~NO75를 먼저 적용한다. */
+  await startNew();
+
+  /* 권한 또는 기준문서 오류로 신규등록 모드가 열리지 않았다면 기존 오류 메시지를 유지한다. */
+  if(currentMode !== "new") return true;
+
+  const customer = customers.find(function(row){
+    return row && row.is_active !== false && normalize(row.customer_name) === customerName;
+  });
+
+  if(!customer){
+    customerSelect.value = "";
+    itemNameInput.value = itemName;
+    itemNumberInput.value = itemNumber;
+    setNotice(
+      "관리문서현황에서 전달된 고객사 '"+customerName+"'를 고객사 관리에서 찾지 못했습니다. 고객사 정보를 확인해 주세요.",
+      "error",
+      true
+    );
+    return true;
+  }
+
+  const item = activeItems().find(function(row){
+    return row.customer_system_id === customer.customer_system_id
+      && normalize(row.item_name) === itemName
+      && normalize(row.item_number) === itemNumber;
+  });
+
+  if(!item){
+    renderNewIdentity.state = {
+      customerId: customer.customer_system_id,
+      itemName: "",
+      itemId: ""
+    };
+    currentItemSystemId = "";
+    renderNewIdentity();
+    customerSelect.value = customer.customer_system_id;
+    itemNameInput.value = itemName;
+    itemNumberInput.value = itemNumber;
+    setNotice(
+      "관리문서현황에서 전달된 품목 '"+itemName+" / "+itemNumber+"'을 아이템 관리에서 찾지 못했습니다. 품목정보를 확인해 주세요.",
+      "error",
+      true
+    );
+    return true;
+  }
+
+  /* 관리문서현황의 ITEM을 제조공정도 신규등록 기본정보에 자동 선택한다. */
+  renderNewIdentity.state = {
+    customerId: customer.customer_system_id,
+    itemName: item.item_name,
+    itemId: item.item_system_id
+  };
+  currentItemSystemId = item.item_system_id;
+  renderNewIdentity();
+
+  /* 상단 조회조건에도 현재 ITEM을 표시해 어떤 품목에서 넘어왔는지 바로 확인할 수 있게 한다. */
+  customerSelect.value = customer.customer_system_id;
+  itemNameInput.value = item.item_name;
+  itemNumberInput.value = item.item_number;
+
+  const contextParts = [];
+  if(firstWorkDate) contextParts.push("최초작업일 "+firstWorkDate);
+  if(materialName) contextParts.push("재질 "+materialName);
+  const contextText = contextParts.length ? " ("+contextParts.join(" · ")+")" : "";
+
+  setNotice(
+    "관리문서현황의 미작성 제조공정도를 신규등록으로 열었습니다. 고객사·품명·품번을 자동 입력했습니다"+contextText+". 기준 제조공정도 내용을 확인·수정한 후 저장해 주세요.",
+    "success",
+    false
+  );
+  return true;
+}
+
 async function removeStoragePaths(paths){
   const unique = Array.from(new Set((paths || []).filter(Boolean)));
   if(!unique.length) return;
@@ -1467,8 +1556,13 @@ async function initialize(){
     currentCompleted = false;
     clearForm();
     setEditMode(false);
+
+    const openedFromManagement = await applyManagementRegistrationPrefill();
+
     document.documentElement.classList.remove("auth-pending");
-    setNotice("Supabase DB 연결 완료 · 고객사 "+customers.length+"건 · 품목 "+activeItems().length+"건 · 제조공정도 "+documents.length+"건","success");
+    if(!openedFromManagement){
+      setNotice("Supabase DB 연결 완료 · 고객사 "+customers.length+"건 · 품목 "+activeItems().length+"건 · 제조공정도 "+documents.length+"건","success");
+    }
   }catch(error){
     console.error(error);
     document.documentElement.classList.remove("auth-pending");
