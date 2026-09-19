@@ -438,6 +438,30 @@
   @media print {
     body { background: #fff; padding: 0; }
     .app-frame { display: none; }
+
+    /* 인쇄/PDF에는 화면 알림·로딩·조회 팝업을 절대 표시하지 않는다. */
+    .toast-message,
+    .loading-overlay,
+    .report-lookup-overlay {
+      display: none !important;
+    }
+
+    /* 사후관리 1차~3차는 PDF/인쇄에서 항상 빈칸으로 출력한다.
+       DB 값과 화면 입력값은 변경하지 않고 인쇄 순간에만 숨긴다. */
+    input[name=follow1],
+    input[name=follow2],
+    input[name=follow3] {
+      background: #fff !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+      caret-color: transparent !important;
+    }
+    input[name=follow1]::-webkit-calendar-picker-indicator,
+    input[name=follow2]::-webkit-calendar-picker-indicator,
+    input[name=follow3]::-webkit-calendar-picker-indicator {
+      display: none !important;
+    }
+
     /* [SIZE 수정] 인쇄시 1장 안에 들어오도록 패딩 재계산
        인쇄가능높이 190mm(=210-@page여백20) - 콘텐츠 176.75mm - 여유5mm = 8.25mm → 상하 각 4mm */
     .sheet { box-shadow: none; margin: 0; width: auto; min-height: auto; padding: 4mm 8mm; }
@@ -1514,7 +1538,7 @@ async function loadReportByDocumentNumber(documentNumber) {
 
     fillForm(data);
     await displayStoredPhotos(data);
-    showToast(`개선보고서 ${data.document_number}을(를) 불러왔습니다.`, "success", 4500);
+    /* 조회 완료 알림 문구는 출력 화면을 가릴 수 있으므로 표시하지 않는다. */
   } catch (error) {
     console.error(error);
     showToast("조회 실패: " + error.message, "error", 7000);
@@ -1559,6 +1583,62 @@ function sanitizePdfFileNamePart(value) {
     .replace(/\s+/g, "_");
 }
 
+const PRINT_BLANK_FOLLOWUP_NAMES = Object.freeze(["follow1", "follow2", "follow3"]);
+let followupPrintState = null;
+
+function hideTransientMessagesForPrint() {
+  clearTimeout(toastTimer);
+  const toast = document.getElementById("toastMessage");
+  if (toast) {
+    toast.textContent = "";
+    toast.className = "toast-message";
+  }
+
+  const loading = document.getElementById("loadingOverlay");
+  if (loading) loading.classList.remove("show");
+
+  closeReportLookup();
+}
+
+function prepareFollowupFieldsForPrint() {
+  if (followupPrintState) return;
+
+  followupPrintState = PRINT_BLANK_FOLLOWUP_NAMES
+    .map(name => {
+      const input = getInput(name);
+      if (!input) return null;
+
+      const state = {
+        input,
+        type: input.type,
+        value: input.value,
+        readOnly: input.readOnly
+      };
+
+      /* date 입력의 "연도-월-일" 표시까지 제거하기 위해 인쇄 중에는 text 빈칸으로 전환한다. */
+      input.type = "text";
+      input.value = "";
+      input.readOnly = true;
+      input.setAttribute("data-print-blank", "true");
+      return state;
+    })
+    .filter(Boolean);
+}
+
+function restoreFollowupFieldsAfterPrint() {
+  if (!followupPrintState) return;
+
+  followupPrintState.forEach(state => {
+    const { input, type, value, readOnly } = state;
+    input.type = type;
+    input.value = value;
+    input.readOnly = readOnly;
+    input.removeAttribute("data-print-blank");
+  });
+
+  followupPrintState = null;
+}
+
 function savePdf() {
   const documentNumber = sanitizePdfFileNamePart(getValue("doc_no")) || "개선보고서";
   const writeDate = sanitizePdfFileNamePart(getValue("found_date")) || new Date().toISOString().slice(0, 10);
@@ -1566,22 +1646,34 @@ function savePdf() {
   const pdfTitle = `${documentNumber}_${writeDate}`;
   let restored = false;
 
-  const restoreTitle = () => {
+  const restorePrintState = () => {
     if (restored) return;
     restored = true;
     document.title = originalTitle;
+    restoreFollowupFieldsAfterPrint();
   };
 
-  document.title = pdfTitle;
-  window.addEventListener("afterprint", restoreTitle, { once: true });
+  /* PDF 변환 직전에 화면 알림을 제거하고 사후관리 날짜 3칸을 인쇄용 빈칸으로 만든다. */
+  hideTransientMessagesForPrint();
+  prepareFollowupFieldsForPrint();
 
-  // 변경된 문서 제목이 브라우저 인쇄창에 반영된 뒤 실행한다.
-  setTimeout(() => window.print(), 50);
+  document.title = pdfTitle;
+  window.addEventListener("afterprint", restorePrintState, { once: true });
+
+  // 변경된 문서 제목과 인쇄용 빈칸 처리가 브라우저 인쇄창에 반영된 뒤 실행한다.
+  setTimeout(() => window.print(), 80);
   // 일부 브라우저에서 afterprint가 발생하지 않는 경우를 대비한 복구 처리
-  setTimeout(restoreTitle, 5000);
+  setTimeout(restorePrintState, 5000);
 }
 
 function bindEvents() {
+  /* PDF 버튼뿐 아니라 Ctrl+P/브라우저 인쇄에서도 동일하게 적용한다. */
+  window.addEventListener("beforeprint", () => {
+    hideTransientMessagesForPrint();
+    prepareFollowupFieldsForPrint();
+  });
+  window.addEventListener("afterprint", restoreFollowupFieldsAfterPrint);
+
   getInput("found_date")?.addEventListener("input", syncBeforeDates);
   getInput("found_date")?.addEventListener("change", syncBeforeDates);
   getInput("improve_date")?.addEventListener("input", syncAfterDates);
