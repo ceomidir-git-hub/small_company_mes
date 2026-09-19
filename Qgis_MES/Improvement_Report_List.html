@@ -171,37 +171,39 @@
 
     .table-wrap {
       width: 100%;
-      overflow-x: auto;
+      overflow-x: hidden;
       border: 1px solid var(--line-dark);
       background: #ffffff;
-      -webkit-overflow-scrolling: touch;
     }
 
     table {
       width: 100%;
-      min-width: 1620px;
+      min-width: 0;
       border-collapse: collapse;
       table-layout: fixed;
       background: #ffffff;
     }
 
-    col.no { width: 60px; }
-    col.document-number { width: 110px; }
-    col.write-date { width: 105px; }
-    col.complete-date { width: 105px; }
-    col.category { width: 90px; }
-    col.item { width: 120px; }
-    col.subject { width: 230px; }
-    col.problem { width: 400px; }
-    col.result { width: 400px; }
+    /* A4 가로 비율과 화면 표시 비율을 동일하게 유지 */
+    col.no { width: 4%; }
+    col.document-number { width: 9%; }
+    col.write-date { width: 8%; }
+    col.complete-date { width: 8%; }
+    col.category { width: 7%; }
+    col.item { width: 8%; }
+    col.subject { width: 14%; }
+    col.problem { width: 21%; }
+    col.result { width: 21%; }
 
     th, td {
       border-right: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
-      padding: 9px 8px;
+      padding: 8px 6px;
       text-align: center;
       vertical-align: middle;
-      line-height: 1.45;
+      line-height: 1.4;
+      font-size: 14px;
+      overflow-wrap: anywhere;
     }
 
     th:last-child, td:last-child { border-right: 0; }
@@ -213,7 +215,10 @@
       z-index: 2;
       background: var(--head);
       font-weight: 800;
-      white-space: nowrap;
+      white-space: normal;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+      line-height: 1.3;
     }
 
     tbody tr:nth-child(even) td { background: var(--soft); }
@@ -228,6 +233,7 @@
 
     .document-link {
       display: inline-block;
+      max-width: 100%;
       border: 0;
       padding: 0;
       background: transparent;
@@ -235,6 +241,7 @@
       font-weight: 800;
       text-decoration: underline;
       text-underline-offset: 3px;
+      overflow-wrap: anywhere;
     }
 
     .document-link:hover { color: #1e3a8a; }
@@ -334,14 +341,14 @@
       }
 
       col.no { width: 4%; }
-      col.document-number { width: 8%; }
-      col.write-date { width: 7%; }
-      col.complete-date { width: 7%; }
-      col.category { width: 6%; }
+      col.document-number { width: 9%; }
+      col.write-date { width: 8%; }
+      col.complete-date { width: 8%; }
+      col.category { width: 7%; }
       col.item { width: 8%; }
       col.subject { width: 14%; }
-      col.problem { width: 23%; }
-      col.result { width: 23%; }
+      col.problem { width: 21%; }
+      col.result { width: 21%; }
 
       th, td {
         padding: 1mm;
