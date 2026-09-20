@@ -889,6 +889,8 @@ function openLinkedWorksheet() {
 window.addEventListener("load", initializePage);
 
 async function initializePage() {
+  // 비동기 로그인 확인 전에 부모 화면의 선택 행을 복사한다.
+  const managementContext = unwrittenReportManagementContext();
   const today = localDateText(new Date());
   document.getElementById("q-date").value = today;
   document.getElementById("f-date").value = today;
@@ -907,13 +909,89 @@ async function initializePage() {
     updateAllSignatures();
     updateWorksheetButtonState();
     document.documentElement.classList.remove("auth-pending");
-    setQueryMessage("조회 조건을 입력한 후 조회 버튼을 눌러주세요.", "info");
+    if (managementContext) {
+      await loadUnwrittenReportFromManagement(managementContext);
+    } else {
+      setQueryMessage("조회 조건을 입력한 후 조회 버튼을 눌러주세요.", "info");
+    }
   } catch (error) {
     console.error(error);
     document.documentElement.classList.remove("auth-pending");
     setQueryMessage("화면 초기화 실패: " + formatDbError(error), "err");
   } finally {
     hideLoading();
+  }
+}
+
+/* 관리문서현황의 미작성 성적서 연결. 기존 HTML 링크와 작성완료 조회 방식은 유지한다. */
+function unwrittenReportManagementContext() {
+  try {
+    if (!window.opener || window.opener.closed) return null;
+    const parentDocument = window.opener.document;
+    const selector = '.doc-status-button[data-doc-type="inspectionReport"]';
+    const button = parentDocument.activeElement?.closest?.(selector)
+      || parentDocument.querySelector(selector + ":focus");
+    const rowKey = cleanVal(button?.dataset.rowKey);
+    if (!rowKey || typeof window.opener.findCurrentRowByKey !== "function") return null;
+    const row = window.opener.findCurrentRowByKey(rowKey);
+    // 작성완료 성적서는 기존 부모 화면의 autoOpenInspectionReport가 조회한다.
+    if (!row || row.has_inspection_report !== false) return null;
+    const context = {
+      productionSystemId: cleanVal(row.production_system_id),
+      workDate: cleanVal(row.first_work_date),
+      customerName: cleanVal(row.customer_name),
+      itemName: cleanVal(row.item_name),
+      itemNumber: cleanVal(row.item_number)
+    };
+    if (!context.workDate || !context.customerName || !context.itemName || !context.itemNumber) return null;
+    return context;
+  } catch (error) {
+    // 직접 열기 또는 다른 출처의 창에서는 기존 수동 조회 화면을 사용한다.
+    console.warn("관리문서현황 선택 행 확인 실패:", error);
+    return null;
+  }
+}
+
+async function loadUnwrittenReportFromManagement(context) {
+  sv("q-date", context.workDate);
+  sv("f-date", context.workDate);
+  sv("q-lot", "");
+  sv("q-customer", context.customerName);
+  sv("q-product", context.itemName);
+  sv("q-dwg", context.itemNumber);
+  showLoading("관리문서현황에서 선택한 작업일보를 불러오는 중입니다.");
+  setQueryMessage("미작성 성적서의 작업일보를 조회 중입니다.", "info");
+  try {
+    let query = sb.from(PRODUCTION_TABLE).select(PRODUCTION_COLUMNS)
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .eq("work_date", context.workDate)
+      .eq("customer_name", context.customerName)
+      .eq("item_name", context.itemName)
+      .eq("item_number", context.itemNumber);
+    if (context.productionSystemId) query = query.eq("production_system_id", context.productionSystemId);
+    // 이전 관리문서현황에는 작업일보 ID가 없으므로 최초 행 선정 순서를 동일하게 유지한다.
+    const { data, error } = await query
+      .order("created_at", { ascending: true })
+      .order("production_system_id", { ascending: true })
+      .limit(1);
+    if (error) throw error;
+    queryResults = data || [];
+    queryIndex = 0;
+    updateNav();
+    if (!queryResults.length) {
+      currentProductionRow = null;
+      currentReportRow = null;
+      updateWorksheetButtonState();
+      setQueryMessage("연결된 작업일보를 찾을 수 없습니다. 조회 조건을 확인해 주세요.", "err");
+      return;
+    }
+    // 기존 조회와 동일한 경로로 작업일보 값 및 저장된 성적서 내용을 불러온다. 자동 저장하지 않는다.
+    await loadRecord(queryResults[0]);
+    setQueryMessage("관리문서현황 연계 · 작업일보를 불러왔습니다. 성적서를 확인한 후 저장해 주세요.", "ok");
+  } catch (error) {
+    console.error("미작성 성적서 자동조회 실패:", error);
+    setQueryMessage("미작성 성적서 자동조회 실패: " + formatDbError(error), "err");
   }
 }
 
