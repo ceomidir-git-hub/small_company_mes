@@ -1615,14 +1615,14 @@ table.hdr select.db-input {
       "mm/sec": /\s*mm\s*\/\s*(?:sec|s)$/i,
       mm: /\s*mm$/i,
       "℃": /\s*(?:℃|°\s*c|c|도)$/i,
-      min: /\s*(?:minutes?|mins?|min|분)$/i
+      hr: /\s*(?:hours?|hrs?|h|시간)$/i
     };
     const numericText = raw.replace(suffixes[unit], "").trim();
     if (!/^[+-]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\.\d+)$/.test(numericText)) return "";
     const number = Number(numericText.replace(/,/g, "")) * multiplier;
     if (!Number.isFinite(number)) return "";
     const formatted = String(Number(number.toFixed(10)));
-    return `${formatted}${tolerance ? "±" + tolerance : ""}${unit}`;
+    return `${formatted}${tolerance ? "±" + tolerance : ""}${unit === "hr" ? "min" : unit}`;
   }
 
   async function fetchProductionActuals(customer, item, preferredWorkDate = "") {
@@ -1673,8 +1673,8 @@ table.hdr select.db-input {
       productGap: formatProductionNumber(row.coil_product_gap_mm, "mm"),
       surfaceHardness: normalizeText(row.tempering_hardness_hrc),
       temperingTemperature: formatProductionNumber(row.tempering_temperature_c, "℃", "10"),
-      // DB 컬럼명은 tempering_time_hr이지만 작업일보 입력값의 실제 단위는 분(min)이다.
-      temperingTime: formatProductionNumber(row.tempering_time_hr, "min", "10")
+      // 작업일보의 템퍼링 가열시간(hr)을 관리계획서의 분(min) 단위로 환산한다.
+      temperingTime: formatProductionNumber(row.tempering_time_hr, "hr", "10", 60)
     };
   }
 
