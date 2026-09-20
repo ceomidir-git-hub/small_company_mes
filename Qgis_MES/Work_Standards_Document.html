@@ -2323,10 +2323,12 @@ body.pdf-capture-mode .form-identity-select{
   }
 
   async function applyProductionDefaults(context, linkedItem) {
-    // 기준 경도를 찾지 못한 경우 공통 경도가 이 품목의 기준처럼 남지 않도록 비운다.
+    // 작업일보 값을 찾지 못한 경우 다른 품목의 기본값이 남지 않도록 연계 항목을 먼저 비운다.
+    setValue("work_sequence_1", "");
+    setValue("caution_2", "");
     setValue("finished_2_management_standard", "");
     let query = sb.from("Total_Production_DB")
-      .select("production_system_id,work_date,equipment_name,equipment_number,tempering_hardness_hrc")
+      .select("production_system_id,work_date,equipment_name,equipment_number,tempering_hardness_hrc,coil_number,coil_product_gap_mm")
       .eq("company_id", currentProfile.company_id)
       .eq("is_active", true)
       .eq("customer_name", linkedItem.customer_name)
@@ -2340,7 +2342,7 @@ body.pdf-capture-mode .form-identity-select{
       .order("production_system_id", { ascending:true })
       .limit(1).maybeSingle();
     if (error) throw error;
-    if (!production) return ["연결된 작업일보를 찾을 수 없습니다. 설비·제정일·표면경도를 확인해 주세요."];
+    if (!production) return ["연결된 작업일보를 찾을 수 없습니다. 설비·제정일·표면경도·코일정보를 확인해 주세요."];
 
     const warnings = [];
     setValue("establishment_date", production.work_date || "");
@@ -2361,6 +2363,22 @@ body.pdf-capture-mode .form-identity-select{
     const hardness = normalize(production.tempering_hardness_hrc);
     setValue("finished_2_management_standard", hardness);
     if (!hardness) warnings.push("작업일보의 표면경도 기준이 비어 있습니다. 직접 확인해 주세요.");
+
+    const coilNumber = normalize(production.coil_number);
+    if (coilNumber) {
+      const coilLabel = /코일\s*$/i.test(coilNumber) ? coilNumber : `${coilNumber} 코일`;
+      setValue("work_sequence_1", `1. ${coilLabel}을 셋팅한다.`);
+    } else {
+      warnings.push("작업일보의 코일번호가 비어 있습니다. 작업순서 1번을 확인해 주세요.");
+    }
+
+    const productGap = normalize(production.coil_product_gap_mm);
+    if (productGap) {
+      const gapWithUnit = /(?:mm|㎜)\s*$/i.test(productGap) ? productGap : `${productGap}mm`;
+      setValue("caution_2", `2. 제품, 코일의 간격(${gapWithUnit})을 확인한다.`);
+    } else {
+      warnings.push("작업일보의 코일제품간격이 비어 있습니다. 작업시 주의사항 2번을 확인해 주세요.");
+    }
     clearInitialValueStyles();
     loadedSnapshot = captureFormState();
     return warnings;
