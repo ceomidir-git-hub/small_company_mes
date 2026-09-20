@@ -371,7 +371,7 @@ textarea.form-control{
   font-weight:400!important;
 }
 
-/* 초기 기본값/안내문구만 기존보다 1pt 작고 더 희미하게 */
+/* 안내문구와 달리 실제 기본값은 일반 입력값과 같은 크기와 명도로 표시한다. */
 .form-control::placeholder{
   color:#cbc8bd!important;
   -webkit-text-fill-color:#cbc8bd!important;
@@ -379,14 +379,21 @@ textarea.form-control{
   font-size:calc(1em - 1pt)!important;
   font-weight:400!important;
 }
-.form-control.initial-default,
-.signature-select.initial-default,
 .form-control.empty-value,
 .signature-select.empty-value{
   color:#c7c4b9!important;
   -webkit-text-fill-color:#c7c4b9!important;
   opacity:.42!important;
   font-size:calc(1em - 1pt)!important;
+  font-weight:400!important;
+}
+
+.form-control.initial-default,
+.signature-select.initial-default{
+  color:#111!important;
+  -webkit-text-fill-color:#111!important;
+  opacity:1!important;
+  font-size:inherit!important;
   font-weight:400!important;
 }
 
@@ -2254,12 +2261,14 @@ body.pdf-capture-mode .form-identity-select{
     const itemNumber = normalize(params.get("item_number"));
     const mode = normalize(params.get("mode")).toLowerCase();
 
-    const isManagementSource = ["processmanagement", "process_management", "process-management", "management"]
+    const isManagementSource = ["processmanagement", "process_management", "process-management", "management", "process_management_docu_list"]
       .includes(source.toLowerCase());
     if (!isManagementSource && !itemSystemId && !(customerName && itemName && itemNumber)) return null;
 
     return {
       itemSystemId,
+      productionSystemId: normalize(params.get("production_system_id")),
+      firstWorkDate: normalize(params.get("first_work_date")),
       customerName,
       itemName,
       itemNumber,
@@ -2283,6 +2292,8 @@ body.pdf-capture-mode .form-identity-select{
 
       return {
         itemSystemId: normalize(sourceRow.item_system_id),
+        productionSystemId: normalize(sourceRow.production_system_id),
+        firstWorkDate: normalize(sourceRow.first_work_date),
         customerName: normalize(sourceRow.customer_name),
         itemName: normalize(sourceRow.item_name),
         itemNumber: normalize(sourceRow.item_number),
@@ -2311,6 +2322,50 @@ body.pdf-capture-mode .form-identity-select{
     ) || null;
   }
 
+  async function applyProductionDefaults(context, linkedItem) {
+    // 기준 경도를 찾지 못한 경우 공통 경도가 이 품목의 기준처럼 남지 않도록 비운다.
+    setValue("finished_2_management_standard", "");
+    let query = sb.from("Total_Production_DB")
+      .select("production_system_id,work_date,equipment_name,equipment_number,tempering_hardness_hrc")
+      .eq("company_id", currentProfile.company_id)
+      .eq("is_active", true)
+      .eq("customer_name", linkedItem.customer_name)
+      .eq("item_name", linkedItem.item_name)
+      .eq("item_number", linkedItem.item_number);
+    if (context.productionSystemId) query = query.eq("production_system_id", context.productionSystemId);
+    if (context.firstWorkDate) query = query.eq("work_date", context.firstWorkDate);
+    const { data: production, error } = await query
+      .order("work_date", { ascending:true })
+      .order("created_at", { ascending:true })
+      .order("production_system_id", { ascending:true })
+      .limit(1).maybeSingle();
+    if (error) throw error;
+    if (!production) return ["연결된 작업일보를 찾을 수 없습니다. 설비·제정일·표면경도를 확인해 주세요."];
+
+    const warnings = [];
+    setValue("establishment_date", production.work_date || "");
+    const equipmentNumber = normalize(production.equipment_number);
+    const equipmentName = normalize(production.equipment_name);
+    const matches = referenceEquipment.filter(row =>
+      equipmentNumber
+        ? normalize(row.equipment_number) === equipmentNumber
+        : equipmentName && normalize(row.equipment_name) === equipmentName
+    );
+    if (matches.length === 1) {
+      setValue("equipment_system_id", matches[0].equipment_system_id);
+      updateEquipmentNumber();
+    } else {
+      warnings.push(`작업일보 설비(${equipmentName || "이름 없음"} / ${equipmentNumber || "번호 없음"})를 설비관리에서 확인해 주세요.`);
+    }
+    // 작업일보 표면경도 기준의 실제 저장 필드. P1~P3 측정값은 사용하지 않는다.
+    const hardness = normalize(production.tempering_hardness_hrc);
+    setValue("finished_2_management_standard", hardness);
+    if (!hardness) warnings.push("작업일보의 표면경도 기준이 비어 있습니다. 직접 확인해 주세요.");
+    clearInitialValueStyles();
+    loadedSnapshot = captureFormState();
+    return warnings;
+  }
+
   async function openFromManagementStatusIfNeeded() {
     const context = managementLaunchContext();
     if (!context) return false;
@@ -2334,10 +2389,16 @@ body.pdf-capture-mode .form-identity-select{
       applyDefaultSnapshot();
       syncFormIdentityFromItem(linkedItem);
       setMode("view");
-      setNotice(
-        `관리문서현황 연계 · ${linkedItem.customer_name} / ${linkedItem.item_name} / ${linkedItem.item_number} · 작업표준서가 미작성 상태이며 현재 계정에는 등록 권한이 없습니다.`,
-        "error"
-      );
+    }
+    try {
+      const warnings = await applyProductionDefaults(context, linkedItem);
+      if (!hasWritePermission()) warnings.push("현재 계정에는 등록 권한이 없습니다.");
+      setNotice(warnings.length
+        ? warnings.join(" ")
+        : "관리문서현황 연계 · 작업일보의 설비·제정일·표면경도를 반영했습니다. 내용을 확인한 후 저장해 주세요.",
+        warnings.length ? "error" : "success");
+    } catch (error) {
+      setNotice("작업일보 자동 입력 실패: " + dbMessage(error) + " 설비·제정일·표면경도를 확인해 주세요.", "error");
     }
     return true;
   }
@@ -2529,8 +2590,8 @@ body.pdf-capture-mode .form-identity-select{
       await Promise.all([loadItems(),loadEquipment(),loadEmployees(),loadDefaults()]);
       await refreshDocumentIndex();
       applyDefaultSnapshot();
-      document.documentElement.classList.remove("auth-pending");
       const openedFromManagement = await openFromManagementStatusIfNeeded();
+      document.documentElement.classList.remove("auth-pending");
       window.requestAnimationFrame(updateAllValueHighlights);
       if (!openedFromManagement) {
         setNotice(`작업표준서 DB 연결 완료 · 품목 ${referenceItems.length}건 · 설비 ${referenceEquipment.length}건 · 사원 ${referenceEmployees.length}건`,"success");
