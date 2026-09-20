@@ -2322,13 +2322,32 @@ body.pdf-capture-mode .form-identity-select{
     ) || null;
   }
 
+  function formatConditionActual(value, unit, tolerance = "") {
+    const raw = normalize(value);
+    if (!raw) return "";
+    const unitPatterns = {
+      V: /\s*v$/i,
+      A: /\s*a$/i,
+      kW: /\s*kw$/i,
+      kHz: /\s*khz$/i,
+      bar: /\s*bar$/i,
+      sec: /\s*(?:sec|s|초)$/i
+    };
+    const numericText = raw.replace(unitPatterns[unit], "").trim().replace(/,/g, "");
+    if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(numericText)) return "";
+    const numeric = Number(numericText);
+    if (!Number.isFinite(numeric)) return "";
+    return `${numeric}${tolerance ? `±${tolerance}` : ""}${unit}`;
+  }
+
   async function applyProductionDefaults(context, linkedItem) {
     // 작업일보 값을 찾지 못한 경우 다른 품목의 기본값이 남지 않도록 연계 항목을 먼저 비운다.
     setValue("work_sequence_1", "");
     setValue("caution_2", "");
     setValue("finished_2_management_standard", "");
+    [1, 2, 3, 4, 5, 7].forEach(order => setValue(`condition_${order}_specification`, ""));
     let query = sb.from("Total_Production_DB")
-      .select("production_system_id,work_date,equipment_name,equipment_number,tempering_hardness_hrc,coil_number,coil_product_gap_mm")
+      .select("production_system_id,work_date,equipment_name,equipment_number,tempering_hardness_hrc,coil_number,coil_product_gap_mm,voltage_v,current_a,output_kw,frequency_khz,cooling_water_pressure_bar,cooling_time_sec")
       .eq("company_id", currentProfile.company_id)
       .eq("is_active", true)
       .eq("customer_name", linkedItem.customer_name)
@@ -2342,7 +2361,7 @@ body.pdf-capture-mode .form-identity-select{
       .order("production_system_id", { ascending:true })
       .limit(1).maybeSingle();
     if (error) throw error;
-    if (!production) return ["연결된 작업일보를 찾을 수 없습니다. 설비·제정일·표면경도·코일정보를 확인해 주세요."];
+    if (!production) return ["연결된 작업일보를 찾을 수 없습니다. 설비·제정일·표면경도·코일정보·조건관리표준을 확인해 주세요."];
 
     const warnings = [];
     setValue("establishment_date", production.work_date || "");
@@ -2379,6 +2398,19 @@ body.pdf-capture-mode .form-identity-select{
     } else {
       warnings.push("작업일보의 코일제품간격이 비어 있습니다. 작업시 주의사항 2번을 확인해 주세요.");
     }
+
+    const conditionActuals = [
+      { order:1, label:"전압", value:formatConditionActual(production.voltage_v, "V", "2") },
+      { order:2, label:"전류", value:formatConditionActual(production.current_a, "A", "2.5") },
+      { order:3, label:"출력", value:formatConditionActual(production.output_kw, "kW") },
+      { order:4, label:"주파수", value:formatConditionActual(production.frequency_khz, "kHz") },
+      { order:5, label:"냉각수압", value:formatConditionActual(production.cooling_water_pressure_bar, "bar") },
+      { order:7, label:"냉각시간", value:formatConditionActual(production.cooling_time_sec, "sec", "0.5") }
+    ];
+    conditionActuals.forEach(entry => {
+      setValue(`condition_${entry.order}_specification`, entry.value);
+      if (!entry.value) warnings.push(`작업일보의 ${entry.label} 값이 비어 있거나 숫자 형식이 아닙니다. 조건관리표준 ${entry.order}번을 확인해 주세요.`);
+    });
     clearInitialValueStyles();
     loadedSnapshot = captureFormState();
     return warnings;
