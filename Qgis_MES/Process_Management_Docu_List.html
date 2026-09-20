@@ -707,6 +707,7 @@ async function searchData() {
           item_number: itemNumber,
           material_name: materialName,
           first_work_date: workDate,
+          production_system_id: row.production_system_id,
           item_system_id: normalize(itemInfo.item_system_id),
           has_inspection_report: reportCompleted
         });
@@ -718,6 +719,7 @@ async function searchData() {
       /* 더 과거 작업일이 발견되면 그 행을 진짜 최초작업으로 교체한다. */
       if (workDate < current.first_work_date) {
         current.first_work_date = workDate;
+        current.production_system_id = row.production_system_id;
         current.material_name = materialName;
         current.has_inspection_report = reportCompleted;
         return;
@@ -1044,6 +1046,18 @@ async function openManagedDocument(docType, row) {
 
   const targetUrl = new URL(`./${source.file}`, window.location.href);
 
+  // 작업표준서가 동일한 작업일보를 회사/품목 조건으로 다시 조회하도록 식별자를 전달한다.
+  if (docType === "workStandard") {
+    targetUrl.searchParams.set("source", "Process_Management_Docu_List");
+    targetUrl.searchParams.set("mode", documentExists ? "view" : "new");
+    targetUrl.searchParams.set("item_system_id", normalize(row.item_system_id));
+    targetUrl.searchParams.set("production_system_id", normalize(row.production_system_id));
+    targetUrl.searchParams.set("first_work_date", normalize(row.first_work_date));
+    targetUrl.searchParams.set("customer_name", normalize(row.customer_name));
+    targetUrl.searchParams.set("item_name", normalize(row.item_name));
+    targetUrl.searchParams.set("item_number", normalize(row.item_number));
+  }
+
   /*
     미작성 관리계획서/제조공정도/검사기준서는 관리문서현황의 최초작업 ITEM 정보를 전달하여
     각 문서 화면이 즉시 신규등록 모드로 열리도록 한다.
@@ -1066,6 +1080,9 @@ async function openManagedDocument(docType, row) {
     alert("팝업이 차단되었습니다. 브라우저에서 이 사이트의 팝업을 허용해 주세요.");
     return;
   }
+
+  // 작업표준서는 URL 정보를 이용해 자체 초기화한다. 부모 창의 재조회로 입력값을 덮어쓰지 않는다.
+  if (docType === "workStandard") return;
 
   /* 열처리성적서 미작성은 기존 기준대로 빈 양식만 연다. */
   if (docType === "inspectionReport" && !documentExists) return;
