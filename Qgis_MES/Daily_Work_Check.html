@@ -133,6 +133,38 @@
   #printRoot tfoot td{ background:#eef2ff; font-weight:700; }
   #printRoot .print-title{ font-size:18px; font-weight:700; text-align:center; margin-bottom:8px; color:#123a99; }
   #printRoot .print-page{ font-size:10px; text-align:right; color:#666; margin-top:4px; }
+
+  /* PPT 제작 팝업: 화면 안에 전체 조작부 표시, 스크롤 없음 */
+  .ppt-modal{position:fixed;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;background:rgba(16,32,48,.65);padding:10px}
+  .ppt-modal.open{display:flex}
+  .ppt-panel{width:min(1040px,100%);max-height:calc(100dvh - 20px);background:#fff;border-radius:10px;border:1px solid #cdd9e4;display:flex;flex-direction:column;overflow:hidden}
+  .ppt-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid #d7e0e8}
+  .ppt-head h2{margin:0;font-size:19px;color:#17324d}
+  .ppt-body{padding:12px 18px 14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+  .ppt-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .ppt-fields label{min-width:0;font-size:12px;color:#33495b;font-weight:700}
+  .ppt-fields input{display:block;width:100%;height:32px;margin-top:4px;border:1px solid #bac9d5;border-radius:5px;padding:4px 7px;font-size:12px;color:#17324d;background:#f4f8fb}
+  .ppt-photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;min-height:0}
+  .ppt-photo-card{min-width:0;padding:8px;border:1px solid #d7e0e8;border-radius:8px;background:#fbfcfd}
+  .ppt-photo-card.drag-over{border:2px solid #246b9b;background:#eaf6fd}
+  .ppt-photo-card h3{font-size:13px;margin:0 0 7px;color:#29495f}
+  .ppt-photo-card h3 span{font-size:11px;font-weight:400;color:#607180}
+  .ppt-preview{height:clamp(75px,18dvh,160px);border:1px dashed #aac0cf;border-radius:6px;background:#fff;display:grid;place-items:center;text-align:center;color:#7a8c99;font-size:12px;overflow:hidden;padding:5px;white-space:pre-line}
+  .ppt-preview img{width:100%;height:100%;object-fit:contain}
+  .ppt-file-actions{display:flex;gap:6px;margin-top:7px}
+  .ppt-file-actions label{position:relative;flex:1;text-align:center;display:grid;place-items:center;background:#e3f1f9;color:#1f587d;border-radius:5px;font-size:12px;font-weight:700;min-height:29px;cursor:pointer}
+  .ppt-file-actions input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .ppt-file-actions button{min-height:29px}
+  .ppt-foot{display:flex;justify-content:space-between;align-items:center;gap:9px;padding:9px 18px;border-top:1px solid #d7e0e8;background:#f2f8fc}
+  .ppt-foot-detail{min-width:0;flex:1}
+  .ppt-foot-detail small{display:block;color:#507087;font-weight:700}
+  #pptFileName{display:block;overflow-wrap:anywhere;font-size:12px;color:#17324d;font-weight:700}
+  #pptStatus{font-size:12px;color:#507087;min-height:15px;margin:4px 0 0}
+  #pptStatus.error{color:#a12a2a}
+  .ppt-save{background:#246b9b;color:#fff;border-color:#246b9b}
+  .ppt-save:hover{background:#17547d}
+  @media(max-width:700px){.ppt-head{padding:7px 10px}.ppt-head h2{font-size:15px}.ppt-body{padding:7px;gap:6px}.ppt-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.ppt-photos{gap:4px}.ppt-photo-card{padding:4px}.ppt-photo-card h3{font-size:10px}.ppt-preview{height:clamp(55px,14dvh,105px);font-size:10px}.ppt-file-actions{flex-wrap:wrap;gap:3px}.ppt-file-actions label{flex:1 1 100%;min-height:23px;font-size:10px}.ppt-file-actions button{width:100%;min-height:22px;font-size:10px;padding:1px}.ppt-foot{padding:6px;gap:5px}.ppt-save{font-size:11px}.ppt-fields input{height:28px}}
+  @media(max-height:620px){.ppt-body{padding-top:6px;padding-bottom:6px;gap:6px}.ppt-preview{height:clamp(50px,13dvh,95px)}.ppt-head{padding-top:6px;padding-bottom:6px}.ppt-foot{padding-top:5px;padding-bottom:5px}}
 </style>
 </head>
 <body>
@@ -181,6 +213,7 @@
       <button class="btn btn-delete" id="btnDelete" disabled>🗑 삭제</button>
       <button class="btn" id="btnCsv">⬇ CSV 다운로드</button>
       <button class="btn" id="btnPdf">🖨 PDF 다운로드</button>
+      <button class="btn btn-primary" id="btnPpt">📊 PPT 제작</button>
     </div>
   </div>
   <div id="actionMessage" class="action-message" role="status" aria-live="polite"></div>
@@ -233,9 +266,43 @@
   </div>
 </div>
 
+
+<div class="ppt-modal" id="pptModal" role="dialog" aria-modal="true" aria-labelledby="pptModalTitle">
+  <div class="ppt-panel">
+    <div class="ppt-head"><h2 id="pptModalTitle">작업사진 PPT 자동생성 (총 3장)</h2><button type="button" class="btn" id="pptClose">✕ 닫기</button></div>
+    <div class="ppt-body">
+      <div class="ppt-fields">
+        <label>작업일<input id="pptWorkDate" type="text" readonly></label>
+        <label>업체명<input id="pptCustomer" type="text" readonly></label>
+        <label>부품명<input id="pptItemName" type="text" readonly></label>
+        <label>부품번호<input id="pptItemNumber" type="text" readonly></label>
+      </div>
+      <div class="ppt-photos">
+        <div class="ppt-photo-card" data-ppt-slot="report">
+          <h3>① 작업일보 사진 <span>필수</span></h3><div class="ppt-preview">사진을 선택하거나 드롭해 주세요</div>
+          <div class="ppt-file-actions"><label>사진 선택<input type="file" accept="image/*"></label><button type="button" class="btn ppt-clear">삭제</button></div>
+        </div>
+        <div class="ppt-photo-card" data-ppt-slot="material">
+          <h3>② 소재 사진 <span>선택</span></h3><div class="ppt-preview">미첨부 시 금회 미추가</div>
+          <div class="ppt-file-actions"><label>사진 선택<input type="file" accept="image/*"></label><button type="button" class="btn ppt-clear">삭제</button></div>
+        </div>
+        <div class="ppt-photo-card" data-ppt-slot="drawing">
+          <h3>③ 도면 사진 <span>선택</span></h3><div class="ppt-preview">미첨부 시 금회 미추가</div>
+          <div class="ppt-file-actions"><label>사진 선택<input type="file" accept="image/*"></label><button type="button" class="btn ppt-clear">삭제</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="ppt-foot">
+      <div class="ppt-foot-detail"><small>저장 파일명</small><span id="pptFileName"></span><p id="pptStatus" role="status" aria-live="polite"></p></div>
+      <button type="button" class="btn ppt-save" id="pptSave">PPT 저장</button>
+    </div>
+  </div>
+</div>
+
 <div id="loadingOverlay">⏳ 처리 중입니다...</div>
 <div id="printRoot"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script>
 "use strict";
 
@@ -1380,6 +1447,153 @@ function buildPrintSumRowHtml() {
     <td colspan="5"></td>
   </tr>`;
 }
+
+
+/* PPT 자동제작: 선택한 생산실적 1건의 기본정보 + 사용자가 직접 지정한 사진 */
+const pptPhotos = { report:null, material:null, drawing:null };
+const pptModal = document.getElementById("pptModal");
+const pptStatus = document.getElementById("pptStatus");
+const pptInputIds = ["pptWorkDate", "pptCustomer", "pptItemName", "pptItemNumber"];
+let pptLoading = false;
+const pptFileVersions = { report:0, material:0, drawing:0 };
+
+function pptMessage(message, isError = false) {
+  pptStatus.textContent = message;
+  pptStatus.classList.toggle("error", isError);
+}
+function pptSafePart(value) {
+  return String(value == null ? "" : value).trim().replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ");
+}
+function pptName() {
+  return pptInputIds.map((id) => pptSafePart(document.getElementById(id).value)).join("_") + ".pptx";
+}
+function resetPptPhotos() {
+  Object.keys(pptFileVersions).forEach((slot) => { pptFileVersions[slot] += 1; }); // 이전 로딩 결과 무효화
+  document.querySelectorAll(".ppt-photo-card").forEach((card) => {
+    const slot = card.dataset.pptSlot;
+    pptPhotos[slot] = null;
+    card.querySelector('input[type="file"]').value = "";
+    card.querySelector(".ppt-preview").textContent = slot === "report" ? "사진을 선택하거나 드롭해 주세요" : "미첨부 시 금회 미추가";
+  });
+}
+function openPptMaker() {
+  const selected = Array.from(document.querySelectorAll('#tbody tr[data-row-index] .row-selector:checked'));
+  if (selected.length !== 1) {
+    const message = selected.length === 0 ? "PPT로 제작할 번호를 1건 선택해 주세요." : "PPT 제작은 번호 1건만 선택할 수 있습니다.";
+    setActionMessage(message, "error");
+    alert(message);
+    return;
+  }
+  const tr = selected[0].closest('tr');
+  const row = currentRows[Number(tr.dataset.rowIndex)];
+  if (!row) { alert("선택한 작업정보를 찾을 수 없습니다. 다시 조회해 주세요."); return; }
+  const values = [row.work_date, row.customer_name, row.item_name, row.item_number];
+  if (values.some((v) => !String(v == null ? "" : v).trim())) {
+    alert("선택한 작업의 작업일·업체명·부품명·부품번호 중 누락된 값이 있습니다.");
+    return;
+  }
+  pptInputIds.forEach((id, i) => { document.getElementById(id).value = String(values[i]).trim(); });
+  document.getElementById("pptFileName").textContent = pptName();
+  resetPptPhotos();
+  pptMessage("작업일보 사진은 필수이며, 소재·도면 사진은 선택입니다. PPT는 항상 3장으로 저장됩니다.");
+  pptModal.classList.add("open");
+  document.getElementById("pptClose").focus();
+}
+function closePptMaker() {
+  if (pptLoading) return;
+  pptModal.classList.remove("open");
+  resetPptPhotos();
+}
+document.getElementById("btnPpt").addEventListener("click", openPptMaker);
+document.getElementById("pptClose").addEventListener("click", closePptMaker);
+pptModal.addEventListener("click", (event) => { if (event.target === pptModal) closePptMaker(); });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape" && pptModal.classList.contains("open")) closePptMaker(); });
+
+document.querySelectorAll(".ppt-photo-card").forEach((card) => {
+  const slot = card.dataset.pptSlot;
+  const input = card.querySelector('input[type="file"]');
+  const preview = card.querySelector(".ppt-preview");
+  const clear = () => {
+    pptFileVersions[slot] += 1;
+    pptPhotos[slot] = null;
+    input.value = "";
+    preview.textContent = slot === "report" ? "사진을 선택하거나 드롭해 주세요" : "미첨부 시 금회 미추가";
+  };
+  const loadFile = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { clear(); pptMessage("이미지 파일만 선택해 주세요.", true); return; }
+    const version = ++pptFileVersions[slot];
+    try {
+      const data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const image = new Image();
+      await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; image.src = data; });
+      if (version !== pptFileVersions[slot]) return;
+      pptPhotos[slot] = { data, width:image.naturalWidth, height:image.naturalHeight };
+      preview.replaceChildren(image);
+      pptMessage("사진 미리보기를 표시했습니다.");
+    } catch (error) { if (version === pptFileVersions[slot]) { clear(); pptMessage("사진을 읽을 수 없습니다.", true); } }
+  };
+  input.addEventListener("change", () => loadFile(input.files[0]));
+  ["dragenter", "dragover"].forEach((eventName) => card.addEventListener(eventName, (event) => { event.preventDefault(); card.classList.add("drag-over"); }));
+  ["dragleave", "drop"].forEach((eventName) => card.addEventListener(eventName, (event) => { event.preventDefault(); card.classList.remove("drag-over"); }));
+  card.addEventListener("drop", (event) => { if (pptLoading) return; loadFile(event.dataTransfer.files[0]); });
+  card.querySelector(".ppt-clear").addEventListener("click", clear);
+});
+
+function appendPptSlide(pptx, photo) {
+  const slide = pptx.addSlide();
+  slide.background = { color:"FFFFFF" };
+  const frame = { x:0.42, y:0.45, w:12.493, h:6.6 }; // 16:9 wide
+  if (!photo) {
+    slide.addShape(pptx.ShapeType.rect, { x:frame.x, y:frame.y, w:frame.w, h:frame.h, line:{color:"B8C7D1",dash:"dash"}, fill:{color:"FAFCFD"} });
+    slide.addText("금회 미추가", {
+      x:frame.x, y:frame.y, w:frame.w, h:frame.h,
+      fontFace:"Malgun Gothic", fontSize:20, color:"6B7C88", bold:false,
+      align:"center", valign:"mid", margin:0, breakLine:false
+    });
+    return;
+  }
+  const scale = Math.min(frame.w / photo.width, frame.h / photo.height);
+  const w = photo.width * scale;
+  const h = photo.height * scale;
+  slide.addImage({ data:photo.data, x:frame.x + (frame.w - w)/2, y:frame.y + (frame.h - h)/2, w, h });
+}
+
+document.getElementById("pptSave").addEventListener("click", async () => {
+  if (pptLoading) return;
+  if (!pptPhotos.report) { pptMessage("작업일보 사진을 반드시 선택해 주세요.", true); return; }
+  if (typeof PptxGenJS === "undefined") {
+    pptMessage("PPT 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결 또는 CDN 접근을 확인해 주세요.", true);
+    return;
+  }
+  const saveBtn = document.getElementById("pptSave");
+  pptLoading = true;
+  saveBtn.disabled = true;
+  pptMessage("PPT 3장을 생성하고 있습니다...");
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = "LAYOUT_WIDE";
+    pptx.author = "Small Company MES";
+    pptx.subject = "작업사진";
+    pptx.title = pptName().replace(/\.pptx$/i, "");
+    pptx.company = document.getElementById("pptCustomer").value;
+    // 항상 3장. 사진이 없는 2·3장은 20pt '금회 미추가' 표기
+    appendPptSlide(pptx, pptPhotos.report);
+    appendPptSlide(pptx, pptPhotos.material);
+    appendPptSlide(pptx, pptPhotos.drawing);
+    await pptx.writeFile({ fileName:pptName() });
+    pptMessage("PPT 3장 저장 완료. 브라우저 다운로드 폴더를 확인해 주세요.");
+    setActionMessage("PPT 3장 생성을 완료했습니다.", "success");
+  } catch (error) {
+    console.error("PPT 저장 실패", error);
+    pptMessage("PPT 저장 실패: " + (error?.message || "파일 또는 브라우저 상태를 확인해 주세요."), true);
+  } finally { pptLoading = false; saveBtn.disabled = false; }
+});
 
 /* ══════════════════════════════════════════════
    버튼 및 초기 실행
